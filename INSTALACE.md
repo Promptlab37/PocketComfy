@@ -31,7 +31,14 @@ hledej něco jako `192.168.x.x`.
 
 ### A2. Nainstaluj custom nody
 
-Úplný seznam je v [POZADAVKY.md](POZADAVKY.md). Nejpohodlnější cesta je přes
+**Nejrychlejší cesta (Windows):** stáhni z tohoto repozitáře soubor
+[`instalace-serveru.bat`](instalace-serveru.bat), zkopíruj ho do složky
+ComfyUI (tam, kde je `main.py`) a spusť. Skript naklonuje všechny potřebné
+custom nody a nabídne stažení veřejně dostupných modelů po jednotlivých
+kartách (u každé řekne velikost, nic nestahuje bez zeptání). Potom
+restartuj ComfyUI.
+
+Ruční cesta: úplný seznam je v [POZADAVKY.md](POZADAVKY.md), nejpohodlněji přes
 [ComfyUI-Manager](https://github.com/Comfy-Org/ComfyUI-Manager):
 **Manager → Custom Nodes Manager → vyhledat → Install**, potom restart ComfyUI.
 
@@ -71,7 +78,7 @@ to pár minut a jsou dvě cesty; pro většinu lidí je jednodušší **Android 
 1. Stáhni a nainstaluj [Android Studio](https://developer.android.com/studio)
    (zdarma; při prvním spuštění si samo doinstaluje Android SDK).
 2. Stáhni tento repozitář: zelené tlačítko **Code → Download ZIP** a rozbal,
-   nebo `git clone https://github.com/Promptlab37/H3VideoApp.git`.
+   nebo `git clone https://github.com/Promptlab37/PocketComfy.git`.
 3. V Android Studiu: **Open** → vyber složku projektu → počkej, až doběhne
    „Gradle sync" (poprvé pár minut, stahují se závislosti).
 4. Připoj telefon USB kabelem a povol na něm **ladění USB**
@@ -85,8 +92,8 @@ Potřebuješ JDK 17 a Android SDK (proměnná `ANDROID_HOME`, nebo soubor
 `local.properties` s řádkem `sdk.dir=...`):
 
 ```bash
-git clone https://github.com/Promptlab37/H3VideoApp.git
-cd H3VideoApp
+git clone https://github.com/Promptlab37/PocketComfy.git
+cd PocketComfy
 ./gradlew assembleDebug          # Windows: gradlew.bat assembleDebug
 ```
 
@@ -125,6 +132,20 @@ přihlas oba stejným účtem a v appce použij tailscalovou adresu počítače
 > (Nastavení → Aplikace → Tailscale → Baterie → Neomezeno), jinak ho systém
 > po čase uspí a appka ohlásí „počítač neodpovídá".
 
+### Higgs Audio — namlouvání replik (volitelné)
+
+Karta **Dialogy** umí nechat postavy mluvit tvými replikami. Hlasy namlouvá
+**Higgs Audio** — to není součást ComfyUI, ale samostatný malý server
+(webové rozhraní na portu 7860), který si spustíš vedle něj:
+[higgs-audio-studio-webui](https://github.com/Promptlab37/higgs-audio-studio-webui) —
+lokální rozhraní pro syntézu (i české) řeči nad modelem Higgs Audio,
+včetně klonování hlasu.
+
+Aplikace si adresu Higgse odvodí sama (stejný počítač jako ComfyUI, port
+7860) a umí ho na povel zapínat a vypínat, aby se s generováním videa
+nepral o paměť grafiky. **Bez Higgse funguje všechno ostatní** — jen na
+kartě Dialogy nepůjde namlouvat repliky.
+
 ---
 
 ## Když něco nejde
@@ -139,5 +160,5 @@ přihlas oba stejným účtem a v appce použij tailscalovou adresu počítače
 | Gradle sync v Android Studiu selže | zkontroluj připojení k internetu a že máš JDK 17 (File → Settings → Build Tools → Gradle → Gradle JDK) |
 | Instalace APK z příkazové řádky selže | v telefonu povol Ladění USB a potvrď otisk počítače; nebo APK prostě zkopíruj a otevři v telefonu |
 
-Když si nevíš rady, otevři [Issue](https://github.com/Promptlab37/H3VideoApp/issues)
+Když si nevíš rady, otevři [Issue](https://github.com/Promptlab37/PocketComfy/issues)
 a přilož text chyby z aplikace.

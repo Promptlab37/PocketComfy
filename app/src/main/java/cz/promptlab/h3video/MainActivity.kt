@@ -379,8 +379,10 @@ private fun Header(tab: Tab, version: String) {
                     .background(AccentBrush)
             )
             Spacer(Modifier.size(9.dp))
+            // Jméno vlastní, ne jméno cizího modelu — „MiniMax" je ochranná
+            // známka a patří jen do popisů karet (nominativní užití).
             Text(
-                "MiniMax H3",
+                "PocketComfy",
                 style = MaterialTheme.typography.titleMedium,
                 color = TextHi,
                 fontWeight = FontWeight.Bold

@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🎬 H3 Video
+# 🎬 PocketComfy
 
 ### Celé AI studio z kapsy — na tvém vlastním počítači
 
@@ -69,8 +69,8 @@ Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné před
    nebo z příkazové řádky:
 
    ```bash
-   git clone https://github.com/Promptlab37/H3VideoApp.git
-   cd H3VideoApp
+   git clone https://github.com/Promptlab37/PocketComfy.git
+   cd PocketComfy
    ./gradlew assembleDebug
    # výsledek: app/build/outputs/apk/debug/app-debug.apk
    ```

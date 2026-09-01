@@ -54,7 +54,7 @@ fun OnboardingScreen(vm: MainViewModel) {
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         Text(
-            "Vítej v H3 Video",
+            "Vítej v PocketComfy",
             style = MaterialTheme.typography.headlineSmall,
             color = TextHi,
             fontWeight = FontWeight.Bold
