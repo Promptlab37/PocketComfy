@@ -336,6 +336,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             GenerationEngine.dismissResult()
                             vm.posliDoUpravy(s.item)
                         },
+                        onAnimate = {
+                            GenerationEngine.dismissResult()
+                            vm.posliDoRozhybani(s.item)
+                        },
                     )
                 }
             }
@@ -384,6 +388,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onEdit = {
                         opened = null
                         vm.posliDoUpravy(open)
+                    },
+                    onAnimate = {
+                        opened = null
+                        vm.posliDoRozhybani(open)
                     },
                 )
             }

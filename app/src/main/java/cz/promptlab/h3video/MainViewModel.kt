@@ -1452,6 +1452,30 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * Pošle hotový obrázek rovnou do All in One → „Z obrázku" a přepne kartu —
+     * třetí rameno rozcestníku na výsledku vedle Úpravy a Zvětšení: obrázek
+     * se dá jedním klepnutím rozhýbat do videa.
+     */
+    fun posliDoRozhybani(item: VideoItem) {
+        viewModelScope.launch {
+            val zdroj = item.file(getApplication())
+            val target = aioStore.imageFile("first", 1)
+            val thumb = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), Uri.fromFile(zdroj), target)
+            } ?: return@launch
+            updateAio {
+                it.copy(
+                    mode = AioMode.IMAGE,
+                    first = it.first.copy(image = target, thumb = thumb),
+                )
+            }
+            hlidejProfilKCeste()
+            setMode(Mode.ALLINONE)
+            selectTab(Tab.CREATE)
+        }
+    }
+
+    /**
      * Obrázek do slotu. `druh` je „first", „last", „ref" nebo „key" – podle něj
      * se pozná soubor na disku, takže se sloty navzájem nepřepisují.
      */

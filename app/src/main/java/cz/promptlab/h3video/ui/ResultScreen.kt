@@ -75,6 +75,8 @@ fun ResultScreen(
     onUpscale: (() -> Unit)? = null,
     /** Poslat hotový obrázek rovnou do karty Úprava obrázku (jen u obrázků). */
     onEdit: (() -> Unit)? = null,
+    /** Rozhýbat obrázek — poslat do All in One → Z obrázku (jen u obrázků). */
+    onAnimate: (() -> Unit)? = null,
     /**
      * Co k běhu řekly samotné uzly. Jinak to skončí jen v logu na počítači,
      * kam se z telefonu nedostaneš – a přitom jde často o věc, kterou z videa
@@ -221,23 +223,42 @@ fun ResultScreen(
             }
         }
 
-        // Řetěz Obrázek → Úprava → Zvětšit: z hotového obrázku se pokračuje
-        // jedním klepnutím, bez stahování a znovunahrávání.
-        if (item.isImage && onEdit != null) {
-            Spacer(Modifier.height(10.dp))
-            OutlineButton(
-                "Upravit (Krea 2 — popiš změnu)",
+        // Rozcestník: z hotového obrázku se pokračuje jedním klepnutím —
+        // rozhýbat do videa, upravit, nebo zvětšit. Bez stahování a
+        // znovunahrávání.
+        if (item.isImage && (onAnimate != null || onEdit != null || onUpscale != null)) {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "Pokračuj s obrázkem",
+                style = MaterialTheme.typography.labelMedium,
+                color = TextLow,
                 modifier = Modifier.fillMaxWidth(),
-                onClick = onEdit,
             )
-        }
-        if (item.isImage && onUpscale != null) {
-            Spacer(Modifier.height(10.dp))
-            OutlineButton(
-                "Zvětšit (SeedVR2 gigapixel)",
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onUpscale,
-            )
+            if (onAnimate != null) {
+                Spacer(Modifier.height(8.dp))
+                OutlineButton(
+                    "Rozhýbat — video z obrázku",
+                    modifier = Modifier.fillMaxWidth(),
+                    color = Cyan,
+                    onClick = onAnimate,
+                )
+            }
+            if (onEdit != null) {
+                Spacer(Modifier.height(8.dp))
+                OutlineButton(
+                    "Upravit (Krea 2 — popiš změnu)",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onEdit,
+                )
+            }
+            if (onUpscale != null) {
+                Spacer(Modifier.height(8.dp))
+                OutlineButton(
+                    "Zvětšit (SeedVR2 gigapixel)",
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onUpscale,
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))
