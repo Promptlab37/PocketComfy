@@ -26,6 +26,19 @@ Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné před
 
 ---
 
+## ⚠️ Co potřebuješ, aby to fungovalo
+
+PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
+
+| | Požadavek | Podrobnosti |
+|---|---|---|
+| 🖥️ | **Počítač s NVIDIA grafikou** (doporučeno 16 GB VRAM) a **[ComfyUI](https://github.com/comfyanonymous/ComfyUI)** | spuštěné s `--listen 0.0.0.0` |
+| 🧩 | **Custom nody a modely** | přesný seznam: **[POZADAVKY.md](POZADAVKY.md)** · na Windows je nainstaluje skript **[instalace-serveru.bat](instalace-serveru.bat)** · co chybí, vypíše appka v Nastavení |
+| 📱 | **Android telefon** (Android 8+) | na stejné Wi-Fi jako počítač |
+| 🌍 | **[Tailscale](https://tailscale.com)** (volitelné) | bezplatná VPN, díky které appka funguje i mimo domov — [návod v INSTALACE.md](INSTALACE.md#přístup-odkudkoli-volitelné-doporučené) |
+
+📖 **Kompletní návod od nuly po první video: [INSTALACE.md](INSTALACE.md)** — server, nody, modely, sestavení aplikace, Tailscale i řešení potíží.
+
 ## ✨ Proč si ji zamiluješ
 
 - 🏠 **100 % lokální.** Generuje tvůj počítač, appka jen posílá zadání a stahuje výsledky. Přes VPN (Tailscale) to funguje odkudkoli na světě.
