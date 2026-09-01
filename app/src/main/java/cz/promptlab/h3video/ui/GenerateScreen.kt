@@ -574,6 +574,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                 params.sageAttention
                             ) { v -> vm.update { it.copy(sageAttention = v) } }
                             ToggleRow(
+                                "TeaCache",
+                                "Přeskočí podobné kroky — až 3× rychlejší, drobně méně věrné",
+                                params.teaCache
+                            ) { v -> vm.update { it.copy(teaCache = v) } }
+                            ToggleRow(
                                 "Živý náhled",
                                 "Rozpracované snímky během generování; vypnutí šetří grafiku",
                                 params.livePreview

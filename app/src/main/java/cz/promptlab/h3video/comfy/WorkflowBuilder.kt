@@ -49,6 +49,7 @@ object WorkflowBuilder {
     const val N_PREVIEW = "3050"      // ModelPreviewOverrideKJ (živý náhled)
     const val N_LSI_TIMELINE = "3070" // LSIMinimaxTimeline
     const val N_LSI_RENDER = "3071"   // LSIMinimaxTimelineRender
+    const val N_TEACACHE = "3080"     // MiniMaxH3TeaCache (volitelné zrychlení)
 
     /** Malý dekodér pro živý náhled – leží v ComfyUI/models/vae_approx. */
     private const val TAEH3 = "taeh3.safetensors"
@@ -125,6 +126,30 @@ object WorkflowBuilder {
         }
         wf.inputs(N_CLIP).put("clip_name", p.clipName)
 
+        // ---- TeaCache (volitelné zrychlení, port pro H3 od Icyoung)
+        // Přeskakuje kroky, jejichž vstup se skoro nezměnil. Hodnoty jsou
+        // doporučené autorem uzlu (thresh 0.15, start 2, end -2); total_steps
+        // musí sedět na skutečný počet kroků běhu.
+        var modelPredSamplerem = N_SPECTRUM
+        if (p.teaCache) {
+            wf.put(
+                N_TEACACHE, JSONObject()
+                    .put(
+                        "inputs", JSONObject()
+                            .put("model", link(N_SPECTRUM))
+                            .put("rel_l1_thresh", 0.15)
+                            .put("start_step", 2)
+                            .put("end_step", -2)
+                            .put("total_steps", p.steps)
+                    )
+                    .put("class_type", "MiniMaxH3TeaCache")
+                    .put("_meta", JSONObject().put("title", "TeaCache"))
+            )
+            wf.inputs(N_SCHEDULER).put("model", link(N_TEACACHE))
+            wf.inputs(N_GUIDER).put("model", link(N_TEACACHE))
+            modelPredSamplerem = N_TEACACHE
+        }
+
         // ---- živý náhled během vzorkování
         // ComfyUI se spouští bez --preview-method, takže standardní náhledy vůbec
         // nevznikají. Tenhle uzel je posílá vlastní zprávou (kj_preview_override),
@@ -134,7 +159,7 @@ object WorkflowBuilder {
                 N_PREVIEW, JSONObject()
                     .put(
                         "inputs", JSONObject()
-                            .put("model", link(N_SPECTRUM))
+                            .put("model", link(modelPredSamplerem))
                             .put("max_resolution", 512)
                             .put("jpeg_quality", 70)
                             // Osm snímků, ne jeden: uzel z nich pošle animaci
@@ -234,7 +259,7 @@ object WorkflowBuilder {
     fun stageFor(node: String?): Stage = when (node) {
         null -> Stage.FINISHING
         N_UNET_FL2VA, N_CLIP, N_VAE_VIDEO, N_VAE_AUDIO -> Stage.MODELS
-        N_LORA, N_SAGE, N_SHIFT, N_SPECTRUM -> Stage.MODELS
+        N_LORA, N_SAGE, N_SHIFT, N_SPECTRUM, N_TEACACHE -> Stage.MODELS
         N_WIDTH, N_HEIGHT, N_DURATION, N_FRAMES, N_RESOLUTION,
         N_SWITCH_W, N_SWITCH_H -> Stage.REFERENCES
         N_COND, N_LSI_TIMELINE -> Stage.ENCODING
@@ -251,7 +276,7 @@ object WorkflowBuilder {
      */
     fun rangeFor(node: String?): Pair<Float, Float> = when (node) {
         N_UNET_FL2VA, N_CLIP, N_VAE_VIDEO, N_VAE_AUDIO -> 0.00f to 0.03f
-        N_LORA, N_SAGE, N_SHIFT, N_SPECTRUM -> 0.03f to 0.04f
+        N_LORA, N_SAGE, N_SHIFT, N_SPECTRUM, N_TEACACHE -> 0.03f to 0.04f
         N_WIDTH, N_HEIGHT, N_DURATION, N_FRAMES, N_RESOLUTION,
         N_SWITCH_W, N_SWITCH_H -> 0.05f to 0.055f
         N_COND, N_LSI_TIMELINE -> 0.055f to 0.075f

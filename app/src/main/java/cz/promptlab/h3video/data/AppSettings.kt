@@ -249,6 +249,7 @@ class AppSettings(ctx: Context) {
             sageAttention = sp.getBoolean("sage", defaults.sageAttention),
             crf = sp.getInt("crf", defaults.crf),
             livePreview = sp.getBoolean("livePreview", defaults.livePreview),
+            teaCache = sp.getBoolean("teaCache", defaults.teaCache),
             extraLoras = extraLoras,
             // Enkodér patří k profilu, ne k uloženému nastavení – jinak by po
             // restartu jel profil V2 se starým textovým enkodérem verze 1.
@@ -281,6 +282,7 @@ class AppSettings(ctx: Context) {
             putBoolean("sage", p.sageAttention)
             putInt("crf", p.crf)
             putBoolean("livePreview", p.livePreview)
+            putBoolean("teaCache", p.teaCache)
         }.apply()
         extraLoras = p.extraLoras
     }

@@ -87,7 +87,10 @@ class ServerAuditTest {
         // grafu je přidávají stavitelé až za běhu. Kdyby vypadly z kontroly,
         // cizí server by prošel a karta pak spadla.
         assertEquals(
-            listOf("LSIMinimaxTimeline", "LSIMinimaxTimelineRender", "ModelPreviewOverrideKJ"),
+            listOf(
+                "LSIMinimaxTimeline", "LSIMinimaxTimelineRender",
+                "ModelPreviewOverrideKJ", "MiniMaxH3TeaCache",
+            ),
             ServerAudit.PRIDAVANE_ZA_BEHU
         )
     }

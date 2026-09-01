@@ -339,6 +339,23 @@ object AioBuilder {
             model = link(id)
         }
 
+        // TeaCache (H3 port od Icyoung) — volitelné zrychlení; hodnoty jsou
+        // doporučené autorem uzlu, total_steps musí sedět na skutečné kroky.
+        if (p.teaCache) {
+            val id = newId()
+            wf.put(
+                id, node(
+                    "MiniMaxH3TeaCache", "TeaCache", JSONObject()
+                        .put("model", model)
+                        .put("rel_l1_thresh", 0.15)
+                        .put("start_step", 2)
+                        .put("end_step", -2)
+                        .put("total_steps", p.steps)
+                )
+            )
+            model = link(id)
+        }
+
         if (p.livePreview) {
             wf.put(
                 N_PREVIEW, node(
@@ -548,7 +565,8 @@ object AioBuilder {
         null -> Stage.SAMPLING
         "CLIPLoader", "UNETLoader", "VAELoader", "MiniMaxH3SigmaShift",
         "LoraLoaderModelOnly", "MiniMaxH3MemoryEfficientSageAttentionPatch",
-        "ModelPreviewOverrideKJ", "SeedVR2LoadDiTModel", "SeedVR2LoadVAEModel" -> Stage.MODELS
+        "ModelPreviewOverrideKJ", "MiniMaxH3TeaCache",
+        "SeedVR2LoadDiTModel", "SeedVR2LoadVAEModel" -> Stage.MODELS
 
         "LoadImage", "LoadVideo", "LoadAudio", "GetVideoComponents",
         "MiniMaxH3CustomKeyframes", "MiniMaxH3ExistingVideoMaskedContext",

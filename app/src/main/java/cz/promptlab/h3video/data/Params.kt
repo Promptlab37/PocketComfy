@@ -38,6 +38,12 @@ data class GenParams(
     val clipName: String = CLIP_NVFP4,
     /** Živý náhled během vzorkování – posílá ho `ModelPreviewOverrideKJ`. */
     val livePreview: Boolean = true,
+    /**
+     * TeaCache pro H3 (Icyoung port): přeskakuje kroky, jejichž vstup se skoro
+     * nezměnil — až ~3× rychlejší za cenu drobného driftu. Vypnuté schválně;
+     * zapíná se v Pokročilém. Přidává do grafu uzel MiniMaxH3TeaCache.
+     */
+    val teaCache: Boolean = false,
     /** Další LoRA nad rámec Turbo. */
     val extraLoras: List<LoraEntry> = emptyList(),
     /**
@@ -230,6 +236,13 @@ const val CLIP_INT8 = "qwen3vl_32b_minimax_h3_int8_convrot.safetensors"
 const val TURBO_V4 = "minimax_h3_turbo_v4_step600_ema_pruned_comfyui.safetensors"
 
 /**
+ * lightx2v Turbo v1.0 — osmikroková destilace z 768p řady, na které stojí
+ * profil [Profile.TURBO8]. Podle autorů výrazně lepší obraz i ZVUK než starší
+ * čtyřkrokové LoRA. 768p řada je trénovaná na shift 6 (viz TURBO.KNOWN).
+ */
+const val TURBO8_LORA = "minimax_h3_fl2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors"
+
+/**
  * FastH3 — čtyřkroková destilace MiniMaxu H3 od FastVideo, na které stojí
  * profil [Profile.FAST].
  *
@@ -267,6 +280,14 @@ object TURBO {
         LoraProfile(
             "minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors",
             "lightx2v 4step v1.0 (768p)", steps = 4, shiftVideo = 6f
+        ),
+        LoraProfile(
+            TURBO8_LORA,
+            "lightx2v 8step v1.0 (768p) — nejlepší zvuk", steps = 8, shiftVideo = 6f
+        ),
+        LoraProfile(
+            "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+            "lightx2v ref2v 4step (pro reference)", steps = 4, shiftVideo = 12f
         ),
         LoraProfile(FASTH3_LORA, "FastH3 4step (bez referencí)", steps = 4, shiftVideo = 12f),
     )
@@ -366,6 +387,22 @@ enum class Profile(
         clip = CLIP_INT8,
         lora = TURBO_V4,
         schedulerRef = "simple",
+    ),
+
+    /**
+     * lightx2v Turbo v1.0 — nová osmikroková destilace (768p řada, srpen 2026).
+     * Podle autorů i komunity lepší obraz a hlavně ZVUK než čtyřkrokové LoRA.
+     * Shift 6 podle trénovací hodnoty 768p řady (viz TURBO.KNOWN — cizí shift
+     * kvalitu znatelně sráží). Jen nereferenční (fl2va) cesta.
+     */
+    TURBO8(
+        title = "Turbo 8 v1",
+        detail = "Nová lightx2v LoRA, 8 kroků – lepší zvuk",
+        steps = 8, sampler = "euler", scheduler = "simple",
+        shiftVideo = 6f, spectrum = false, useLora = true,
+        clip = CLIP_INT8,
+        lora = TURBO8_LORA,
+        bezReferenci = true,
     ),
 
     /**

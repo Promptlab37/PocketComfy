@@ -462,6 +462,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 shiftAudio = d.shiftAudio,
                 sageAttention = d.sageAttention,
                 crf = d.crf,
+                teaCache = d.teaCache,
             )
         }
     }
@@ -473,7 +474,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return p.steps == prof.steps && p.sampler == prof.sampler &&
             p.scheduler == prof.scheduler && p.shiftVideo == prof.shiftVideo &&
             p.spectrum == prof.spectrum && p.turboLoraOn == prof.useLora &&
-            p.shiftAudio == d.shiftAudio && p.sageAttention == d.sageAttention && p.crf == d.crf
+            p.shiftAudio == d.shiftAudio && p.sageAttention == d.sageAttention &&
+            p.crf == d.crf && p.teaCache == d.teaCache
     }
 
     // ------------------------------------------------------------------ profil

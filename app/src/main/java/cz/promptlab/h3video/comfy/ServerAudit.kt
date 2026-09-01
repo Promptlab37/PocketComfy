@@ -44,6 +44,7 @@ object ServerAudit {
         "LSIMinimaxTimeline",
         "LSIMinimaxTimelineRender",
         "ModelPreviewOverrideKJ",
+        "MiniMaxH3TeaCache",
     )
 
     /** Z předloh: třída uzlu → textové vstupy (název → hodnota). */
