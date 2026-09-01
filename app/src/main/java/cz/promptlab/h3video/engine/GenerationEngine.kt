@@ -128,7 +128,11 @@ object GenerationEngine {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var job: Job? = null
-    private var socket: WebSocket? = null
+
+    // Zapisují ho OkHttp callback vlákna (onFailure/onClosed) i koroutiny —
+    // bez @Volatile by watch po výpadku mohl trvale vidět starou hodnotu
+    // a spojení už nikdy neobnovit.
+    @Volatile private var socket: WebSocket? = null
 
     private val _state = MutableStateFlow<GenState>(GenState.Idle)
     val state: StateFlow<GenState> = _state.asStateFlow()
@@ -340,6 +344,10 @@ object GenerationEngine {
                     fail((e as? ComfyException)?.userMessage ?: (e.message ?: "Neznámá chyba"))
                 }
         }
+        // Ať job skončí jakkoli (hotovo, chyba, zrušení uprostřed blokujícího
+        // volání), socket nesmí zůstat viset — jinak by jeho guard zablokoval
+        // připojení příštího běhu a starý listener by mu sahal do stavu.
+        job?.invokeOnCompletion { closeSocket() }
     }
 
     /** Znovu se přilepí na rozdělanou úlohu po restartu aplikace. */
@@ -411,7 +419,7 @@ object GenerationEngine {
                 finishFromHistory(client, pid, null)
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                fail(e.message ?: "Nepodařilo se navázat na generování")
+                fail((e as? ComfyException)?.userMessage ?: e.message ?: "Nepodařilo se navázat na generování")
             }
         }
     }
@@ -443,6 +451,18 @@ object GenerationEngine {
         val pid = settings.activePromptId ?: return
         if (isRunning) return
         resetRun()
+        // Po restartu procesu by flagy druhu běhu byly na false a texty by
+        // mluvily o videu i u obrázku/hudby — obnovit je ze settings stejně
+        // jako při navazování.
+        editRun = settings.activeEdit
+        upscaleRun = settings.activeUpscale
+        t2iRun = settings.activeT2i
+        musicRun = settings.activeMusic
+        restoreRun = settings.activeRestore
+        swapRun = settings.activeSwap
+        aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun &&
+            !swapRun && settings.activeAio
+        label = settings.activeLabel
         startedAt = System.currentTimeMillis()
         publish(Stage.DOWNLOADING, 0.90f)
         // Službu na popředí nesmí appka odnést pádem, když ji systém odmítne
@@ -454,7 +474,12 @@ object GenerationEngine {
             runCatching {
                 val client = ComfyClient(settings.serverUrl)
                 finishFromHistory(client, pid, null)
-            }.onFailure { fail(it.message ?: "Stažení se nepovedlo", canRetryDownload = true) }
+            }.onFailure {
+                fail(
+                    (it as? ComfyException)?.userMessage ?: it.message ?: "Stažení se nepovedlo",
+                    canRetryDownload = true,
+                )
+            }
         }
     }
 
@@ -611,6 +636,20 @@ object GenerationEngine {
         logSince = runCatching { client.nodeWarnings().lastOrNull()?.first }.getOrNull()
         publish(Stage.QUEUED, 0.06f)
         submitWithRetry(client, workflow, promptId)
+
+        // Zrušení mohlo přijít uprostřed blokujícího submitu — pak se úloha
+        // sice zařadila, ale NESMÍ se zapsat jako aktivní (appka by se po
+        // restartu chytala běhu, který uživatel zrušil) ani otevírat socket.
+        // Místo toho se zrušená úloha rovnou uklidí i na serveru.
+        if (!kotlin.coroutines.coroutineContext.isActive) {
+            withContext(kotlinx.coroutines.NonCancellable) {
+                runCatching {
+                    client.deleteFromQueue(promptId)
+                    client.interrupt(promptId)
+                }
+            }
+            throw kotlinx.coroutines.CancellationException("zruseno behem odeslani")
+        }
 
         settings.activePromptId = promptId
         settings.activeLabel = label
@@ -836,7 +875,10 @@ object GenerationEngine {
         var lostPolls = 0
         lastContactAt = System.currentTimeMillis()
 
-        while (scope.isActive) {
+        // POZOR: scope má SupervisorJob, který se nikdy neruší — podmínka na
+        // scope.isActive by po zrušení JOBU byla pořád true a smyčku by
+        // zachraňoval jen delay(). Kontroluje se proto kontext samotného jobu.
+        while (kotlin.coroutines.coroutineContext.isActive) {
             if (serverError != null) throw ComfyException("server", serverError!!)
             if (interrupted) {
                 settings.activePromptId = null
@@ -925,27 +967,32 @@ object GenerationEngine {
     ) {
         publish(Stage.DOWNLOADING, 0.90f)
 
-        // dotáhnout záznam historie (server ho má, i kdyby telefon zrovna neměl signál)
-        var record: JSONObject? = null
+        // dotáhnout záznam historie (server ho má, i kdyby telefon zrovna neměl
+        // signál). Záznam se navíc může objevit dřív než jeho výstupy, takže se
+        // čeká i na neprázdné "outputs" – a když se to nestihne, stav zůstane
+        // opakovatelný (Stáhnout znovu), protože na serveru výsledek je.
+        var record: JSONObject?
         var attempt = 0
-        while (record == null) {
+        while (true) {
             record = runCatching { client.history(promptId) }.getOrNull()
-            if (record == null) {
-                if (++attempt >= MAX_DOWNLOAD_ATTEMPTS) throw ComfyException(
-                    "no history",
-                    "Výsledek se nepodařilo najít na serveru. Zkus to znovu, až bude spojení stabilní."
-                )
-                publish(Stage.DOWNLOADING, 0.90f, note = NOTE_WAITING)
-                delay(3000L)
+            val status = record?.optJSONObject("status")
+            if (status?.optString("status_str") == "error") {
+                throw ComfyException("server", extractError(status) ?: "ComfyUI ohlásilo chybu.")
             }
+            val zatim = record?.optJSONObject("outputs")
+            if (zatim != null && zatim.length() > 0) break
+            if (++attempt >= MAX_DOWNLOAD_ATTEMPTS) {
+                fail(
+                    "Výsledek se nepodařilo najít na serveru. Zkus to znovu, až bude spojení stabilní.",
+                    canRetryDownload = true,
+                )
+                return
+            }
+            publish(Stage.DOWNLOADING, 0.90f, note = NOTE_WAITING)
+            delay(3000L)
         }
 
-        val status = record.optJSONObject("status")
-        if (status?.optString("status_str") == "error") {
-            throw ComfyException("server", extractError(status) ?: "ComfyUI ohlásilo chybu.")
-        }
-
-        val outputs = record.optJSONObject("outputs")
+        val outputs = record!!.optJSONObject("outputs")
             ?: throw ComfyException("no outputs", "ComfyUI nevrátilo žádný výstup.")
 
         // Výstupů může být víc druhů najednou: list postavy vrací otočné video
@@ -961,7 +1008,10 @@ object GenerationEngine {
         fun isSound(name: String) = name.substringAfterLast('.', "").lowercase() in
             listOf("mp3", "flac", "wav", "opus", "ogg", "m4a")
 
-        var main: OutFile? = null
+        // Priorita hlavního výstupu: video > zvuk > obrázek. Kdyby graf vracel
+        // video i samostatnou stopu zvuku, výsledkem karty je video.
+        var mainVideo: OutFile? = null
+        var mainAudio: OutFile? = null
         val pictures = mutableListOf<OutFile>()
         for (key in outputs.keys()) {
             val o = outputs.optJSONObject(key) ?: continue
@@ -976,11 +1026,15 @@ object GenerationEngine {
                         f.optString("type", "output"),
                     )
                     if (out.filename.isBlank()) continue
-                    if (isPicture(out.filename)) pictures += out
-                    else if (main == null) main = out
+                    when {
+                        isPicture(out.filename) -> pictures += out
+                        isSound(out.filename) -> if (mainAudio == null) mainAudio = out
+                        else -> if (mainVideo == null) mainVideo = out
+                    }
                 }
             }
         }
+        val main: OutFile? = mainVideo ?: mainAudio
         // Karta Úprava obrázku žádné video nevyrábí – jejím výsledkem je PNG.
         // Když tedy video není, bere se jako hlavní výstup první obrázek a
         // ostatní zůstanou jako doplňkové (list postavy má obojí).
@@ -997,7 +1051,9 @@ object GenerationEngine {
         val pripona = when {
             jenObrazek -> filename.substringAfterLast('.', "png").lowercase()
             isSound(filename) -> filename.substringAfterLast('.', "mp3").lowercase()
-            else -> "mp4"
+            // I video si nese svou skutečnou příponu – webm přejmenované
+            // na .mp4 by některé přehrávače odmítly.
+            else -> filename.substringAfterLast('.', "mp4").lowercase()
         }
         val target = File(VideoItem.videosDir(app), "$promptId.$pripona")
         val url = client.viewUrl(filename, subfolder, type)
@@ -1057,7 +1113,7 @@ object GenerationEngine {
             when {
                 jenObrazek -> MediaSaver.saveImageToGallery(app, target, "H3_$createdAt.$pripona")
                 zvuk -> MediaSaver.saveAudioToGallery(app, target, "H3_$createdAt.$pripona")
-                else -> MediaSaver.saveToGallery(app, target, "H3_$createdAt.mp4")
+                else -> MediaSaver.saveToGallery(app, target, "H3_$createdAt.$pripona")
             }
             )
 
@@ -1223,7 +1279,11 @@ object GenerationEngine {
                 }
             }
 
-            "executed" -> if (mine && pid == promptId) serverFinished = true
+            // POZOR: "executed" chodí po KAŽDÉM výstupním uzlu, ne po dokončení
+            // úlohy — u grafů s více výstupy (list postavy: video + slepený
+            // obrázek) by sledování skončilo po prvním z nich a /history by
+            // ještě neexistovala. Konec poznáme z execution_success a z
+            // "executing" s node == null (obojí výše).
             "execution_success" -> if (pid == promptId) serverFinished = true
             "execution_interrupted" -> if (pid == promptId) interrupted = true
             "execution_error" -> if (pid == promptId) {
@@ -1346,6 +1406,11 @@ object GenerationEngine {
     private fun publish(
         stage: Stage, overall: Float, note: String? = null, offline: Boolean = false
     ) {
+        // Po Zrušit doběhne blokující síťové volání (OkHttp se přerušit nedá)
+        // a jeho průběžné callbacky by stav „vzkřísily" zpátky na Running —
+        // obrazovka průběhu by po zrušení zůstala viset. Zrušený job už stav
+        // publikovat nesmí.
+        if (job?.isActive != true) return
         val prev = _state.value as? GenState.Running
         // Dokud jen odhadujeme, kolečko necouvá. Jakmile ale server hlásí skutečné
         // kroky, má přednost i za cenu skoku dolů – jinak by se v kolečku zamklo

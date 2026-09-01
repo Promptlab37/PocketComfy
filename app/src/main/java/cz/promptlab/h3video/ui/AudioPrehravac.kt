@@ -55,6 +55,17 @@ fun AudioPrehravac(file: File, modifier: Modifier = Modifier) {
     }
     DisposableEffect(file.path) { onDispose { player.release() } }
 
+    // Odchod z appky (domů, zamknutí) přehrávání zastaví – skladba by jinak
+    // hrála dál na pozadí bez jakéhokoli ovládání.
+    val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle, file.path) {
+        val obs = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_STOP) player.pause()
+        }
+        lifecycle.addObserver(obs)
+        onDispose { lifecycle.removeObserver(obs) }
+    }
+
     var hraje by remember(file.path) { mutableStateOf(false) }
     var pozice by remember(file.path) { mutableLongStateOf(0L) }
     var delka by remember(file.path) { mutableLongStateOf(0L) }

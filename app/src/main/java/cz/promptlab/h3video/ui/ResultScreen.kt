@@ -42,10 +42,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -129,10 +131,23 @@ fun ResultScreen(
         Spacer(Modifier.height(18.dp))
         // Karta Úprava obrázku vrací PNG – přehrávač by na něm jen zčernal.
         if (item.isImage) {
-            val bmp = remember(item.id) {
-                runCatching {
-                    android.graphics.BitmapFactory.decodeFile(item.file(ctx).absolutePath)
-                }.getOrNull()
+            // Dekóduje se na pozadí a se stropem ~4096 px na hranu – gigapixel
+            // ze Zvětšit by jinak zmrazil UI a shodil appku na paměti.
+            var bmp by remember(item.id) { mutableStateOf<android.graphics.Bitmap?>(null) }
+            LaunchedEffect(item.id) {
+                bmp = withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    runCatching {
+                        val cesta = item.file(ctx).absolutePath
+                        val hranice = android.graphics.BitmapFactory.Options()
+                            .apply { inJustDecodeBounds = true }
+                        android.graphics.BitmapFactory.decodeFile(cesta, hranice)
+                        var vzorek = 1
+                        while (maxOf(hranice.outWidth, hranice.outHeight) / (vzorek * 2) >= 4096) vzorek *= 2
+                        val opts = android.graphics.BitmapFactory.Options()
+                            .apply { inSampleSize = vzorek }
+                        android.graphics.BitmapFactory.decodeFile(cesta, opts)
+                    }.getOrNull()
+                }
             }
             var naCelou by remember(item.id) { mutableStateOf(false) }
             bmp?.let {

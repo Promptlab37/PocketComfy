@@ -148,7 +148,10 @@ object UpdateChecker {
                 }
             }
             if (target.exists()) target.delete()
-            tmp.renameTo(target)
+            if (!tmp.renameTo(target)) {
+                tmp.copyTo(target, overwrite = true)
+                tmp.delete()
+            }
             return target
         }
     }

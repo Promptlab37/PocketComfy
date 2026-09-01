@@ -34,6 +34,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -201,15 +202,22 @@ fun FaceSwapSection(vm: MainViewModel) {
 
     if (maluje) {
         val file = scene.target
-        val bmp = remember(file?.path, maluje) {
-            file?.let {
-                runCatching { android.graphics.BitmapFactory.decodeFile(it.absolutePath) }
-                    .getOrNull()
+        // Dekódování na pozadí – PNG 2560 px na hraně by při otevření editoru
+        // na okamžik zamrazilo UI.
+        var bmp by remember(file?.path) {
+            androidx.compose.runtime.mutableStateOf<android.graphics.Bitmap?>(null)
+        }
+        androidx.compose.runtime.LaunchedEffect(file?.path) {
+            bmp = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                file?.let {
+                    runCatching { android.graphics.BitmapFactory.decodeFile(it.absolutePath) }
+                        .getOrNull()
+                }
             }
         }
-        if (bmp != null) {
+        bmp?.let { podklad ->
             MaskEditor(
-                bitmap = bmp,
+                bitmap = podklad,
                 onDone = { vysledek ->
                     vm.ulozSwapMasku(vysledek)
                     maluje = false
@@ -295,6 +303,16 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
                             },
                         )
                     }
+                    // detectDragGestures začne až po překročení prahu tažení —
+                    // čisté ťuknutí (doťukávání malých míst) by jinak nenakreslilo nic.
+                    .pointerInput(bitmap) {
+                        detectTapGestures { p ->
+                            val density = box.width / 360f
+                            val t = Tah(brushDp * density / scale())
+                            t.body += naBitmapu(p)
+                            tahy += t
+                        }
+                    }
             ) {
                 Canvas(Modifier.fillMaxSize()) {
                     val s = scale(); val o = offset()
@@ -362,6 +380,11 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
                     enabled = tahy.isNotEmpty(),
                     onClick = {
                         val out = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+                        // KLÍČOVÉ: předloha z JPEGu má hasAlpha=false a ta vlajka
+                        // se kopíruje dál — PNG by se pak uložilo BEZ alfa kanálu,
+                        // vygumovaná maska by zmizela a server by nedostal co
+                        // vyměnit (černá díra místo tváře, 1. 9. 2026).
+                        out.setHasAlpha(true)
                         val canvas = android.graphics.Canvas(out)
                         val paint = android.graphics.Paint().apply {
                             isAntiAlias = true

@@ -176,16 +176,19 @@ private fun Root(vm: MainViewModel = viewModel()) {
     // Nabídka aktualizace vyskočí sama po spuštění, jakmile kontrola najde novější
     // vydání. „Později" zavře jen okno – proužek nad obsahem zůstane, aby se dalo
     // vrátit k tomu kdykoli potom.
-    var updateDialogClosed by rememberSaveable { mutableStateOf(false) }
+    // Zavření se pamatuje na konkrétní verzi – když mezitím vyjde novější,
+    // okno se ozve znovu, jen „Později" u stejné verze se neopakuje.
+    var updateDialogClosedFor by rememberSaveable { mutableStateOf("") }
     val updateOffer = updateState.takeIf {
         it is UpdateState.Available || it is UpdateState.Downloading ||
             it is UpdateState.Ready
     }
-    if (updateOffer != null && !updateDialogClosed && running == null) {
+    val offerVersion = (updateOffer as? UpdateState.Available)?.info?.versionName ?: "~"
+    if (updateOffer != null && updateDialogClosedFor != offerVersion && running == null) {
         UpdateDialog(
             state = updateOffer,
             onDownload = { (updateOffer as? UpdateState.Available)?.let { vm.downloadUpdate(it.info) } },
-            onLater = { updateDialogClosed = true },
+            onLater = { updateDialogClosedFor = offerVersion },
         )
     }
 
@@ -193,15 +196,15 @@ private fun Root(vm: MainViewModel = viewModel()) {
     // práci je potřeba šířka a všechno po ruce naráz (pás, ovládání, Generovat),
     // takže se tu neukazuje běžná rolovací obrazovka. Otočením zpět se appka
     // vrátí přesně tam, kde byla – osa se ukládá průběžně.
+    // Editor se ale otevírá JEN když je karta Timeline aktivní – otočení
+    // telefonu na jiné kartě (čtení výsledku, psaní promptu) dřív násilně
+    // přepnulo režim a uživatel přišel o rozdělanou kartu.
     val naSirku = LocalConfiguration.current.orientation ==
         android.content.res.Configuration.ORIENTATION_LANDSCAPE
-    LaunchedEffect(naSirku) {
-        if (naSirku) {
-            vm.setMode(cz.promptlab.h3video.data.Mode.TIMELINE)
-            vm.selectTab(Tab.CREATE)
-        }
-    }
-    if (naSirku && !overlay) {
+    val aktParams by vm.params.collectAsStateWithLifecycle()
+    val vTimeline = aktParams.mode == cz.promptlab.h3video.data.Mode.TIMELINE
+    if (naSirku && vTimeline && !overlay) {
+        LaunchedEffect(Unit) { vm.selectTab(Tab.CREATE) }
         TimelineLandscapeScreen(vm, busy = running != null)
         return
     }

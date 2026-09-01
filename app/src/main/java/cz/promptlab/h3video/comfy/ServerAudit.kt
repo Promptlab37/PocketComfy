@@ -45,6 +45,15 @@ object ServerAudit {
         "LSIMinimaxTimelineRender",
         "ModelPreviewOverrideKJ",
         "MiniMaxH3TeaCache",
+        // Časová osa (buildTimeline) si graf skládá celý sama z těchto tříd:
+        "H3CacheBust",
+        "H3IdentityAnchor",
+        "MiniMaxH3MemoryEfficientSageAttentionPatch",
+        "LoraLoaderModelOnly",
+        "LoadVideo",
+        "LoadAudio",
+        "GetVideoComponents",
+        "VAEEncode",
     )
 
     /** Z předloh: třída uzlu → textové vstupy (název → hodnota). */

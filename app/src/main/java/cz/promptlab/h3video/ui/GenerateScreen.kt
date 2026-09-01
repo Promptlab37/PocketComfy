@@ -237,9 +237,12 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
     val musicScene by vm.music.collectAsStateWithLifecycle()
     val restoreScene by vm.restore.collectAsStateWithLifecycle()
     val swapScene by vm.swap.collectAsStateWithLifecycle()
+    // Dostupnost AIO balíku doráží asynchronně – bez ní v klíčích by hláška
+    // „server nemá balík" zůstala viset i po úspěšné kontrole (a naopak).
+    val aioAvailable by vm.aioAvailable.collectAsStateWithLifecycle()
     val problem = remember(
         params, talkScene, timelineScene, aioScene, editScene, upscaleScene, musicScene,
-        restoreScene, swapScene,
+        restoreScene, swapScene, aioAvailable,
     ) {
         vm.validation(params)
     }
@@ -248,6 +251,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
     val keyboard = LocalSoftwareKeyboardController.current
     val hints = remember(
         params, talkScene, aioScene, editScene, upscaleScene, musicScene, restoreScene, swapScene,
+        aioAvailable,
     ) {
         vm.hints(params)
     }

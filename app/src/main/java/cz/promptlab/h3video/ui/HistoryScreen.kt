@@ -127,9 +127,9 @@ private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit
             // nemá – dlaždici dělá nota.
             when {
                 item.isAudio -> null
-                item.isImage -> runCatching {
-                    android.graphics.BitmapFactory.decodeFile(item.file(ctx).absolutePath)
-                }.getOrNull()
+                // Zmenšený náhled – plné PNG (klidně gigapixel ze Zvětšit)
+                // by na dlaždici sežralo desítky MB a seznam by cukal.
+                item.isImage -> cz.promptlab.h3video.util.ImageUtils.loadFileThumb(item.file(ctx))
                 else -> frameOf(item.file(ctx))
             }
         }

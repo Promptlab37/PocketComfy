@@ -90,6 +90,10 @@ class ServerAuditTest {
             listOf(
                 "LSIMinimaxTimeline", "LSIMinimaxTimelineRender",
                 "ModelPreviewOverrideKJ", "MiniMaxH3TeaCache",
+                "H3CacheBust", "H3IdentityAnchor",
+                "MiniMaxH3MemoryEfficientSageAttentionPatch",
+                "LoraLoaderModelOnly", "LoadVideo", "LoadAudio",
+                "GetVideoComponents", "VAEEncode",
             ),
             ServerAudit.PRIDAVANE_ZA_BEHU
         )

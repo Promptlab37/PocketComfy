@@ -174,7 +174,10 @@ class HiggsClient(baseUrl: String, private val token: String = "") {
             val tmp = File(target.parentFile, target.name + ".part")
             tmp.outputStream().use { out -> r.body!!.byteStream().copyTo(out) }
             if (target.exists()) target.delete()
-            tmp.renameTo(target)
+            if (!tmp.renameTo(target)) {
+                tmp.copyTo(target, overwrite = true)
+                tmp.delete()
+            }
         }
     }
 

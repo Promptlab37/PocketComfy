@@ -46,7 +46,13 @@ class HistoryStore(private val ctx: Context) {
 
     private val sp = ctx.getSharedPreferences("h3history", Context.MODE_PRIVATE)
 
-    fun all(): List<VideoItem> {
+    // Čtení-úprava-zápis nad jedním klíčem v prefs: engine přidává výsledek
+    // z IO vlákna, UI zároveň maže/označuje. Bez zámku by se změny přepsaly.
+    private val lock = Any()
+
+    fun all(): List<VideoItem> = synchronized(lock) { allLocked() }
+
+    private fun allLocked(): List<VideoItem> {
         val raw = sp.getString("items", "[]")!!
         val arr = runCatching { JSONArray(raw) }.getOrDefault(JSONArray())
         val list = mutableListOf<VideoItem>()
@@ -73,24 +79,24 @@ class HistoryStore(private val ctx: Context) {
         return sorted
     }
 
-    fun add(item: VideoItem) {
-        val list = all().toMutableList()
+    fun add(item: VideoItem) = synchronized(lock) {
+        val list = allLocked().toMutableList()
         list.removeAll { it.id == item.id }
         list.add(0, item)
         persist(list)
     }
 
-    fun markInGallery(id: String) {
-        val list = all().map { if (it.id == id) it.copy(inGallery = true) else it }
+    fun markInGallery(id: String) = synchronized(lock) {
+        val list = allLocked().map { if (it.id == id) it.copy(inGallery = true) else it }
         persist(list)
     }
 
     /** Kolik místa zabírají kopie videí uvnitř aplikace. */
     fun totalBytes(): Long = all().sumOf { runCatching { it.file(ctx).length() }.getOrDefault(0L) }
 
-    fun remove(item: VideoItem) {
+    fun remove(item: VideoItem) = synchronized(lock) {
         runCatching { item.file(ctx).delete() }
-        persist(all().filterNot { it.id == item.id })
+        persist(allLocked().filterNot { it.id == item.id })
     }
 
     private fun persist(list: List<VideoItem>) {

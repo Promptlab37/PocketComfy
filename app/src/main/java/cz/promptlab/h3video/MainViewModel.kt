@@ -1751,14 +1751,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
                     val resolver = getApplication<android.app.Application>().contentResolver
-                    val ext = android.webkit.MimeTypeMap.getSingleton()
-                        .getExtensionFromMimeType(resolver.getType(uri)) ?: "png"
+                    val ext = (android.webkit.MimeTypeMap.getSingleton()
+                        .getExtensionFromMimeType(resolver.getType(uri)) ?: "png").lowercase()
                     restoreStore.dir().listFiles()?.forEach { it.delete() }
-                    val target = File(restoreStore.dir(), "zdroj.$ext")
-                    resolver.openInputStream(uri)?.use { input ->
-                        target.outputStream().use { input.copyTo(it) }
-                    } ?: return@runCatching null
-                    target.takeIf { it.length() > 0 }
+                    if (ext in setOf("png", "jpg", "jpeg", "webp")) {
+                        val target = File(restoreStore.dir(), "zdroj.$ext")
+                        resolver.openInputStream(uri)?.use { input ->
+                            target.outputStream().use { input.copyTo(it) }
+                        } ?: return@runCatching null
+                        target.takeIf { it.length() > 0 }
+                    } else {
+                        // HEIC ze Samsungu (a jiné exotické formáty) server
+                        // nepřečte – překóduje se na JPEG včetně EXIF otočení.
+                        val bmp = ImageUtils.loadUpright(getApplication(), uri, 4096)
+                            ?: return@runCatching null
+                        val target = File(restoreStore.dir(), "zdroj.jpg")
+                        target.outputStream().use {
+                            bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it)
+                        }
+                        target
+                    }
                 }.getOrNull()
             } ?: return@launch
             val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(vysledek) }
@@ -1809,20 +1821,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val target = withContext(Dispatchers.IO) {
                 runCatching {
-                    val resolver = getApplication<android.app.Application>().contentResolver
-                    val bmp = resolver.openInputStream(uri)?.use {
-                        android.graphics.BitmapFactory.decodeStream(it)
-                    } ?: return@runCatching null
-                    val maxHrana = 2560
-                    val scaled = if (maxOf(bmp.width, bmp.height) > maxHrana) {
-                        val k = maxHrana.toFloat() / maxOf(bmp.width, bmp.height)
-                        android.graphics.Bitmap.createScaledBitmap(
-                            bmp, (bmp.width * k).toInt(), (bmp.height * k).toInt(), true
-                        )
-                    } else bmp
+                    // loadUpright dekóduje rovnou podvzorkované (108Mpx fotka by
+                    // v plném rozlišení spolkla stovky MB) a srovná EXIF otočení –
+                    // fotka z foťáku by jinak na server odešla naležato.
+                    val bmp = ImageUtils.loadUpright(getApplication(), uri, 2560)
+                        ?: return@runCatching null
                     val f = swapStore.targetFile()
                     f.outputStream().use {
-                        scaled.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
                     }
                     f
                 }.getOrNull()
@@ -1905,14 +1911,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
                     val resolver = getApplication<android.app.Application>().contentResolver
-                    val ext = android.webkit.MimeTypeMap.getSingleton()
-                        .getExtensionFromMimeType(resolver.getType(uri)) ?: "png"
+                    val ext = (android.webkit.MimeTypeMap.getSingleton()
+                        .getExtensionFromMimeType(resolver.getType(uri)) ?: "png").lowercase()
                     upscaleStore.dir().listFiles()?.forEach { it.delete() }
-                    val target = File(upscaleStore.dir(), "zdroj.$ext")
-                    resolver.openInputStream(uri)?.use { input ->
-                        target.outputStream().use { input.copyTo(it) }
-                    } ?: return@runCatching null
-                    target.takeIf { it.length() > 0 }
+                    if (ext in setOf("png", "jpg", "jpeg", "webp")) {
+                        val target = File(upscaleStore.dir(), "zdroj.$ext")
+                        resolver.openInputStream(uri)?.use { input ->
+                            target.outputStream().use { input.copyTo(it) }
+                        } ?: return@runCatching null
+                        target.takeIf { it.length() > 0 }
+                    } else {
+                        // HEIC a spol. – server by je nepřečetl, překóduje se
+                        // na JPEG včetně EXIF otočení.
+                        val bmp = ImageUtils.loadUpright(getApplication(), uri, 4096)
+                            ?: return@runCatching null
+                        val target = File(upscaleStore.dir(), "zdroj.jpg")
+                        target.outputStream().use {
+                            bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it)
+                        }
+                        target
+                    }
                 }.getOrNull()
             } ?: return@launch
             val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(vysledek) }

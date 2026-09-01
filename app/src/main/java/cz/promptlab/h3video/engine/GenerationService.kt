@@ -90,6 +90,13 @@ class GenerationService : Service() {
         super.onDestroy()
     }
 
+    // Android 15 dává dataSync službě denní kvótu ~6 h a po jejím vyčerpání
+    // zavolá tohle. Bez override by systém proces zabil i s appkou; takhle se
+    // služba jen tiše zavře a sledování běhu pokračuje bez notifikace.
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        stopSelf()
+    }
+
     private fun startForegroundCompat(n: Notification) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(NOTIF_PROGRESS, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
