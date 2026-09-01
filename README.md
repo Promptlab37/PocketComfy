@@ -58,10 +58,15 @@ Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné před
 
 ## 🚀 Rychlý start
 
+> 📖 **Podrobný návod od nuly po první video: [INSTALACE.md](INSTALACE.md)**
+> — server, sestavení aplikace i řešení potíží, krok za krokem.
+
 1. **Server:** počítač s ComfyUI a NVIDIA grafikou (vyvíjeno na RTX 4060 Ti 16 GB),
    spuštěné s `--listen 0.0.0.0`. Custom nody a modely podle [POZADAVKY.md](POZADAVKY.md) —
    co chybí, ti appka sama vypíše v **Nastavení → Zkontrolovat server**.
-2. **Sestav APK** (hotové se tu nevydává — kód je celý tady):
+2. **Sestav aplikaci** — buď otevři projekt v
+   [Android Studiu](https://developer.android.com/studio) a stiskni Run,
+   nebo z příkazové řádky:
 
    ```bash
    git clone https://github.com/Promptlab37/H3VideoApp.git
@@ -70,9 +75,8 @@ Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné před
    # výsledek: app/build/outputs/apk/debug/app-debug.apk
    ```
 
-   Stačí JDK 17 + Android SDK (nejjednodušeji [Android Studio](https://developer.android.com/studio):
-   otevřít složku, stisknout Run). Debug build se podepíše sám, žádný klíč nepotřebuješ.
-   Nová verze = `git pull` a přeložit znovu.
+   Sestavení ze zdrojáků = jistota, že v telefonu běží přesně to, co je
+   v repozitáři. Nová verze: `git pull` a přeložit znovu.
 3. **První spuštění:** appka se zeptá na adresu serveru, otestuje spojení
    a ukáže, jestli něco nechybí. Pak už jen tvoř.
 
