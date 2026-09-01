@@ -1,0 +1,108 @@
+{
+  "1": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_4b_fp8_scaled.safetensors",
+      "type": "krea2",
+      "device": "default"
+    },
+    "_meta": { "title": "Textový enkodér Krea 2" }
+  },
+  "2": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "krea2_turbo_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": { "title": "Krea 2 Turbo" }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "qwen_image_vae.safetensors" },
+    "_meta": { "title": "VAE" }
+  },
+  "4": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": ["2", 0],
+      "lora_name": "krea2_identity_edit_v1_2.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": { "title": "Krea 2 Identity Edit" }
+  },
+  "5": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Upravovaný obrázek" }
+  },
+  "6": {
+    "class_type": "VAEEncode",
+    "inputs": { "pixels": ["5", 0], "vae": ["3", 0] },
+    "_meta": { "title": "Zdroj do latentu" }
+  },
+  "7": {
+    "class_type": "Krea2EditModelPatch",
+    "inputs": {
+      "model": ["4", 0],
+      "source_latent": ["6", 0],
+      "ref_boost": 1.0,
+      "ref_boost_a": 1.0,
+      "fit_mode": "fit",
+      "vae": ["3", 0],
+      "source_image": ["5", 0]
+    },
+    "_meta": { "title": "Krea2 Edit (source patch)" }
+  },
+  "8": {
+    "class_type": "Krea2EditGroundedEncode",
+    "inputs": {
+      "clip": ["1", 0],
+      "prompt": "",
+      "image": ["5", 0],
+      "grounding_px": 768,
+      "system_prompt": ""
+    },
+    "_meta": { "title": "Zadání úpravy" }
+  },
+  "9": {
+    "class_type": "Krea2EditGroundedEncode",
+    "inputs": {
+      "clip": ["1", 0],
+      "prompt": "",
+      "grounding_px": 768,
+      "system_prompt": ""
+    },
+    "_meta": { "title": "Prázdná podmínka" }
+  },
+  "10": {
+    "class_type": "EmptySD3LatentImage",
+    "inputs": { "width": 1024, "height": 1024, "batch_size": 1 },
+    "_meta": { "title": "Rozměr výstupu" }
+  },
+  "11": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["7", 0],
+      "positive": ["8", 0],
+      "negative": ["9", 0],
+      "latent_image": ["10", 0],
+      "seed": 0,
+      "steps": 12,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    },
+    "_meta": { "title": "Vzorkování" }
+  },
+  "12": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["11", 0], "vae": ["3", 0] },
+    "_meta": { "title": "Dekódování" }
+  },
+  "13": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["12", 0], "filename_prefix": "h3app/krea2-edit" },
+    "_meta": { "title": "Uložení" }
+  }
+}

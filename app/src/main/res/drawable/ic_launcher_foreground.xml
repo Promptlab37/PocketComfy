@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- prstenec -->
+    <path
+        android:pathData="M54,25 m-21,0 a21,21 0 1,0 42,0 a21,21 0 1,0 -42,0"
+        android:strokeWidth="0" />
+    <group>
+        <path
+            android:pathData="M54,33 m-19,0 a19,19 0 1,1 38,0 a19,19 0 1,1 -38,0"
+            android:strokeColor="#7C5CFF"
+            android:strokeWidth="5"
+            android:strokeLineCap="round" />
+        <path
+            android:pathData="M54,52 a19,19 0 0,1 13.4,-32.4"
+            android:strokeColor="#22D3EE"
+            android:strokeWidth="5"
+            android:strokeLineCap="round" />
+    </group>
+
+    <!-- play uprostřed -->
+    <path
+        android:pathData="M49,26 L62,33 L49,40 Z"
+        android:fillColor="#E8E8F5" />
+
+    <!-- vlnovka = zvuk -->
+    <path
+        android:pathData="M32,70 L32,78 M40,64 L40,84 M48,58 L48,90 M56,66 L56,82 M64,61 L64,87 M72,69 L72,79"
+        android:strokeColor="#22D3EE"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+</vector>

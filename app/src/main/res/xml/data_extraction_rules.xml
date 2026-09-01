@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Totéž co backup_rules.xml, ve formátu pro Android 12+. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="sharedpref" path="h3secrets.xml" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="sharedpref" path="h3secrets.xml" />
+    </device-transfer>
+</data-extraction-rules>

@@ -1,0 +1,123 @@
+{
+  "325": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "qwen_image_edit_2511_fp8_e4m3fn.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": { "title": "Qwen Image Edit 2511" }
+  },
+  "122": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": ["325", 0],
+      "lora_name": "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-fp32.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": { "title": "Lightning 4 kroky" }
+  },
+  "324": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": ["122", 0],
+      "lora_name": "qwen_image_edit_2511_upscale.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": { "title": "Upscale LoRA" }
+  },
+  "326": {
+    "class_type": "LoraLoaderModelOnly",
+    "inputs": {
+      "model": ["324", 0],
+      "lora_name": "flymy_realism.safetensors",
+      "strength_model": 1.0
+    },
+    "_meta": { "title": "Realism LoRA" }
+  },
+  "38": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "_meta": { "title": "Textový enkodér" }
+  },
+  "39": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "qwen_image_vae.safetensors" },
+    "_meta": { "title": "VAE" }
+  },
+  "107": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Opravovaná fotka" }
+  },
+  "283": {
+    "class_type": "QwenEditConfigPreparer",
+    "inputs": {
+      "image": ["107", 0],
+      "to_ref": true,
+      "ref_main_image": true,
+      "ref_longest_edge": 1536,
+      "ref_crop": "pad",
+      "ref_upscale": "lanczos",
+      "to_vl": true,
+      "vl_resize": true,
+      "vl_target_size": 384,
+      "vl_crop": "center",
+      "vl_upscale": "bicubic"
+    },
+    "_meta": { "title": "Příprava předlohy" }
+  },
+  "223": {
+    "class_type": "PrimitiveStringMultiline",
+    "inputs": {
+      "value": "Ultra high-resolution photo reconstruction with strict sharpness control, preserve original facial identity with zero identity drift and no shape deformation, remove dust scratches stains grain and paper artifacts while maintaining natural micro-texture, full realistic colorization with physically accurate subsurface scattering on skin, crisp edges high local contrast fine detail preservation no smoothing no blur no softness, naturalistic lighting neutral white balance professional color grading with restrained saturation, repair torn edges and missing areas with realistic texture continuity, true 4K detail razor-sharp focus high-frequency detail retention professional modern photography look, detailed sharp hair, focus on eyes."
+    },
+    "_meta": { "title": "Opravovací zadání" }
+  },
+  "284": {
+    "class_type": "TextEncodeQwenImageEditPlusCustom_lrzjason",
+    "inputs": {
+      "clip": ["38", 0],
+      "vae": ["39", 0],
+      "configs": ["283", 0],
+      "prompt": ["223", 0],
+      "return_full_refs_cond": true,
+      "instruction": "Describe the key features of the input image (color, shape, size, texture, objects, background), then explain how the user's text instruction should alter or modify the image. Generate a new image that meets the user's requirements while maintaining consistency with the original input where appropriate."
+    },
+    "_meta": { "title": "Zakódování úpravy" }
+  },
+  "181": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": { "conditioning": ["284", 0] },
+    "_meta": { "title": "Prázdný negativ" }
+  },
+  "302": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["326", 0],
+      "positive": ["284", 0],
+      "negative": ["181", 0],
+      "latent_image": ["284", 1],
+      "seed": 0,
+      "steps": 4,
+      "cfg": 1.0,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "beta57",
+      "denoise": 1.0
+    },
+    "_meta": { "title": "Vzorkování" }
+  },
+  "303": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["302", 0], "vae": ["39", 0] },
+    "_meta": { "title": "Dekódování" }
+  },
+  "320": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["303", 0], "filename_prefix": "H3Restore" },
+    "_meta": { "title": "Uložení" }
+  }
+}

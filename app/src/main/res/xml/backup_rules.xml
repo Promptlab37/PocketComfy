@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- GitHub token (h3secrets) nepatří do zálohy v Googlu; zbytek nastavení ano. -->
+<full-backup-content>
+    <exclude domain="sharedpref" path="h3secrets.xml" />
+</full-backup-content>

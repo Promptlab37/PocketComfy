@@ -1,0 +1,42 @@
+# sestavení
+build/
+.gradle/
+*.apk
+*.aab
+
+# lokální a citlivé
+local.properties
+keystore/
+*.jks
+*.keystore
+
+.idea/
+*.log
+
+# Vygenerovaná videa a jakýkoli jiný obsah z generování do repozitáře NEPATŘÍ.
+# Repozitář je jen na zdrojový kód; hotová videa zůstávají v telefonu, v galerii
+# a v output složce ComfyUI na počítači.
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.avi
+*.gif
+*.wav
+*.mp3
+*.flac
+*.m4a
+
+# Referenční obrázky a jiné podklady ke generování
+*.jpg
+*.jpeg
+*.png
+*.webp
+!app/src/main/res/**/*.png
+!app/src/main/res/**/*.webp
+
+# Modely a váhy
+*.safetensors
+*.ckpt
+*.pt
+*.bin

@@ -1,0 +1,86 @@
+{
+  "14": {
+    "class_type": "SeedVR2LoadDiTModel",
+    "inputs": {
+      "model": "seedvr2_ema_7b-Q4_K_M.gguf",
+      "device": "cuda:0",
+      "blocks_to_swap": 36,
+      "swap_io_components": false,
+      "offload_device": "cpu",
+      "cache_model": false,
+      "attention_mode": "sdpa"
+    },
+    "_meta": { "title": "SeedVR2 DiT" }
+  },
+  "13": {
+    "class_type": "SeedVR2LoadVAEModel",
+    "inputs": {
+      "model": "ema_vae_fp16.safetensors",
+      "device": "cuda:0",
+      "encode_tiled": true,
+      "encode_tile_size": 1024,
+      "encode_tile_overlap": 128,
+      "decode_tiled": true,
+      "decode_tile_size": 1024,
+      "decode_tile_overlap": 128,
+      "tile_debug": "false",
+      "offload_device": "cpu",
+      "cache_model": false
+    },
+    "_meta": { "title": "SeedVR2 VAE" }
+  },
+  "43": {
+    "class_type": "LoadImageWithFilename",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Zvětšovaný obrázek" }
+  },
+  "47": {
+    "class_type": "ImageTileSplit",
+    "inputs": {
+      "image": ["43", 0],
+      "grid_size": "2x2",
+      "overlap_percent": 2.0
+    },
+    "_meta": { "title": "Rozdělení na dlaždice" }
+  },
+  "10": {
+    "class_type": "SeedVR2VideoUpscaler",
+    "inputs": {
+      "image": ["47", 0],
+      "dit": ["14", 0],
+      "vae": ["13", 0],
+      "seed": 42,
+      "resolution": 3200,
+      "max_resolution": 3200,
+      "batch_size": 1,
+      "uniform_batch_size": false,
+      "color_correction": "lab",
+      "temporal_overlap": 0,
+      "prepend_frames": 0,
+      "input_noise_scale": 0.0,
+      "latent_noise_scale": 0.0,
+      "offload_device": "cpu",
+      "enable_debug": false
+    },
+    "_meta": { "title": "SeedVR2 zvětšení" }
+  },
+  "48": {
+    "class_type": "ImageTileMerge",
+    "inputs": {
+      "tiles": ["10", 0],
+      "tile_info": ["47", 1],
+      "crop_percent": 25.0,
+      "fade_percent": 100.0,
+      "blend_mode": "cosine"
+    },
+    "_meta": { "title": "Slepení dlaždic" }
+  },
+  "15": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": ["48", 0],
+      "filename_prefix": ["43", 1]
+    },
+    "_meta": { "title": "Uložení" }
+  }
+}

@@ -1,0 +1,229 @@
+{
+  "340": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "flux1-Fill-Dev_FP8.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": { "title": "Flux Fill" }
+  },
+  "341": {
+    "class_type": "DualCLIPLoader",
+    "inputs": {
+      "clip_name1": "clip_l.safetensors",
+      "clip_name2": "t5xxl_fp16.safetensors",
+      "type": "flux",
+      "device": "default"
+    },
+    "_meta": { "title": "Textové enkodéry" }
+  },
+  "337": {
+    "class_type": "Power Lora Loader (rgthree)",
+    "inputs": {
+      "model": ["340", 0],
+      "clip": ["341", 0],
+      "lora_1": { "on": true, "lora": "comfyui_portrait_lora64.safetensors", "strength": 1.0 },
+      "lora_2": { "on": true, "lora": "FLUX.1-Turbo-Alpha.safetensors", "strength": 1.0 }
+    },
+    "_meta": { "title": "ACE++ portrét + Turbo" }
+  },
+  "338": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "ae.sft" },
+    "_meta": { "title": "VAE" }
+  },
+  "239": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Cílová fotka s maskou" }
+  },
+  "420": {
+    "class_type": "InpaintCropImproved",
+    "inputs": {
+      "image": ["239", 0],
+      "mask": ["239", 1],
+      "downscale_algorithm": "bilinear",
+      "upscale_algorithm": "bicubic",
+      "preresize": false,
+      "preresize_mode": "ensure minimum resolution",
+      "preresize_min_width": 1024,
+      "preresize_min_height": 1024,
+      "preresize_max_width": 16384,
+      "preresize_max_height": 16384,
+      "mask_fill_holes": false,
+      "mask_expand_pixels": 0,
+      "mask_invert": false,
+      "mask_blend_pixels": 16,
+      "mask_hipass_filter": 0.1,
+      "extend_for_outpainting": false,
+      "extend_up_factor": 1.0,
+      "extend_down_factor": 1.0,
+      "extend_left_factor": 1.0,
+      "extend_right_factor": 1.0,
+      "context_from_mask_extend_factor": 1.2,
+      "output_resize_to_target_size": true,
+      "output_target_width": 1024,
+      "output_target_height": 1024,
+      "output_padding": "32",
+      "device_mode": "cpu (compatible)"
+    },
+    "_meta": { "title": "Výřez kolem tváře" }
+  },
+  "399": {
+    "class_type": "ImageResize+",
+    "inputs": {
+      "image": ["420", 1],
+      "width": 1024,
+      "height": 1024,
+      "interpolation": "lanczos",
+      "method": "keep proportion",
+      "condition": "downscale if bigger",
+      "multiple_of": 0
+    },
+    "_meta": { "title": "Velikost výřezu" }
+  },
+  "240": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Nová tvář" }
+  },
+  "175": {
+    "class_type": "ImageResize+",
+    "inputs": {
+      "image": ["240", 0],
+      "width": 0,
+      "height": ["399", 2],
+      "interpolation": "lanczos",
+      "method": "keep proportion",
+      "condition": "always",
+      "multiple_of": 0
+    },
+    "_meta": { "title": "Velikost tváře" }
+  },
+  "323": {
+    "class_type": "ImageConcanate",
+    "inputs": {
+      "image1": ["399", 0],
+      "image2": ["175", 0],
+      "direction": "right",
+      "match_image_size": true
+    },
+    "_meta": { "title": "Fotka + tvář vedle sebe" }
+  },
+  "184": {
+    "class_type": "EmptyImage",
+    "inputs": {
+      "width": ["175", 1],
+      "height": ["175", 2],
+      "batch_size": 1,
+      "color": 0
+    },
+    "_meta": { "title": "Černý doplněk masky" }
+  },
+  "402": {
+    "class_type": "ResizeMask",
+    "inputs": {
+      "mask": ["420", 2],
+      "width": ["399", 1],
+      "height": ["399", 2],
+      "keep_proportions": true,
+      "upscale_method": "nearest-exact",
+      "crop": "disabled"
+    },
+    "_meta": { "title": "Maska na velikost výřezu" }
+  },
+  "182": {
+    "class_type": "MaskToImage",
+    "inputs": { "mask": ["402", 0] },
+    "_meta": { "title": "Maska jako obraz" }
+  },
+  "181": {
+    "class_type": "ImageConcanate",
+    "inputs": {
+      "image1": ["182", 0],
+      "image2": ["184", 0],
+      "direction": "right",
+      "match_image_size": true
+    },
+    "_meta": { "title": "Maska + černá vedle sebe" }
+  },
+  "185": {
+    "class_type": "ImageToMask",
+    "inputs": { "image": ["181", 0], "channel": "red" },
+    "_meta": { "title": "Zpět na masku" }
+  },
+  "403": {
+    "class_type": "ImpactGaussianBlurMask",
+    "inputs": { "mask": ["185", 0], "kernel_size": 30, "sigma": 10.0 },
+    "_meta": { "title": "Změkčení masky" }
+  },
+  "343": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "clip": ["341", 0], "text": "Retain face. " },
+    "_meta": { "title": "Zadání" }
+  },
+  "345": {
+    "class_type": "FluxGuidance",
+    "inputs": { "conditioning": ["343", 0], "guidance": 50.0 },
+    "_meta": { "title": "Vedení Fluxu" }
+  },
+  "404": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": { "conditioning": ["343", 0] },
+    "_meta": { "title": "Prázdný negativ" }
+  },
+  "221": {
+    "class_type": "InpaintModelConditioning",
+    "inputs": {
+      "positive": ["345", 0],
+      "negative": ["404", 0],
+      "vae": ["338", 0],
+      "pixels": ["323", 0],
+      "mask": ["403", 0],
+      "noise_mask": true
+    },
+    "_meta": { "title": "Inpaint podmínky" }
+  },
+  "346": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["337", 0],
+      "positive": ["221", 0],
+      "negative": ["221", 1],
+      "latent_image": ["221", 2],
+      "seed": 0,
+      "steps": 12,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "normal",
+      "denoise": 1.0
+    },
+    "_meta": { "title": "Vzorkování" }
+  },
+  "214": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["346", 0], "vae": ["338", 0] },
+    "_meta": { "title": "Dekódování" }
+  },
+  "228": {
+    "class_type": "ImageCrop",
+    "inputs": {
+      "image": ["214", 0],
+      "width": ["399", 1],
+      "height": ["399", 2],
+      "x": 0,
+      "y": 0
+    },
+    "_meta": { "title": "Ořez na výřez" }
+  },
+  "421": {
+    "class_type": "InpaintStitchImproved",
+    "inputs": { "stitcher": ["420", 0], "inpainted_image": ["228", 0] },
+    "_meta": { "title": "Vlepení zpět do fotky" }
+  },
+  "413": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["421", 0], "filename_prefix": "H3FaceSwap" },
+    "_meta": { "title": "Uložení" }
+  }
+}
