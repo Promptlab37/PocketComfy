@@ -45,6 +45,19 @@ import cz.promptlab.h3video.ui.theme.TextMid
 import cz.promptlab.h3video.ui.theme.Violet
 
 /** Karta jedné sekce zadání. */
+/**
+ * Obdélník právě zaostřeného textového pole (souřadnice okna).
+ *
+ * Hlídač v MainActivity podle něj při KAŽDÉM dotyku pozná, jestli prst mířil
+ * do pole, nebo mimo — a mimo pole klávesnici schová. Ošetření po jednom
+ * prvku (tlačítka, sekce, pilulky) nefungovalo: klepnutí si spotřebují a
+ * klávesnice zůstávala viset. Není to Compose stav, čte se jen při dotyku.
+ */
+object ZaostrenePole {
+    @Volatile
+    var bounds: androidx.compose.ui.geometry.Rect? = null
+}
+
 @Composable
 fun SectionCard(
     title: String,

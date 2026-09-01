@@ -62,7 +62,10 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -203,10 +206,35 @@ private fun Root(vm: MainViewModel = viewModel()) {
         return
     }
 
+    // Hlídač klávesnice: KAŽDÝ stisk mimo zaostřené textové pole ji schová.
+    // Běží v Initial fázi, takže funguje i na tlačítkách a rozbalovacích
+    // sekcích, které by si klepnutí jinak spotřebovaly (a klávesnice visela).
+    var korenoveSouradnice by remember {
+        mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null)
+    }
     Box(
         Modifier
             .fillMaxSize()
             .background(Ink)
+            .onGloballyPositioned { korenoveSouradnice = it }
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val udalost = awaitPointerEvent(PointerEventPass.Initial)
+                        if (udalost.type == PointerEventType.Press) {
+                            val mistni = udalost.changes.firstOrNull()?.position
+                            val vOkne = mistni?.let { p ->
+                                korenoveSouradnice?.localToWindow(p)
+                            }
+                            val pole = cz.promptlab.h3video.ui.ZaostrenePole.bounds
+                            if (vOkne == null || pole == null || !pole.contains(vOkne)) {
+                                focus.clearFocus(force = true)
+                                keyboard?.hide()
+                            }
+                        }
+                    }
+                }
+            }
     ) {
         Column(Modifier.fillMaxSize()) {
             Header(tab, vm.versionName)

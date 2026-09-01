@@ -62,8 +62,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.boundsInWindow
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -1108,6 +1111,11 @@ fun DarkTextField(
     onClear: (() -> Unit)? = null,
 ) {
     val focus = LocalFocusManager.current
+    // Poloha pole pro hlídač klávesnice (viz ZaostrenePole v Components.kt).
+    var maFokus by remember { mutableStateOf(false) }
+    var souradnice by remember {
+        mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null)
+    }
     CompositionLocalProvider(
         LocalTextSelectionColors provides TextSelectionColors(Cyan, Cyan.copy(alpha = .35f))
     ) {
@@ -1116,7 +1124,16 @@ fun DarkTextField(
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(minHeight),
+                .height(minHeight)
+                .onGloballyPositioned {
+                    souradnice = it
+                    if (maFokus) ZaostrenePole.bounds = it.boundsInWindow()
+                }
+                .onFocusChanged { stav ->
+                    maFokus = stav.isFocused
+                    ZaostrenePole.bounds =
+                        if (stav.isFocused) souradnice?.boundsInWindow() else null
+                },
             placeholder = {
                 Text(placeholder, style = MaterialTheme.typography.bodyMedium, color = TextLow)
             },
