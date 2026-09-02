@@ -163,8 +163,10 @@ class GenerationService : Service() {
         fun notifyDone(ctx: Context, item: VideoItem) {
             ensureChannels(ctx)
             val text =
-                if (item.isImage) item.resolution
-                else "%.1f s · %s".format(item.seconds, item.resolution)
+                (if (item.isImage) item.resolution
+                else "%.1f s · %s".format(item.seconds, item.resolution)) +
+                    if (item.tookSeconds > 0)
+                        " · hotovo za ${formatEta(item.tookSeconds)}" else ""
             val n = NotificationCompat.Builder(ctx, CH_DONE)
                 .setSmallIcon(R.drawable.ic_stat_h3)
                 .setContentTitle(

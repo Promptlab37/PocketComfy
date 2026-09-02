@@ -85,6 +85,30 @@ class ZImageBuilderTest {
     }
 
     @Test
+    fun `odvazana lora se vklada jen se zapnutym prepinacem`() {
+        // Vypnuto = graf beze změny (šablona 1:1).
+        val bez = ZImageBuilder.build(sablona, "x", Aspect.SQUARE_1_1, 1L)
+        assertFalse(bez.has(ZImageBuilder.N_NSFW_LORA))
+        assertEquals(ZImageBuilder.N_UNET,
+            bez.inputs(ZImageBuilder.N_SHIFT).getJSONArray("model").getString(0))
+
+        // Zapnuto = LoraLoaderModelOnly mezi UNETLoader a sigma shift.
+        val s = ZImageBuilder.build(
+            sablona, "x", Aspect.SQUARE_1_1, 1L, nsfwLora = true, nsfwSila = 0.75f,
+        )
+        val lora = s.inputs(ZImageBuilder.N_NSFW_LORA)
+        assertEquals("LoraLoaderModelOnly",
+            s.getJSONObject(ZImageBuilder.N_NSFW_LORA).getString("class_type"))
+        assertEquals(ZImageBuilder.NSFW_LORA_FILE, lora.getString("lora_name"))
+        assertEquals(0.75, lora.getDouble("strength_model"), 0.001)
+        assertEquals(ZImageBuilder.N_UNET, lora.getJSONArray("model").getString(0))
+        assertEquals(ZImageBuilder.N_NSFW_LORA,
+            s.inputs(ZImageBuilder.N_SHIFT).getJSONArray("model").getString(0))
+        // Zbytek grafu nedotčený.
+        assertEquals(8, s.inputs(ZImageBuilder.N_SAMPLER).getInt("steps"))
+    }
+
+    @Test
     fun `rozmery jsou nasobky 16 kolem jednoho megapixelu`() {
         Aspect.entries.forEach { a ->
             val (w, h) = ZImageBuilder.sizeFor(a)

@@ -18,6 +18,8 @@ data class VideoItem(
     val inGallery: Boolean = false,
     /** Název režimu (Mode.name), u starých záznamů prázdné. */
     val mode: String = "",
+    /** Jak dlouho se generovalo (vteřiny). 0 = neznáme (staré záznamy, navázání). */
+    val tookSeconds: Int = 0,
 ) {
     fun file(ctx: Context): File = File(videosDir(ctx), fileName)
 
@@ -70,6 +72,7 @@ class HistoryStore(private val ctx: Context) {
                 twoImages = o.optBoolean("two"),
                 inGallery = o.optBoolean("gal"),
                 mode = o.optString("mode"),
+                tookSeconds = o.optInt("took"),
             )
             if (item.file(ctx).exists()) list.add(item) else dropped = true
         }
@@ -119,6 +122,7 @@ class HistoryStore(private val ctx: Context) {
                     .put("two", it.twoImages)
                     .put("gal", it.inGallery)
                     .put("mode", it.mode)
+                    .put("took", it.tookSeconds)
             )
         }
         sp.edit().putString("items", arr.toString()).apply()

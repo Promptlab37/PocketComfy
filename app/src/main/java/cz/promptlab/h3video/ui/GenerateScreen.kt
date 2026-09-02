@@ -48,6 +48,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
+import kotlin.math.roundToInt
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -760,6 +761,40 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     style = MaterialTheme.typography.bodySmall,
                     color = TextLow
                 )
+            }
+            Column {
+                ToggleRow(
+                    "Bez cenzury",
+                    "Přimíchá odvázanou LoRA — model pak nic neodmítá",
+                    params.zimageNsfw
+                ) { v -> vm.update { it.copy(zimageNsfw = v) } }
+                AnimatedVisibility(params.zimageNsfw) {
+                    Column(Modifier.padding(top = 8.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "Síla",
+                                style = MaterialTheme.typography.labelMedium, color = TextLow
+                            )
+                            Slider(
+                                value = params.zimageNsfwSila,
+                                onValueChange = { v ->
+                                    vm.update { it.copy(zimageNsfwSila = (v * 20).roundToInt() / 20f) }
+                                },
+                                valueRange = 0.5f..1.2f,
+                                modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                                colors = sliderColors()
+                            )
+                            Text(
+                                "%.2f".format(params.zimageNsfwSila),
+                                style = MaterialTheme.typography.labelMedium, color = TextMid
+                            )
+                        }
+                        Text(
+                            "1.00 = jak byla trénovaná; kolem 0.75 jemnější výsledky.",
+                            style = MaterialTheme.typography.bodySmall, color = TextLow
+                        )
+                    }
+                }
             }
         }
     }

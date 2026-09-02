@@ -112,8 +112,12 @@ fun ResultScreen(
         Text(
             // U videa, na které aplikace navázala po restartu, délku neznáme –
             // pak se ukáže jen popis, ne matoucí "0,0 s".
-            if (item.seconds > 0f) "%.1f s · %s".format(item.seconds, item.resolution)
-            else item.resolution,
+            (if (item.seconds > 0f) "%.1f s · %s".format(item.seconds, item.resolution)
+            else item.resolution) +
+                if (item.tookSeconds > 0)
+                    " · hotovo za " +
+                        cz.promptlab.h3video.engine.GenerationService.formatEta(item.tookSeconds)
+                else "",
             style = MaterialTheme.typography.bodySmall, color = TextLow
         )
         // Prompt se tu neopakuje – uživatel ho právě napsal a na výsledku ho

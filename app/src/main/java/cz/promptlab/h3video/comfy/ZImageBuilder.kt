@@ -25,6 +25,10 @@ object ZImageBuilder {
     const val N_DECODE = "8"
     const val N_SAVE = "9"
 
+    /** Odvázaná LoRA: uzel se do grafu vkládá jen se zapnutým přepínačem. */
+    const val N_NSFW_LORA = "90"
+    const val NSFW_LORA_FILE = "zimage_nsfw_v1.safetensors"
+
     /** Kroky z předlohy — ukazatel průběhu na ně přepočítává hlášení serveru. */
     const val STEPS = 8
 
@@ -49,17 +53,40 @@ object ZImageBuilder {
         Aspect.ULTRAWIDE_21_9 -> 1568 to 672
     }
 
-    fun build(ctx: Context, prompt: String, aspect: Aspect, seed: Long): JSONObject =
-        build(template(ctx), prompt, aspect, seed)
+    fun build(
+        ctx: Context, prompt: String, aspect: Aspect, seed: Long,
+        nsfwLora: Boolean = false, nsfwSila: Float = 1f,
+    ): JSONObject = build(template(ctx), prompt, aspect, seed, nsfwLora, nsfwSila)
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
-    fun build(template: String, prompt: String, aspect: Aspect, seed: Long): JSONObject {
+    fun build(
+        template: String, prompt: String, aspect: Aspect, seed: Long,
+        nsfwLora: Boolean = false, nsfwSila: Float = 1f,
+    ): JSONObject {
         val wf = JSONObject(template)
         wf.inputs(N_TEXT).put("text", prompt)
         val (w, h) = sizeFor(aspect)
         wf.inputs(N_LATENT).put("width", w)
         wf.inputs(N_LATENT).put("height", h)
         wf.inputs(N_SAMPLER).put("seed", seed)
+        // Odvázaný režim: LoraLoaderModelOnly mezi UNETLoader a sigma shift.
+        // Se zhasnutým přepínačem se graf šablony nemění ani o bajt.
+        if (nsfwLora) {
+            wf.put(
+                N_NSFW_LORA,
+                JSONObject()
+                    .put("class_type", "LoraLoaderModelOnly")
+                    .put(
+                        "inputs",
+                        JSONObject()
+                            .put("model", org.json.JSONArray().put(N_UNET).put(0))
+                            .put("lora_name", NSFW_LORA_FILE)
+                            .put("strength_model", nsfwSila.toDouble()),
+                    )
+                    .put("_meta", JSONObject().put("title", "Odvázaná LoRA")),
+            )
+            wf.inputs(N_SHIFT).put("model", org.json.JSONArray().put(N_NSFW_LORA).put(0))
+        }
         return wf
     }
 
@@ -67,7 +94,8 @@ object ZImageBuilder {
         getJSONObject(node).getJSONObject("inputs")
 
     fun stageForClass(cls: String?): Stage = when (cls) {
-        "UNETLoader", "CLIPLoader", "VAELoader", "ModelSamplingAuraFlow" -> Stage.MODELS
+        "UNETLoader", "CLIPLoader", "VAELoader", "ModelSamplingAuraFlow",
+        "LoraLoaderModelOnly" -> Stage.MODELS
         "CLIPTextEncode", "ConditioningZeroOut", "EmptySD3LatentImage" -> Stage.ENCODING
         "KSampler" -> Stage.SAMPLING
         "VAEDecode", "SaveImage" -> Stage.MUXING
@@ -75,7 +103,8 @@ object ZImageBuilder {
     }
 
     fun rangeForClass(cls: String?): Pair<Float, Float> = when (cls) {
-        "UNETLoader", "CLIPLoader", "VAELoader", "ModelSamplingAuraFlow" -> 0.00f to 0.10f
+        "UNETLoader", "CLIPLoader", "VAELoader", "ModelSamplingAuraFlow",
+        "LoraLoaderModelOnly" -> 0.00f to 0.10f
         "CLIPTextEncode", "ConditioningZeroOut", "EmptySD3LatentImage" -> 0.10f to 0.14f
         "KSampler" -> 0.14f to 0.84f
         "VAEDecode" -> 0.84f to 0.89f

@@ -277,9 +277,13 @@ private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     // délku neznáme u videa, na které aplikace navázala po restartu
-                    if (item.seconds > 0f)
+                    (if (item.seconds > 0f)
                         "%.1f s · %s · %s".format(item.seconds, item.resolution, dateOf(item.createdAt))
-                    else "%s · %s".format(item.resolution, dateOf(item.createdAt)),
+                    else "%s · %s".format(item.resolution, dateOf(item.createdAt))) +
+                        if (item.tookSeconds > 0)
+                            " · za " + cz.promptlab.h3video.engine.GenerationService
+                                .formatEta(item.tookSeconds)
+                        else "",
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
                 if (item.inGallery) {

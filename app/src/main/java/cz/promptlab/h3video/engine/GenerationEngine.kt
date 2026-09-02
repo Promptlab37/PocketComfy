@@ -589,7 +589,10 @@ object GenerationEngine {
 
             // Obrázek z textu jede na uživatelově Z-Image Turbo workflow z APK.
             t2i ->
-                ZImageBuilder.build(app, effective.prompt, effective.aspect, seed)
+                ZImageBuilder.build(
+                    app, effective.prompt, effective.aspect, seed,
+                    nsfwLora = effective.zimageNsfw, nsfwSila = effective.zimageNsfwSila,
+                )
 
             // Hudba jede na uživatelově ACE-Step 1.5 workflow z APK.
             musicScene != null ->
@@ -1139,6 +1142,10 @@ object GenerationEngine {
             twoImages = false,
             inGallery = saved,
             mode = params?.mode?.name.orEmpty(),
+            // Jen u čerstvého běhu — po navázání či opakovaném stažení by
+            // startedAt měřil jen to čekání, ne skutečné generování.
+            tookSeconds = if (params != null && startedAt > 0)
+                ((createdAt - startedAt) / 1000L).toInt().coerceAtLeast(0) else 0,
         )
         history.add(item)
         settings.activePromptId = null

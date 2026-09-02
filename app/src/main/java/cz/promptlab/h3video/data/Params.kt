@@ -47,6 +47,14 @@ data class GenParams(
     /** Další LoRA nad rámec Turbo. */
     val extraLoras: List<LoraEntry> = emptyList(),
     /**
+     * Karta Obrázek: přimíchat odvázanou LoRA (`zimage_nsfw_v1.safetensors`
+     * na serveru). Základní Z-Image Turbo má část obsahu vytrénovanou pryč;
+     * s touhle LoRA generuje bez omezení. Vypnuté = graf 1:1 jako dřív.
+     */
+    val zimageNsfw: Boolean = false,
+    /** Síla odvázané LoRA. Autor trénoval na 1.0, jemnější výsledky ~0.75. */
+    val zimageNsfwSila: Float = 1f,
+    /**
      * Časová osa: jméno projektu v cache uzlu. Hotové segmenty se pod ním drží
      * mezi běhy, takže úprava jednoho záběru neznamená počítat celé video znovu.
      */

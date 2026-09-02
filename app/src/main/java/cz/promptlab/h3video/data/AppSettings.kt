@@ -250,6 +250,8 @@ class AppSettings(ctx: Context) {
             crf = sp.getInt("crf", defaults.crf),
             livePreview = sp.getBoolean("livePreview", defaults.livePreview),
             teaCache = sp.getBoolean("teaCache", defaults.teaCache),
+            zimageNsfw = sp.getBoolean("zimageNsfw", defaults.zimageNsfw),
+            zimageNsfwSila = sp.getFloat("zimageNsfwSila", defaults.zimageNsfwSila),
             extraLoras = extraLoras,
             // Enkodér patří k profilu, ne k uloženému nastavení – jinak by po
             // restartu jel profil V2 se starým textovým enkodérem verze 1.
@@ -283,6 +285,8 @@ class AppSettings(ctx: Context) {
             putInt("crf", p.crf)
             putBoolean("livePreview", p.livePreview)
             putBoolean("teaCache", p.teaCache)
+            putBoolean("zimageNsfw", p.zimageNsfw)
+            putFloat("zimageNsfwSila", p.zimageNsfwSila)
         }.apply()
         extraLoras = p.extraLoras
     }
