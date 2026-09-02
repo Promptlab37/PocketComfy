@@ -259,6 +259,7 @@ class AppSettings(ctx: Context) {
             zimageNsfwSila = sp.getFloat("zimageNsfwSila", defaults.zimageNsfwSila),
             zimageModel = sp.getString("zimageModel", defaults.zimageModel)!!,
             zimageNsfwLora = sp.getString("zimageNsfwLora", defaults.zimageNsfwLora)!!,
+            rewriteHudba = sp.getBoolean("rewriteHudba", defaults.rewriteHudba),
             extraLoras = extraLoras,
             // Enkodér patří k profilu, ne k uloženému nastavení – jinak by po
             // restartu jel profil V2 se starým textovým enkodérem verze 1.
@@ -296,6 +297,7 @@ class AppSettings(ctx: Context) {
             putFloat("zimageNsfwSila", p.zimageNsfwSila)
             putString("zimageModel", p.zimageModel)
             putString("zimageNsfwLora", p.zimageNsfwLora)
+            putBoolean("rewriteHudba", p.rewriteHudba)
         }.apply()
         extraLoras = p.extraLoras
     }

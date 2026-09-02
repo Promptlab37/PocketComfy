@@ -323,6 +323,9 @@ object Slovnik {
             "What to keep from the photos (face, hair, clothes) and what to skip",
         "✨ Vylepšit prompt" to "✨ Improve the prompt",
         "Přepisuji…" to "Rewriting…",
+        "Podkresová hudba" to "Background music",
+        "AI k videu vymyslí i soundtrack" to "The AI also invents a soundtrack",
+        "Jen zvuky scény — bez vymyšlené hudby" to "Scene sounds only — no invented music",
         "Vrátit původní" to "Restore the original",
         "Napiš klidně česky pár slov — AI na tvém počítači z nich " to
             "Write a few words in any language — an AI on your PC turns them ",

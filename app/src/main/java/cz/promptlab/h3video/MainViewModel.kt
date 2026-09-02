@@ -1668,7 +1668,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             vysledek.onSuccess { text ->
                 _rewriteOriginal.value = zadani
-                setAioPrompt(text.trim())
+                // Přepisovač do promptu vždy dopíše podkresovou hudbu, i když
+                // o ni nikdo nestál — bez zapnuté volby se vyhazuje.
+                val hotovy = if (_params.value.rewriteHudba) text.trim()
+                else PromptRewriteBuilder.bezPodkresoveHudby(text.trim())
+                setAioPrompt(hotovy)
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(

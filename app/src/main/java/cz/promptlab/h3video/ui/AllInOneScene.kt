@@ -204,6 +204,18 @@ fun AllInOneSection(vm: MainViewModel) {
                             t("složí plný anglický prompt (záběry, časování, zvuk)."),
                         style = MaterialTheme.typography.bodySmall, color = TextLow
                     )
+                    // Přepisovač do promptu vždycky dopíše podkresovou hudbu —
+                    // má ji v pevném formátu. Kdo ji nechce, nechá vypnuté.
+                    val paramy by vm.params.collectAsStateWithLifecycle()
+                    Spacer(Modifier.height(6.dp))
+                    PrepinacRadek(
+                        titulek = t("Podkresová hudba"),
+                        detail = if (paramy.rewriteHudba)
+                            t("AI k videu vymyslí i soundtrack")
+                        else t("Jen zvuky scény — bez vymyšlené hudby"),
+                        checked = paramy.rewriteHudba,
+                        onChange = { v -> vm.update { it.copy(rewriteHudba = v) } },
+                    )
                 }
             }
         }

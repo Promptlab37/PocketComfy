@@ -57,6 +57,11 @@ data class GenParams(
     /** Která LoRA se přimíchá — na serveru jich je víc (zimage_*). */
     val zimageNsfwLora: String = "zimage_nsfw_v1.safetensors",
     /**
+     * Smí vylepšovač promptu přidat podkresovou hudbu? Ve svém formátu ji
+     * vyplňuje vždycky, i bez vyzvání — proto se ve výchozím stavu vyhazuje.
+     */
+    val rewriteHudba: Boolean = false,
+    /**
      * Karta Obrázek: jiný model místo základního Turbo ze šablony. Prázdné =
      * šablona 1:1. Jediná další volba je PerfecZion (odvázaný finetune) —
      * s ním LoRA není potřeba a jede na 12 kroků s dpmpp_3m_sde (dle autora).

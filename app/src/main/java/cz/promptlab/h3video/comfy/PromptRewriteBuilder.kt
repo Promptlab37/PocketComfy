@@ -86,6 +86,29 @@ object PromptRewriteBuilder {
         return wf
     }
 
+    /**
+     * Přepisovač má ve svém formátu pevné pole `non_diegetic_music:` a vyplní
+     * ho VŽDY — i když o hudbě v zadání není ani slovo. H3 ji pak do videa
+     * opravdu zahraje a přebije ruchy i mluvené slovo. Tohle to pole přepíše
+     * na „žádná hudba"; zvuky scény (`overall_soundscape`) zůstávají.
+     */
+    fun bezPodkresoveHudby(text: String): String {
+        val radky = text.split("\n").toMutableList()
+        var naslo = false
+        for (i in radky.indices) {
+            if (radky[i].trimStart().startsWith("non_diegetic_music:", ignoreCase = true)) {
+                radky[i] = "non_diegetic_music: None — no soundtrack, only the natural " +
+                    "sound of the scene."
+                naslo = true
+            }
+        }
+        // Kdyby model pole vynechal, dopíše se — jinak si ho H3 může domyslet.
+        if (!naslo) {
+            radky += "non_diegetic_music: None — no soundtrack, only the natural sound of the scene."
+        }
+        return radky.joinToString("\n")
+    }
+
     private fun loadImage(name: String): JSONObject = JSONObject()
         .put("class_type", "LoadImage")
         .put("inputs", JSONObject().put("image", name))
