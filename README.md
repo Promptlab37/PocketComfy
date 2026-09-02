@@ -50,7 +50,7 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 - 📴 **Výpadek sítě nikdy nezabije úlohu.** Telefon může zhasnout, počítač počítá dál — appka se k běhu zase přilepí, klidně i po restartu.
 - 🎮 **Grafika na povel.** Tlačítkem v Nastavení ComfyUI na dálku vypneš (a jde se hrát) i zapneš.
 - 🖌️ **Maska prstem.** U výměny tváře začmáráš obličej přímo v appce — dvěma prsty přiblížíš na detaily, jedním maluješ; velikost štětce, krok zpět, guma.
-- ✨ **Prompt napíše AI za tebe.** Napíšeš pár slov (klidně česky) a LLM na tvém počítači z nich složí plný prompt pro H3 — záběry, časování, zvuková stopa. Nic neodchází z domu.
+- ✨ **Prompt napíše AI za tebe.** Napíšeš pár slov (klidně česky) a jazykový model z nich složí plný prompt — u videa záběry, časování a zvukovou stopu, u obrázku popis podle pravidel Z-Image. Běží to jako workflow ve tvém ComfyUI (chce k tomu jeden model navíc, [viz POZADAVKY](POZADAVKY.md)), takže nic neodchází z domu.
 - 📋 **Fronta úloh.** Zatímco se generuje, připravíš další zadání a přidáš ho do fronty — běhy jedou samy jeden po druhém a každý hotový se ohlásí notifikací.
 - 🗂️ **Galerie s filtrem a hledáním.** Videa / obrázky / hudba zvlášť, hledání v popisech, smazání jde vzít zpět. U každého výsledku vidíš, jak dlouho se počítal.
 

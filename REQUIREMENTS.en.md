@@ -90,26 +90,36 @@ check verifies classes.
 - **A launcher on the PC** (port 8190) — lets the app start and stop ComfyUI
   remotely (to free the GPU). Without it ComfyUI has to be running while you
   use the app.
-- **✨ AI prompt enhancer** (All in One card) — you type a few words and an LLM
-  on your PC expands them into a full English H3 prompt (shots, timing, sound).
-  Needs the
-  [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI)
-  pack plus an 8B model in `models/LLM` — a trio of *base + projector + adapter*:
-  - base: any **Qwen3-VL-8B-Instruct** in GGUF (Q4–Q6, ~4.5–6.5 GB) together
-    with the `mmproj` file (~1 GB) from the same conversion,
-  - adapter: [MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF) (~1.3 GB).
+- **✨ AI prompt enhancer** (All in One and Image cards) — you type a few words,
+  in any language, and a language model expands them into a full English
+  prompt: for video with shots, timing and sound, for stills written to the
+  Z-Image rules (flowing sentences, lighting first, no negative prompt).
 
-  The node can also download a model itself on first use (it offers one in the
-  list). The model is released from VRAM after the rewrite, so it does not get
-  in the way of video generation. Without this pack the app works normally — the
-  button just reports that it is missing.
-- **✨ AI prompt enhancer on the Image card** — the same idea for still images,
-  but written to the Z-Image rules (flowing sentences, lighting first, no
-  negative prompt). Needs the
-  [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm)
-  pack and **any instruction-following GGUF** in `models/LLM` — the one you
-  already downloaded for the video enhancer will do. The app picks from the
-  list on its own (preferring an uncensored build).
+  **It runs as an ordinary workflow inside your own ComfyUI** — the app posts a
+  small graph to `/prompt` and reads the finished text back from the history.
+  Nothing is downloaded onto the phone and nothing leaves the house; you do
+  need a node pack and one model in `models/LLM` on the server:
+
+  | | video (All in One) | image |
+  |---|---|---|
+  | pack | [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm) |
+  | model | base + projector + adapter | the base alone is enough |
+
+  The exact files (~7 GB together; `instalace-serveru.bat` can fetch them for
+  you into `models/LLM`):
+  - **base:** [Huihui-Qwen3-VL-8B-Instruct-abliterated Q4_K_M](https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/Huihui-Qwen3-VL-8B-Instruct-abliterated-Q4_K_M.gguf)
+    (4.7 GB) — the uncensored build, so it does not refuse your idea,
+  - **projector:** [mmproj-F16](https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/mmproj-F16.gguf) (1.1 GB) from the same repository;
+    save it as `Huihui-Qwen3-VL-8B-Instruct-abliterated-mmproj-F16.gguf`,
+  - **adapter (video only):**
+    [MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF/resolve/main/MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf) (1.3 GB).
+
+  The video rewriter node can also download a model itself on first use (it
+  offers one in the list); the Image card cannot — there the file really has to
+  sit in `models/LLM`. The app then picks a model from the server's list on its
+  own (preferring an uncensored build) and releases it from VRAM once the
+  prompt is written, so it never gets in the way of generating. Without all
+  this the app works normally — the button just reports what is missing.
 - **Image card — the "uncensored" toggle and the "Photoreal" model** (18+):
   both require files you download yourself (CivitAI / Hugging Face — look for
   Z-Image Turbo LoRAs and finetunes). LoRAs go into `models/loras/` and the app

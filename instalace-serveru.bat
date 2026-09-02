@@ -28,10 +28,11 @@ call :klon https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 call :klon https://github.com/ltdrdata/ComfyUI-Impact-Pack
 call :klon https://github.com/Icyoung/ComfyUI-MiniMaxH3-TeaCache
 call :klon https://github.com/city96/ComfyUI-GGUF
-REM Volitelne: tlacitko "Vylepsit prompt" (LLM prepise kratke zadani na plny
-REM H3 prompt). Model si uzel stahne sam pri prvnim pouziti - viz POZADAVKY.md.
+REM Volitelne: tlacitko "Vylepsit prompt" na karte All in One - LLM prepise
+REM kratke zadani na plny H3 prompt. Model viz nabidka nize.
 call :klon https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI
-REM Volitelne: totez pro kartu Obrazek (prompty pro Z-Image).
+REM Volitelne: totez pro kartu Obrazek (prompty pro Z-Image). Tenhle uzel si
+REM model sam nestahne - musi lezet v models\LLM, viz nabidka nize.
 call :klon https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm
 
 echo.
@@ -67,6 +68,16 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors" "models\text_encoders\t5xxl_fp16.safetensors"
   call :stahni "https://huggingface.co/ali-vilab/ACE_Plus/resolve/main/portrait/comfyui_portrait_lora64.safetensors" "models\loras\comfyui_portrait_lora64.safetensors"
   call :stahni "https://huggingface.co/alimama-creative/FLUX.1-Turbo-Alpha/resolve/main/diffusion_pytorch_model.safetensors" "models\loras\FLUX.1-Turbo-Alpha.safetensors"
+)
+
+echo.
+echo Tlacitko "Vylepsit prompt" - jazykovy model do models\LLM, cca 7 GB.
+echo   Bez nej karty jedou normalne, jen tlacitko ohlasi chybejici model.
+set /p ODP="Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/Huihui-Qwen3-VL-8B-Instruct-abliterated-Q4_K_M.gguf" "models\LLM\Huihui-Qwen3-VL-8B-Instruct-abliterated-Q4_K_M.gguf"
+  call :stahni "https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/mmproj-F16.gguf" "models\LLM\Huihui-Qwen3-VL-8B-Instruct-abliterated-mmproj-F16.gguf"
+  call :stahni "https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF/resolve/main/MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf" "models\LLM\MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf"
 )
 
 echo.

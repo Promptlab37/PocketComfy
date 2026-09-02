@@ -76,6 +76,16 @@ Exact file names and target folders (`models/diffusion_models`,
 also listed in [REQUIREMENTS.en.md](REQUIREMENTS.en.md). SeedVR2 downloads its
 own models on first use.
 
+### A4. The prompt enhancer (optional)
+
+The **✨ AI prompt enhancer** button (All in One and Image cards) is not a
+separate service — **it is a workflow like any other and runs inside your own
+ComfyUI.** For it to work the server needs a node pack and one language model
+in GGUF in `models/LLM` (~7 GB together). `instalace-serveru.bat` asks about
+them and downloads them; the manual list with links is in
+[REQUIREMENTS.en.md](REQUIREMENTS.en.md). Without it both cards work normally —
+the button just reports what is missing.
+
 ---
 
 ## Part B — Building the app
@@ -171,6 +181,7 @@ Dialogue card requires it.
 | Worked at home, not outside | the phone is not on the VPN — turn on Tailscale (and see the battery tip above) |
 | "The ComfyUI-ALLinONE-MinimaxH3 pack is missing" | install the pack via Manager and **restart ComfyUI** — nodes are only loaded at startup |
 | The server check lists missing models | download exactly those files (names match REQUIREMENTS.en.md) into the folders shown; a new file is picked up without a restart |
+| The **✨ prompt enhancer** button reports a missing node or model | the rewriter / llama.cpp pack or the GGUF model in `models/LLM` is missing — see A4 |
 | The Timeline / Image edit card reports missing nodes | those two cards need packs that are not publicly available — the other seven cards work normally |
 | Gradle sync fails in Android Studio | check your internet connection and that you use JDK 17 (File → Settings → Build Tools → Gradle → Gradle JDK) |
 | Installing the APK from the command line fails | enable USB debugging on the phone and confirm the computer's fingerprint; or just copy the APK to the phone and open it |

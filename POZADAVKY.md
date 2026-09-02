@@ -89,25 +89,36 @@ Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy
   Dialogy; bez něj zbytek appky funguje normálně.
 - **Spouštěč na počítači** (port 8190) — umí ComfyUI na dálku zapnout
   a vypnout (uvolnit grafiku). Bez něj musí ComfyUI běžet, když appku používáš.
-- **✨ Vylepšit prompt** (karta All in One) — napíšeš pár slov, klidně česky,
-  a LLM na tvém počítači z nich složí plný anglický prompt pro H3 (záběry,
-  časování, zvuk). Potřebuje balík
-  [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI)
-  a k němu 8B model do `models/LLM` — trojici *základ + projektor + adaptér*:
-  - základ: kterýkoli **Qwen3-VL-8B-Instruct** v GGUF (Q4–Q6, ~4,5–6,5 GB)
-    + jeho `mmproj` soubor (~1 GB) ze stejné konverze,
-  - adaptér: [MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF) (~1,3 GB).
+- **✨ Vylepšit prompt** (karty All in One a Obrázek) — napíšeš pár slov,
+  klidně česky, a jazykový model z nich složí plný anglický prompt: u videa
+  včetně záběrů, časování a zvuku, u obrázku podle pravidel Z-Image (souvislé
+  věty, důraz na světlo, bez negativního promptu).
 
-  Uzel si model umí i sám stáhnout při prvním použití (nabídne ho v seznamu).
-  Model se po přepsání uvolní z paměti, takže generování videa neomezí.
-  Bez tohohle balíku appka funguje normálně, jen tlačítko ohlásí, že chybí.
-- **✨ Vylepšit prompt na kartě Obrázek** — totéž pro statické obrázky, jen
-  psané podle pravidel Z-Image (souvislé věty, důraz na světlo, bez
-  negativního promptu). Potřebuje balík
-  [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm)
-  a **jakýkoli instrukční model v GGUF** ve složce `models/LLM` — stačí ten,
-  který sis stáhl pro vylepšovač videa výš. Appka si z nabídky vybere sama
-  (přednost má odblokovaný).
+  **Jede to jako obyčejné workflow ve tvém ComfyUI** — appka pošle malý graf
+  na `/prompt` a přečte si z historie hotový text. V telefonu se tedy nic
+  nestahuje a nic neodchází z domu; potřebuješ ale na serveru balík uzlů
+  a jeden model v `models/LLM`:
+
+  | | video (All in One) | obrázek |
+  |---|---|---|
+  | balík | [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm) |
+  | model | základ + projektor + adaptér | stačí ten základ |
+
+  Konkrétní soubory (dohromady ~7 GB; `instalace-serveru.bat` je umí stáhnout
+  za tebe do `models/LLM`):
+  - **základ:** [Huihui-Qwen3-VL-8B-Instruct-abliterated Q4_K_M](https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/Huihui-Qwen3-VL-8B-Instruct-abliterated-Q4_K_M.gguf)
+    (4,7 GB) — odblokovaná verze, takže zadání neodmítá,
+  - **projektor:** [mmproj-F16](https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/mmproj-F16.gguf) (1,1 GB) ze stejného repozitáře;
+    ulož ho jako `Huihui-Qwen3-VL-8B-Instruct-abliterated-mmproj-F16.gguf`,
+  - **adaptér (jen pro video):**
+    [MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF/resolve/main/MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf) (1,3 GB).
+
+  Uzel přepisovače videa si model umí stáhnout i sám při prvním použití
+  (nabídne ho v seznamu); u karty Obrázek to neumí — tam soubor ve složce
+  `models/LLM` opravdu být musí. Appka si pak model z nabídky serveru vybere
+  sama (přednost má odblokovaný) a po dopsání promptu ho uvolní z paměti
+  grafiky, takže generování neomezí. Bez toho appka funguje normálně, jen
+  tlačítko ohlásí, co na serveru chybí.
 - **Karta Obrázek — přepínač „Bez cenzury" a model „Photoreal"** (18+):
   obojí vyžaduje vlastní soubory, které si stáhneš sám (CivitAI /
   Hugging Face, hledej Z-Image Turbo LoRA a finetuny). LoRA patří do
