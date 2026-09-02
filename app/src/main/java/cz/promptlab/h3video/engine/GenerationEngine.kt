@@ -1159,12 +1159,13 @@ object GenerationEngine {
         // z hotového videa poznat nejde – repliku, kterou neudělal jako dialog,
         // nebo prázdné povinné pole.
         val warnings = withContext(Dispatchers.IO) {
-            client.nodeWarnings(logSince)
-                .map { it.second }
-                .filter { it.contains("[WARNING]") || it.contains("[ERROR]") }
-                .map { it.replace("[WARNING]", "").replace("[ERROR]", "").trim() }
-                .distinct()
-                .takeLast(6)
+            NodeWarnings.filtruj(
+                client.nodeWarnings(logSince)
+                    .map { it.second }
+                    .filter { it.contains("[WARNING]") || it.contains("[ERROR]") }
+                    .map { it.replace("[WARNING]", "").replace("[ERROR]", "").trim() }
+                    .distinct()
+            ).takeLast(6)
         }
         val poznamky = if (savedPictures > 0)
             listOf("List postavy je uložený v telefonu ve složce Obrázky/H3 Video.")
