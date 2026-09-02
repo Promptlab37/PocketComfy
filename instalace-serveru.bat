@@ -28,6 +28,9 @@ call :klon https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 call :klon https://github.com/ltdrdata/ComfyUI-Impact-Pack
 call :klon https://github.com/Icyoung/ComfyUI-MiniMaxH3-TeaCache
 call :klon https://github.com/city96/ComfyUI-GGUF
+REM Volitelne: tlacitko "Vylepsit prompt" (LLM prepise kratke zadani na plny
+REM H3 prompt). Model si uzel stahne sam pri prvnim pouziti - viz POZADAVKY.md.
+call :klon https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI
 
 echo.
 echo === 2/2  Modely (volitelne, velke soubory) ===

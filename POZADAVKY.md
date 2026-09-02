@@ -31,6 +31,7 @@ chybí u tebe).
 | ComfyUI_essentials | ImageResize+ | Výměna tváře |
 | Impact Pack* | ImpactGaussianBlurMask | Výměna tváře |
 | ComfyUI-GGUF | UnetLoaderGGUF | Obrázek — jen volitelný alternativní model ve formátu GGUF |
+| [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | MiniMaxH3PromptWriter8B | tlačítko **✨ Vylepšit prompt** (volitelné, viz níž) |
 
 Karty **Obrázek** (Z-Image) a **Hudba** (ACE-Step 1.5) jedou jen na
 vestavěných uzlech ComfyUI — žádný custom balík nepotřebují
@@ -86,6 +87,18 @@ Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy
   Dialogy; bez něj zbytek appky funguje normálně.
 - **Spouštěč na počítači** (port 8190) — umí ComfyUI na dálku zapnout
   a vypnout (uvolnit grafiku). Bez něj musí ComfyUI běžet, když appku používáš.
+- **✨ Vylepšit prompt** (karta All in One) — napíšeš pár slov, klidně česky,
+  a LLM na tvém počítači z nich složí plný anglický prompt pro H3 (záběry,
+  časování, zvuk). Potřebuje balík
+  [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI)
+  a k němu 8B model do `models/LLM` — trojici *základ + projektor + adaptér*:
+  - základ: kterýkoli **Qwen3-VL-8B-Instruct** v GGUF (Q4–Q6, ~4,5–6,5 GB)
+    + jeho `mmproj` soubor (~1 GB) ze stejné konverze,
+  - adaptér: [MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF) (~1,3 GB).
+
+  Uzel si model umí i sám stáhnout při prvním použití (nabídne ho v seznamu).
+  Model se po přepsání uvolní z paměti, takže generování videa neomezí.
+  Bez tohohle balíku appka funguje normálně, jen tlačítko ohlásí, že chybí.
 - **Karta Obrázek — přepínač „Bez cenzury" a model „Photoreal"** (18+):
   obojí vyžaduje vlastní soubory, které si stáhneš sám (CivitAI /
   Hugging Face, hledej Z-Image Turbo LoRA a finetuny). LoRA patří do
