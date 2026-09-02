@@ -1,5 +1,7 @@
 package cz.promptlab.h3video
 
+import cz.promptlab.h3video.data.t
+
 import android.Manifest
 import android.os.Build
 import android.os.Bundle
@@ -437,8 +439,8 @@ private fun Header(tab: Tab, version: String) {
             Text(
                 when (tab) {
                     Tab.CREATE -> "ULTRA workflow"
-                    Tab.GALLERY -> "galerie"
-                    Tab.SETTINGS -> "nastavení"
+                    Tab.GALLERY -> t("galerie")
+                    Tab.SETTINGS -> t("nastavení")
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = TextLow,
@@ -568,7 +570,7 @@ private fun UpdateBanner(versionName: String, onClick: () -> Unit) {
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Klepni pro stažení a instalaci",
+                t("Klepni pro stažení a instalaci"),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextLow
             )
@@ -587,9 +589,9 @@ private fun BottomBar(tab: Tab, updateWaiting: Boolean, onSelect: (Tab) -> Unit)
             .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
-        BarItem("Tvořit", Icons.Default.AutoAwesome, tab == Tab.CREATE) { onSelect(Tab.CREATE) }
-        BarItem("Galerie", Icons.Default.VideoLibrary, tab == Tab.GALLERY) { onSelect(Tab.GALLERY) }
-        BarItem("Nastavení", Icons.Default.Settings, tab == Tab.SETTINGS, updateWaiting) {
+        BarItem(t("Tvořit"), Icons.Default.AutoAwesome, tab == Tab.CREATE) { onSelect(Tab.CREATE) }
+        BarItem(t("Galerie"), Icons.Default.VideoLibrary, tab == Tab.GALLERY) { onSelect(Tab.GALLERY) }
+        BarItem(t("Nastavení"), Icons.Default.Settings, tab == Tab.SETTINGS, updateWaiting) {
             onSelect(Tab.SETTINGS)
         }
     }

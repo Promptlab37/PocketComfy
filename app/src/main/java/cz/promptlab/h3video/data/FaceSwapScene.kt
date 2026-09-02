@@ -33,9 +33,9 @@ data class FaceSwapScene(
 
 /** Co kartě chybí, než se dá spustit. */
 fun faceSwapProblem(s: FaceSwapScene): String? = when {
-    s.target == null -> "Vyber fotku, ve které se má vyměnit tvář."
-    !s.maskPainted -> "Začmárej prstem obličej, který se má vyměnit."
-    s.face == null -> "Vyber fotku s novou tváří."
+    s.target == null -> t("Vyber fotku, ve které se má vyměnit tvář.")
+    !s.maskPainted -> t("Začmárej prstem obličej, který se má vyměnit.")
+    s.face == null -> t("Vyber fotku s novou tváří.")
     else -> null
 }
 
@@ -43,7 +43,7 @@ fun faceSwapProblem(s: FaceSwapScene): String? = when {
 fun faceSwapHints(s: FaceSwapScene): List<String> {
     val out = mutableListOf<String>()
     if (s.face != null) {
-        out += "Nejlíp funguje ostrá tvář zepředu, bez brýlí a bez stínů."
+        out += t("Nejlíp funguje ostrá tvář zepředu, bez brýlí a bez stínů.")
     }
     return out
 }

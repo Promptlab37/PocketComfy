@@ -18,6 +18,12 @@ class H3App : Application() {
         super.onCreate()
         // Zapisovač pádů první, ať zachytí i to, co spadne hned pod ním.
         runCatching { recordCrashes() }
+        // Jazyk co nejdřív — texty čte i notifikace a engine, ne jen obrazovky.
+        runCatching {
+            cz.promptlab.h3video.data.Jazyk.init(
+                cz.promptlab.h3video.data.AppSettings(this).jazyk
+            )
+        }
         runCatching { GenerationService.ensureChannels(this) }
         runCatching { GenerationEngine.init(this) }
     }

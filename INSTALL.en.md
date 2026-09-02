@@ -122,20 +122,18 @@ will ask for permission to install from unknown sources).
 1. Open the app. The welcome screen asks for the **server address** — enter
    `http://192.168.x.x:8188` (the PC address from step A1; the scheme and port
    may be omitted, the app fills them in).
-2. Tap **Otestovat spojení** (Test connection). A green box with the ComfyUI
-   version and your GPU name means success. Tap **Vstoupit do appky** (Enter).
-3. Go to **Nastavení → Co serveru chybí → Zkontrolovat server**
-   (Settings → What the server is missing → Check server). The app compares its
-   workflows with your server and lists missing nodes and models by name, with
-   packs, folders and links. Install what it lists and check again.
-4. Once it is green, switch to **Tvořit** (Create), pick the **Obrázek** (Image)
-   card, type a few words and press **Vygenerovat obrázek** (Generate image).
-   That is the fastest first test — a few seconds. Then try the rest: music,
-   video, photo restoration…
+2. Tap **Test connection**. A green box with the ComfyUI version and your GPU
+   name means success. Tap **Enter the app**.
+3. Go to **Settings → What the server is missing → Check server**. The app
+   compares its workflows with your server and lists missing nodes and models
+   by name, with packs, folders and links. Install what it lists and check again.
+4. Once it is green, switch to **Create**, pick the **Image** card, type a few
+   words and press **Generate image**. That is the fastest first test — a few
+   seconds. Then try the rest: music, video, photo restoration…
 
-> The interface is currently in Czech; an English translation is in progress.
-> The card names map to the table in [README.en.md](README.en.md), and the
-> few buttons you need on the first run are spelled out above.
+> The interface follows your phone's language. If your phone is not set to
+> Czech you get English automatically; you can also force either language under
+> **Settings → Language**. A few advanced strings are still Czech-only.
 
 ### Access from anywhere (optional, recommended)
 

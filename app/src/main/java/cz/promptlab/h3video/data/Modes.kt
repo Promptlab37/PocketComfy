@@ -8,14 +8,14 @@ package cz.promptlab.h3video.data
  * All in One taky — jen líp a bez rizika, že se appka rozejde s ComfyUI.
  */
 enum class Mode(
-    val title: String,
-    val short: String,
-    val detail: String,
+    private val titleCs: String,
+    private val shortCs: String,
+    private val detailCs: String,
 ) {
     ALLINONE(
-        title = "All in One",
-        short = "All in One",
-        detail = "Z textu, obrázků i referencí, klíčové snímky, prodloužení a zvětšení"
+        titleCs = "All in One",
+        shortCs = "All in One",
+        detailCs = "Z textu, obrázků i referencí, klíčové snímky, prodloužení a zvětšení"
     ),
 
     /**
@@ -24,9 +24,9 @@ enum class Mode(
      * v ULTRA workflow tahle karta od 2.62 nemá.
      */
     TALK(
-        title = "Dialogy",
-        short = "Dialogy",
-        detail = "Postavy z fotek řeknou, co napíšeš"
+        titleCs = "Dialogy",
+        shortCs = "Dialogy",
+        detailCs = "Postavy z fotek řeknou, co napíšeš"
     ),
 
     /**
@@ -35,9 +35,9 @@ enum class Mode(
      * není limitovaný jedním záběrem modelu.
      */
     TIMELINE(
-        title = "Časová osa",
-        short = "Osa",
-        detail = "Delší video složené ze segmentů"
+        titleCs = "Časová osa",
+        shortCs = "Osa",
+        detailCs = "Delší video složené ze segmentů"
     ),
 
     /**
@@ -46,9 +46,9 @@ enum class Mode(
      * Obrázek → Úprava → Zvětšit, celý bez opuštění appky.
      */
     IMAGE(
-        title = "Obrázek",
-        short = "Obrázek",
-        detail = "Z-Image Turbo — nová fotka z textu za pár sekund"
+        titleCs = "Obrázek",
+        shortCs = "Obrázek",
+        detailCs = "Z-Image Turbo — nová fotka z textu za pár sekund"
     ),
 
     /**
@@ -58,9 +58,9 @@ enum class Mode(
      * je to samostatný obrázkový model.
      */
     EDIT(
-        title = "Úprava obrázku",
-        short = "Úprava",
-        detail = "Změní hotovou fotku podle popisu, tvář zůstane"
+        titleCs = "Úprava obrázku",
+        shortCs = "Úprava",
+        detailCs = "Změní hotovou fotku podle popisu, tvář zůstane"
     ),
 
     /**
@@ -69,9 +69,9 @@ enum class Mode(
      * dosazuje se jen fotka a seed, takže karta je jen fotka + tlačítko.
      */
     RESTORE(
-        title = "Oprava fotky",
-        short = "Oprava",
-        detail = "Stará či poškozená fotka jako nová, i barevně"
+        titleCs = "Oprava fotky",
+        shortCs = "Oprava",
+        detailCs = "Stará či poškozená fotka jako nová, i barevně"
     ),
 
     /**
@@ -80,9 +80,9 @@ enum class Mode(
      * dosazují se jen dvě fotky a seed.
      */
     FACESWAP(
-        title = "Výměna tváře",
-        short = "Tvář",
-        detail = "Začmáráš obličej, vybereš novou tvář, hotovo"
+        titleCs = "Výměna tváře",
+        shortCs = "Tvář",
+        detailCs = "Začmáráš obličej, vybereš novou tvář, hotovo"
     ),
 
     /**
@@ -91,9 +91,9 @@ enum class Mode(
      * a seed. Druhá karta, která nevyrábí video.
      */
     UPSCALE(
-        title = "Zvětšit",
-        short = "Zvětšit",
-        detail = "SeedVR2 gigapixel — fotka ve velkém rozlišení"
+        titleCs = "Zvětšit",
+        shortCs = "Zvětšit",
+        detailCs = "SeedVR2 gigapixel — fotka ve velkém rozlišení"
     ),
 
     /**
@@ -101,10 +101,15 @@ enum class Mode(
      * 8 kroků, výsledkem je MP3. Jediná karta, která nevyrábí obraz.
      */
     MUSIC(
-        title = "Hudba",
-        short = "Hudba",
-        detail = "ACE-Step 1.5 — celá píseň z textu, i česky"
+        titleCs = "Hudba",
+        shortCs = "Hudba",
+        detailCs = "ACE-Step 1.5 — celá píseň z textu, i česky"
     );
+
+    /** Název karty v jazyce rozhraní (překlad až při čtení). */
+    val title: String get() = t(titleCs)
+    val short: String get() = t(shortCs)
+    val detail: String get() = t(detailCs)
 
     /** Jede se na referenčních (ref2va) vahách? U dialogů ano. */
     val usesRefModel: Boolean get() = this == TALK

@@ -547,6 +547,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Přepnutí karty. Prompt se pamatuje zvlášť pro každý režim. */
+    /** Přepnutí jazyka rozhraní — projeví se hned, obrazovky se překreslí. */
+    fun setJazyk(v: cz.promptlab.h3video.data.Jazyk.Volba) {
+        cz.promptlab.h3video.data.Jazyk.nastav(v)
+        settings.jazyk = v.kod
+    }
+
     fun setMode(mode: Mode) {
         if (mode == _params.value.mode) return
         val next = _params.value.copy(mode = mode, prompt = settings.promptFor(mode))

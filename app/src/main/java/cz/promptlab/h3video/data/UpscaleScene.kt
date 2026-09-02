@@ -36,7 +36,7 @@ data class UpscaleScene(
 
 /** Co kartě chybí, než se dá spustit. */
 fun upscaleProblem(s: UpscaleScene): String? =
-    if (s.source == null) "Vyber fotku, kterou chceš zvětšit." else null
+    if (s.source == null) t("Vyber fotku, kterou chceš zvětšit.") else null
 
 /** Upozornění, která nebrání spuštění. */
 fun upscaleHints(s: UpscaleScene): List<String> {

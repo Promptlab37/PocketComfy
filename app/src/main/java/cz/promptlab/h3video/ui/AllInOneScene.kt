@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -69,8 +71,8 @@ fun AllInOneSection(vm: MainViewModel) {
     val scene by vm.aio.collectAsStateWithLifecycle()
 
     SectionCard(
-        title = "Co se má udělat",
-        subtitle = "Šablonu si appka stáhne z ComfyUI, z balíku All in One"
+        title = t("Co se má udělat"),
+        subtitle = t("Šablonu si appka stáhne z ComfyUI, z balíku All in One")
     ) {
         Column {
             PillRow(
@@ -90,14 +92,14 @@ fun AllInOneSection(vm: MainViewModel) {
         AioMode.KEYFRAMES -> KeyframeSekce(vm, scene)
         AioMode.EXTEND -> VideoSekce(
             vm, scene,
-            titulek = "Video, které se má prodloužit",
-            popis = "Naváže se na jeho konec – stejné rámování, žádný střih",
+            titulek = t("Video, které se má prodloužit"),
+            popis = t("Naváže se na jeho konec – stejné rámování, žádný střih"),
         )
         AioMode.UPSCALE -> {
             VideoSekce(
                 vm, scene,
-                titulek = "Video, které se má zvětšit",
-                popis = "Nic se negeneruje znovu, jen se dopočítají detaily",
+                titulek = t("Video, které se má zvětšit"),
+                popis = t("Nic se negeneruje znovu, jen se dopočítají detaily"),
             )
             UpscaleSekce(vm, scene)
         }
@@ -110,14 +112,14 @@ fun AllInOneSection(vm: MainViewModel) {
     if (scene.mode.needsPrompt || scene.mode == AioMode.CHARSHEET) {
         SectionCard(
             title = when (scene.mode) {
-                AioMode.EXTEND -> "Co se má dít dál"
-                AioMode.CHARSHEET -> "Popis postavy (nepovinné)"
-                else -> "Popis scény"
+                AioMode.EXTEND -> t("Co se má dít dál")
+                AioMode.CHARSHEET -> t("Popis postavy (nepovinné)")
+                else -> t("Popis scény")
             },
             subtitle = when (scene.mode) {
-                AioMode.EXTEND -> "Popiš, co se má stát po konci původního videa"
-                AioMode.CHARSHEET -> "Co z fotek držet (obličej, účes, oblečení) a co vynechat"
-                else -> "Anglicky to model chápe nejlíp, ale rozumí i česky"
+                AioMode.EXTEND -> t("Popiš, co se má stát po konci původního videa")
+                AioMode.CHARSHEET -> t("Co z fotek držet (obličej, účes, oblečení) a co vynechat")
+                else -> t("Anglicky to model chápe nejlíp, ale rozumí i česky")
             }
         ) {
             Column {
@@ -140,8 +142,8 @@ fun AllInOneSection(vm: MainViewModel) {
                         }
                         Spacer(Modifier.height(6.dp))
                         Text(
-                            "Značka říká modelu, kterou fotku myslíš — klidně si ji " +
-                                "přesuň doprostřed věty („The woman from <Picture 1>…“).",
+                            t("Značka říká modelu, kterou fotku myslíš — klidně si ji ") +
+                                t("přesuň doprostřed věty („The woman from <Picture 1>…“)."),
                             style = MaterialTheme.typography.bodySmall, color = TextLow
                         )
                         Spacer(Modifier.height(10.dp))
@@ -168,7 +170,7 @@ fun AllInOneSection(vm: MainViewModel) {
                     Spacer(Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlineButton(
-                            if (bezi) "Přepisuji…" else "✨ Vylepšit prompt",
+                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
                             color = Cyan,
                         ) { if (!bezi) vm.vylepsiAioPrompt() }
                         if (bezi) {
@@ -180,7 +182,7 @@ fun AllInOneSection(vm: MainViewModel) {
                         if (!bezi && puvodni != null) {
                             Spacer(Modifier.width(12.dp))
                             Text(
-                                "Vrátit původní",
+                                t("Vrátit původní"),
                                 style = MaterialTheme.typography.bodySmall, color = TextMid,
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(8.dp))
@@ -198,8 +200,8 @@ fun AllInOneSection(vm: MainViewModel) {
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Napiš klidně česky pár slov — AI na tvém počítači z nich " +
-                            "složí plný anglický prompt (záběry, časování, zvuk).",
+                        t("Napiš klidně česky pár slov — AI na tvém počítači z nich ") +
+                            t("složí plný anglický prompt (záběry, časování, zvuk)."),
                         style = MaterialTheme.typography.bodySmall, color = TextLow
                     )
                 }
@@ -211,12 +213,12 @@ fun AllInOneSection(vm: MainViewModel) {
     // postavy (choreografie kamery v šabloně je vyladěná na 124 snímků).
     if (scene.mode != AioMode.UPSCALE && scene.mode != AioMode.CHARSHEET) {
         SectionCard(
-            title = if (scene.mode == AioMode.EXTEND) "O kolik prodloužit" else "Délka videa",
-            subtitle = "Model počítá po blocích 17 snímků, délka se proto zaokrouhlí"
+            title = if (scene.mode == AioMode.EXTEND) t("O kolik prodloužit") else t("Délka videa"),
+            subtitle = t("Model počítá po blocích 17 snímků, délka se proto zaokrouhlí")
         ) {
             val strop = if (scene.mode == AioMode.EXTEND) AioScene.MAX_EXTEND_SECONDS else 15f
             LabeledSlider(
-                label = "Sekundy",
+                label = t("Sekundy"),
                 value = if (scene.mode == AioMode.EXTEND) {
                     val (_, _, nove) = planExtend(scene.seconds)
                     "%.1f s navíc".format(nove / 24f)
@@ -234,21 +236,21 @@ fun AllInOneSection(vm: MainViewModel) {
 @Composable
 private fun ImageSekce(vm: MainViewModel, scene: AioScene) {
     SectionCard(
-        title = "Snímky videa",
-        subtitle = "První snímek určuje, čím video začne; poslední, kam dojede"
+        title = t("Snímky videa"),
+        subtitle = t("První snímek určuje, čím video začne; poslední, kam dojede")
     ) {
         Column {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ObrazekSlot(
                     slot = scene.first,
-                    popisek = "První snímek",
+                    popisek = t("První snímek"),
                     modifier = Modifier.weight(1f),
                     onPick = { uri -> vm.pickAioImage("first", 1, uri) },
                     onClear = { vm.clearAioImage("first", 1) },
                 )
                 ObrazekSlot(
                     slot = scene.last,
-                    popisek = "Poslední snímek",
+                    popisek = t("Poslední snímek"),
                     modifier = Modifier.weight(1f),
                     ztlumeny = !scene.useLastFrame,
                     onPick = { uri -> vm.pickAioImage("last", 2, uri) },
@@ -257,10 +259,10 @@ private fun ImageSekce(vm: MainViewModel, scene: AioScene) {
             }
             Spacer(Modifier.height(12.dp))
             PrepinacRadek(
-                titulek = "Zadat i poslední snímek",
+                titulek = t("Zadat i poslední snímek"),
                 detail = if (scene.useLastFrame)
-                    "Video půjde od prvního snímku k poslednímu"
-                else "Video začne prvním snímkem a dál se rozvine samo",
+                    t("Video půjde od prvního snímku k poslednímu")
+                else t("Video začne prvním snímkem a dál se rozvine samo"),
                 checked = scene.useLastFrame,
                 onChange = { vm.setAioUseLastFrame(it) },
             )
@@ -294,7 +296,7 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene) {
         }
         if (scene.canAddRef) {
             OutlineButton(
-                "Přidat referenci",
+                t("Přidat referenci"),
                 icon = { Icon(Icons.Default.Add, null, Modifier.size(18.dp), TextMid) },
                 onClick = { vm.addAioRef() },
             )
@@ -305,15 +307,15 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene) {
 @Composable
 private fun ReferenceSekce(vm: MainViewModel, scene: AioScene) {
     SectionCard(
-        title = "Reference",
-        subtitle = "Podle nich model drží podobu postav, věcí i stylu"
+        title = t("Reference"),
+        subtitle = t("Podle nich model drží podobu postav, věcí i stylu")
     ) {
         RefsMrizka(vm, scene)
     }
 
     SectionCard(
-        title = "Referenční video",
-        subtitle = "Nepovinné – z videa se bere pohyb, podobu drží fotky"
+        title = t("Referenční video"),
+        subtitle = t("Nepovinné – z videa se bere pohyb, podobu drží fotky")
     ) {
         ReferencniVideoObsah(vm, scene)
     }
@@ -327,31 +329,31 @@ private fun ReferenceSekce(vm: MainViewModel, scene: AioScene) {
 @Composable
 private fun CharSheetSekce(vm: MainViewModel, scene: AioScene) {
     SectionCard(
-        title = "Fotky postavy",
-        subtitle = "První fotka určuje styl, další doplňují podobu"
+        title = t("Fotky postavy"),
+        subtitle = t("První fotka určuje styl, další doplňují podobu")
     ) {
         RefsMrizka(vm, scene)
     }
 
     SectionCard(
-        title = "Podoba listu",
-        subtitle = "Vzorkování a kameru řídí šablona balíku"
+        title = t("Podoba listu"),
+        subtitle = t("Vzorkování a kameru řídí šablona balíku")
     ) {
         Column {
-            Text("Počet pohledů", style = MaterialTheme.typography.labelMedium, color = TextLow)
+            Text(t("Počet pohledů"), style = MaterialTheme.typography.labelMedium, color = TextLow)
             Spacer(Modifier.height(8.dp))
             PillRow(
                 items = listOf(6, 4),
                 selected = scene.sheetPanels,
-                label = { if (it == 6) "6 – plná otočka" else "4 – rychlejší" },
+                label = { if (it == 6) t("6 – plná otočka") else t("4 – rychlejší") },
                 onSelect = { vm.setAioSheetPanels(it) },
             )
             Spacer(Modifier.height(12.dp))
             PrepinacRadek(
-                titulek = "Fotorealistický styl",
+                titulek = t("Fotorealistický styl"),
                 detail = if (scene.sheetPhotoreal)
-                    "Neretušovaná studiová fotografie, bez make-upu"
-                else "Styl se převezme z první fotky",
+                    t("Neretušovaná studiová fotografie, bez make-upu")
+                else t("Styl se převezme z první fotky"),
                 checked = scene.sheetPhotoreal,
                 onChange = { vm.setAioSheetPhotoreal(it) },
             )
@@ -371,10 +373,10 @@ private fun ReferencniVideoObsah(vm: MainViewModel, scene: AioScene) {
         if (scene.refVideo != null) {
             Spacer(Modifier.height(12.dp))
             PrepinacRadek(
-                titulek = "Použít i zvuk z videa",
+                titulek = t("Použít i zvuk z videa"),
                 detail = if (scene.refVideoAudio)
                     "Model dostane zvukovou stopu videa jako referenci"
-                else "Zvuk z videa se zahodí, model si vytvoří vlastní",
+                else t("Zvuk z videa se zahodí, model si vytvoří vlastní"),
                 checked = scene.refVideoAudio,
                 onChange = { vm.setAioRefVideoAudio(it) },
             )
@@ -385,8 +387,8 @@ private fun ReferencniVideoObsah(vm: MainViewModel, scene: AioScene) {
 @Composable
 private fun KeyframeSekce(vm: MainViewModel, scene: AioScene) {
     SectionCard(
-        title = "Klíčové snímky",
-        subtitle = "Obrázek se připne na konkrétní snímek a video jimi projde po řadě"
+        title = t("Klíčové snímky"),
+        subtitle = t("Obrázek se připne na konkrétní snímek a video jimi projde po řadě")
     ) {
         Column {
             scene.keys.forEachIndexed { i, slot ->
@@ -416,7 +418,7 @@ private fun KeyframeSekce(vm: MainViewModel, scene: AioScene) {
             }
             if (scene.canAddKey) {
                 OutlineButton(
-                    "Přidat klíčový snímek",
+                    t("Přidat klíčový snímek"),
                     icon = { Icon(Icons.Default.Add, null, Modifier.size(18.dp), TextMid) },
                     onClick = { vm.addAioKey() },
                 )
@@ -440,8 +442,8 @@ private fun VideoSekce(vm: MainViewModel, scene: AioScene, titulek: String, popi
 @Composable
 private fun UpscaleSekce(vm: MainViewModel, scene: AioScene) {
     SectionCard(
-        title = "Zvětšovač",
-        subtitle = "SeedVR2 dopočítává detaily, RTX jen rychle zvětší"
+        title = t("Zvětšovač"),
+        subtitle = t("SeedVR2 dopočítává detaily, RTX jen rychle zvětší")
     ) {
         Column {
             PillRow(
@@ -455,21 +457,21 @@ private fun UpscaleSekce(vm: MainViewModel, scene: AioScene) {
             Spacer(Modifier.height(14.dp))
             when (scene.upscaler) {
                 Upscaler.SEEDVR2 -> LabeledSlider(
-                    label = "Kratší hrana výsledku",
+                    label = t("Kratší hrana výsledku"),
                     value = "${scene.upscaleResolution} px",
                     position = scene.upscaleResolution.toFloat(),
                     range = 720f..2160f,
                     onChange = { vm.setAioUpscaleResolution((it / 120f).roundToInt() * 120) },
-                    note = "Čím víc, tím déle to trvá a tím víc paměti to sní.",
+                    note = t("Čím víc, tím déle to trvá a tím víc paměti to sní."),
                 )
 
                 Upscaler.RTX -> LabeledSlider(
-                    label = "Kolikrát zvětšit",
+                    label = t("Kolikrát zvětšit"),
                     value = "${scene.upscaleMultiplier}×",
                     position = scene.upscaleMultiplier.toFloat(),
                     range = 2f..4f,
                     onChange = { vm.setAioUpscaleMultiplier(it.roundToInt()) },
-                    note = "Jede na grafice NVIDIA přes ovladač, model se nespouští.",
+                    note = t("Jede na grafice NVIDIA přes ovladač, model se nespouští."),
                 )
             }
         }
@@ -523,7 +525,7 @@ private fun ObrazekSlot(
                         .clickable(onClick = onClear),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Close, "Odebrat obrázek", Modifier.size(15.dp), TextMid)
+                    Icon(Icons.Default.Close, t("Odebrat obrázek"), Modifier.size(15.dp), TextMid)
                 }
             } else {
                 Icon(

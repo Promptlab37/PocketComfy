@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.engine
 
+import cz.promptlab.h3video.data.t
+
 import cz.promptlab.h3video.comfy.Stage
 
 /**
@@ -26,117 +28,117 @@ val GenState.Running.kind: RunKind
 
 /** Nadpis fáze — úplná matice, žádný druh nepropadá na texty o videu. */
 fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
-    Stage.STARTING -> "Probouzím ComfyUI"
+    Stage.STARTING -> t("Probouzím ComfyUI")
     Stage.UPLOADING -> when (kind) {
-        RunKind.VIDEO -> "Odesílám podklady"
-        RunKind.EDIT, RunKind.RESTORE, RunKind.UPSCALE -> "Odesílám fotku"
-        RunKind.SWAP -> "Odesílám fotky"
-        RunKind.T2I, RunKind.MUSIC -> "Připravuji zadání"
+        RunKind.VIDEO -> t("Odesílám podklady")
+        RunKind.EDIT, RunKind.RESTORE, RunKind.UPSCALE -> t("Odesílám fotku")
+        RunKind.SWAP -> t("Odesílám fotky")
+        RunKind.T2I, RunKind.MUSIC -> t("Připravuji zadání")
     }
-    Stage.QUEUED -> "Ve frontě"
+    Stage.QUEUED -> t("Ve frontě")
     Stage.MODELS -> when (kind) {
-        RunKind.VIDEO -> "Načítám modely"
-        RunKind.EDIT -> "Načítám Krea 2"
-        RunKind.T2I -> "Načítám Z-Image"
-        RunKind.RESTORE -> "Načítám Qwen Edit"
-        RunKind.SWAP -> "Načítám Flux Fill"
-        RunKind.UPSCALE -> "Načítám SeedVR2"
-        RunKind.MUSIC -> "Načítám ACE-Step"
+        RunKind.VIDEO -> t("Načítám modely")
+        RunKind.EDIT -> t("Načítám Krea 2")
+        RunKind.T2I -> t("Načítám Z-Image")
+        RunKind.RESTORE -> t("Načítám Qwen Edit")
+        RunKind.SWAP -> t("Načítám Flux Fill")
+        RunKind.UPSCALE -> t("Načítám SeedVR2")
+        RunKind.MUSIC -> t("Načítám ACE-Step")
     }
     Stage.REFERENCES -> when (kind) {
-        RunKind.VIDEO -> "Připravuji podklady"
-        RunKind.EDIT, RunKind.RESTORE -> "Načítám fotku"
-        RunKind.SWAP -> "Připravuji výřez tváře"
-        RunKind.UPSCALE -> "Dělím na dlaždice"
-        RunKind.T2I -> "Připravuji plátno"
-        RunKind.MUSIC -> "Připravuji zadání"
+        RunKind.VIDEO -> t("Připravuji podklady")
+        RunKind.EDIT, RunKind.RESTORE -> t("Načítám fotku")
+        RunKind.SWAP -> t("Připravuji výřez tváře")
+        RunKind.UPSCALE -> t("Dělím na dlaždice")
+        RunKind.T2I -> t("Připravuji plátno")
+        RunKind.MUSIC -> t("Připravuji zadání")
     }
     Stage.ENCODING -> when (kind) {
-        RunKind.VIDEO -> "Zpracovávám prompt"
-        RunKind.MUSIC -> "Čtu zadání skladby"
-        RunKind.SWAP -> "Připravuji vlepení"
-        else -> "Čtu zadání"
+        RunKind.VIDEO -> t("Zpracovávám prompt")
+        RunKind.MUSIC -> t("Čtu zadání skladby")
+        RunKind.SWAP -> t("Připravuji vlepení")
+        else -> t("Čtu zadání")
     }
     Stage.SAMPLING -> when (kind) {
-        RunKind.VIDEO -> "Generuji video"
-        RunKind.EDIT -> "Upravuji obrázek"
-        RunKind.T2I -> "Generuji obrázek"
-        RunKind.RESTORE -> "Opravuji fotku"
-        RunKind.SWAP -> "Měním tvář"
-        RunKind.UPSCALE -> "Zvětšuji obrázek"
-        RunKind.MUSIC -> "Skládám hudbu"
+        RunKind.VIDEO -> t("Generuji video")
+        RunKind.EDIT -> t("Upravuji obrázek")
+        RunKind.T2I -> t("Generuji obrázek")
+        RunKind.RESTORE -> t("Opravuji fotku")
+        RunKind.SWAP -> t("Měním tvář")
+        RunKind.UPSCALE -> t("Zvětšuji obrázek")
+        RunKind.MUSIC -> t("Skládám hudbu")
     }
     Stage.DECODING -> when (kind) {
-        RunKind.VIDEO -> "Dekóduji obraz a zvuk"
-        RunKind.MUSIC -> "Dekóduji zvuk"
-        else -> "Dekóduji obraz"
+        RunKind.VIDEO -> t("Dekóduji obraz a zvuk")
+        RunKind.MUSIC -> t("Dekóduji zvuk")
+        else -> t("Dekóduji obraz")
     }
     Stage.MUXING -> when (kind) {
-        RunKind.VIDEO -> "Skládám video"
-        RunKind.MUSIC -> "Ukládám skladbu"
-        RunKind.SWAP -> "Vlepuji tvář zpět"
-        RunKind.UPSCALE -> "Slepuji dlaždice"
-        else -> "Ukládám obrázek"
+        RunKind.VIDEO -> t("Skládám video")
+        RunKind.MUSIC -> t("Ukládám skladbu")
+        RunKind.SWAP -> t("Vlepuji tvář zpět")
+        RunKind.UPSCALE -> t("Slepuji dlaždice")
+        else -> t("Ukládám obrázek")
     }
     Stage.DOWNLOADING -> when (kind) {
-        RunKind.VIDEO -> "Přebírám video"
-        RunKind.MUSIC -> "Přebírám skladbu"
-        else -> "Přebírám obrázek"
+        RunKind.VIDEO -> t("Přebírám video")
+        RunKind.MUSIC -> t("Přebírám skladbu")
+        else -> t("Přebírám obrázek")
     }
-    Stage.FINISHING -> "Dokončuji"
+    Stage.FINISHING -> t("Dokončuji")
 }
 
 /** Podtitulek fáze — kde nemá druh nic zvláštního, platí obecný popis. */
 fun stageDetailText(stage: Stage, kind: RunKind): String = when {
     stage == Stage.MODELS -> when (kind) {
-        RunKind.VIDEO -> "MiniMax H3 + textový enkodér"
-        RunKind.EDIT -> "Krea 2 + textový enkodér"
-        RunKind.T2I -> "Z-Image Turbo + textový enkodér"
-        RunKind.RESTORE -> "Qwen Image Edit 2511 + LoRA"
-        RunKind.SWAP -> "Flux Fill + portrétní LoRA"
+        RunKind.VIDEO -> t("MiniMax H3 + textový enkodér")
+        RunKind.EDIT -> t("Krea 2 + textový enkodér")
+        RunKind.T2I -> t("Z-Image Turbo + textový enkodér")
+        RunKind.RESTORE -> t("Qwen Image Edit 2511 + LoRA")
+        RunKind.SWAP -> t("Flux Fill + portrétní LoRA")
         RunKind.UPSCALE -> "SeedVR2 + VAE"
         RunKind.MUSIC -> "ACE-Step 1.5 Turbo"
     }
     stage == Stage.SAMPLING -> when (kind) {
-        RunKind.VIDEO -> "Nejdelší část – obraz i zvuk najednou"
-        RunKind.MUSIC -> "Celá skladba vzniká najednou"
-        RunKind.UPSCALE -> "Dlaždice po dlaždici na 3200 px"
-        else -> "Nejdelší část běhu"
+        RunKind.VIDEO -> t("Nejdelší část – obraz i zvuk najednou")
+        RunKind.MUSIC -> t("Celá skladba vzniká najednou")
+        RunKind.UPSCALE -> t("Dlaždice po dlaždici na 3200 px")
+        else -> t("Nejdelší část běhu")
     }
     stage == Stage.DOWNLOADING -> when (kind) {
-        RunKind.MUSIC -> "Přenáším ji z počítače do Galerie aplikace"
-        else -> "Přenáším ho z počítače do Galerie aplikace"
+        RunKind.MUSIC -> t("Přenáším ji z počítače do Galerie aplikace")
+        else -> t("Přenáším ho z počítače do Galerie aplikace")
     }
     stage == Stage.UPLOADING && (kind == RunKind.T2I || kind == RunKind.MUSIC) ->
-        "Sestavuji graf pro ComfyUI"
+        t("Sestavuji graf pro ComfyUI")
     stage == Stage.DECODING && kind != RunKind.VIDEO -> when (kind) {
-        RunKind.MUSIC -> "Převádím latentní data na zvuk"
-        else -> "Převádím latentní data na obraz"
+        RunKind.MUSIC -> t("Převádím latentní data na zvuk")
+        else -> t("Převádím latentní data na obraz")
     }
     stage == Stage.MUXING && kind != RunKind.VIDEO -> when (kind) {
-        RunKind.MUSIC -> "Zapisuji MP3"
-        RunKind.UPSCALE -> "Prolnutí dlaždic do jedné fotky"
-        else -> "Zapisuji hotový obrázek"
+        RunKind.MUSIC -> t("Zapisuji MP3")
+        RunKind.UPSCALE -> t("Prolnutí dlaždic do jedné fotky")
+        else -> t("Zapisuji hotový obrázek")
     }
     else -> stage.detail
 }
 
 /** Popisek 4. fáze v pásku fází (ostatní fáze jsou pro všechny stejné). */
 fun mainPhaseTitle(kind: RunKind): String = when (kind) {
-    RunKind.VIDEO -> "Generování obrazu a zvuku"
-    RunKind.EDIT -> "Úprava obrázku"
-    RunKind.T2I -> "Nový obrázek"
-    RunKind.RESTORE -> "Oprava fotky"
-    RunKind.SWAP -> "Výměna tváře"
-    RunKind.UPSCALE -> "Zvětšování"
-    RunKind.MUSIC -> "Skládání hudby"
+    RunKind.VIDEO -> t("Generování obrazu a zvuku")
+    RunKind.EDIT -> t("Úprava obrázku")
+    RunKind.T2I -> t("Nový obrázek")
+    RunKind.RESTORE -> t("Oprava fotky")
+    RunKind.SWAP -> t("Výměna tváře")
+    RunKind.UPSCALE -> t("Zvětšování")
+    RunKind.MUSIC -> t("Skládání hudby")
 }
 
 /** Popisek 1. fáze — u karet bez vstupních fotek se nic neodesílá. */
 fun firstPhaseTitle(kind: RunKind): String = when (kind) {
-    RunKind.VIDEO -> "Spojení a odeslání referencí"
-    RunKind.T2I, RunKind.MUSIC -> "Spojení se serverem"
-    else -> "Spojení a odeslání fotky"
+    RunKind.VIDEO -> t("Spojení a odeslání referencí")
+    RunKind.T2I, RunKind.MUSIC -> t("Spojení se serverem")
+    else -> t("Spojení a odeslání fotky")
 }
 
 /** Titulek notifikace na popředí. */

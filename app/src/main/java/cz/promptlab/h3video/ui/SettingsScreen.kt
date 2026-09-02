@@ -43,6 +43,7 @@ import cz.promptlab.h3video.AuditState
 import cz.promptlab.h3video.MainViewModel
 import cz.promptlab.h3video.UpdateState
 import cz.promptlab.h3video.data.AppSettings
+import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.update.UpdateChecker
 import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.ui.theme.Cyan
@@ -69,8 +70,8 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         SectionCard(
-            title = "Server ComfyUI",
-            subtitle = "Adresa počítače, na kterém běží generování"
+            title = t("Server ComfyUI"),
+            subtitle = t("Adresa počítače, na kterém běží generování")
         ) {
             Column {
                 DarkTextField(
@@ -83,14 +84,14 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Adresa se ukládá sama při psaní – tlačítko níž ji jen otestuje.",
+                    t("Adresa se ukládá sama při psaní – tlačítko níž ji jen otestuje."),
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
                 // Rychlé volby jsou jen v osobním sestavení (local.properties);
                 // veřejné žádné cizí adresy nenabízí.
                 if (AppSettings.SUGGESTED.isNotEmpty()) {
                     Spacer(Modifier.height(10.dp))
-                    Text("Rychlá volba", style = MaterialTheme.typography.labelMedium, color = TextLow)
+                    Text(t("Rychlá volba"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                     Spacer(Modifier.height(8.dp))
                     PillRow(
                         items = AppSettings.SUGGESTED,
@@ -102,7 +103,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                 }
                 Spacer(Modifier.height(14.dp))
                 GradientButton(
-                    if (check.checking) "Zkouším spojení…" else "Uložit a otestovat",
+                    if (check.checking) t("Zkouším spojení…") else t("Uložit a otestovat"),
                     enabled = !check.checking,
                     onClick = { vm.testServer() }
                 )
@@ -113,7 +114,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                         CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
                         Spacer(Modifier.height(0.dp))
                         Text(
-                            "  Připojuji se…",
+                            t("  Připojuji se…"),
                             style = MaterialTheme.typography.bodySmall, color = TextMid
                         )
                     }
@@ -147,20 +148,20 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         }
 
         SectionCard(
-            title = "Co serveru chybí",
-            subtitle = "Nody a modely, které karty appky potřebují"
+            title = t("Co serveru chybí"),
+            subtitle = t("Nody a modely, které karty appky potřebují")
         ) {
             val audit by vm.audit.collectAsStateWithLifecycle()
             Column {
                 Text(
-                    "Porovná workflow appky s tím, co tvůj ComfyUI opravdu nabízí — " +
-                        "vypíše chybějící custom nody a modely. Higgs Audio je " +
-                        "volitelný, bez něj nefunguje jen namlouvání replik.",
+                    t("Porovná workflow appky s tím, co tvůj ComfyUI opravdu nabízí — ") +
+                        t("vypíše chybějící custom nody a modely. Higgs Audio je ") +
+                        t("volitelný, bez něj nefunguje jen namlouvání replik."),
                     style = MaterialTheme.typography.bodySmall, color = TextMid
                 )
                 Spacer(Modifier.height(12.dp))
                 GradientButton(
-                    if (audit is AuditState.Running) "Porovnávám…" else "Zkontrolovat server",
+                    if (audit is AuditState.Running) t("Porovnávám…") else t("Zkontrolovat server"),
                     enabled = audit !is AuditState.Running,
                     onClick = { vm.runServerAudit() }
                 )
@@ -171,7 +172,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
                             Text(
-                                "  Čtu definice uzlů ze serveru…",
+                                t("  Čtu definice uzlů ze serveru…"),
                                 style = MaterialTheme.typography.bodySmall, color = TextMid
                             )
                         }
@@ -192,7 +193,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                             Spacer(Modifier.height(10.dp))
                             val ctx = LocalContext.current
                             OutlineButton(
-                                "Zkopírovat seznam",
+                                t("Zkopírovat seznam"),
                                 modifier = Modifier.fillMaxWidth(),
                                 color = Cyan,
                             ) {
@@ -202,13 +203,13 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                                 )
                                 // Android 13+ ukazuje vlastní bublinu o zkopírování sám.
                                 if (android.os.Build.VERSION.SDK_INT < 33) {
-                                    Toast.makeText(ctx, "Zkopírováno", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(ctx, t("Zkopírováno"), Toast.LENGTH_SHORT).show()
                                 }
                             }
                             Spacer(Modifier.height(6.dp))
                             Text(
-                                "Pošli si seznam do počítače (e-mailem, chatem) a stahuj " +
-                                    "podle odkazů — nemusíš nic přepisovat.",
+                                t("Pošli si seznam do počítače (e-mailem, chatem) a stahuj ") +
+                                    t("podle odkazů — nemusíš nic přepisovat."),
                                 style = MaterialTheme.typography.bodySmall, color = TextLow
                             )
                         }
@@ -222,8 +223,8 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         val crash by vm.crash.collectAsStateWithLifecycle()
         crash?.let { text ->
             SectionCard(
-                title = "Appka naposledy spadla",
-                subtitle = "Tohle pošli vývojáři, je v tom příčina"
+                title = t("Appka naposledy spadla"),
+                subtitle = t("Tohle pošli vývojáři, je v tom příčina")
             ) {
                 Column {
                     Text(
@@ -235,7 +236,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                             .verticalScroll(rememberScrollState())
                     )
                     Spacer(Modifier.height(12.dp))
-                    OutlineButton("Zahodit výpis", modifier = Modifier.fillMaxWidth()) {
+                    OutlineButton(t("Zahodit výpis"), modifier = Modifier.fillMaxWidth()) {
                         vm.clearCrash()
                     }
                 }
@@ -244,15 +245,15 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
 
         SectionCard(
             title = "Higgs Audio",
-            subtitle = "Namlouvání replik pro kartu Mluvící scéna"
+            subtitle = t("Namlouvání replik pro kartu Mluvící scéna")
         ) {
             val higgsServer by vm.higgsServer.collectAsStateWithLifecycle()
             val higgsCode by vm.higgsCode.collectAsStateWithLifecycle()
             Column {
                 Text(
-                    "Prázdné pole = stejný počítač jako ComfyUI, port 7860. " +
-                        "Higgs se zapíná sám, když necháš namluvit repliku, a před " +
-                        "generováním videa se zase vypne – na grafiku se oba modely nevejdou.",
+                    t("Prázdné pole = stejný počítač jako ComfyUI, port 7860. ") +
+                        t("Higgs se zapíná sám, když necháš namluvit repliku, a před ") +
+                        t("generováním videa se zase vypne – na grafiku se oba modely nevejdou."),
                     style = MaterialTheme.typography.bodySmall, color = TextMid
                 )
                 Spacer(Modifier.height(12.dp))
@@ -267,12 +268,12 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                 DarkTextField(
                     value = higgsCode,
                     onValueChange = { vm.setHiggsCode(it) },
-                    placeholder = "Přístupový kód (jen když si ho Higgs vyžádá)",
+                    placeholder = t("Přístupový kód (jen když si ho Higgs vyžádá)"),
                     minHeight = 58.dp,
                     singleLine = true,
                 )
                 Spacer(Modifier.height(12.dp))
-                GradientButton("Uložit", onClick = { vm.saveHiggs() })
+                GradientButton(t("Uložit"), onClick = { vm.saveHiggs() })
             }
         }
 
@@ -280,8 +281,8 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         // uživatel ho hledal právě tady. Na obrazovce generování zůstává taky,
         // aby se dal přehodit bez odcházení z rozdělané práce.
         SectionCard(
-            title = "Model",
-            subtitle = "Který MiniMax H3 se použije pro text a snímky"
+            title = t("Model"),
+            subtitle = t("Který MiniMax H3 se použije pro text a snímky")
         ) {
             val params by vm.params.collectAsStateWithLifecycle()
             val modely by vm.availableUnets.collectAsStateWithLifecycle()
@@ -297,7 +298,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                 )
                 Spacer(Modifier.height(12.dp))
                 OutlineButton(
-                    params.unetFl2va.ifBlank { "Z workflow (výchozí)" },
+                    params.unetFl2va.ifBlank { t("Z workflow (výchozí)") },
                     modifier = Modifier.fillMaxWidth(),
                 ) { otevreno = !otevreno; if (otevreno) vm.loadUnets() }
 
@@ -306,7 +307,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                     if (modely.isEmpty()) {
                         Text(
                             "Seznam se načítá ze serveru… když se neobjeví, " +
-                                "ComfyUI neodpovídá.",
+                                t("ComfyUI neodpovídá."),
                             style = MaterialTheme.typography.bodySmall, color = TextLow
                         )
                     }
@@ -325,7 +326,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                                     .padding(horizontal = 12.dp, vertical = 10.dp)
                             ) {
                                 Text(
-                                    jmeno.ifBlank { "Z workflow (výchozí)" },
+                                    jmeno.ifBlank { t("Z workflow (výchozí)") },
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (vybrano) Cyan else TextMid,
                                 )
@@ -337,7 +338,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         }
 
         SectionCard(
-            title = "Grafická karta",
+            title = t("Grafická karta"),
             subtitle = "ComfyUI se zapíná samo při generování"
         ) {
             val ctx = LocalContext.current
@@ -400,9 +401,29 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         }
 
         val autoSave by vm.autoSave.collectAsStateWithLifecycle()
+        // Jazyk rozhraní. Výchozí „Podle telefonu" = čeština na českém
+        // telefonu, jinak angličtina — cizí uživatel tak nic hledat nemusí.
         SectionCard(
-            title = "Ukládat vše do telefonu",
-            subtitle = "Normálně vypnuté – stahuješ si jen to, co chceš",
+            title = t("Jazyk"),
+            subtitle = t("Jazyk rozhraní; nepřeložené části zůstanou česky.")
+        ) {
+            PillRow(
+                items = cz.promptlab.h3video.data.Jazyk.Volba.entries.toList(),
+                selected = cz.promptlab.h3video.data.Jazyk.volba,
+                label = {
+                    when (it) {
+                        cz.promptlab.h3video.data.Jazyk.Volba.SYSTEM -> t("Podle telefonu")
+                        cz.promptlab.h3video.data.Jazyk.Volba.CS -> t("Čeština")
+                        cz.promptlab.h3video.data.Jazyk.Volba.EN -> t("Angličtina")
+                    }
+                },
+                onSelect = { vm.setJazyk(it) },
+            )
+        }
+
+        SectionCard(
+            title = t("Ukládat vše do telefonu"),
+            subtitle = t("Normálně vypnuté – stahuješ si jen to, co chceš"),
             trailing = {
                 Switch(
                     checked = autoSave,
@@ -418,11 +439,11 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         ) {
             Text(
                 if (autoSave)
-                    "Zapnuto: každé hotové video se rovnou uloží do Filmy/H3 Video. " +
-                        "Hodí se, když chceš mít úplně všechno v telefonu."
-                else "Videa zůstanou v Galerii aplikace a do telefonu se uloží až tehdy, " +
+                    t("Zapnuto: každé hotové video se rovnou uloží do Filmy/H3 Video. ") +
+                        t("Hodí se, když chceš mít úplně všechno v telefonu.")
+                else t("Videa zůstanou v Galerii aplikace a do telefonu se uloží až tehdy, ") +
                     "když u konkrétního videa klepneš na „Uložit do galerie\". " +
-                    "Jen pozor, že odinstalace aplikace neuložená videa smaže.",
+                    t("Jen pozor, že odinstalace aplikace neuložená videa smaže."),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextMid
             )
@@ -430,14 +451,14 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             // Jednorázová záchrana: dohraje do telefonu všechno, co tam chybí –
             // třeba videa vygenerovaná před zapnutím přepínače.
             var dohrano by remember { mutableStateOf<Int?>(null) }
-            OutlineButton("Doplnit chybějící videa do galerie telefonu") {
+            OutlineButton(t("Doplnit chybějící videa do galerie telefonu")) {
                 vm.saveAllToGallery { dohrano = it }
             }
             dohrano?.let {
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    if (it == 0) "Nic nechybělo – všechna videa už v telefonu jsou."
-                    else "Uloženo $it videí do Filmy/H3 Video.",
+                    if (it == 0) t("Nic nechybělo – všechna videa už v telefonu jsou.")
+                    else t("Uloženo %d videí do Filmy/H3 Video.").format(it),
                     style = MaterialTheme.typography.bodySmall, color = Ok
                 )
             }
@@ -445,7 +466,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
 
         UpdateCard(vm)
 
-        SectionCard(title = "O aplikaci") {
+        SectionCard(title = t("O aplikaci")) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     "Pouští workflow MiniMax H3 Reference-to-Video přesně tak, jak je " +
@@ -492,8 +513,8 @@ private fun UpdateCard(vm: MainViewModel) {
     val token by vm.token.collectAsStateWithLifecycle()
 
     SectionCard(
-        title = "Aktualizace",
-        subtitle = "Verze ${vm.versionName} (sestavení ${vm.versionCode})"
+        title = t("Aktualizace"),
+        subtitle = t("Verze %s (sestavení %d)").format(vm.versionName, vm.versionCode)
     ) {
         Column {
             // Od 2.20 je token součástí sestavení, takže tu není co vyplňovat.
@@ -559,7 +580,7 @@ private fun UpdateCard(vm: MainViewModel) {
                         }
                     }
                     Spacer(Modifier.height(12.dp))
-                    GradientButton("Stáhnout a nainstalovat") { vm.downloadUpdate(s.info) }
+                    GradientButton(t("Stáhnout a nainstalovat")) { vm.downloadUpdate(s.info) }
                 }
 
                 is UpdateState.Downloading -> Column {
@@ -578,7 +599,7 @@ private fun UpdateCard(vm: MainViewModel) {
 
                 is UpdateState.Ready -> Column {
                     Text(
-                        "Staženo. Android se teď zeptá na potvrzení instalace.",
+                        t("Staženo. Android se teď zeptá na potvrzení instalace."),
                         style = MaterialTheme.typography.bodySmall, color = TextMid
                     )
                     Spacer(Modifier.height(12.dp))
@@ -603,7 +624,7 @@ private fun UpdateCard(vm: MainViewModel) {
                 UpdateState.Checking -> Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
                     Text(
-                        "  Hledám novou verzi…",
+                        t("  Hledám novou verzi…"),
                         style = MaterialTheme.typography.bodySmall, color = TextMid
                     )
                 }
@@ -615,7 +636,7 @@ private fun UpdateCard(vm: MainViewModel) {
                     ) {
                         Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp), Ok)
                         Text(
-                            "Máš nejnovější verzi.",
+                            t("Máš nejnovější verzi."),
                             style = MaterialTheme.typography.bodySmall, color = TextMid
                         )
                     }
@@ -626,7 +647,7 @@ private fun UpdateCard(vm: MainViewModel) {
                 }
 
                 UpdateState.Idle -> OutlineButton(
-                    "Zkontrolovat aktualizace",
+                    t("Zkontrolovat aktualizace"),
                     modifier = Modifier.fillMaxWidth()
                 ) { vm.checkUpdate() }
             }

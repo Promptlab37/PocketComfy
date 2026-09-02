@@ -21,8 +21,8 @@ import java.io.File
  */
 enum class AioMode(
     val kod: String,
-    val nazev: String,
-    val popis: String,
+    private val nazevCs: String,
+    private val popisCs: String,
     val sablona: String,
 ) {
     TEXT("t2v", "Z textu", "Jen z popisu, nic se nepřikládá", "t2v.json"),
@@ -40,6 +40,10 @@ enum class AioMode(
      */
     CHARSHEET("charsheet", "List postavy", "Z fotek složí otočný list postavy", "charsheet.json");
 
+    /** Název a popis v jazyce rozhraní (překlad až při čtení). */
+    val nazev: String get() = t(nazevCs)
+    val popis: String get() = t(popisCs)
+
     /**
      * Potřebuje tenhle režim popis scény? Zvětšování ne – jen zvětšuje.
      * U listu postavy je popis volitelný (říká, co z referencí držet a co ne).
@@ -51,9 +55,17 @@ enum class AioMode(
 }
 
 /** Zvětšovač v režimu [AioMode.UPSCALE]. */
-enum class Upscaler(val kod: String, val nazev: String, val popis: String, val sablona: String) {
-    SEEDVR2("seedvr2", "SeedVR2", "Kvalitnější, ale pomalé – dopočítává detaily", "upscale.json"),
-    RTX("rtx", "RTX Video SR", "Rychlé, jede na grafice NVIDIA", "upscale_rtx.json"),
+enum class Upscaler(
+    val kod: String,
+    private val nazevCs: String,
+    private val popisCs: String,
+    val sablona: String,
+) {
+    SEEDVR2("seedvr2", "SeedVR2", t("Kvalitnější, ale pomalé – dopočítává detaily"), "upscale.json"),
+    RTX("rtx", "RTX Video SR", "Rychlé, jede na grafice NVIDIA", "upscale_rtx.json");
+
+    val nazev: String get() = t(nazevCs)
+    val popis: String get() = t(popisCs)
 }
 
 /** Jeden obrázkový slot karty. */
@@ -143,34 +155,34 @@ data class AioScene(
 /** Co kartě chybí, než se dá spustit. Hláška pro uživatele, nebo null. */
 fun aioProblem(s: AioScene): String? {
     if (s.mode.needsPrompt && s.prompt.isBlank()) {
-        return if (s.mode == AioMode.EXTEND) "Napiš, co se má dít v prodloužení."
-        else "Napiš, co se má ve videu dít."
+        return if (s.mode == AioMode.EXTEND) t("Napiš, co se má dít v prodloužení.")
+        else t("Napiš, co se má ve videu dít.")
     }
     return when (s.mode) {
         AioMode.TEXT -> null
         AioMode.IMAGE -> when {
             s.first.image == null && !(s.useLastFrame && s.last.image != null) ->
-                "Vyber snímek, ze kterého se má vyjít."
+                t("Vyber snímek, ze kterého se má vyjít.")
             s.useLastFrame && s.last.image == null ->
-                "Vyber poslední snímek, nebo ho vypni."
+                t("Vyber poslední snímek, nebo ho vypni.")
             else -> null
         }
         AioMode.REFERENCE ->
             if (s.refsWithImage.isEmpty() && s.refVideo == null)
-                "Přidej aspoň jednu referenci – obrázek nebo video." else null
+                t("Přidej aspoň jednu referenci – obrázek nebo video.") else null
         AioMode.KEYFRAMES -> when {
-            s.keysWithImage.isEmpty() -> "Přidej aspoň jeden klíčový snímek."
+            s.keysWithImage.isEmpty() -> t("Přidej aspoň jeden klíčový snímek.")
             s.keysWithImage.any { it.position > s.frames } ->
-                "Klíčový snímek je za koncem videa – zkrať pozici, nebo prodluž video."
+                t("Klíčový snímek je za koncem videa – zkrať pozici, nebo prodluž video.")
             else -> null
         }
         AioMode.EXTEND ->
-            if (s.sourceVideo == null) "Vyber video, které se má prodloužit." else null
+            if (s.sourceVideo == null) t("Vyber video, které se má prodloužit.") else null
         AioMode.UPSCALE ->
-            if (s.sourceVideo == null) "Vyber video, které se má zvětšit." else null
+            if (s.sourceVideo == null) t("Vyber video, které se má zvětšit.") else null
         AioMode.CHARSHEET ->
             if (s.refsWithImage.isEmpty())
-                "Přidej aspoň jednu fotku postavy, ze které má list vzniknout." else null
+                t("Přidej aspoň jednu fotku postavy, ze které má list vzniknout.") else null
     }
 }
 

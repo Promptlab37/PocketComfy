@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -103,9 +105,9 @@ fun ResultScreen(
         Spacer(Modifier.height(10.dp))
         Text(
             when {
-                item.isImage -> "Obrázek je hotový"
-                item.isAudio -> "Skladba je hotová"
-                else -> "Video je hotové"
+                item.isImage -> t("Obrázek je hotový")
+                item.isAudio -> t("Skladba je hotová")
+                else -> t("Video je hotové")
             },
             style = MaterialTheme.typography.headlineSmall, color = TextHi
         )
@@ -115,7 +117,7 @@ fun ResultScreen(
             (if (item.seconds > 0f) "%.1f s · %s".format(item.seconds, item.resolution)
             else item.resolution) +
                 if (item.tookSeconds > 0)
-                    " · hotovo za " +
+                    t(" · hotovo za ") +
                         cz.promptlab.h3video.engine.GenerationService.formatEta(item.tookSeconds)
                 else "",
             style = MaterialTheme.typography.bodySmall, color = TextLow
@@ -128,7 +130,7 @@ fun ResultScreen(
             buildString {
                 val m = runCatching { cz.promptlab.h3video.data.Mode.valueOf(item.mode) }.getOrNull()
                 if (m != null) append(m.title).append(" · ")
-                else if (item.twoImages) append("2 reference · ")
+                else if (item.twoImages) append(t("2 reference · "))
                 append("seed ${item.seed}")
             },
             style = MaterialTheme.typography.bodySmall, color = TextLow,
@@ -141,7 +143,7 @@ fun ResultScreen(
                     cm.setPrimaryClip(android.content.ClipData.newPlainText("PocketComfy", text))
                     // Android 13+ ukazuje vlastní bublinu o zkopírování sám.
                     if (android.os.Build.VERSION.SDK_INT < 33) {
-                        Toast.makeText(ctx, "Zkopírováno", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(ctx, t("Zkopírováno"), Toast.LENGTH_SHORT).show()
                     }
                 }
                 .padding(horizontal = 6.dp, vertical = 2.dp)
@@ -172,7 +174,7 @@ fun ResultScreen(
             bmp?.let {
                 androidx.compose.foundation.Image(
                     bitmap = it.asImageBitmap(),
-                    contentDescription = "Upravený obrázek – klepnutím zvětšíš",
+                    contentDescription = t("Upravený obrázek – klepnutím zvětšíš"),
                     contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -180,7 +182,7 @@ fun ResultScreen(
                         .clickable { naCelou = true },
                 )
                 Text(
-                    "Klepni pro zvětšení",
+                    t("Klepni pro zvětšení"),
                     style = MaterialTheme.typography.bodySmall, color = TextLow,
                     modifier = Modifier.padding(top = 4.dp)
                 )
@@ -198,7 +200,7 @@ fun ResultScreen(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(
-                if (saved) "V galerii telefonu" else "Uložit do galerie",
+                if (saved) t("V galerii telefonu") else t("Uložit do galerie"),
                 modifier = Modifier.weight(1f),
                 color = if (saved) Ok else TextMid,
                 icon = {
@@ -230,16 +232,16 @@ fun ResultScreen(
                 Toast.makeText(
                     ctx,
                     when {
-                        !ok -> "Uložení se nepovedlo"
-                        item.isAudio -> "Uloženo do Hudba/H3 Video"
-                        item.isImage -> "Uloženo do Obrázky/H3 Video"
-                        else -> "Uloženo do Filmy/H3 Video"
+                        !ok -> t("Uložení se nepovedlo")
+                        item.isAudio -> t("Uloženo do Hudba/H3 Video")
+                        item.isImage -> t("Uloženo do Obrázky/H3 Video")
+                        else -> t("Uloženo do Filmy/H3 Video")
                     },
                     Toast.LENGTH_SHORT
                 ).show()
             }
             OutlineButton(
-                "Sdílet",
+                t("Sdílet"),
                 modifier = Modifier.weight(1f),
                 icon = { Icon(Icons.Default.Share, null, Modifier.size(18.dp), TextMid) }
             ) {
@@ -248,9 +250,9 @@ fun ResultScreen(
                     Intent.createChooser(
                         intent,
                         when {
-                            item.isAudio -> "Sdílet skladbu"
-                            item.isImage -> "Sdílet obrázek"
-                            else -> "Sdílet video"
+                            item.isAudio -> t("Sdílet skladbu")
+                            item.isImage -> t("Sdílet obrázek")
+                            else -> t("Sdílet video")
                         }
                     )
                 )
@@ -263,7 +265,7 @@ fun ResultScreen(
         if (item.isImage && (onAnimate != null || onEdit != null || onUpscale != null)) {
             Spacer(Modifier.height(16.dp))
             Text(
-                "Pokračuj s obrázkem",
+                t("Pokračuj s obrázkem"),
                 style = MaterialTheme.typography.labelMedium,
                 color = TextLow,
                 modifier = Modifier.fillMaxWidth(),
@@ -271,7 +273,7 @@ fun ResultScreen(
             if (onAnimate != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    "Rozhýbat — video z obrázku",
+                    t("Rozhýbat — video z obrázku"),
                     modifier = Modifier.fillMaxWidth(),
                     color = Cyan,
                     onClick = onAnimate,
@@ -280,7 +282,7 @@ fun ResultScreen(
             if (onEdit != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    "Upravit (Krea 2 — popiš změnu)",
+                    t("Upravit (Krea 2 — popiš změnu)"),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onEdit,
                 )
@@ -288,7 +290,7 @@ fun ResultScreen(
             if (onUpscale != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    "Zvětšit (SeedVR2 gigapixel)",
+                    t("Zvětšit (SeedVR2 gigapixel)"),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onUpscale,
                 )
@@ -296,9 +298,9 @@ fun ResultScreen(
         }
 
         Spacer(Modifier.height(16.dp))
-        GradientButton("Generovat další", onClick = onAgain)
+        GradientButton(t("Generovat další"), onClick = onAgain)
         Spacer(Modifier.height(10.dp))
-        OutlineButton("Zavřít", modifier = Modifier.fillMaxWidth(), onClick = onClose)
+        OutlineButton(t("Zavřít"), modifier = Modifier.fillMaxWidth(), onClick = onClose)
         Spacer(Modifier.height(26.dp))
     }
 }
@@ -321,7 +323,7 @@ fun FailureScreen(
         Spacer(Modifier.height(60.dp))
         Icon(Icons.Default.ErrorOutline, null, Modifier.size(44.dp), Danger)
         Spacer(Modifier.height(12.dp))
-        Text("Nepovedlo se", style = MaterialTheme.typography.headlineSmall, color = TextHi)
+        Text(t("Nepovedlo se"), style = MaterialTheme.typography.headlineSmall, color = TextHi)
         Spacer(Modifier.height(12.dp))
         Box(
             Modifier
@@ -341,7 +343,7 @@ fun FailureScreen(
         Spacer(Modifier.height(20.dp))
         if (canRetryDownload) {
             GradientButton(
-                "Zkusit přenos znovu",
+                t("Zkusit přenos znovu"),
                 icon = {
                     Icon(
                         Icons.Default.Refresh, null, Modifier.size(18.dp),
@@ -352,7 +354,7 @@ fun FailureScreen(
             )
             Spacer(Modifier.height(10.dp))
         }
-        OutlineButton("Zpět na zadání", modifier = Modifier.fillMaxWidth(), color = Cyan, onClick = onClose)
+        OutlineButton(t("Zpět na zadání"), modifier = Modifier.fillMaxWidth(), color = Cyan, onClick = onClose)
     }
 }
 
@@ -371,7 +373,7 @@ private fun NodeWarnings(warnings: List<String>) {
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            "Co k tomu řekly uzly",
+            t("Co k tomu řekly uzly"),
             style = MaterialTheme.typography.labelMedium,
             color = Amber
         )
@@ -428,7 +430,7 @@ private fun ZoomovaciObrazek(bmp: android.graphics.Bitmap, onClose: () -> Unit) 
         ) {
             androidx.compose.foundation.Image(
                 bitmap = bmp.asImageBitmap(),
-                contentDescription = "Obrázek na celou obrazovku",
+                contentDescription = t("Obrázek na celou obrazovku"),
                 contentScale = androidx.compose.ui.layout.ContentScale.Fit,
                 modifier = Modifier
                     .fillMaxSize()
@@ -448,7 +450,7 @@ private fun ZoomovaciObrazek(bmp: android.graphics.Bitmap, onClose: () -> Unit) 
                     .clickable { onClose() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Close, "Zavřít", Modifier.size(20.dp), TextHi)
+                Icon(Icons.Default.Close, t("Zavřít"), Modifier.size(20.dp), TextHi)
             }
         }
     }

@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -54,18 +56,18 @@ fun OnboardingScreen(vm: MainViewModel) {
         verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
         Text(
-            "Vítej v PocketComfy",
+            t("Vítej v PocketComfy"),
             style = MaterialTheme.typography.headlineSmall,
             color = TextHi,
             fontWeight = FontWeight.Bold
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            "Appka je klient pro tvůj vlastní ComfyUI server — všechno se " +
+            t("Appka je klient pro tvůj vlastní ComfyUI server — všechno se ") +
                 "generuje na tvém počítači, nikam jinam se nic neposílá.\n\n" +
-                "Zadej adresu počítače, na kterém ComfyUI běží. Musí být " +
-                "spuštěné s parametrem --listen 0.0.0.0 a telefon musí být " +
-                "na stejné síti nebo VPN (např. Tailscale).",
+                t("Zadej adresu počítače, na kterém ComfyUI běží. Musí být ") +
+                t("spuštěné s parametrem --listen 0.0.0.0 a telefon musí být ") +
+                t("na stejné síti nebo VPN (např. Tailscale)."),
             style = MaterialTheme.typography.bodyMedium,
             color = TextMid
         )
@@ -79,7 +81,7 @@ fun OnboardingScreen(vm: MainViewModel) {
         )
         Spacer(Modifier.height(14.dp))
         GradientButton(
-            if (check.checking) "Zkouším spojení…" else "Otestovat spojení",
+            if (check.checking) t("Zkouším spojení…") else t("Otestovat spojení"),
             enabled = !check.checking && server.isNotBlank(),
             onClick = { vm.testServer() }
         )
@@ -89,7 +91,7 @@ fun OnboardingScreen(vm: MainViewModel) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
                 Text(
-                    "  Připojuji se…",
+                    t("  Připojuji se…"),
                     style = MaterialTheme.typography.bodySmall, color = TextMid
                 )
             }
@@ -101,12 +103,12 @@ fun OnboardingScreen(vm: MainViewModel) {
 
         Spacer(Modifier.height(24.dp))
         if (check.ok == true) {
-            GradientButton("Vstoupit do appky", onClick = { vm.finishOnboarding() })
+            GradientButton(t("Vstoupit do appky"), onClick = { vm.finishOnboarding() })
         } else {
             // I bez úspěšného testu se dá pokračovat — počítač třeba zrovna
             // neběží a adresu jde doladit později v Nastavení.
             OutlineButton(
-                "Pokračovat bez testu",
+                t("Pokračovat bez testu"),
                 modifier = Modifier.fillMaxWidth(),
                 onClick = { if (server.isNotBlank()) vm.finishOnboarding() }
             )
@@ -114,8 +116,8 @@ fun OnboardingScreen(vm: MainViewModel) {
         Spacer(Modifier.height(14.dp))
         Text(
             "V Nastavení pak najdeš tlačítko „Zkontrolovat server\" — vypíše, " +
-                "jestli na serveru nechybí custom nody nebo modely, které " +
-                "karty appky potřebují.",
+                t("jestli na serveru nechybí custom nody nebo modely, které ") +
+                t("karty appky potřebují."),
             style = MaterialTheme.typography.bodySmall,
             color = TextMid
         )

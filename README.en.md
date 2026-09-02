@@ -27,9 +27,9 @@ with the GPU.
 
 </div>
 
-> **Note on language:** the app's interface is currently in Czech. Everything
-> else — code, comments and this documentation — is available in English, and
-> an in-app English translation is on the way.
+> **Language:** the app speaks English and Czech. It follows your phone's
+> language by default; you can force either one in Settings. A few advanced
+> strings are still Czech-only and fall back gracefully — no blank labels.
 
 ---
 

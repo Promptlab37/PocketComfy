@@ -23,7 +23,7 @@ data class RestoreScene(
 
 /** Co kartě chybí, než se dá spustit. */
 fun restoreProblem(s: RestoreScene): String? =
-    if (s.source == null) "Vyber fotku, kterou chceš opravit." else null
+    if (s.source == null) t("Vyber fotku, kterou chceš opravit.") else null
 
 /** Soubor opravované fotky — bajt po bajtu, ve vlastní složce. */
 class RestoreStore(private val ctx: Context) {

@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.os.Build
@@ -108,10 +110,10 @@ fun HistoryScreen(
             ) {
                 Icon(Icons.Default.VideoLibrary, null, Modifier.size(44.dp), Outline1)
                 Spacer(Modifier.height(14.dp))
-                Text("Zatím tu nic není", style = MaterialTheme.typography.titleMedium, color = TextMid)
+                Text(t("Zatím tu nic není"), style = MaterialTheme.typography.titleMedium, color = TextMid)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Vygenerovaná videa se ukládají sem a zůstanou tu,\ni když je počítač vypnutý.",
+                    t("Vygenerovaná videa se ukládají sem a zůstanou tu,\ni když je počítač vypnutý."),
                     style = MaterialTheme.typography.bodySmall, color = TextLow,
                     textAlign = TextAlign.Center
                 )
@@ -124,17 +126,17 @@ fun HistoryScreen(
         ) {
             if (druhu > 1) item(key = "filtr") {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FiltrChip("Vše", filtr == "vse") { filtr = "vse" }
-                    FiltrChip("Videa", filtr == "video") { filtr = "video" }
-                    FiltrChip("Obrázky", filtr == "obrazek") { filtr = "obrazek" }
-                    FiltrChip("Hudba", filtr == "hudba") { filtr = "hudba" }
+                    FiltrChip(t("Vše"), filtr == "vse") { filtr = "vse" }
+                    FiltrChip(t("Videa"), filtr == "video") { filtr = "video" }
+                    FiltrChip(t("Obrázky"), filtr == "obrazek") { filtr = "obrazek" }
+                    FiltrChip(t("Hudba"), filtr == "hudba") { filtr = "hudba" }
                 }
             }
             if (items.size >= 6) item(key = "hledani") {
                 DarkTextField(
                     value = hledani,
                     onValueChange = { hledani = it },
-                    placeholder = "Hledat v popisech…",
+                    placeholder = t("Hledat v popisech…"),
                     minHeight = 48.dp,
                     singleLine = true,
                     onClear = { hledani = "" },
@@ -150,7 +152,7 @@ fun HistoryScreen(
             }
             if (zobrazene.isEmpty()) item(key = "nic") {
                 Text(
-                    "Tomuhle filtru nic neodpovídá.",
+                    t("Tomuhle filtru nic neodpovídá."),
                     style = MaterialTheme.typography.bodySmall, color = TextLow,
                     modifier = Modifier.padding(vertical = 20.dp)
                 )
@@ -173,10 +175,10 @@ fun HistoryScreen(
                     .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Smazáno", style = MaterialTheme.typography.bodyMedium, color = TextMid)
+                Text(t("Smazáno"), style = MaterialTheme.typography.bodyMedium, color = TextMid)
                 Spacer(Modifier.width(16.dp))
                 Text(
-                    "Vrátit",
+                    t("Vrátit"),
                     style = MaterialTheme.typography.bodyMedium, color = Cyan,
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
@@ -267,7 +269,7 @@ private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit
 
         Column(Modifier.weight(1f)) {
             Text(
-                item.prompt.ifBlank { "(bez popisu)" },
+                item.prompt.ifBlank { t("(bez popisu)") },
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextHi,
                 maxLines = 2,
@@ -281,14 +283,14 @@ private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit
                         "%.1f s · %s · %s".format(item.seconds, item.resolution, dateOf(item.createdAt))
                     else "%s · %s".format(item.resolution, dateOf(item.createdAt))) +
                         if (item.tookSeconds > 0)
-                            " · za " + cz.promptlab.h3video.engine.GenerationService
+                            t(" · za ") + cz.promptlab.h3video.engine.GenerationService
                                 .formatEta(item.tookSeconds)
                         else "",
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
                 if (item.inGallery) {
                     Spacer(Modifier.width(6.dp))
-                    Icon(Icons.Default.CheckCircle, "V galerii telefonu", Modifier.size(13.dp), Ok)
+                    Icon(Icons.Default.CheckCircle, t("V galerii telefonu"), Modifier.size(13.dp), Ok)
                 }
             }
         }
@@ -329,12 +331,16 @@ private fun frameOf(file: File): Bitmap? = runCatching {
     }
 }.getOrNull()
 
-/** Česky se počítá jinak: 1 položka, 2–4 položky, 5 a víc položek. */
+/**
+ * Počet položek. Čeština skloňuje ve třech tvarech (1 položka, 2–4 položky,
+ * 5+ položek), angličtina ve dvou — proto vlastní větev, ne slovník.
+ */
 private fun polozkyCount(n: Int): String = when {
+    cz.promptlab.h3video.data.Jazyk.anglicky -> if (n == 1) "1 item" else "$n items"
     n == 1 -> "1 položka"
     n in 2..4 -> "$n položky"
     else -> "$n položek"
 }
 
 private fun dateOf(millis: Long): String =
-    SimpleDateFormat("d. M. HH:mm", Locale.getDefault()).format(Date(millis))
+    SimpleDateFormat(t("d. M. HH:mm"), Locale.getDefault()).format(Date(millis))

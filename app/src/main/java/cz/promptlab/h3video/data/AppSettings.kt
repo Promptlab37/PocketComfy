@@ -93,6 +93,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("autoSave", false)
         set(v) = sp.edit().putBoolean("autoSave", v).apply()
 
+    /** Jazyk rozhraní: `system` / `cs` / `en` (viz [Jazyk]). */
+    var jazyk: String
+        get() = sp.getString("jazyk", Jazyk.Volba.SYSTEM.kod)!!
+        set(v) = sp.edit().putString("jazyk", v).apply()
+
     /**
      * Další LoRA nad rámec Turbo. Ukládají se společné pro všechny karty –
      * jsou to vlastnosti modelu, ne způsobu zadání.
