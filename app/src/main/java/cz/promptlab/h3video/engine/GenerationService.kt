@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.engine
 
+import cz.promptlab.h3video.data.t
+
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -53,7 +55,7 @@ class GenerationService : Service() {
         // Neodchycená výjimka ve službě zabije celý proces – tedy i appku při
         // pouhém spuštění. Sledování běhu se bez služby obejde; jen hůř přežije
         // zamčený telefon, což je nesrovnatelně menší škoda než pád.
-        if (!runCatching { startForegroundCompat(buildProgress("Připravuji…", 0, false)) }.isSuccess) {
+        if (!runCatching { startForegroundCompat(buildProgress(t("Připravuji…"), 0, false)) }.isSuccess) {
             stopSelf()
             return START_NOT_STICKY
         }
@@ -146,12 +148,12 @@ class GenerationService : Service() {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
             val nm = ctx.getSystemService(NotificationManager::class.java)
             nm.createNotificationChannel(
-                NotificationChannel(CH_PROGRESS, "Průběh generování", NotificationManager.IMPORTANCE_LOW)
-                    .apply { description = "Živý průběh běžícího generování" }
+                NotificationChannel(CH_PROGRESS, t("Průběh generování"), NotificationManager.IMPORTANCE_LOW)
+                    .apply { description = t("Živý průběh běžícího generování") }
             )
             nm.createNotificationChannel(
-                NotificationChannel(CH_DONE, "Hotová videa", NotificationManager.IMPORTANCE_HIGH)
-                    .apply { description = "Upozornění, když je video hotové" }
+                NotificationChannel(CH_DONE, t("Hotová videa"), NotificationManager.IMPORTANCE_HIGH)
+                    .apply { description = t("Upozornění, když je video hotové") }
             )
         }
 
@@ -171,9 +173,9 @@ class GenerationService : Service() {
                 .setSmallIcon(R.drawable.ic_stat_h3)
                 .setContentTitle(
                     when {
-                        item.isAudio -> "Skladba je hotová"
-                        item.isImage -> "Obrázek je hotový"
-                        else -> "Video je hotové"
+                        item.isAudio -> t("Skladba je hotová")
+                        item.isImage -> t("Obrázek je hotový")
+                        else -> t("Video je hotové")
                     }
                 )
                 .setContentText(text)
@@ -189,7 +191,7 @@ class GenerationService : Service() {
             ensureChannels(ctx)
             val n = NotificationCompat.Builder(ctx, CH_DONE)
                 .setSmallIcon(R.drawable.ic_stat_h3)
-                .setContentTitle("Generování se nepovedlo")
+                .setContentTitle(t("Generování se nepovedlo"))
                 .setContentText(message.lineSequence().first())
                 .setStyle(NotificationCompat.BigTextStyle().bigText(message))
                 .setAutoCancel(true)

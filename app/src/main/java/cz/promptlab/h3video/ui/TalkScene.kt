@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -103,8 +105,8 @@ fun TalkSceneSection(vm: MainViewModel) {
 
     // ---------------------------------------------------------------- postavy
     SectionCard(
-        title = "Postavy",
-        subtitle = "Fotka drží podobu, hlas namluví repliky. Každá postava může mluvit vícekrát."
+        title = t("Postavy"),
+        subtitle = t("Fotka drží podobu, hlas namluví repliky. Každá postava může mluvit vícekrát.")
     ) {
         Column {
             scene.speakers.forEachIndexed { index, speaker ->
@@ -119,7 +121,7 @@ fun TalkSceneSection(vm: MainViewModel) {
             }
             if (scene.canAddSpeaker) {
                 OutlineButton(
-                    text = "Přidat postavu",
+                    text = t("Přidat postavu"),
                     icon = { Icon(Icons.Default.PersonAdd, null, Modifier.size(18.dp), TextMid) },
                     onClick = { vm.addSpeaker() }
                 )
@@ -129,8 +131,8 @@ fun TalkSceneSection(vm: MainViewModel) {
 
     // ---------------------------------------------------------------- dialog
     SectionCard(
-        title = "Dialog",
-        subtitle = "Repliky jdou po sobě v tomto pořadí. U každé vyber, kdo ji říká."
+        title = t("Dialog"),
+        subtitle = t("Repliky jdou po sobě v tomto pořadí. U každé vyber, kdo ji říká.")
     ) {
         Column {
             scene.lines.forEachIndexed { index, line ->
@@ -159,14 +161,14 @@ fun TalkSceneSection(vm: MainViewModel) {
 
             if (scene.canAddLine) {
                 OutlineButton(
-                    text = "Přidat repliku",
+                    text = t("Přidat repliku"),
                     icon = { Icon(Icons.Default.RecordVoiceOver, null, Modifier.size(18.dp), TextMid) },
                     onClick = { vm.addLine() }
                 )
             } else {
                 Text(
-                    "Víc než $MAX_LINES repliky se do jednoho videa nevejdou – model bere " +
-                        "jen tři zvukové reference.",
+                    t("Víc než %d repliky se do jednoho videa nevejdou – model bere jen tři zvukové reference.")
+                        .format(MAX_LINES),
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
             }
@@ -184,7 +186,7 @@ fun TalkSceneSection(vm: MainViewModel) {
                     Icon(Icons.Default.GraphicEq, null, Modifier.size(16.dp), Cyan)
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "Dialog trvá $needed s – délka videa se podle něj nastavila sama.",
+                        t("Dialog trvá %s s – délka videa se podle něj nastavila sama.").format(needed),
                         style = MaterialTheme.typography.bodySmall, color = TextMid
                     )
                 }
@@ -196,7 +198,7 @@ fun TalkSceneSection(vm: MainViewModel) {
             if (pending > 0) {
                 Spacer(Modifier.height(12.dp))
                 OutlineButton(
-                    text = if (pending == 1) "Namluvit repliku" else "Namluvit všechny ($pending)",
+                    text = if (pending == 1) t("Namluvit repliku") else t("Namluvit všechny (%d)").format(pending),
                     icon = { Icon(Icons.Default.RecordVoiceOver, null, Modifier.size(18.dp), Cyan) },
                     onClick = { vm.speakAll() }
                 )
@@ -210,7 +212,7 @@ fun TalkSceneSection(vm: MainViewModel) {
                         Spacer(Modifier.width(8.dp))
                     }
                     Text(
-                        higgsNote.ifBlank { "Zapínám Higgs Audio na počítači…" },
+                        higgsNote.ifBlank { t("Zapínám Higgs Audio na počítači…") },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (higgs == null) Amber else TextMid
                     )
@@ -219,28 +221,28 @@ fun TalkSceneSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(title = "Scéna", subtitle = "Kde se to odehrává a jak se chová kamera – nepovinné") {
+    SectionCard(title = t("Scéna"), subtitle = t("Kde se to odehrává a jak se chová kamera – nepovinné")) {
         DarkTextField(
             value = scene.sceneNote,
             onValueChange = { vm.setSceneNote(it) },
-            placeholder = "Kavárna, měkké odpolední světlo, kamera pomalu najíždí…",
+            placeholder = t("Kavárna, měkké odpolední světlo, kamera pomalu najíždí…"),
             minHeight = 90.dp,
             onClear = { vm.setSceneNote("") },
         )
     }
 
-    SectionCard(title = "Prompt pro model", subtitle = "Skládá se sám z postav a replik. Můžeš do něj sáhnout.") {
+    SectionCard(title = t("Prompt pro model"), subtitle = t("Skládá se sám z postav a replik. Můžeš do něj sáhnout.")) {
         Column {
             DarkTextField(
                 value = scene.prompt,
                 onValueChange = { vm.setTalkPrompt(it) },
-                placeholder = "Doplní se, jakmile přidáš fotku a repliku",
+                placeholder = t("Doplní se, jakmile přidáš fotku a repliku"),
                 minHeight = 170.dp,
             )
             if (scene.promptEdited) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    text = "Složit prompt znovu podle dialogu",
+                    text = t("Složit prompt znovu podle dialogu"),
                     icon = { Icon(Icons.Default.Refresh, null, Modifier.size(18.dp), TextMid) },
                     onClick = { vm.recomposeTalkPrompt() }
                 )
@@ -305,7 +307,7 @@ private fun SpeakerRow(
                     ) {
                         Icon(Icons.Default.AddPhotoAlternate, null, Modifier.size(22.dp), TextMid)
                         Spacer(Modifier.height(4.dp))
-                        Text("Fotka", style = MaterialTheme.typography.bodySmall, color = TextMid)
+                        Text(t("Fotka"), style = MaterialTheme.typography.bodySmall, color = TextMid)
                     }
                 }
                 Box(
@@ -318,14 +320,14 @@ private fun SpeakerRow(
                         .clickable(onClick = shoot),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.PhotoCamera, "Vyfotit", Modifier.size(15.dp), Color.White)
+                    Icon(Icons.Default.PhotoCamera, t("Vyfotit"), Modifier.size(15.dp), Color.White)
                 }
             }
 
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        "Postava $number",
+                        t("Postava %d").format(number),
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextHi, fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.weight(1f)
@@ -339,7 +341,7 @@ private fun SpeakerRow(
                                 .clickable { vm.removeSpeaker(speaker.key) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Close, "Odebrat postavu", Modifier.size(14.dp), TextMid)
+                            Icon(Icons.Default.Close, t("Odebrat postavu"), Modifier.size(14.dp), TextMid)
                         }
                     }
                 }
@@ -347,7 +349,7 @@ private fun SpeakerRow(
                 DarkTextField(
                     value = speaker.look,
                     onValueChange = { vm.setSpeakerLook(speaker.key, it) },
-                    placeholder = "muž v obleku (nepovinné)",
+                    placeholder = t("muž v obleku (nepovinné)"),
                     minHeight = 56.dp,
                     singleLine = true,
                 )
@@ -375,7 +377,7 @@ private fun SpeakerRow(
                         when (val v = speaker.voice) {
                             is VoiceSource.Library -> v.voiceName
                             is VoiceSource.Sample -> v.label
-                            null -> "Vybrat hlas"
+                            null -> t("Vybrat hlas")
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = if (speaker.voice != null) TextHi else TextMid,
@@ -389,7 +391,7 @@ private fun SpeakerRow(
             Column(Modifier.padding(top = 10.dp)) {
                 if (voices.isEmpty()) {
                     Text(
-                        "Načítám hlasy z počítače…",
+                        t("Načítám hlasy z počítače…"),
                         style = MaterialTheme.typography.bodySmall, color = TextMid
                     )
                 } else {
@@ -410,12 +412,12 @@ private fun SpeakerRow(
                 }
                 Spacer(Modifier.height(8.dp))
                 RecordVoiceButton { file ->
-                    vm.setSpeakerSample(speaker.key, file, "vlastní nahrávka")
+                    vm.setSpeakerSample(speaker.key, file, t("vlastní nahrávka"))
                     voicesOpen = false
                 }
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    text = "Naklonovat ze zvukového souboru",
+                    text = t("Naklonovat ze zvukového souboru"),
                     onClick = { pickSample.launch("audio/*"); voicesOpen = false }
                 )
             }
@@ -446,7 +448,7 @@ private fun LineCard(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "$number. replika",
+                t("%d. replika").format(number),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextHi, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
@@ -460,7 +462,7 @@ private fun LineCard(
                         .clickable { vm.removeLine(line.key) },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Close, "Odebrat repliku", Modifier.size(14.dp), TextMid)
+                    Icon(Icons.Default.Close, t("Odebrat repliku"), Modifier.size(14.dp), TextMid)
                 }
             }
         }
@@ -478,7 +480,7 @@ private fun LineCard(
                         .padding(horizontal = 12.dp, vertical = 7.dp)
                 ) {
                     Text(
-                        s.look.trim().ifBlank { "Postava ${i + 1}" },
+                        s.look.trim().ifBlank { t("Postava %d").format(i + 1) },
                         style = MaterialTheme.typography.labelMedium,
                         color = if (active) TextHi else TextMid,
                         maxLines = 1
@@ -491,7 +493,7 @@ private fun LineCard(
         DarkTextField(
             value = line.text,
             onValueChange = { vm.setLineText(line.key, it) },
-            placeholder = "Co má říct…",
+            placeholder = t("Co má říct…"),
             minHeight = 92.dp,
             onClear = { vm.setLineText(line.key, "") },
         )
@@ -512,10 +514,10 @@ private fun LineCard(
                     when {
                         line.status == VoiceStatus.RUNNING ->
                             CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
-                        playing -> Icon(Icons.Default.Stop, "Zastavit", Modifier.size(18.dp), Ok)
+                        playing -> Icon(Icons.Default.Stop, t("Zastavit"), Modifier.size(18.dp), Ok)
                         line.voiceCurrent ->
-                            Icon(Icons.Default.PlayArrow, "Přehrát repliku", Modifier.size(18.dp), Ok)
-                        else -> Icon(Icons.Default.RecordVoiceOver, "Namluvit", Modifier.size(18.dp), Cyan)
+                            Icon(Icons.Default.PlayArrow, t("Přehrát repliku"), Modifier.size(18.dp), Ok)
+                        else -> Icon(Icons.Default.RecordVoiceOver, t("Namluvit"), Modifier.size(18.dp), Cyan)
                     }
                 }
                 if (line.voiceCurrent && line.status != VoiceStatus.RUNNING) {
@@ -528,16 +530,16 @@ private fun LineCard(
                             .clickable { vm.speakLine(line.key) },
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(Icons.Default.Refresh, "Namluvit znovu", Modifier.size(18.dp), TextMid)
+                        Icon(Icons.Default.Refresh, t("Namluvit znovu"), Modifier.size(18.dp), TextMid)
                     }
                 }
                 Spacer(Modifier.width(10.dp))
                 val note = when {
                     line.status == VoiceStatus.FAILED && line.error.isNotBlank() -> line.error to Amber
-                    line.voiceCurrent -> "Hlas je hotový (%.1f s)".format(line.audioSeconds) to Ok
-                    line.audio != null -> "Text se změnil – namluv znovu" to Amber
-                    speaker?.voice == null -> "Postava nemá vybraný hlas" to Amber
-                    else -> "Ťukni pro namluvení" to TextLow
+                    line.voiceCurrent -> t("Hlas je hotový (%.1f s)").format(line.audioSeconds) to Ok
+                    line.audio != null -> t("Text se změnil – namluv znovu") to Amber
+                    speaker?.voice == null -> t("Postava nemá vybraný hlas") to Amber
+                    else -> t("Ťukni pro namluvení") to TextLow
                 }
                 Text(note.first, style = MaterialTheme.typography.bodySmall, color = note.second)
             }
@@ -546,7 +548,7 @@ private fun LineCard(
             // sedí i délka videa a časy replik v promptu.
             Spacer(Modifier.height(6.dp))
             TagChip(
-                text = if (line.voiceCurrent) "Vyměnit za vlastní zvuk" else "Vložit vlastní zvuk",
+                text = if (line.voiceCurrent) t("Vyměnit za vlastní zvuk") else t("Vložit vlastní zvuk"),
                 active = false,
             ) { onPickAudio() }
             if (line.status == VoiceStatus.RUNNING) {
@@ -576,7 +578,7 @@ private fun RecordVoiceButton(onRecorded: (java.io.File) -> Unit) {
 
     Column {
         OutlineButton(
-            text = if (recording) "Zastavit nahrávání" else "Nahrát vlastní hlas mikrofonem",
+            text = if (recording) t("Zastavit nahrávání") else t("Nahrát vlastní hlas mikrofonem"),
             icon = {
                 Icon(
                     if (recording) Icons.Default.Stop else Icons.Default.Mic,
@@ -597,8 +599,8 @@ private fun RecordVoiceButton(onRecorded: (java.io.File) -> Unit) {
             }
         )
         Text(
-            if (recording) "Mluv souvisle, ideálně 5–30 sekund."
-            else "5–30 s čisté řeči; podle ní Higgs hlas naklonuje.",
+            if (recording) t("Mluv souvisle, ideálně 5–30 sekund.")
+            else t("5–30 s čisté řeči; podle ní Higgs hlas naklonuje."),
             style = MaterialTheme.typography.bodySmall, color = TextLow,
             modifier = Modifier.padding(top = 6.dp)
         )

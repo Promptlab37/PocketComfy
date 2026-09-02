@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +30,7 @@ fun MusicSection(vm: MainViewModel) {
 
     SectionCard(
         title = "Skladba",
-        subtitle = "ACE-Step 1.5 — celá píseň za pár desítek sekund"
+        subtitle = t("ACE-Step 1.5 — celá píseň za pár desítek sekund")
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column {
@@ -37,20 +39,20 @@ fun MusicSection(vm: MainViewModel) {
                 DarkTextField(
                     value = scene.styl,
                     onValueChange = { vm.setMusicStyl(it) },
-                    placeholder = "Žánr, nástroje, nálada, hlas zpěváka…",
+                    placeholder = t("Žánr, nástroje, nálada, hlas zpěváka…"),
                     minHeight = 90.dp,
                 )
             }
             Column {
                 Text(
-                    "Text písně (nepovinný)",
+                    t("Text písně (nepovinný)"),
                     style = MaterialTheme.typography.labelMedium, color = TextLow
                 )
                 Spacer(Modifier.height(8.dp))
                 DarkTextField(
                     value = scene.text,
                     onValueChange = { vm.setMusicText(it) },
-                    placeholder = "Sloky a refrén; prázdné = instrumentálka",
+                    placeholder = t("Sloky a refrén; prázdné = instrumentálka"),
                     minHeight = 140.dp,
                     onClear = { vm.setMusicText("") },
                 )
@@ -59,7 +61,7 @@ fun MusicSection(vm: MainViewModel) {
     }
 
     SectionCard(
-        title = "Délka a jazyk",
+        title = t("Délka a jazyk"),
         trailing = {
             Text(
                 "${scene.seconds} s",
@@ -75,7 +77,7 @@ fun MusicSection(vm: MainViewModel) {
                 colors = sliderColors()
             )
             Column {
-                Text("Jazyk zpěvu", style = MaterialTheme.typography.labelMedium, color = TextLow)
+                Text(t("Jazyk zpěvu"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                 Spacer(Modifier.height(8.dp))
                 PillRow(
                     items = MusicScene.LANGUAGES,
@@ -88,7 +90,7 @@ fun MusicSection(vm: MainViewModel) {
     }
 
     SkladaciSekce(
-        title = "Hudební detaily",
+        title = t("Hudební detaily"),
         souhrn = "${scene.bpm} BPM · ${scene.keyscale}",
         klic = "hudebni-detaily",
     ) {
@@ -112,7 +114,7 @@ fun MusicSection(vm: MainViewModel) {
                     colors = sliderColors()
                 )
             }
-            Dropdown("Tónina", MusicScene.KEYSCALES, scene.keyscale, { it }) { v ->
+            Dropdown(t("Tónina"), MusicScene.KEYSCALES, scene.keyscale, { it }) { v ->
                 vm.setMusicKeyscale(v)
             }
         }

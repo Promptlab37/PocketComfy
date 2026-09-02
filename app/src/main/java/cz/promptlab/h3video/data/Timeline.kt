@@ -20,12 +20,17 @@ import java.io.File
  * `{"path":"podsložka/soubor.jpg","name":"soubor.jpg"}` relativně ke složce
  * `ComfyUI/input`.
  */
-enum class SegmentMode(val kod: String, val nazev: String, val popis: String) {
+enum class SegmentMode(val kod: String, private val nazevCs: String, private val popisCs: String) {
     /** Jen z textu – nic se nevkládá. */
     TEXT("T2V", "Text", "Jen z popisu"),
 
     /** Z obrázku: buď z vlastního, nebo navázáním na předchozí segment. */
-    IMAGE("I2V", "Obrázek", "Z prvního snímku"),
+    IMAGE("I2V", "Obrázek", "Z prvního snímku");
+
+    // Překlad až při čtení — konstanty enumu vznikají jednou při startu
+    // a jazyk by v nich zamrzl (viz Jazyk.kt).
+    val nazev: String get() = t(nazevCs)
+    val popis: String get() = t(popisCs)
 }
 
 @Immutable
@@ -122,10 +127,10 @@ fun buildLsiTimeline(scene: TimelineScene, imageNames: List<String>): String {
 /** Co ose chybí, než se dá odeslat. Hláška pro uživatele, nebo null. */
 fun timelineProblem(scene: TimelineScene): String? {
     if (scene.segments.all { it.prompt.isBlank() }) {
-        return "Napiš, co se má v prvním segmentu dít."
+        return t("Napiš, co se má v prvním segmentu dít.")
     }
     scene.segments.firstOrNull { it.prompt.isBlank() }?.let {
-        return "Segment bez popisu model neumí natočit – doplň ho, nebo ho odeber."
+        return t("Segment bez popisu model neumí natočit – doplň ho, nebo ho odeber.")
     }
     scene.segments.forEachIndexed { i, seg ->
         if (seg.seconds > TimelineScene.MAX_SEGMENT_SECONDS) {
@@ -134,7 +139,7 @@ fun timelineProblem(scene: TimelineScene): String? {
         }
         if (seg.mode == SegmentMode.IMAGE) {
             if (i == 0 && seg.inheritPrevious) {
-                return "První segment nemá na co navázat – vyber mu snímek."
+                return t("První segment nemá na co navázat – vyber mu snímek.")
             }
             if (!seg.inheritPrevious && seg.image == null) {
                 return "Segment ${i + 1} čeká na snímek, ze kterého má vyjít."

@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -105,8 +107,8 @@ fun TimelineSceneSection(vm: MainViewModel) {
         ?: scene.segments.first().also { vybrany = it.key }
 
     SectionCard(
-        title = "Časová osa",
-        subtitle = "Ťukni na klip a uprav ho dole. Délku táhni za okraj klipu."
+        title = t("Časová osa"),
+        subtitle = t("Ťukni na klip a uprav ho dole. Délku táhni za okraj klipu.")
     ) {
         Column {
             val scroll = rememberScrollState()
@@ -149,7 +151,7 @@ fun TimelineSceneSection(vm: MainViewModel) {
                                 .clickable { vm.addSegment() },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Movie, "Přidat segment", Modifier.size(20.dp), TextMid)
+                            Icon(Icons.Default.Movie, t("Přidat segment"), Modifier.size(20.dp), TextMid)
                         }
                     }
                 }
@@ -157,7 +159,9 @@ fun TimelineSceneSection(vm: MainViewModel) {
 
             Spacer(Modifier.height(10.dp))
             Text(
-                "%.1f s celkem · %d segmentů".format(scene.totalSeconds, scene.segments.size),
+                t("%s celkem · %s").format(
+                    "%.1f s".format(scene.totalSeconds), segmentyPocet(scene.segments.size)
+                ),
                 style = MaterialTheme.typography.bodySmall, color = TextLow
             )
 
@@ -174,7 +178,7 @@ fun TimelineSceneSection(vm: MainViewModel) {
             // natvrdo v kódu a nešel změnit, přestože se ukládal i posílal.
             Spacer(Modifier.height(14.dp))
             Text(
-                "Styl celého filmu",
+                t("Styl celého filmu"),
                 style = MaterialTheme.typography.labelMedium, color = TextLow
             )
             Spacer(Modifier.height(8.dp))
@@ -187,7 +191,7 @@ fun TimelineSceneSection(vm: MainViewModel) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Přidá se ke každému segmentu – drží jednotný vzhled, světlo a barvy.",
+                t("Přidá se ke každému segmentu – drží jednotný vzhled, světlo a barvy."),
                 style = MaterialTheme.typography.bodySmall, color = TextLow
             )
         }
@@ -357,8 +361,8 @@ private fun SegmentPanel(
         DarkTextField(
             value = seg.prompt,
             onValueChange = { vm.setSegmentPrompt(seg.key, it) },
-            placeholder = if (index == 0) "Muž jde po molu, kamera ho sleduje zezadu…"
-            else "Pokračuje dál, kamera se stáčí k moři…",
+            placeholder = if (index == 0) t("Muž jde po molu, kamera ho sleduje zezadu…")
+            else t("Pokračuje dál, kamera se stáčí k moři…"),
             minHeight = 84.dp,
             onClear = { vm.setSegmentPrompt(seg.key, "") },
         )
@@ -367,7 +371,7 @@ private fun SegmentPanel(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (index > 0) {
                 TagChip(
-                    text = "Navázat na předchozí",
+                    text = t("Navázat na předchozí"),
                     active = seg.inheritPrevious,
                 ) {
                     vm.setSegmentInherit(seg.key, !seg.inheritPrevious)
@@ -376,7 +380,7 @@ private fun SegmentPanel(
             }
             if (!seg.inheritPrevious) {
                 TagChip(
-                    text = if (seg.thumb != null) "Vyměnit snímek" else "Začít snímkem",
+                    text = if (seg.thumb != null) t("Vyměnit snímek") else t("Začít snímkem"),
                     active = seg.thumb != null,
                 ) { onPick() }
             }
@@ -385,26 +389,26 @@ private fun SegmentPanel(
         if (!seg.inheritPrevious && seg.thumb == null && seg.mode == SegmentMode.IMAGE) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "Segment čeká na snímek, ze kterého má vyjít.",
+                t("Segment čeká na snímek, ze kterého má vyjít."),
                 style = MaterialTheme.typography.bodySmall, color = Amber
             )
         }
 
         Spacer(Modifier.height(10.dp))
         LabeledSlider(
-            label = "Délka",
+            label = t("Délka"),
             value = "%.1f s".format(seg.seconds),
             position = seg.seconds,
             range = 2f..TimelineScene.MAX_SEGMENT_SECONDS,
             onChange = { vm.setSegmentSeconds(seg.key, it) },
-            note = "Nebo táhni za pravý okraj klipu v ose.",
+            note = t("Nebo táhni za pravý okraj klipu v ose."),
         )
 
         // Uzel si hotové segmenty drží v mezipaměti projektu, takže jeden
         // upravený záběr nemusí znamenat přepočítání celé osy.
         Spacer(Modifier.height(10.dp))
         TagChip(
-            text = "Přegenerovat jen tento segment",
+            text = t("Přegenerovat jen tento segment"),
             active = scene.onlySegment == index + 1,
         ) {
             vm.setTimelineOnlySegment(if (scene.onlySegment == index + 1) 0 else index + 1)
@@ -436,4 +440,16 @@ private fun IconAction(
     ) {
         Icon(icon, popis, Modifier.size(19.dp), if (enabled) TextMid else Outline1)
     }
+}
+
+/**
+ * Počet segmentů. Čeština má tři tvary (1 segment, 2–4 segmenty, 5+ segmentů),
+ * angličtina dva — proto vlastní větev, ne slovník. Dřív tu bylo natvrdo
+ * „%d segmentů", takže u jednoho segmentu svítilo „1 segmentů".
+ */
+internal fun segmentyPocet(n: Int): String = when {
+    cz.promptlab.h3video.data.Jazyk.anglicky -> if (n == 1) "1 segment" else "$n segments"
+    n == 1 -> "1 segment"
+    n in 2..4 -> "$n segmenty"
+    else -> "$n segmentů"
 }

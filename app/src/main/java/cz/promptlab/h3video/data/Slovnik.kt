@@ -210,7 +210,6 @@ object Slovnik {
         "Popiš, co má na obrázku být — jednoduše a bez záporů" to
             "Describe what should be in the picture — simply, no negatives",
         "Poměr stran" to "Aspect ratio",
-        "do Úpravy obrázku nebo do Zvětšit." to "to Image edit or Upscale.",
         "Vygenerovat obrázek" to "Generate image",
         "Upravit obrázek" to "Edit image",
         "Zvětšit obrázek" to "Upscale image",
@@ -280,12 +279,6 @@ object Slovnik {
         "Vypnuté – věrnější zvuk, o něco pomalejší" to
             "Off — more faithful audio, a bit slower",
         "Věrnost referencí" to "Reference fidelity",
-        "Odsud je výsledek nejjistější." to "From here the result is the safest bet.",
-        "měkčí obraz a méně přesné tváře." to "a softer picture and less accurate faces.",
-        "detaily bývají měkčí. Ostřejší HD spíš vyjde z nativu " to
-            "details tend to be softer. Sharper HD comes from the native size ",
-        "a karty All in One → Zvětšit." to "and the All in One → Upscale card.",
-        "na výsledku nepoznáš." to "you will not see it in the result.",
         "Žádná – model jede na plno" to "None — the model runs at full strength",
         "Vypnutá – plný model, lepší hlas, ale pomalejší" to
             "Off — full model, better voice, but slower",
@@ -496,6 +489,229 @@ object Slovnik {
         "Tohle pošli vývojáři, je v tom příčina" to
             "Send this to the developer — it contains the cause",
         "Zahodit výpis" to "Discard the report",
+        // --------------------------------------------------- časová osa
+        "ČASOVÁ OSA" to "TIMELINE",
+        "Styl celého filmu" to "Style of the whole film",
+        "Přidá se ke každému segmentu – drží jednotný vzhled, světlo a barvy." to
+            "Added to every segment — it keeps the look, light and colours consistent.",
+        "Ťukni na klip a uprav ho dole. Délku táhni za okraj klipu." to
+            "Tap a clip and edit it below. Drag the clip edge to change its length.",
+        "Přidat segment" to "Add a segment",
+        "Začít snímkem" to "Start from a frame",
+        "Vyměnit snímek" to "Replace the frame",
+        "Navázat na předchozí" to "Continue from the previous one",
+        "Nebo táhni za pravý okraj klipu v ose." to
+            "Or drag the right edge of the clip in the timeline.",
+        "Přegenerovat jen tento segment" to "Regenerate this segment only",
+        "Segment čeká na snímek, ze kterého má vyjít." to
+            "The segment is waiting for a frame to start from.",
+        "Muž jde po molu, kamera ho sleduje zezadu…" to
+            "A man walks along a pier, the camera follows him from behind…",
+        "Pokračuje dál, kamera se stáčí k moři…" to
+            "He keeps walking, the camera turns towards the sea…",
+        "Generování už běží" to "A run is already in progress",
+        "Napiš, co se má v prvním segmentu dít." to
+            "Write what should happen in the first segment.",
+        "První segment nemá na co navázat – vyber mu snímek." to
+            "The first segment has nothing to continue from — pick a frame for it.",
+        "Segment bez popisu model neumí natočit – doplň ho, nebo ho odeber." to
+            "The model cannot shoot a segment without a description — add one or remove it.",
+        "Z prvního snímku" to "From the first frame",
+
+        // -------------------------------------------------- mluvící scéna
+        "Scéna" to "Scene",
+        "Postavy" to "Characters",
+        "Dialog" to "Dialogue",
+        "Fotka" to "Photo",
+        "Vyfotit" to "Take a photo",
+        "Vybrat hlas" to "Pick a voice",
+        "Namluvit" to "Voice it",
+        "Namluvit repliku" to "Voice this line",
+        "Namluvit znovu" to "Voice it again",
+        "Zastavit" to "Stop",
+        "Odebrat postavu" to "Remove the character",
+        "Odebrat repliku" to "Remove the line",
+        "Prompt pro model" to "Prompt for the model",
+        "Postava %d" to "Character %d",
+        "%d. replika" to "Line %d",
+        "Namluvit všechny (%d)" to "Voice all (%d)",
+        "Dialog trvá %s s – délka videa se podle něj nastavila sama." to
+            "The dialogue runs %s s — the video length was set from it automatically.",
+        "Přidej první postavě fotku." to "Add a photo to the first character.",
+        "Napiš aspoň jednu repliku." to "Write at least one line.",
+        "Repliku říká postava bez fotky – doplň jí fotku." to
+            "A line is spoken by a character with no photo — add one.",
+        "Postava, která mluví, potřebuje vybraný hlas." to
+            "A speaking character needs a voice selected.",
+        "Nech repliky namluvit." to "Have the lines voiced.",
+        "Replika se změnila – nech ji namluvit znovu." to
+            "The line changed — have it voiced again.",
+        "Prompt je prázdný." to "The prompt is empty.",
+        "Napiš, co má na obrázku být." to "Write what should be in the picture.",
+        "Kde se to odehrává a jak se chová kamera – nepovinné" to
+            "Where it takes place and how the camera behaves — optional",
+        "Kavárna, měkké odpolední světlo, kamera pomalu najíždí…" to
+            "A café, soft afternoon light, the camera slowly pushes in…",
+        "Fotka drží podobu, hlas namluví repliky. Každá postava může mluvit vícekrát." to
+            "The photo keeps the look, the voice reads the lines. Each character can speak several times.",
+        "Přidat postavu" to "Add a character",
+        "muž v obleku (nepovinné)" to "a man in a suit (optional)",
+        "Repliky jdou po sobě v tomto pořadí. U každé vyber, kdo ji říká." to
+            "Lines play in this order. For each one pick who says it.",
+        "Přidat repliku" to "Add a line",
+        "Co má říct…" to "What they should say…",
+        "Ťukni pro namluvení" to "Tap to voice it",
+        "Přehrát repliku" to "Play the line",
+        "Text se změnil – namluv znovu" to "The text changed — voice it again",
+        "Hlas je hotový (%.1f s)" to "The voice is ready (%.1f s)",
+        "Postava nemá vybraný hlas" to "This character has no voice selected",
+        "Zapínám Higgs Audio na počítači…" to "Starting Higgs Audio on the PC…",
+        "Načítám hlasy z počítače…" to "Loading voices from the PC…",
+        "Nahrát vlastní hlas mikrofonem" to "Record your own voice with the microphone",
+        "Zastavit nahrávání" to "Stop recording",
+        "Mluv souvisle, ideálně 5–30 sekund." to "Speak continuously, ideally 5–30 seconds.",
+        "Naklonovat ze zvukového souboru" to "Clone from an audio file",
+        "5–30 s čisté řeči; podle ní Higgs hlas naklonuje." to
+            "5–30 s of clean speech; Higgs clones the voice from it.",
+        "vlastní nahrávka" to "own recording",
+        "Vložit vlastní zvuk" to "Use your own audio",
+        "Vyměnit za vlastní zvuk" to "Replace with your own audio",
+        "Složit prompt znovu podle dialogu" to "Rebuild the prompt from the dialogue",
+        "Skládá se sám z postav a replik. Můžeš do něj sáhnout." to
+            "It is built from the characters and lines. You can edit it.",
+        "Doplní se, jakmile přidáš fotku a repliku" to
+            "It fills in once you add a photo and a line",
+
+        // ------------------------------------------------------- průběh
+        "Čtení zadání" to "Reading the brief",
+        "Fronta a modely" to "Queue and models",
+        "%s celkem · %s" to "%s total · %s",
+        "%.0f s / krok" to "%.0f s / step",
+        "z %.1f MB" to "of %.1f MB",
+        "Hotovo" to "Done",
+        "Víc než %d repliky se do jednoho videa nevejdou – model bere jen tři zvukové reference." to
+            "More than %d lines will not fit into one video — the model takes only three audio references.",
+        "Načítám model" to "Loading the model",
+        "Model se nahrává do grafické karty, chvíli to trvá." to
+            "The model is loading into the GPU, this takes a moment.",
+        "Dokončení a přenos do aplikace" to "Finishing and transfer to the app",
+        "Náhled se objeví, až model začne kreslit" to
+            "The preview appears once the model starts drawing",
+        "Náhled se objeví, jakmile model vykreslí první snímek" to
+            "The preview appears as soon as the model renders the first frame",
+        "Zbývá" to "Remaining",
+        "Přeneseno" to "Transferred",
+        "počítám" to "estimating",
+        "Telefon můžeš zamknout, generování běží na počítači dál." to
+            "You can lock the phone — generation keeps running on the PC.",
+
+        // -------------------------------------------------------- hudba
+        "ACE-Step 1.5 — celá píseň za pár desítek sekund" to
+            "ACE-Step 1.5 — a whole song in a few dozen seconds",
+        "Popiš styl skladby — žánr, nástroje, náladu." to
+            "Describe the style — genre, instruments, mood.",
+        "Žánr, nástroje, nálada, hlas zpěváka…" to
+            "Genre, instruments, mood, the singer's voice…",
+        "Text písně (nepovinný)" to "Lyrics (optional)",
+        "Sloky a refrén; prázdné = instrumentálka" to
+            "Verses and chorus; empty = instrumental",
+        "Bez textu písně vyjde instrumentálka. Text piš po slokách, " to
+            "With no lyrics you get an instrumental. Write the lyrics verse by verse, ",
+        "klidně česky." to "in any language.",
+        "Délka a jazyk" to "Length and language",
+        "Jazyk zpěvu" to "Singing language",
+        "Hudební detaily" to "Musical details",
+        "Tónina" to "Key",
+
+        // ------------------------------------------------ úprava obrázku
+        "Fotka k úpravě" to "Photo to edit",
+        "Upravovaná fotka" to "The photo being edited",
+        "Z ní se bere podoba i scéna" to "The look and the scene come from it",
+        "Osoba navíc (nepovinné)" to "Extra person (optional)",
+        "Co se má změnit" to "What should change",
+        "Napiš to jednoduše, běžnou větou" to "Write it simply, in a plain sentence",
+        "Dej jí červenou bundu a přesaď je na zasněženou horskou cestu" to
+            "Give her a red jacket and move them to a snowy mountain road",
+        "Nastavení úpravy" to "Edit settings",
+        "Kolem 1 MP je u tohohle modelu nejjistější" to
+            "Around 1 MP is the safest for this model",
+        "Nad 1 MP se u dvou lidí začíná rozpadat podoba." to
+            "Above 1 MP the likeness starts to fall apart with two people.",
+        "Vidění předlohy" to "Reference vision",
+        "Víc = věrnější podoba, míň = poslušnější úprava. Na lidi dej 1024." to
+            "More = closer likeness, less = more obedient edit. Use 1024 for people.",
+        "Věrnost předloze" to "Fidelity to the reference",
+        "Síla úpravy" to "Edit strength",
+        "Kompromis mezi poslušností zadání a věrností obličeje" to
+            "A trade-off between following the brief and keeping the face",
+        "1,00 je vypnuto. Na věrné obličeje zkus 1,5–2." to
+            "1.00 is off. For faithful faces try 1.5–2.",
+        "Vyber fotku, kterou chceš upravit." to "Pick the photo you want to edit.",
+        "Napiš, co se má na fotce změnit." to "Write what should change in the photo.",
+        "Nad zhruba 1 MP se u tohohle modelu začíná obsah zdvojovat. " to
+            "Above roughly 1 MP this model starts duplicating content. ",
+        "Radši uprav v menším a zvětši potom v kartě All in One." to
+            "Better to edit smaller and upscale afterwards on the All in One card.",
+        "U dvou lidí drž rozlišení kolem 1 MP, výš se podoba rozpadá." to
+            "With two people keep the resolution around 1 MP; higher and the likeness breaks.",
+        "S nízkým viděním předlohy podoba lidí ujíždí — pro věrné obličeje " to
+            "With low reference vision the likeness drifts — for faithful faces ",
+        "autor doporučuje 1024. Nízké hodnoty se hodí jen na tvrdohlavé změny scény." to
+            "the author recommends 1024. Low values only help with stubborn scene changes.",
+        "Mazání věcí z obrázku tenhle model spolehlivě neumí — je to jeho " to
+            "This model cannot reliably delete things from a picture — that is its ",
+        "nejslabší úloha. Zkus místo mazání popsat, co má být na tom místě místo toho." to
+            "weakest task. Instead of deleting, describe what should be there instead.",
+        "Obě předlohy jdou do modelu naráz: první je scéna, druhá vkládaná osoba. " to
+            "Both references go into the model at once: the first is the scene, the second the person being inserted. ",
+
+        // ---------------------------------------------- tvář, oprava, zvětšit
+        "Fotka, kde se mění tvář" to "The photo whose face changes",
+        "Vyber fotku a pak prstem začmárej obličej, který se má vyměnit" to
+            "Pick a photo, then scribble over the face to be swapped",
+        "Cílová fotka" to "Target photo",
+        "Maska je namalovaná — klepnutím na štětec ji předěláš" to
+            "The mask is painted — tap the brush to redo it",
+        "Nová tvář" to "New face",
+        "Nejlíp ostrá fotka zepředu" to "A sharp front-facing photo works best",
+        "Vybrat tvář" to "Pick a face",
+        "Začmárej obličej, který se vymění" to "Scribble over the face to be swapped",
+        "Klidně s přesahem přes okraje tváře — přechod se změkčí sám. " to
+            "Feel free to overlap the edges of the face — the transition softens itself. ",
+        "Dvěma prsty přiblížíš na detaily." to "Pinch with two fingers to zoom in on details.",
+        "Štětec" to "Brush",
+        "Krok zpět" to "Undo",
+        "Smazat vše" to "Clear all",
+        "Nejdřív začmárej obličej" to "Scribble over the face first",
+        "Hotovo — použít masku" to "Done — use this mask",
+        "Zavřít bez uložení" to "Close without saving",
+        "Fotka k opravě" to "Photo to restore",
+        "Stará nebo poškozená fotka" to "An old or damaged photo",
+        "Škrábance, prach, vybledlé barvy i trhliny — appka opraví vše naráz" to
+            "Scratches, dust, faded colours and tears — the app fixes it all at once",
+        "Fotka ke zvětšení" to "Photo to upscale",
+        "Vezme se v plném rozlišení, bez překódování" to
+            "Taken at full resolution, without re-encoding",
+        "Velikost zvětšení" to "Upscale size",
+        "Fotka se rozdělí na dlaždice, každá se zvětší na 3200 px a slepí se" to
+            "The photo is split into tiles, each upscaled to 3200 px and merged back",
+        "Víc dlaždic = větší výsledek, ale úměrně delší běh. 2×2 je vyladěné výchozí." to
+            "More tiles = a bigger result but a proportionally longer run. 2×2 is the tuned default.",
+
+        // -------------------------------------------- aktualizace a notifikace
+        "Později" to "Later",
+        "Staženo" to "Downloaded",
+        "Android se teď zeptá na potvrzení instalace." to
+            "Android will now ask you to confirm the installation.",
+        "Android potřebuje povolit instalaci z této aplikace." to
+            "Android needs permission to install from this app.",
+        "Průběh generování" to "Generation progress",
+        "Živý průběh běžícího generování" to "Live progress of the running job",
+        "Hotová videa" to "Finished videos",
+        "Upozornění, když je video hotové" to "A notification when the video is done",
+        "Připravuji…" to "Preparing…",
+        "Generování se nepovedlo" to "Generation failed",
+
         // Věty s hodnotou — překládá se celá věta i s %s/%d, aby nevznikla
         // půl česká, půl anglická.
         "Přesně plátno, na kterém model vznikl (%s). Odsud je výsledek nejjistější." to

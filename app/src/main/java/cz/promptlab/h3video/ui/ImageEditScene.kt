@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -64,20 +66,20 @@ fun ImageEditSection(vm: MainViewModel) {
     ) { uri -> pickFor?.let { vm.pickEditImage(it, uri) }; pickFor = null }
 
     SectionCard(
-        title = "Fotka k úpravě",
-        subtitle = "Z ní se bere podoba i scéna"
+        title = t("Fotka k úpravě"),
+        subtitle = t("Z ní se bere podoba i scéna")
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             EditSlot(
                 thumb = scene.thumb,
-                popisek = "Upravovaná fotka",
+                popisek = t("Upravovaná fotka"),
                 modifier = Modifier.weight(1f),
                 onPick = { pickFor = "source"; pick.launch(imageOnly) },
                 onClear = { vm.clearEditImage("source") },
             )
             EditSlot(
                 thumb = scene.personThumb,
-                popisek = "Osoba navíc (nepovinné)",
+                popisek = t("Osoba navíc (nepovinné)"),
                 modifier = Modifier.weight(1f),
                 onPick = { pickFor = "person"; pick.launch(imageOnly) },
                 onClear = { vm.clearEditImage("person") },
@@ -86,13 +88,13 @@ fun ImageEditSection(vm: MainViewModel) {
     }
 
     SectionCard(
-        title = "Co se má změnit",
-        subtitle = "Napiš to jednoduše, běžnou větou"
+        title = t("Co se má změnit"),
+        subtitle = t("Napiš to jednoduše, běžnou větou")
     ) {
         DarkTextField(
             value = scene.prompt,
             onValueChange = { vm.setEditPrompt(it) },
-            placeholder = "Dej jí červenou bundu a přesaď je na zasněženou horskou cestu",
+            placeholder = t("Dej jí červenou bundu a přesaď je na zasněženou horskou cestu"),
             minHeight = 110.dp,
             onClear = { vm.setEditPrompt("") },
         )
@@ -101,14 +103,14 @@ fun ImageEditSection(vm: MainViewModel) {
     // Rozlišení a jemné páčky nikdo nemění při každém běhu – jsou sbalené,
     // ať na obrazovce zbyde jen fotka, zadání a tlačítko.
     SkladaciSekce(
-        title = "Nastavení úpravy",
+        title = t("Nastavení úpravy"),
         souhrn = scene.resolution.label + " · vidí " + scene.groundingPx + " px" +
             " · věrnost %.2f".format(scene.refBoost),
         klic = "nastaveni-edit",
     ) {
         SectionCard(
-            title = "Rozlišení",
-            subtitle = "Kolem 1 MP je u tohohle modelu nejjistější",
+            title = t("Rozlišení"),
+            subtitle = t("Kolem 1 MP je u tohohle modelu nejjistější"),
             trailing = {
                 Text(
                     scene.resolution.label,
@@ -118,7 +120,7 @@ fun ImageEditSection(vm: MainViewModel) {
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column {
-                    Text("Poměr stran", style = MaterialTheme.typography.labelMedium, color = TextLow)
+                    Text(t("Poměr stran"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                     Spacer(Modifier.height(8.dp))
                     PillRow(
                         items = listOf(
@@ -136,32 +138,32 @@ fun ImageEditSection(vm: MainViewModel) {
                     position = scene.megapixels,
                     range = 0.4f..ImageEditScene.MAX_MEGAPIXELS,
                     onChange = { vm.setEditMegapixels((it * 10).roundToInt() / 10f) },
-                    note = "Nad 1 MP se u dvou lidí začíná rozpadat podoba.",
+                    note = t("Nad 1 MP se u dvou lidí začíná rozpadat podoba."),
                 )
             }
         }
 
         SectionCard(
-            title = "Síla úpravy",
-            subtitle = "Kompromis mezi poslušností zadání a věrností obličeje"
+            title = t("Síla úpravy"),
+            subtitle = t("Kompromis mezi poslušností zadání a věrností obličeje")
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 LabeledSlider(
-                    label = "Vidění předlohy",
+                    label = t("Vidění předlohy"),
                     value = "${scene.groundingPx} px",
                     position = scene.groundingPx.toFloat(),
                     range = ImageEditScene.MIN_GROUNDING.toFloat()..
                         ImageEditScene.MAX_GROUNDING.toFloat(),
                     onChange = { vm.setEditGrounding((it / 64).roundToInt() * 64) },
-                    note = "Víc = věrnější podoba, míň = poslušnější úprava. Na lidi dej 1024.",
+                    note = t("Víc = věrnější podoba, míň = poslušnější úprava. Na lidi dej 1024."),
                 )
                 LabeledSlider(
-                    label = "Věrnost předloze",
+                    label = t("Věrnost předloze"),
                     value = "%.2f".format(scene.refBoost),
                     position = scene.refBoost,
                     range = 0.5f..3f,
                     onChange = { vm.setEditRefBoost((it * 100).roundToInt() / 100f) },
-                    note = "1,00 je vypnuto. Na věrné obličeje zkus 1,5–2.",
+                    note = t("1,00 je vypnuto. Na věrné obličeje zkus 1,5–2."),
                 )
             }
         }

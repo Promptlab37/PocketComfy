@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cz.promptlab.h3video.comfy.ComfyClient
 import cz.promptlab.h3video.comfy.ComfyException
+import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.comfy.PromptRewriteBuilder
 import cz.promptlab.h3video.data.AioMode
 import cz.promptlab.h3video.data.AioScene
@@ -621,7 +622,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.EDIT -> imageEditProblem(_edit.value)
             Mode.UPSCALE -> upscaleProblem(_upscale.value)
             Mode.IMAGE ->
-                if (p.prompt.isBlank()) "Napiš, co má na obrázku být." else null
+                if (p.prompt.isBlank()) t("Napiš, co má na obrázku být.") else null
             Mode.MUSIC -> musicProblem(_music.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
             Mode.FACESWAP -> faceSwapProblem(_swap.value)
@@ -633,20 +634,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * karet nekontroluje jako první – uživatel by nechápal, co má psát.
      */
     fun validateScene(s: TalkScene): String? {
-        if (s.withImage.isEmpty()) return "Přidej první postavě fotku."
+        if (s.withImage.isEmpty()) return t("Přidej první postavě fotku.")
         val written = s.written
-        if (written.isEmpty()) return "Napiš aspoň jednu repliku."
+        if (written.isEmpty()) return t("Napiš aspoň jednu repliku.")
         written.firstOrNull { s.speakerOf(it)?.image == null }?.let {
-            return "Repliku říká postava bez fotky – doplň jí fotku."
+            return t("Repliku říká postava bez fotky – doplň jí fotku.")
         }
         written.firstOrNull { s.speakerOf(it)?.voice == null }?.let {
-            return "Postava, která mluví, potřebuje vybraný hlas."
+            return t("Postava, která mluví, potřebuje vybraný hlas.")
         }
         written.firstOrNull { !it.voiceCurrent }?.let {
-            return if (it.audio == null) "Nech repliky namluvit."
-            else "Replika se změnila – nech ji namluvit znovu."
+            return if (it.audio == null) t("Nech repliky namluvit.")
+            else t("Replika se změnila – nech ji namluvit znovu.")
         }
-        if (s.prompt.isBlank()) return "Prompt je prázdný."
+        if (s.prompt.isBlank()) return t("Prompt je prázdný.")
         return null
     }
 

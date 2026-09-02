@@ -62,8 +62,8 @@ data class ImageEditScene(
 
 /** Co kartě chybí, než se dá spustit. Hláška pro uživatele, nebo null. */
 fun imageEditProblem(s: ImageEditScene): String? = when {
-    s.source == null -> "Vyber fotku, kterou chceš upravit."
-    s.prompt.isBlank() -> "Napiš, co se má na fotce změnit."
+    s.source == null -> t("Vyber fotku, kterou chceš upravit.")
+    s.prompt.isBlank() -> t("Napiš, co se má na fotce změnit.")
     else -> null
 }
 
@@ -74,20 +74,20 @@ fun imageEditHints(s: ImageEditScene): List<String> {
     if (listOf("odeber", "smaž", "smaz", "vymaž", "vymaz", "remove", "delete", "erase")
             .any { it in text }
     ) {
-        out += "Mazání věcí z obrázku tenhle model spolehlivě neumí — je to jeho " +
-            "nejslabší úloha. Zkus místo mazání popsat, co má být na tom místě místo toho."
+        out += t("Mazání věcí z obrázku tenhle model spolehlivě neumí — je to jeho ") +
+            t("nejslabší úloha. Zkus místo mazání popsat, co má být na tom místě místo toho.")
     }
     if (s.hasPerson) {
-        out += "Obě předlohy jdou do modelu naráz: první je scéna, druhá vkládaná osoba. " +
-            "U dvou lidí drž rozlišení kolem 1 MP, výš se podoba rozpadá."
+        out += t("Obě předlohy jdou do modelu naráz: první je scéna, druhá vkládaná osoba. ") +
+            t("U dvou lidí drž rozlišení kolem 1 MP, výš se podoba rozpadá.")
     }
     if (s.megapixels > 1.2f) {
-        out += "Nad zhruba 1 MP se u tohohle modelu začíná obsah zdvojovat. " +
-            "Radši uprav v menším a zvětši potom v kartě All in One."
+        out += t("Nad zhruba 1 MP se u tohohle modelu začíná obsah zdvojovat. ") +
+            t("Radši uprav v menším a zvětši potom v kartě All in One.")
     }
     if (s.groundingPx < 768) {
-        out += "S nízkým viděním předlohy podoba lidí ujíždí — pro věrné obličeje " +
-            "autor doporučuje 1024. Nízké hodnoty se hodí jen na tvrdohlavé změny scény."
+        out += t("S nízkým viděním předlohy podoba lidí ujíždí — pro věrné obličeje ") +
+            t("autor doporučuje 1024. Nízké hodnoty se hodí jen na tvrdohlavé změny scény.")
     }
     return out
 }

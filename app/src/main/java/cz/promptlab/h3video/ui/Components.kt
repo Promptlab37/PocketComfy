@@ -87,7 +87,10 @@ fun SectionCard(
             }
             trailing?.invoke()
         }
-        Box(Modifier.padding(top = 14.dp)) { content() }
+        // Sloupec, ne Box: obsah sekce je svislý seznam. V Boxu se prvky
+        // kreslily PŘES SEBE — sekce, která nemá vlastní Column, měla text
+        // přes tlačítko (viditelné u „Ukládat vše do telefonu", 2. 9. 2026).
+        Column(Modifier.padding(top = 14.dp)) { content() }
     }
 }
 

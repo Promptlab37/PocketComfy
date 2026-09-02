@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -53,8 +55,8 @@ fun UpscaleSection(vm: MainViewModel) {
     ) { uri -> vm.pickUpscaleImage(uri) }
 
     SectionCard(
-        title = "Fotka ke zvětšení",
-        subtitle = "Vezme se v plném rozlišení, bez překódování"
+        title = t("Fotka ke zvětšení"),
+        subtitle = t("Vezme se v plném rozlišení, bez překódování")
     ) {
         Box(
             Modifier
@@ -69,7 +71,7 @@ fun UpscaleSection(vm: MainViewModel) {
             if (thumb != null) {
                 Image(
                     bitmap = thumb.asImageBitmap(),
-                    contentDescription = "Fotka ke zvětšení",
+                    contentDescription = t("Fotka ke zvětšení"),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -95,8 +97,8 @@ fun UpscaleSection(vm: MainViewModel) {
     }
 
     SectionCard(
-        title = "Velikost zvětšení",
-        subtitle = "Fotka se rozdělí na dlaždice, každá se zvětší na 3200 px a slepí se"
+        title = t("Velikost zvětšení"),
+        subtitle = t("Fotka se rozdělí na dlaždice, každá se zvětší na 3200 px a slepí se")
     ) {
         Column {
             PillRow(
@@ -110,7 +112,7 @@ fun UpscaleSection(vm: MainViewModel) {
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Víc dlaždic = větší výsledek, ale úměrně delší běh. 2×2 je vyladěné výchozí.",
+                t("Víc dlaždic = větší výsledek, ale úměrně delší běh. 2×2 je vyladěné výchozí."),
                 style = MaterialTheme.typography.bodySmall, color = TextLow
             )
         }

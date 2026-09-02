@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -83,8 +85,8 @@ fun UpdateDialog(
                     when (state) {
                         is UpdateState.Available -> "Je tu ${state.info.versionName}"
                         is UpdateState.Downloading -> "Stahuji ${state.info.versionName}"
-                        is UpdateState.Ready -> "Staženo"
-                        else -> "Aktualizace"
+                        is UpdateState.Ready -> t("Staženo")
+                        else -> t("Aktualizace")
                     },
                     style = MaterialTheme.typography.titleMedium,
                     color = TextHi,
@@ -114,9 +116,9 @@ fun UpdateDialog(
                         color = TextLow
                     )
                     Spacer(Modifier.height(18.dp))
-                    GradientButton("Stáhnout a nainstalovat", onClick = onDownload)
+                    GradientButton(t("Stáhnout a nainstalovat"), onClick = onDownload)
                     Spacer(Modifier.height(8.dp))
-                    OutlineButton("Později", modifier = Modifier.fillMaxWidth(), onClick = onLater)
+                    OutlineButton(t("Později"), modifier = Modifier.fillMaxWidth(), onClick = onLater)
                 }
 
                 is UpdateState.Downloading -> {
@@ -141,8 +143,8 @@ fun UpdateDialog(
                     Spacer(Modifier.height(12.dp))
                     Text(
                         if (UpdateChecker.canInstall(ctx))
-                            "Android se teď zeptá na potvrzení instalace."
-                        else "Android potřebuje povolit instalaci z této aplikace.",
+                            t("Android se teď zeptá na potvrzení instalace.")
+                        else t("Android potřebuje povolit instalaci z této aplikace."),
                         style = MaterialTheme.typography.bodySmall, color = TextMid
                     )
                     Spacer(Modifier.height(18.dp))
@@ -155,14 +157,14 @@ fun UpdateDialog(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    OutlineButton("Zavřít", modifier = Modifier.fillMaxWidth(), onClick = onLater)
+                    OutlineButton(t("Zavřít"), modifier = Modifier.fillMaxWidth(), onClick = onLater)
                 }
 
                 is UpdateState.Failed -> {
                     Spacer(Modifier.height(12.dp))
                     Text(state.message, style = MaterialTheme.typography.bodySmall, color = Danger)
                     Spacer(Modifier.height(18.dp))
-                    OutlineButton("Zavřít", modifier = Modifier.fillMaxWidth(), onClick = onLater)
+                    OutlineButton(t("Zavřít"), modifier = Modifier.fillMaxWidth(), onClick = onLater)
                 }
 
                 else -> Unit

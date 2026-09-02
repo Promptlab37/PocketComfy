@@ -45,14 +45,14 @@ data class MusicScene(
 
 /** Co kartě chybí, než se dá spustit. */
 fun musicProblem(s: MusicScene): String? =
-    if (s.styl.isBlank()) "Popiš styl skladby — žánr, nástroje, náladu." else null
+    if (s.styl.isBlank()) t("Popiš styl skladby — žánr, nástroje, náladu.") else null
 
 /** Upozornění, která nebrání spuštění. */
 fun musicHints(s: MusicScene): List<String> {
     val out = mutableListOf<String>()
     if (s.text.isBlank()) {
-        out += "Bez textu písně vyjde instrumentálka. Text piš po slokách, " +
-            "klidně česky."
+        out += t("Bez textu písně vyjde instrumentálka. Text piš po slokách, ") +
+            t("klidně česky.")
     }
     return out
 }

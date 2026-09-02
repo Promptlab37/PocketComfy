@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -47,8 +49,8 @@ fun RestoreSection(vm: MainViewModel) {
     ) { uri -> vm.pickRestoreImage(uri) }
 
     SectionCard(
-        title = "Stará nebo poškozená fotka",
-        subtitle = "Škrábance, prach, vybledlé barvy i trhliny — appka opraví vše naráz"
+        title = t("Stará nebo poškozená fotka"),
+        subtitle = t("Škrábance, prach, vybledlé barvy i trhliny — appka opraví vše naráz")
     ) {
         Box(
             Modifier
@@ -63,7 +65,7 @@ fun RestoreSection(vm: MainViewModel) {
             if (thumb != null) {
                 Image(
                     bitmap = thumb.asImageBitmap(),
-                    contentDescription = "Fotka k opravě",
+                    contentDescription = t("Fotka k opravě"),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),
                 )

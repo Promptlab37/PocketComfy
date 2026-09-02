@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import android.graphics.Bitmap
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -94,10 +96,10 @@ fun FaceSwapSection(vm: MainViewModel) {
     var maluje by remember { mutableStateOf(false) }
 
     SectionCard(
-        title = "Fotka, kde se mění tvář",
+        title = t("Fotka, kde se mění tvář"),
         subtitle = if (scene.maskPainted)
-            "Maska je namalovaná — klepnutím na štětec ji předěláš"
-        else "Vyber fotku a pak prstem začmárej obličej, který se má vyměnit"
+            t("Maska je namalovaná — klepnutím na štětec ji předěláš")
+        else t("Vyber fotku a pak prstem začmárej obličej, který se má vyměnit")
     ) {
         Column {
             Box(
@@ -119,7 +121,7 @@ fun FaceSwapSection(vm: MainViewModel) {
                 if (thumb != null) {
                     Image(
                         bitmap = thumb.asImageBitmap(),
-                        contentDescription = "Cílová fotka",
+                        contentDescription = t("Cílová fotka"),
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -163,8 +165,8 @@ fun FaceSwapSection(vm: MainViewModel) {
     }
 
     SectionCard(
-        title = "Nová tvář",
-        subtitle = "Nejlíp ostrá fotka zepředu"
+        title = t("Nová tvář"),
+        subtitle = t("Nejlíp ostrá fotka zepředu")
     ) {
         Box(
             Modifier
@@ -179,7 +181,7 @@ fun FaceSwapSection(vm: MainViewModel) {
             if (thumb != null) {
                 Image(
                     bitmap = thumb.asImageBitmap(),
-                    contentDescription = "Nová tvář",
+                    contentDescription = t("Nová tvář"),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -197,7 +199,7 @@ fun FaceSwapSection(vm: MainViewModel) {
                 }
             } else {
                 Icon(
-                    Icons.Default.Face, "Vybrat tvář",
+                    Icons.Default.Face, t("Vybrat tvář"),
                     Modifier.align(Alignment.Center).size(34.dp), TextMid
                 )
             }
@@ -289,12 +291,12 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text(
-                    "Začmárej obličej, který se vymění",
+                    t("Začmárej obličej, který se vymění"),
                     style = MaterialTheme.typography.titleMedium, color = TextHi
                 )
                 Text(
-                    "Klidně s přesahem přes okraje tváře — přechod se změkčí sám. " +
-                        "Dvěma prsty přiblížíš na detaily.",
+                    t("Klidně s přesahem přes okraje tváře — přechod se změkčí sám. ") +
+                        t("Dvěma prsty přiblížíš na detaily."),
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
             }
@@ -380,7 +382,7 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
 
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Štětec", style = MaterialTheme.typography.labelMedium, color = TextLow)
+                    Text(t("Štětec"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                     Slider(
                         value = brushDp,
                         onValueChange = { brushDp = it },
@@ -395,16 +397,16 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlineButton("Krok zpět", modifier = Modifier.weight(1f)) {
+                    OutlineButton(t("Krok zpět"), modifier = Modifier.weight(1f)) {
                         tahy.removeLastOrNull()
                     }
-                    OutlineButton("Smazat vše", modifier = Modifier.weight(1f)) {
+                    OutlineButton(t("Smazat vše"), modifier = Modifier.weight(1f)) {
                         tahy.clear()
                     }
                 }
                 Spacer(Modifier.height(8.dp))
                 GradientButton(
-                    if (tahy.isEmpty()) "Nejdřív začmárej obličej" else "Hotovo — použít masku",
+                    if (tahy.isEmpty()) t("Nejdřív začmárej obličej") else t("Hotovo — použít masku"),
                     enabled = tahy.isNotEmpty(),
                     onClick = {
                         // Maska jde od 2.89 jako SAMOSTATNÝ černobílý obrázek
@@ -438,7 +440,7 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
                     }
                 )
                 Spacer(Modifier.height(8.dp))
-                OutlineButton("Zavřít bez uložení", modifier = Modifier.fillMaxWidth()) {
+                OutlineButton(t("Zavřít bez uložení"), modifier = Modifier.fillMaxWidth()) {
                     onClose()
                 }
             }

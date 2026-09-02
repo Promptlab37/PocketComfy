@@ -1,5 +1,7 @@
 package cz.promptlab.h3video.ui
 
+import cz.promptlab.h3video.data.t
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,12 +67,12 @@ fun TimelineLandscapeScreen(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
-                    "ČASOVÁ OSA",
+                    t("ČASOVÁ OSA"),
                     style = MaterialTheme.typography.labelMedium,
                     color = TextLow, letterSpacing = 3.sp,
                 )
                 Text(
-                    "%.1f s · %d segmentů".format(scene.totalSeconds, scene.segments.size),
+                    "%.1f s · %s".format(scene.totalSeconds, segmentyPocet(scene.segments.size)),
                     style = MaterialTheme.typography.titleMedium,
                     color = TextHi, fontWeight = FontWeight.SemiBold,
                 )
@@ -78,8 +80,8 @@ fun TimelineLandscapeScreen(
             Box(Modifier.width(240.dp)) {
                 GradientButton(
                     text = when {
-                        busy -> "Generování už běží"
-                        else -> problem ?: "Vygenerovat video"
+                        busy -> t("Generování už běží")
+                        else -> problem ?: t("Vygenerovat video")
                     },
                     enabled = !busy && problem == null,
                     onClick = { vm.start() },

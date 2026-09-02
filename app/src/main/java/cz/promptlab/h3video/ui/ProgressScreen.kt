@@ -1,4 +1,6 @@
-package cz.promptlab.h3video.ui
+﻿package cz.promptlab.h3video.ui
+
+import cz.promptlab.h3video.data.t
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -83,12 +85,17 @@ private data class Phase(val title: String, val stages: Set<Stage>)
 // Texty fází se berou z jednoho místa pro všechny druhy běhu:
 // engine/RunTexts.kt (stageText, stageDetailText, mainPhaseTitle…).
 
-private val PHASES = listOf(
-    Phase("Spojení a odeslání referencí", setOf(Stage.STARTING, Stage.UPLOADING)),
-    Phase("Fronta a modely", setOf(Stage.QUEUED, Stage.MODELS, Stage.REFERENCES)),
-    Phase("Čtení zadání", setOf(Stage.ENCODING)),
-    Phase("Generování obrazu a zvuku", setOf(Stage.SAMPLING)),
-    Phase("Dokončení a přenos do aplikace", setOf(Stage.DECODING, Stage.MUXING, Stage.DOWNLOADING, Stage.FINISHING)),
+/**
+ * Fáze se skládají FUNKCÍ, ne konstantou: hodnota na úrovni souboru vznikne
+ * jednou při zavedení třídy a texty by zůstaly v jazyce, který platil při
+ * startu. Takhle se přeloží při každém čtení.
+ */
+private fun phases() = listOf(
+    Phase(t("Spojení a odeslání referencí"), setOf(Stage.STARTING, Stage.UPLOADING)),
+    Phase(t("Fronta a modely"), setOf(Stage.QUEUED, Stage.MODELS, Stage.REFERENCES)),
+    Phase(t("Čtení zadání"), setOf(Stage.ENCODING)),
+    Phase(t("Generování obrazu a zvuku"), setOf(Stage.SAMPLING)),
+    Phase(t("Dokončení a přenos do aplikace"), setOf(Stage.DECODING, Stage.MUXING, Stage.DOWNLOADING, Stage.FINISHING)),
 )
 
 /** Prstenec je jen ukazatel u textu, ne hlavní hrdina obrazovky. */
@@ -142,7 +149,7 @@ fun ProgressScreen(
         }
     }
     val elapsed = ((now - state.startedAt) / 1000).toInt().coerceAtLeast(0)
-    val activePhase = PHASES.indexOfFirst { state.stage in it.stages }.coerceAtLeast(0)
+    val activePhase = phases().indexOfFirst { state.stage in it.stages }.coerceAtLeast(0)
 
     val preview = state.preview
     val note = state.note
@@ -187,7 +194,7 @@ fun ProgressScreen(
             ProgressRing(progress, spin, breathe, RING_COMPACT)
             Column(Modifier.weight(1f)) {
                 Text(
-                    if (state.preparing) "Načítám model"
+                    if (state.preparing) t("Načítám model")
                     else stageText(state.stage, state.kind),
                     style = MaterialTheme.typography.titleLarge,
                     color = TextHi,
@@ -196,7 +203,7 @@ fun ProgressScreen(
                 Spacer(Modifier.height(3.dp))
                 Text(
                     when {
-                        state.preparing -> "Model se nahrává do grafické karty, chvíli to trvá."
+                        state.preparing -> t("Model se nahrává do grafické karty, chvíli to trvá.")
                         state.stage == Stage.QUEUED && state.queuePosition > 0 ->
                             "Před tebou je ${state.queuePosition} úloha ve frontě"
                         else -> stageDetailText(state.stage, state.kind)
@@ -227,8 +234,8 @@ fun ProgressScreen(
             } else {
                 Text(
                     if (state.stage == Stage.SAMPLING)
-                        "Náhled se objeví, jakmile model vykreslí první snímek"
-                    else "Náhled se objeví, až model začne kreslit",
+                        t("Náhled se objeví, jakmile model vykreslí první snímek")
+                    else t("Náhled se objeví, až model začne kreslit"),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextLow,
                     textAlign = TextAlign.Center,
@@ -246,18 +253,18 @@ fun ProgressScreen(
         ) {
             StatTile("Uplynulo", formatClock(elapsed), Modifier.weight(1f))
             StatTile(
-                "Zbývá",
-                state.etaSeconds?.let { GenerationService.formatEta(it) } ?: "počítám",
+                t("Zbývá"),
+                state.etaSeconds?.let { GenerationService.formatEta(it) } ?: t("počítám"),
                 Modifier.weight(1f)
             )
             // Během přenosu videa ukazuje stejná dlaždice, kolik už je staženo –
             // u větších souborů to trvá a bez čísel to vypadá zaseknutě.
             if (state.stage == Stage.DOWNLOADING && state.transferTotal > 0) {
                 StatTile(
-                    "Přeneseno",
+                    t("Přeneseno"),
                     "%.1f MB".format(state.transferDone / 1_048_576f),
                     Modifier.weight(1f),
-                    hint = "z %.1f MB".format(state.transferTotal / 1_048_576f)
+                    hint = t("z %.1f MB").format(state.transferTotal / 1_048_576f)
                 )
             } else {
                 StatTile(
@@ -267,7 +274,7 @@ fun ProgressScreen(
                     Modifier.weight(1f),
                     // ať je vidět, z čeho odhad vychází
                     hint = if (state.secondsPerStep > 0)
-                        "%.0f s / krok".format(state.secondsPerStep) else null
+                        t("%.0f s / krok").format(state.secondsPerStep) else null
                 )
             }
         }
@@ -317,13 +324,13 @@ fun ProgressScreen(
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             OutlineButton(
-                "Skrýt",
+                t("Skrýt"),
                 modifier = Modifier.weight(1f),
                 color = Cyan,
                 onClick = onMinimize
             )
             OutlineButton(
-                if (potvrditZruseni) "Opravdu zrušit?" else "Zrušit",
+                if (potvrditZruseni) t("Opravdu zrušit?") else t("Zrušit"),
                 modifier = Modifier.weight(1f),
                 color = if (potvrditZruseni) Danger else TextMid,
                 onClick = {
@@ -337,7 +344,7 @@ fun ProgressScreen(
             if (queueCount > 0)
                 "Ve frontě čeká ${queueCount}× další běh – naskočí sám."
             else
-                "Telefon můžeš zamknout, generování běží na počítači dál.",
+                t("Telefon můžeš zamknout, generování běží na počítači dál."),
             style = MaterialTheme.typography.bodySmall,
             color = TextLow,
             textAlign = TextAlign.Center,
@@ -407,7 +414,7 @@ private fun PhaseStrip(activePhase: Int, kind: RunKind = RunKind.VIDEO) {
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(5.dp)
         ) {
-            PHASES.forEachIndexed { i, _ ->
+            phases().forEachIndexed { i, _ ->
                 Box(
                     Modifier
                         .weight(1f)
@@ -426,7 +433,7 @@ private fun PhaseStrip(activePhase: Int, kind: RunKind = RunKind.VIDEO) {
         Spacer(Modifier.height(5.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Fáze ${activePhase + 1} z ${PHASES.size}",
+                "Fáze ${activePhase + 1} z ${phases().size}",
                 style = MaterialTheme.typography.bodySmall,
                 color = TextLow
             )
@@ -435,7 +442,7 @@ private fun PhaseStrip(activePhase: Int, kind: RunKind = RunKind.VIDEO) {
                 when (activePhase) {
                     0 -> firstPhaseTitle(kind)
                     3 -> mainPhaseTitle(kind)
-                    else -> PHASES[activePhase].title
+                    else -> phases()[activePhase].title
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = TextMid,
