@@ -183,38 +183,33 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                     is AuditState.Done -> {
                         Spacer(Modifier.height(12.dp))
                         val r = a.report
-                        if (r.ok) {
-                            VysledekRamecek(
-                                ok = true,
-                                text = "Server má všechno (${r.checkedClasses} druhů uzlů, " +
-                                    "balík All in One i modely z workflow)."
-                            )
-                        } else {
-                            VysledekRamecek(
-                                ok = false,
-                                text = buildString {
-                                    if (r.missingNodes.isNotEmpty()) {
-                                        append("Chybějící custom nody:\n")
-                                        r.missingNodes.forEach { append("• ").append(it).append('\n') }
-                                    }
-                                    if (r.missingModels.isNotEmpty()) {
-                                        if (isNotEmpty()) append('\n')
-                                        append("Chybějící modely / soubory:\n")
-                                        r.missingModels.forEach { append("• ").append(it).append('\n') }
-                                    }
-                                    if (!r.aioOk) {
-                                        if (isNotEmpty()) append('\n')
-                                        append(
-                                            "Chybí balík ComfyUI-ALLinONE-MinimaxH3 " +
-                                                "(karty All in One a Dialogy)."
-                                        )
-                                    }
-                                    append(
-                                        "\n\nChybějící nody doinstaluješ v ComfyUI přes " +
-                                            "Manager; modely patří do složky models. Úplný " +
-                                            "seznam s odkazy: POZADAVKY.md v repozitáři appky."
-                                    )
-                                }.trimEnd()
+                        // Zpráva se skládá na jednom místě (ServerAudit.zprava),
+                        // ať je v rámečku přesně to, co si uživatel zkopíruje
+                        // na počítač — včetně balíků, složek a odkazů.
+                        val zprava = remember(r) { cz.promptlab.h3video.comfy.ServerAudit.zprava(r) }
+                        VysledekRamecek(ok = r.ok, text = zprava)
+                        if (!r.ok) {
+                            Spacer(Modifier.height(10.dp))
+                            val ctx = LocalContext.current
+                            OutlineButton(
+                                "Zkopírovat seznam",
+                                modifier = Modifier.fillMaxWidth(),
+                                color = Cyan,
+                            ) {
+                                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                                cm.setPrimaryClip(
+                                    android.content.ClipData.newPlainText("PocketComfy", zprava)
+                                )
+                                // Android 13+ ukazuje vlastní bublinu o zkopírování sám.
+                                if (android.os.Build.VERSION.SDK_INT < 33) {
+                                    Toast.makeText(ctx, "Zkopírováno", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                "Pošli si seznam do počítače (e-mailem, chatem) a stahuj " +
+                                    "podle odkazů — nemusíš nic přepisovat.",
+                                style = MaterialTheme.typography.bodySmall, color = TextLow
                             )
                         }
                     }

@@ -82,6 +82,43 @@ class ServerAuditTest {
     }
 
     @Test
+    fun `zprava rekne balik, slozku i odkaz - ne jen technicky nazev`() {
+        val r = cz.promptlab.h3video.comfy.AuditReport(
+            missingNodes = listOf("InpaintCropImproved", "InpaintStitchImproved", "ImageResize+"),
+            missingModels = listOf(
+                cz.promptlab.h3video.comfy.ChybejiciSoubor(
+                    "UNETLoader", "unet_name", "flux1-Fill-Dev_FP8.safetensors"
+                ),
+                // Soubor, který katalog nezná — složka se pozná ze vstupu uzlu.
+                cz.promptlab.h3video.comfy.ChybejiciSoubor(
+                    "LoraLoaderModelOnly", "lora_name", "neco_vlastniho.safetensors"
+                ),
+            ),
+            aioOk = true,
+            checkedClasses = 40,
+        )
+        val z = cz.promptlab.h3video.comfy.ServerAudit.zprava(r)
+        // uzly: balík jednou, ne u každé třídy zvlášť
+        assertTrue(z.contains("ComfyUI-Inpaint-CropAndStitch"))
+        assertEquals(1, Regex("ComfyUI-Inpaint-CropAndStitch —").findAll(z).count())
+        assertTrue(z.contains("InpaintCropImproved, InpaintStitchImproved"))
+        assertTrue(z.contains("ComfyUI_essentials"))
+        // modely: složka, karta i odkaz ke stažení
+        assertTrue(z.contains("models/diffusion_models"))
+        assertTrue(z.contains("karta Výměna tváře"))
+        assertTrue(z.contains("https://huggingface.co/Academia-SD/flux1-Fill-Dev-FP8"))
+        // neznámý soubor: aspoň správná složka podle vstupu
+        assertTrue(z.contains("neco_vlastniho.safetensors"))
+        assertTrue(z.contains("models/loras"))
+    }
+
+    @Test
+    fun `zprava pri poradku je jednoducha`() {
+        val r = cz.promptlab.h3video.comfy.AuditReport(emptyList(), emptyList(), true, 42)
+        assertTrue(cz.promptlab.h3video.comfy.ServerAudit.zprava(r).startsWith("Server má všechno"))
+    }
+
+    @Test
     fun `dynamicky pridavane tridy jsou v kontrole taky`() {
         // LSI nody (Časová osa) a náhledový uzel v předlohách nejsou — do
         // grafu je přidávají stavitelé až za běhu. Kdyby vypadly z kontroly,

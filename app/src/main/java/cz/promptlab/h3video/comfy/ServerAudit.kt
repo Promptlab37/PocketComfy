@@ -12,11 +12,14 @@ import org.json.JSONObject
  * potřeba žádný ručně udržovaný seznam — co karty potřebují, plyne přímo
  * z předloh.
  */
+/** Soubor, který server nenabízí — i s tím, kdo si o něj řekl. */
+data class ChybejiciSoubor(val trida: String, val vstup: String, val soubor: String)
+
 data class AuditReport(
     /** Třídy uzlů, které server vůbec nezná (chybějící custom nody). */
     val missingNodes: List<String>,
-    /** Hodnoty výběrových vstupů mimo nabídku serveru („uzel → vstup: hodnota"). */
-    val missingModels: List<String>,
+    /** Hodnoty výběrových vstupů mimo nabídku serveru (modely, LoRA, VAE…). */
+    val missingModels: List<ChybejiciSoubor>,
     /** Je na serveru balík ComfyUI-ALLinONE-MinimaxH3 (karty All in One a Dialogy)? */
     val aioOk: Boolean,
     val checkedClasses: Int,
@@ -102,7 +105,7 @@ object ServerAudit {
         val potreby = collect(templates).toMutableMap()
         PRIDAVANE_ZA_BEHU.forEach { potreby.getOrPut(it) { mutableListOf() } }
         val chybiUzly = mutableListOf<String>()
-        val chybiModely = mutableListOf<String>()
+        val chybiModely = mutableListOf<ChybejiciSoubor>()
         potreby.keys.sorted().forEach { cls ->
             val spec = client.objectInfo(cls)
             if (spec == null) {
@@ -111,7 +114,9 @@ object ServerAudit {
             }
             potreby.getValue(cls).distinct().forEach { (input, value) ->
                 val opts = options(spec, input) ?: return@forEach
-                if (opts.isNotEmpty() && value !in opts) chybiModely += "$cls → $input: $value"
+                if (opts.isNotEmpty() && value !in opts) {
+                    chybiModely += ChybejiciSoubor(cls, input, value)
+                }
             }
         }
         return AuditReport(
@@ -120,5 +125,51 @@ object ServerAudit {
             aioOk = client.hasAllInOne(),
             checkedClasses = potreby.size,
         )
+    }
+
+    /**
+     * Výsledek kontroly slovy, kterými se dá řídit: co doinstalovat, odkud
+     * a do jaké složky. Používá ho obrazovka Nastavení i tlačítko Zkopírovat
+     * (na počítači se pak dá jen klikat na odkazy).
+     */
+    fun zprava(r: AuditReport): String = buildString {
+        if (r.ok) {
+            append("Server má všechno (${r.checkedClasses} druhů uzlů, balík All in One i modely).")
+            return@buildString
+        }
+        if (!r.aioOk) {
+            append("Chybí balík ComfyUI-ALLinONE-MinimaxH3 — bez něj nejedou karty ")
+            append("All in One a Dialogy.\n")
+            append("  https://github.com/LeonQ8/ComfyUI-ALLinONE-MinimaxH3\n\n")
+        }
+        if (r.missingNodes.isNotEmpty()) {
+            append("CHYBĚJÍCÍ UZLY — doinstaluj balík a restartuj ComfyUI:\n")
+            // Seskupeno po balících, ať se stejný odkaz neopakuje u každého uzlu.
+            r.missingNodes.groupBy { Katalog.balikProUzel(it) }.forEach { (balik, uzly) ->
+                if (balik == null) {
+                    uzly.sorted().forEach { append("• ").append(it).append('\n') }
+                    append("  (neznámý balík — hledej název uzlu v ComfyUI-Manageru)\n")
+                } else {
+                    append("• ").append(balik.nazev).append(" — ").append(balik.karty).append('\n')
+                    append("  chybí: ").append(uzly.sorted().joinToString(", ")).append('\n')
+                    if (balik.odkaz.isNotBlank()) append("  ").append(balik.odkaz).append('\n')
+                }
+            }
+            append('\n')
+        }
+        if (r.missingModels.isNotEmpty()) {
+            append("CHYBĚJÍCÍ MODELY — stáhni a nakopíruj do složky (restart netřeba):\n")
+            r.missingModels.forEach { m ->
+                val info = Katalog.soubor(m.soubor)
+                val slozka = info?.slozka ?: Katalog.slozkaPodleVstupu(m.vstup) ?: "models"
+                append("• ").append(m.soubor).append('\n')
+                append("  → ").append(slozka)
+                info?.karta?.let { append(" · karta ").append(it) }
+                append('\n')
+                info?.odkaz?.let { append("  ").append(it).append('\n') }
+            }
+            append('\n')
+        }
+        append("Úplný seznam včetně velikostí je v POZADAVKY.md v repozitáři appky.")
     }
 }

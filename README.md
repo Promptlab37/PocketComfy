@@ -43,7 +43,7 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 
 - 🏠 **100 % lokální.** Generuje tvůj počítač, appka jen posílá zadání a stahuje výsledky. Přes VPN (Tailscale) to funguje odkudkoli na světě.
 - 🧠 **Nerozbitné workflow.** Appka si nevymýšlí vlastní grafy — každá karta jede na hotovém, vyladěném workflow **1:1** a dosazuje jen tvoje vstupy. Testy hlídají, že se v grafu nezmění nic jiného.
-- 🔍 **„Co serveru chybí" jedním klepnutím.** Appka porovná svá workflow s tvým ComfyUI a vypíše jmenovitě chybějící custom nody a modely. Žádné hádání, proč to nejede.
+- 🔍 **„Co serveru chybí" jedním klepnutím.** Appka porovná svá workflow s tvým ComfyUI a napíše, **který balík doinstalovat a který model kam nakopírovat — i s odkazy ke stažení**. Seznam se dá zkopírovat do počítače. Workflow jsou zabalená v appce, takže nic nemusíš hledat ručně.
 - 🔗 **Řetěz na jedno klepnutí.** Vygeneruješ obrázek → „Upravit" → popíšeš změnu → „Zvětšit" → gigapixel. Bez stahování a přeposílání.
 - 📴 **Výpadek sítě nikdy nezabije úlohu.** Telefon může zhasnout, počítač počítá dál — appka se k běhu zase přilepí, klidně i po restartu.
 - 🎮 **Grafika na povel.** Tlačítkem v Nastavení ComfyUI na dálku vypneš (a jde se hrát) i zapneš.

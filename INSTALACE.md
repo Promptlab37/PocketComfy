@@ -61,9 +61,18 @@ Přesné názvy souborů a cílové složky (`models/diffusion_models`,
 najdeš v [POZADAVKY.md](POZADAVKY.md). SeedVR2 si své modely stáhne sám při
 prvním použití.
 
-**Nemusíš stahovat všechno předem** — aplikace má v Nastavení tlačítko
-**„Zkontrolovat server"**, které přesně vypíše, co ti ještě chybí.
-Klidně začni jen s modely pro karty, které chceš používat.
+**Nemusíš stahovat všechno předem — a nemusíš ani nic dohledávat.**
+Aplikace má v Nastavení tlačítko **„Zkontrolovat server"**, které porovná
+svá workflow s tvým ComfyUI a u každé chybějící věci rovnou napíše:
+
+- u uzlů: **který balík** doinstalovat, pro které karty je a odkaz na GitHub,
+- u modelů: **přesný název souboru, cílovou složku, kterou kartu obsluhuje
+  a odkaz ke stažení**.
+
+Tlačítkem **Zkopírovat seznam** si to pošleš do počítače a jen stahuješ podle
+odkazů. Klidně tedy začni s prázdným ComfyUI a řiď se tím, co ti appka řekne —
+nebo si stáhni jen modely pro karty, které chceš používat (u ostatních prostě
+necháš chybějící položky být).
 
 ---
 
