@@ -1,6 +1,6 @@
 # Co appka potřebuje na serveru
 
-H3 Video je **dálkové ovládání ComfyUI z mobilu** — samo nic negeneruje,
+PocketComfy je **dálkové ovládání ComfyUI z mobilu** — samo nic negeneruje,
 všechno počítá tvůj počítač. Tenhle soubor říká, co na něm musí být.
 Seznam je vygenerovaný přímo z workflow, která appka používá (stejná data
 čte tlačítko **Nastavení → Zkontrolovat server**, které vypíše, co konkrétně
@@ -30,9 +30,11 @@ chybí u tebe).
 | Comfyui-QwenEditUtils | QwenEditConfigPreparer, TextEncodeQwenImageEditPlusCustom | Oprava fotky |
 | ComfyUI_essentials | ImageResize+ | Výměna tváře |
 | Impact Pack* | ImpactGaussianBlurMask | Výměna tváře |
+| ComfyUI-GGUF | UnetLoaderGGUF | Obrázek — jen volitelný alternativní model ve formátu GGUF |
 
 Karty **Obrázek** (Z-Image) a **Hudba** (ACE-Step 1.5) jedou jen na
-vestavěných uzlech ComfyUI — žádný custom balík nepotřebují.
+vestavěných uzlech ComfyUI — žádný custom balík nepotřebují
+(ComfyUI-GGUF je potřeba až pro volitelný alternativní model).
 
 Pozn.: balíky LSI-Minimax-Segment-Timeline a balík s uzly Krea2Edit/H3
 nejsou veřejně dostupné — bez nich nepojedou karty Časová osa a Úprava
@@ -84,6 +86,14 @@ Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy
   Dialogy; bez něj zbytek appky funguje normálně.
 - **Spouštěč na počítači** (port 8190) — umí ComfyUI na dálku zapnout
   a vypnout (uvolnit grafiku). Bez něj musí ComfyUI běžet, když appku používáš.
+- **Karta Obrázek — přepínač „Bez cenzury" a model „Photoreal"** (18+):
+  obojí vyžaduje vlastní soubory, které si stáhneš sám (CivitAI /
+  Hugging Face, hledej Z-Image Turbo LoRA a finetuny). LoRA patří do
+  `models/loras/` a appka nabídne **každou, která má v názvu
+  `zimage`/`zit`** — pojmenuj ji tak a objeví se sama. Alternativní model
+  (safetensors do `models/diffusion_models/`, GGUF k tomu chce balík
+  ComfyUI-GGUF) očekává appka pod názvem `zimage_nsfw_photoreal_v61_Q8.gguf`.
+  Bez těchto souborů karta Obrázek normálně jede na základním Z-Image Turbo.
 
 ## Jak ověřit, že máš všechno
 

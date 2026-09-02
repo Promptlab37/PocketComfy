@@ -47,7 +47,9 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 - 🔗 **Řetěz na jedno klepnutí.** Vygeneruješ obrázek → „Upravit" → popíšeš změnu → „Zvětšit" → gigapixel. Bez stahování a přeposílání.
 - 📴 **Výpadek sítě nikdy nezabije úlohu.** Telefon může zhasnout, počítač počítá dál — appka se k běhu zase přilepí, klidně i po restartu.
 - 🎮 **Grafika na povel.** Tlačítkem v Nastavení ComfyUI na dálku vypneš (a jde se hrát) i zapneš.
-- 🖌️ **Maska prstem.** U výměny tváře začmáráš obličej přímo v appce — s velikostí štětce, krokem zpět a gumou.
+- 🖌️ **Maska prstem.** U výměny tváře začmáráš obličej přímo v appce — dvěma prsty přiblížíš na detaily, jedním maluješ; velikost štětce, krok zpět, guma.
+- 📋 **Fronta úloh.** Zatímco se generuje, připravíš další zadání a přidáš ho do fronty — běhy jedou samy jeden po druhém a každý hotový se ohlásí notifikací.
+- 🗂️ **Galerie s filtrem a hledáním.** Videa / obrázky / hudba zvlášť, hledání v popisech, smazání jde vzít zpět. U každého výsledku vidíš, jak dlouho se počítal.
 
 ## 🃏 Devět karet
 

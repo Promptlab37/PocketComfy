@@ -26,6 +26,8 @@ call :klon https://github.com/cubiq/ComfyUI_essentials
 call :klon https://github.com/kijai/ComfyUI-KJNodes
 call :klon https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 call :klon https://github.com/ltdrdata/ComfyUI-Impact-Pack
+call :klon https://github.com/Icyoung/ComfyUI-MiniMaxH3-TeaCache
+call :klon https://github.com/city96/ComfyUI-GGUF
 
 echo.
 echo === 2/2  Modely (volitelne, velke soubory) ===
