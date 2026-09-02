@@ -90,6 +90,7 @@ class ServerAuditTest {
             listOf(
                 "LSIMinimaxTimeline", "LSIMinimaxTimelineRender",
                 "ModelPreviewOverrideKJ", "MiniMaxH3TeaCache",
+                "UnetLoaderGGUF",
                 "H3CacheBust", "H3IdentityAnchor",
                 "MiniMaxH3MemoryEfficientSageAttentionPatch",
                 "LoraLoaderModelOnly", "LoadVideo", "LoadAudio",

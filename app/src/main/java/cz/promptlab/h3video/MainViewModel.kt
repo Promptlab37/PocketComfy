@@ -150,6 +150,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _aioAvailable = MutableStateFlow<Boolean?>(null)
     val aioAvailable: StateFlow<Boolean?> = _aioAvailable.asStateFlow()
 
+    // Odvázané LoRA pro kartu Obrázek — čtou se ze serveru (vše, co má
+    // v názvu zimage/zit), takže nová stažená LoRA se objeví sama.
+    private val _zimageLoras = MutableStateFlow<List<String>>(emptyList())
+    val zimageLoras: StateFlow<List<String>> = _zimageLoras.asStateFlow()
+
+    fun refreshZimageLoras() {
+        if (_zimageLoras.value.isNotEmpty()) return
+        viewModelScope.launch {
+            val nalezene = withContext(Dispatchers.IO) {
+                runCatching {
+                    ComfyClient(settings.serverUrl).loraNames().filter {
+                        it.contains("zimage", ignoreCase = true) ||
+                            it.contains("zit", ignoreCase = true) ||
+                            it.contains("z-image", ignoreCase = true)
+                    }
+                }.getOrDefault(emptyList())
+            }
+            if (nalezene.isNotEmpty()) _zimageLoras.value = nalezene.sorted()
+        }
+    }
+
     private val _advancedOpen = MutableStateFlow(false)
     val advancedOpen: StateFlow<Boolean> = _advancedOpen.asStateFlow()
 
@@ -802,11 +823,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
 
-            // Kroky se přepisují na hodnotu z předlohy Z-Image (8), aby ukazatel
-            // průběhu počítal krok X/8 a ne podle nastavení videa.
+            // Kroky se přepisují podle zvoleného modelu (Turbo 8, PerfecZion 12),
+            // aby ukazatel průběhu počítal krok X/N a ne podle nastavení videa.
             Mode.IMAGE -> QueuedRun(id, p.mode.title, p.prompt) {
                 GenerationEngine.start(
-                    p.copy(steps = cz.promptlab.h3video.comfy.ZImageBuilder.STEPS),
+                    p.copy(steps = cz.promptlab.h3video.comfy.ZImageBuilder.stepsFor(p.zimageModel)),
                     emptyList(),
                     t2i = true,
                 )
@@ -1509,6 +1530,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setAioMode(mode: AioMode) {
         updateAio { it.copy(mode = mode) }
         hlidejProfilKCeste()
+        doplnReferencniZnacky()
+    }
+
+    /**
+     * Reference (r2v): model potřebuje v popisu značky `<Picture N>`, jinak
+     * fotky ignoruje. Doplní chybějící značky na začátek popisu — uživatel
+     * pak jen dopíše, co se má dít. Co už v textu je, se nechává být (klidně
+     * přesunuté doprostřed věty).
+     */
+    private fun doplnReferencniZnacky() {
+        val s = _aio.value
+        if (s.mode != AioMode.REFERENCE) return
+        val pocet = s.refs.count { it.image != null }
+        if (pocet == 0) return
+        val chybejici = (1..pocet).map { "<Picture $it>" }.filterNot { s.prompt.contains(it) }
+        if (chybejici.isEmpty()) return
+        val prefix = chybejici.joinToString(" ")
+        val novy = if (s.prompt.isBlank()) "$prefix " else "$prefix ${s.prompt}"
+        updateAio { it.copy(prompt = novy) }
     }
 
     fun setAioPrompt(text: String) = updateAio { it.copy(prompt = text) }
@@ -1617,6 +1657,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     })
                 }
             }
+            // Nová reference = rovnou i její značka v popisu.
+            if (druh == "ref") doplnReferencniZnacky()
         }
     }
 

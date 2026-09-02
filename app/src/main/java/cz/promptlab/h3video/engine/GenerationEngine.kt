@@ -591,7 +591,12 @@ object GenerationEngine {
             t2i ->
                 ZImageBuilder.build(
                     app, effective.prompt, effective.aspect, seed,
-                    nsfwLora = effective.zimageNsfw, nsfwSila = effective.zimageNsfwSila,
+                    // PerfecZion je odvázaný sám o sobě – LoRA se s ním nemíchá
+                    // (je trénovaná na základní Turbo a jen by kazila výsledek).
+                    nsfwLora = effective.zimageNsfw && effective.zimageModel.isBlank(),
+                    nsfwSila = effective.zimageNsfwSila,
+                    model = effective.zimageModel,
+                    loraFile = effective.zimageNsfwLora,
                 )
 
             // Hudba jede na uživatelově ACE-Step 1.5 workflow z APK.

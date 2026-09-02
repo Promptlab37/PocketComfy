@@ -118,15 +118,43 @@ fun AllInOneSection(vm: MainViewModel) {
                 else -> "Anglicky to model chápe nejlíp, ale rozumí i česky"
             }
         ) {
-            DarkTextField(
-                value = scene.prompt,
-                onValueChange = { vm.setAioPrompt(it) },
-                placeholder = if (scene.mode == AioMode.CHARSHEET)
-                    "Keep the face and hairstyle from Picture 1, the outfit from Picture 2"
-                else "A woman walks through a neon-lit street, cinematic, static camera",
-                minHeight = 130.dp,
-                onClear = { vm.setAioPrompt("") },
-            )
+            Column {
+                // Reference: značky <Picture N> se do popisu doplňují samy
+                // s nahráním fotky; čipy je ukazují a doťuknou chybějící.
+                if (scene.mode == AioMode.REFERENCE) {
+                    val pocet = scene.refs.count { it.image != null }
+                    if (pocet > 0) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            (1..pocet).forEach { n ->
+                                val znacka = "<Picture $n>"
+                                TagChip(znacka, active = scene.prompt.contains(znacka)) {
+                                    if (!scene.prompt.contains(znacka)) {
+                                        vm.setAioPrompt(
+                                            (scene.prompt.trimEnd() + " $znacka ").trimStart()
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "Značka říká modelu, kterou fotku myslíš — klidně si ji " +
+                                "přesuň doprostřed věty („The woman from <Picture 1>…“).",
+                            style = MaterialTheme.typography.bodySmall, color = TextLow
+                        )
+                        Spacer(Modifier.height(10.dp))
+                    }
+                }
+                DarkTextField(
+                    value = scene.prompt,
+                    onValueChange = { vm.setAioPrompt(it) },
+                    placeholder = if (scene.mode == AioMode.CHARSHEET)
+                        "Keep the face and hairstyle from Picture 1, the outfit from Picture 2"
+                    else "A woman walks through a neon-lit street, cinematic, static camera",
+                    minHeight = 130.dp,
+                    onClear = { vm.setAioPrompt("") },
+                )
+            }
         }
     }
 

@@ -763,13 +763,84 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 )
             }
             Column {
+                Text("Model", style = MaterialTheme.typography.labelMedium, color = TextLow)
+                Spacer(Modifier.height(8.dp))
+                val jeOdvazany =
+                    params.zimageModel == cz.promptlab.h3video.comfy.ZImageBuilder.NSFW_MODEL_FILE
+                PillRow(
+                    items = listOf("Turbo (základ)", "Photoreal (odvázaný)"),
+                    selected = if (jeOdvazany) "Photoreal (odvázaný)" else "Turbo (základ)",
+                    label = { it },
+                    onSelect = { v ->
+                        vm.update {
+                            it.copy(
+                                zimageModel = if (v.startsWith("Photoreal"))
+                                    cz.promptlab.h3video.comfy.ZImageBuilder.NSFW_MODEL_FILE
+                                else ""
+                            )
+                        }
+                    }
+                )
+                if (jeOdvazany) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "NSFW Photorealistic v6.1 — nic neodmítá, jede na 12 kroků. " +
+                            "LoRA níž s ním není potřeba.",
+                        style = MaterialTheme.typography.bodySmall, color = TextLow
+                    )
+                }
+            }
+            // LoRA patří jen k základnímu Turbo — odvázaný finetune to má
+            // „v sobě" a míchání by výsledek jen kazilo, tak se neukazuje.
+            if (params.zimageModel.isBlank()) Column {
                 ToggleRow(
                     "Bez cenzury",
                     "Přimíchá odvázanou LoRA — model pak nic neodmítá",
                     params.zimageNsfw
-                ) { v -> vm.update { it.copy(zimageNsfw = v) } }
+                ) { v ->
+                    vm.update { it.copy(zimageNsfw = v) }
+                    if (v) vm.refreshZimageLoras()
+                }
                 AnimatedVisibility(params.zimageNsfw) {
+                    val loras by vm.zimageLoras.collectAsStateWithLifecycle()
+                    LaunchedEffect(Unit) { vm.refreshZimageLoras() }
                     Column(Modifier.padding(top = 8.dp)) {
+                        // Výběr LoRA — vše se „zimage/zit" v názvu na serveru.
+                        // Nová stažená LoRA se tu objeví sama.
+                        if (loras.size > 1) {
+                            Text(
+                                "Která LoRA",
+                                style = MaterialTheme.typography.labelMedium, color = TextLow
+                            )
+                            Spacer(Modifier.height(6.dp))
+                            loras.forEach { lora ->
+                                val vybrana = params.zimageNsfwLora == lora
+                                Text(
+                                    lora.removeSuffix(".safetensors").removePrefix("zimage_"),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = if (vybrana) Cyan else TextMid,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(
+                                            if (vybrana) Cyan.copy(alpha = .12f)
+                                            else Color.Transparent
+                                        )
+                                        .clickable {
+                                            vm.update { it.copy(zimageNsfwLora = lora) }
+                                        }
+                                        .padding(horizontal = 10.dp, vertical = 7.dp)
+                                )
+                            }
+                            zimageTriggerHint(params.zimageNsfwLora)?.let { hint ->
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    hint,
+                                    style = MaterialTheme.typography.bodySmall, color = Amber
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                        }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 "Síla",
@@ -1135,6 +1206,20 @@ fun sliderColors() = SliderDefaults.colors(
     activeTickColor = Color.Transparent,
     inactiveTickColor = Color.Transparent,
 )
+
+/**
+ * Spouštěcí slova stažených LoRA — bez nich některé skoro nic nedělají.
+ * Zdroj: trainedWords z CivitAI při stažení (2. 9. 2026).
+ */
+private fun zimageTriggerHint(lora: String): String? = when (lora) {
+    "zimage_acts_pack.safetensors" ->
+        "Chce v promptu polohu/akt (missionary, cowgirl…) — je na ně trénovaná."
+    "zimage_lenovo_ultrareal.safetensors" ->
+        "Přidej do promptu spouštěcí slovo: l3n0v0"
+    "zimage_skin_texture.safetensors" ->
+        "Přidej do promptu: photorealistic, detailed skin, fine texture"
+    else -> null
+}
 
 /**
  * Značka do promptu. `active` = už je v textu, takže je na první pohled vidět,

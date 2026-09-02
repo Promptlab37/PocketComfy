@@ -54,6 +54,14 @@ data class GenParams(
     val zimageNsfw: Boolean = false,
     /** Síla odvázané LoRA. Autor trénoval na 1.0, jemnější výsledky ~0.75. */
     val zimageNsfwSila: Float = 1f,
+    /** Která LoRA se přimíchá — na serveru jich je víc (zimage_*). */
+    val zimageNsfwLora: String = "zimage_nsfw_v1.safetensors",
+    /**
+     * Karta Obrázek: jiný model místo základního Turbo ze šablony. Prázdné =
+     * šablona 1:1. Jediná další volba je PerfecZion (odvázaný finetune) —
+     * s ním LoRA není potřeba a jede na 12 kroků s dpmpp_3m_sde (dle autora).
+     */
+    val zimageModel: String = "",
     /**
      * Časová osa: jméno projektu v cache uzlu. Hotové segmenty se pod ním drží
      * mezi běhy, takže úprava jednoho záběru neznamená počítat celé video znovu.

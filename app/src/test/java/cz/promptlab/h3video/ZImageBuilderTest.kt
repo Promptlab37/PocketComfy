@@ -109,6 +109,41 @@ class ZImageBuilderTest {
     }
 
     @Test
+    fun `odvazany model prepina loader na gguf, kroky a sampler`() {
+        val wf = ZImageBuilder.build(
+            sablona, "x", Aspect.SQUARE_1_1, 1L, model = ZImageBuilder.NSFW_MODEL_FILE,
+        )
+        // GGUF potřebuje vlastní loader; weight_dtype tam být nesmí.
+        val unet = wf.getJSONObject(ZImageBuilder.N_UNET)
+        assertEquals("UnetLoaderGGUF", unet.getString("class_type"))
+        assertEquals(ZImageBuilder.NSFW_MODEL_FILE,
+            unet.getJSONObject("inputs").getString("unet_name"))
+        assertFalse(unet.getJSONObject("inputs").has("weight_dtype"))
+        assertEquals(ZImageBuilder.NSFW_MODEL_STEPS,
+            wf.inputs(ZImageBuilder.N_SAMPLER).getInt("steps"))
+        assertEquals(ZImageBuilder.NSFW_MODEL_SAMPLER,
+            wf.inputs(ZImageBuilder.N_SAMPLER).getString("sampler_name"))
+        // cfg, scheduler a shift zůstávají ze šablony.
+        assertEquals(1.0, wf.inputs(ZImageBuilder.N_SAMPLER).getDouble("cfg"), 0.001)
+        assertEquals("simple", wf.inputs(ZImageBuilder.N_SAMPLER).getString("scheduler"))
+        assertEquals(ZImageBuilder.stepsFor(""), 8)
+        assertEquals(ZImageBuilder.stepsFor(ZImageBuilder.NSFW_MODEL_FILE), 12)
+        // Sigma shift dál bere model z uzlu 28 — zapojení se nemění.
+        assertEquals(ZImageBuilder.N_UNET,
+            wf.inputs(ZImageBuilder.N_SHIFT).getJSONArray("model").getString(0))
+    }
+
+    @Test
+    fun `vyber lora souboru se propisuje do grafu`() {
+        val wf = ZImageBuilder.build(
+            sablona, "x", Aspect.SQUARE_1_1, 1L,
+            nsfwLora = true, loraFile = "zimage_nsfw_master.safetensors",
+        )
+        assertEquals("zimage_nsfw_master.safetensors",
+            wf.inputs(ZImageBuilder.N_NSFW_LORA).getString("lora_name"))
+    }
+
+    @Test
     fun `rozmery jsou nasobky 16 kolem jednoho megapixelu`() {
         Aspect.entries.forEach { a ->
             val (w, h) = ZImageBuilder.sizeFor(a)

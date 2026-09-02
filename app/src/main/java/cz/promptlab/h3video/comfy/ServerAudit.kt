@@ -45,6 +45,8 @@ object ServerAudit {
         "LSIMinimaxTimelineRender",
         "ModelPreviewOverrideKJ",
         "MiniMaxH3TeaCache",
+        // Obrázek: odvázaný model v GGUF načítá jiný loader (vkládá se za běhu).
+        "UnetLoaderGGUF",
         // Časová osa (buildTimeline) si graf skládá celý sama z těchto tříd:
         "H3CacheBust",
         "H3IdentityAnchor",

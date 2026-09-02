@@ -29,8 +29,23 @@ object ZImageBuilder {
     const val N_NSFW_LORA = "90"
     const val NSFW_LORA_FILE = "zimage_nsfw_v1.safetensors"
 
+    /**
+     * Odvázaný finetune místo základního Turbo: Z-Image Turbo NSFW
+     * Photorealistic v6.1 (Q8 GGUF, jediná volně šiřitelná podoba — novější
+     * verze si autor zamyká za Buzz). Autor doporučuje 12 kroků, cfg 1
+     * a dpmpp_sde; LoRA s ním není potřeba. GGUF se načítá uzlem
+     * UnetLoaderGGUF (na serveru je, pack ComfyUI-GGUF).
+     */
+    const val NSFW_MODEL_FILE = "zimage_nsfw_photoreal_v61_Q8.gguf"
+    const val NSFW_MODEL_STEPS = 12
+    const val NSFW_MODEL_SAMPLER = "dpmpp_sde"
+
     /** Kroky z předlohy — ukazatel průběhu na ně přepočítává hlášení serveru. */
     const val STEPS = 8
+
+    /** Kroky podle zvoleného modelu (ukazatel průběhu s nimi musí souhlasit). */
+    fun stepsFor(model: String): Int =
+        if (model.isBlank()) STEPS else NSFW_MODEL_STEPS
 
     private var cached: String? = null
 
@@ -55,15 +70,35 @@ object ZImageBuilder {
 
     fun build(
         ctx: Context, prompt: String, aspect: Aspect, seed: Long,
-        nsfwLora: Boolean = false, nsfwSila: Float = 1f,
-    ): JSONObject = build(template(ctx), prompt, aspect, seed, nsfwLora, nsfwSila)
+        nsfwLora: Boolean = false, nsfwSila: Float = 1f, model: String = "",
+        loraFile: String = NSFW_LORA_FILE,
+    ): JSONObject = build(template(ctx), prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile)
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
     fun build(
         template: String, prompt: String, aspect: Aspect, seed: Long,
-        nsfwLora: Boolean = false, nsfwSila: Float = 1f,
+        nsfwLora: Boolean = false, nsfwSila: Float = 1f, model: String = "",
+        loraFile: String = NSFW_LORA_FILE,
     ): JSONObject {
         val wf = JSONObject(template)
+        // Jiný model = jiné doporučené vzorkování (12 kroků, dpmpp_sde dle
+        // autora finetunu). Prázdný model nechává šablonu 1:1. GGUF soubor
+        // potřebuje jiný loader — UNETLoader umí jen safetensors.
+        if (model.isNotBlank()) {
+            if (model.endsWith(".gguf")) {
+                wf.put(
+                    N_UNET,
+                    JSONObject()
+                        .put("class_type", "UnetLoaderGGUF")
+                        .put("inputs", JSONObject().put("unet_name", model))
+                        .put("_meta", JSONObject().put("title", "Odvázaný model (GGUF)")),
+                )
+            } else {
+                wf.inputs(N_UNET).put("unet_name", model)
+            }
+            wf.inputs(N_SAMPLER).put("steps", stepsFor(model))
+            wf.inputs(N_SAMPLER).put("sampler_name", NSFW_MODEL_SAMPLER)
+        }
         wf.inputs(N_TEXT).put("text", prompt)
         val (w, h) = sizeFor(aspect)
         wf.inputs(N_LATENT).put("width", w)
@@ -80,7 +115,7 @@ object ZImageBuilder {
                         "inputs",
                         JSONObject()
                             .put("model", org.json.JSONArray().put(N_UNET).put(0))
-                            .put("lora_name", NSFW_LORA_FILE)
+                            .put("lora_name", loraFile)
                             .put("strength_model", nsfwSila.toDouble()),
                     )
                     .put("_meta", JSONObject().put("title", "Odvázaná LoRA")),
@@ -94,8 +129,8 @@ object ZImageBuilder {
         getJSONObject(node).getJSONObject("inputs")
 
     fun stageForClass(cls: String?): Stage = when (cls) {
-        "UNETLoader", "CLIPLoader", "VAELoader", "ModelSamplingAuraFlow",
-        "LoraLoaderModelOnly" -> Stage.MODELS
+        "UNETLoader", "UnetLoaderGGUF", "CLIPLoader", "VAELoader",
+        "ModelSamplingAuraFlow", "LoraLoaderModelOnly" -> Stage.MODELS
         "CLIPTextEncode", "ConditioningZeroOut", "EmptySD3LatentImage" -> Stage.ENCODING
         "KSampler" -> Stage.SAMPLING
         "VAEDecode", "SaveImage" -> Stage.MUXING
@@ -103,8 +138,8 @@ object ZImageBuilder {
     }
 
     fun rangeForClass(cls: String?): Pair<Float, Float> = when (cls) {
-        "UNETLoader", "CLIPLoader", "VAELoader", "ModelSamplingAuraFlow",
-        "LoraLoaderModelOnly" -> 0.00f to 0.10f
+        "UNETLoader", "UnetLoaderGGUF", "CLIPLoader", "VAELoader",
+        "ModelSamplingAuraFlow", "LoraLoaderModelOnly" -> 0.00f to 0.10f
         "CLIPTextEncode", "ConditioningZeroOut", "EmptySD3LatentImage" -> 0.10f to 0.14f
         "KSampler" -> 0.14f to 0.84f
         "VAEDecode" -> 0.84f to 0.89f
