@@ -118,6 +118,8 @@ fun ResultScreen(
         )
         // Prompt se tu neopakuje – uživatel ho právě napsal a na výsledku ho
         // nezajímá, chce vidět video. Zůstává v Galerii aplikace u záznamu.
+        // Ťuknutím na řádek se zkopíruje seed (a prompt, když nějaký je) –
+        // profík si tak výsledek zreprodukuje nebo doladí jinde.
         Text(
             buildString {
                 val m = runCatching { cz.promptlab.h3video.data.Mode.valueOf(item.mode) }.getOrNull()
@@ -125,7 +127,20 @@ fun ResultScreen(
                 else if (item.twoImages) append("2 reference · ")
                 append("seed ${item.seed}")
             },
-            style = MaterialTheme.typography.bodySmall, color = TextLow
+            style = MaterialTheme.typography.bodySmall, color = TextLow,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                    val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                    val text = if (item.prompt.isNotBlank())
+                        "${item.prompt}\nseed: ${item.seed}" else "${item.seed}"
+                    cm.setPrimaryClip(android.content.ClipData.newPlainText("PocketComfy", text))
+                    // Android 13+ ukazuje vlastní bublinu o zkopírování sám.
+                    if (android.os.Build.VERSION.SDK_INT < 33) {
+                        Toast.makeText(ctx, "Zkopírováno", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                .padding(horizontal = 6.dp, vertical = 2.dp)
         )
 
         Spacer(Modifier.height(18.dp))

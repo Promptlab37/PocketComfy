@@ -34,7 +34,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -243,17 +247,26 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
     val tahy = remember { mutableStateListOf<Tah>() }
     var brushDp by remember { mutableFloatStateOf(42f) }
     var box by remember { mutableStateOf(IntSize.Zero) }
+    // Dva prsty přibližují a posouvají – na přesné doťukání očí a úst.
+    var zoom by remember { mutableFloatStateOf(1f) }
+    var pan by remember { mutableStateOf(Offset.Zero) }
 
     // Fit umístění bitmapy do plátna: měřítko a posun pro převod souřadnic.
     fun scale(): Float = if (box == IntSize.Zero) 1f else minOf(
         box.width.toFloat() / bitmap.width, box.height.toFloat() / bitmap.height
-    )
+    ) * zoom
     fun offset(): Offset {
         val s = scale()
-        return Offset(
+        return pan + Offset(
             (box.width - bitmap.width * s) / 2f,
             (box.height - bitmap.height * s) / 2f,
         )
+    }
+    fun clampPan() {
+        val s = scale()
+        val mx = ((bitmap.width * s - box.width) / 2f).coerceAtLeast(0f)
+        val my = ((bitmap.height * s - box.height) / 2f).coerceAtLeast(0f)
+        pan = Offset(pan.x.coerceIn(-mx, mx), pan.y.coerceIn(-my, my))
     }
     fun naBitmapu(p: Offset): Offset {
         val s = scale(); val o = offset()
@@ -280,7 +293,8 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
                     style = MaterialTheme.typography.titleMedium, color = TextHi
                 )
                 Text(
-                    "Klidně s přesahem přes okraje tváře — přechod se změkčí sám.",
+                    "Klidně s přesahem přes okraje tváře — přechod se změkčí sám. " +
+                        "Dvěma prsty přiblížíš na detaily.",
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
             }
@@ -290,31 +304,45 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
                     .weight(1f)
                     .fillMaxWidth()
                     .onSizeChanged { box = it }
+                    // Jeden prst maluje (ťuknutí = tečka), dva prsty přibližují
+                    // a posouvají. Když se během malování přidá druhý prst,
+                    // rozmalovaný tah se zahodí – byl to začátek gesta zoomu.
                     .pointerInput(bitmap) {
-                        detectDragGestures(
-                            onDragStart = { p ->
-                                val density = box.width / 360f
-                                val t = Tah(brushDp * density / scale())
-                                t.body += naBitmapu(p)
-                                tahy += t
-                            },
-                            onDrag = { change, _ ->
-                                tahy.lastOrNull()?.body?.add(naBitmapu(change.position))
-                            },
-                        )
-                    }
-                    // detectDragGestures začne až po překročení prahu tažení —
-                    // čisté ťuknutí (doťukávání malých míst) by jinak nenakreslilo nic.
-                    .pointerInput(bitmap) {
-                        detectTapGestures { p ->
-                            val density = box.width / 360f
-                            val t = Tah(brushDp * density / scale())
-                            t.body += naBitmapu(p)
-                            tahy += t
+                        awaitEachGesture {
+                            awaitFirstDown()
+                            var tah: Tah? = null
+                            var transformace = false
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                val drzene = event.changes.filter { it.pressed }
+                                if (drzene.size >= 2) {
+                                    if (tah != null) { tahy.remove(tah); tah = null }
+                                    transformace = true
+                                    val z = event.calculateZoom()
+                                    val posun = event.calculatePan()
+                                    zoom = (zoom * z).coerceIn(1f, 6f)
+                                    pan += posun
+                                    clampPan()
+                                    event.changes.forEach { it.consume() }
+                                } else if (drzene.size == 1 && !transformace) {
+                                    val change = drzene[0]
+                                    if (tah == null) {
+                                        val density = box.width / 360f
+                                        val t = Tah(brushDp * density / scale())
+                                        t.body += naBitmapu(change.position)
+                                        tahy += t
+                                        tah = t
+                                    } else {
+                                        tah.body += naBitmapu(change.position)
+                                    }
+                                    change.consume()
+                                }
+                                if (event.changes.none { it.pressed }) break
+                            }
                         }
                     }
             ) {
-                Canvas(Modifier.fillMaxSize()) {
+                Canvas(Modifier.fillMaxSize().clipToBounds()) {
                     val s = scale(); val o = offset()
                     drawImage(
                         image = bitmap.asImageBitmap(),

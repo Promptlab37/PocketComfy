@@ -324,7 +324,6 @@ object GenerationEngine {
             (aioScene?.mode?.nazev ?: params.mode.short) + " · " + params.resolution.label +
                 " · " + "%.1f".format(aioScene?.let { it.frames / 24f } ?: params.realSeconds) + " s"
         }
-        publish(Stage.UPLOADING, 0.01f)
         // Službu na popředí nesmí appka odnést pádem, když ji systém odmítne
         // (kvóta dataSync na Androidu 15, start mimo popředí). Bez ní se jen
         // hůř přežívá zamčený telefon; sledování běhu funguje dál.
@@ -348,6 +347,11 @@ object GenerationEngine {
         // volání), socket nesmí zůstat viset — jinak by jeho guard zablokoval
         // připojení příštího běhu a starý listener by mu sahal do stavu.
         job?.invokeOnCompletion { closeSocket() }
+        // Až PO vzniku jobu – publish() zahazuje stavy bez aktivního jobu
+        // (ochrana proti vzkříšení po Zrušit) a před launch by úvodní stav
+        // nepustil. Stav Running tak naskočí okamžitě, ne až s prvním hlášením
+        // zevnitř běhu.
+        publish(Stage.UPLOADING, 0.01f)
     }
 
     /** Znovu se přilepí na rozdělanou úlohu po restartu aplikace. */
@@ -464,7 +468,6 @@ object GenerationEngine {
             !swapRun && settings.activeAio
         label = settings.activeLabel
         startedAt = System.currentTimeMillis()
-        publish(Stage.DOWNLOADING, 0.90f)
         // Službu na popředí nesmí appka odnést pádem, když ji systém odmítne
         // (kvóta dataSync na Androidu 15, start mimo popředí). Bez ní se jen
         // hůř přežívá zamčený telefon; sledování běhu funguje dál.
@@ -481,6 +484,8 @@ object GenerationEngine {
                 )
             }
         }
+        // Až po vzniku jobu – publish() bez aktivního jobu stav zahazuje.
+        publish(Stage.DOWNLOADING, 0.90f)
     }
 
     // ------------------------------------------------------------------ běh

@@ -70,48 +70,137 @@ fun HistoryScreen(
     totalBytes: Long,
     onOpen: (VideoItem) -> Unit,
     onDelete: (VideoItem) -> Unit,
+    smazane: VideoItem? = null,
+    onUndo: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    if (items.isEmpty()) {
-        Column(
-            modifier
-                .fillMaxSize()
-                .padding(32.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(Icons.Default.VideoLibrary, null, Modifier.size(44.dp), Outline1)
-            Spacer(Modifier.height(14.dp))
-            Text("Zatím tu nic není", style = MaterialTheme.typography.titleMedium, color = TextMid)
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Vygenerovaná videa se ukládají sem a zůstanou tu,\ni když je počítač vypnutý.",
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-                textAlign = TextAlign.Center
-            )
-        }
-        return
+    var filtr by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("vse") }
+    var hledani by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
+    val zobrazene = remember(items, filtr, hledani) {
+        items
+            .filter {
+                when (filtr) {
+                    "video" -> !it.isImage && !it.isAudio
+                    "obrazek" -> it.isImage
+                    "hudba" -> it.isAudio
+                    else -> true
+                }
+            }
+            .filter { hledani.isBlank() || it.prompt.contains(hledani.trim(), ignoreCase = true) }
+    }
+    // Filtr má smysl, až když je v galerii víc druhů výsledků.
+    val druhu = remember(items) {
+        listOf(
+            items.any { !it.isImage && !it.isAudio },
+            items.any { it.isImage },
+            items.any { it.isAudio },
+        ).count { it }
     }
 
-    LazyColumn(
-        modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            // Zelená fajfka u videa znamená, že kopie je i v telefonu; zbytek žije
-            // jen tady v aplikaci, dokud si ho nestáhneš.
-            Text(
-                "${videoCount(items.size)} · ${"%.1f".format(totalBytes / 1_048_576f)} MB",
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
+    Box(modifier.fillMaxSize()) {
+        if (items.isEmpty()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(Icons.Default.VideoLibrary, null, Modifier.size(44.dp), Outline1)
+                Spacer(Modifier.height(14.dp))
+                Text("Zatím tu nic není", style = MaterialTheme.typography.titleMedium, color = TextMid)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Vygenerovaná videa se ukládají sem a zůstanou tu,\ni když je počítač vypnutý.",
+                    style = MaterialTheme.typography.bodySmall, color = TextLow,
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else LazyColumn(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            if (druhu > 1) item(key = "filtr") {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FiltrChip("Vše", filtr == "vse") { filtr = "vse" }
+                    FiltrChip("Videa", filtr == "video") { filtr = "video" }
+                    FiltrChip("Obrázky", filtr == "obrazek") { filtr = "obrazek" }
+                    FiltrChip("Hudba", filtr == "hudba") { filtr = "hudba" }
+                }
+            }
+            if (items.size >= 6) item(key = "hledani") {
+                DarkTextField(
+                    value = hledani,
+                    onValueChange = { hledani = it },
+                    placeholder = "Hledat v popisech…",
+                    minHeight = 48.dp,
+                    singleLine = true,
+                    onClear = { hledani = "" },
+                )
+            }
+            item(key = "pocet") {
+                // Zelená fajfka u videa znamená, že kopie je i v telefonu; zbytek žije
+                // jen tady v aplikaci, dokud si ho nestáhneš.
+                Text(
+                    "${polozkyCount(zobrazene.size)} · ${"%.1f".format(totalBytes / 1_048_576f)} MB",
+                    style = MaterialTheme.typography.bodySmall, color = TextLow
+                )
+            }
+            if (zobrazene.isEmpty()) item(key = "nic") {
+                Text(
+                    "Tomuhle filtru nic neodpovídá.",
+                    style = MaterialTheme.typography.bodySmall, color = TextLow,
+                    modifier = Modifier.padding(vertical = 20.dp)
+                )
+            }
+            items(zobrazene, key = { it.id }) { item ->
+                HistoryRow(item, onOpen = { onOpen(item) }, onDelete = { onDelete(item) })
+            }
+            item { Spacer(Modifier.height(if (smazane != null) 64.dp else 16.dp)) }
         }
-        items(items, key = { it.id }) { item ->
-            HistoryRow(item, onOpen = { onOpen(item) }, onDelete = { onDelete(item) })
+
+        // Lišta Vrátit: pár vteřin po smazání jde položku vytáhnout z koše.
+        if (smazane != null) {
+            Row(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 12.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Surface2)
+                    .border(1.dp, Outline1, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Smazáno", style = MaterialTheme.typography.bodyMedium, color = TextMid)
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    "Vrátit",
+                    style = MaterialTheme.typography.bodyMedium, color = Cyan,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable(onClick = onUndo)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                )
+            }
         }
-        item { Spacer(Modifier.height(16.dp)) }
     }
+}
+
+@Composable
+private fun FiltrChip(text: String, vybrano: Boolean, onClick: () -> Unit) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (vybrano) Cyan else TextMid,
+        modifier = Modifier
+            .clip(RoundedCornerShape(50))
+            .background(if (vybrano) Cyan.copy(alpha = .14f) else Surface1)
+            .border(1.dp, if (vybrano) Cyan.copy(alpha = .45f) else Outline1, RoundedCornerShape(50))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 7.dp)
+    )
 }
 
 @Composable
@@ -236,11 +325,11 @@ private fun frameOf(file: File): Bitmap? = runCatching {
     }
 }.getOrNull()
 
-/** Česky se počítá jinak: 1 video, 2–4 videa, 5 a víc videí. */
-private fun videoCount(n: Int): String = when {
-    n == 1 -> "1 video"
-    n in 2..4 -> "$n videa"
-    else -> "$n videí"
+/** Česky se počítá jinak: 1 položka, 2–4 položky, 5 a víc položek. */
+private fun polozkyCount(n: Int): String = when {
+    n == 1 -> "1 položka"
+    n in 2..4 -> "$n položky"
+    else -> "$n položek"
 }
 
 private fun dateOf(millis: Long): String =

@@ -263,12 +263,17 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             }
                     ) { GenerateScreen(vm, busy = running != null) }
 
-                    Tab.GALLERY -> HistoryScreen(
-                        items = history,
-                        totalBytes = historyBytes,
-                        onOpen = { opened = it },
-                        onDelete = { vm.delete(it) }
-                    )
+                    Tab.GALLERY -> {
+                        val smazane by vm.smazane.collectAsStateWithLifecycle()
+                        HistoryScreen(
+                            items = history,
+                            totalBytes = historyBytes,
+                            onOpen = { opened = it },
+                            onDelete = { vm.delete(it) },
+                            smazane = smazane,
+                            onUndo = { vm.undoDelete() },
+                        )
+                    }
 
                     Tab.SETTINGS -> SettingsScreen(vm)
                 }
@@ -301,10 +306,12 @@ private fun Root(vm: MainViewModel = viewModel()) {
                         .statusBarsPadding()
                         .navigationBarsPadding()
                 ) {
+                    val fronta by vm.queue.collectAsStateWithLifecycle()
                     ProgressScreen(
                         state = s,
                         onMinimize = { progressExpanded = false },
-                        onCancel = { GenerationEngine.cancel() }
+                        onCancel = { GenerationEngine.cancel() },
+                        queueCount = fronta.size,
                     )
                 }
             }

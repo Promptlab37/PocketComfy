@@ -30,6 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,6 +64,7 @@ import cz.promptlab.h3video.util.Preview
 import cz.promptlab.h3video.ui.theme.AccentSweep
 import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.ui.theme.Cyan
+import cz.promptlab.h3video.ui.theme.Danger
 import cz.promptlab.h3video.ui.theme.Ink
 import cz.promptlab.h3video.ui.theme.Ok
 import cz.promptlab.h3video.ui.theme.Outline1
@@ -112,6 +114,7 @@ fun ProgressScreen(
     state: GenState.Running,
     onMinimize: () -> Unit,
     onCancel: () -> Unit,
+    queueCount: Int = 0,
 ) {
     val progress by animateFloatAsState(
         targetValue = state.overall,
@@ -300,6 +303,15 @@ fun ProgressScreen(
         Spacer(Modifier.height(16.dp))
 
         // ------------------------------------------- tlačítka vedle sebe
+        // Zrušit chce potvrzení druhým klepnutím – omylem zabitý dlouhý běh
+        // je drahý. Po pár vteřinách bez potvrzení se tlačítko samo vrátí.
+        var potvrditZruseni by remember { mutableStateOf(false) }
+        LaunchedEffect(potvrditZruseni) {
+            if (potvrditZruseni) {
+                kotlinx.coroutines.delay(4000)
+                potvrditZruseni = false
+            }
+        }
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -311,16 +323,21 @@ fun ProgressScreen(
                 onClick = onMinimize
             )
             OutlineButton(
-                "Zrušit",
+                if (potvrditZruseni) "Opravdu zrušit?" else "Zrušit",
                 modifier = Modifier.weight(1f),
-                color = TextMid,
-                onClick = onCancel
+                color = if (potvrditZruseni) Danger else TextMid,
+                onClick = {
+                    if (potvrditZruseni) onCancel() else potvrditZruseni = true
+                }
             )
         }
 
         Spacer(Modifier.height(10.dp))
         Text(
-            "Telefon můžeš zamknout, generování běží na počítači dál.",
+            if (queueCount > 0)
+                "Ve frontě čeká ${queueCount}× další běh – naskočí sám."
+            else
+                "Telefon můžeš zamknout, generování běží na počítači dál.",
             style = MaterialTheme.typography.bodySmall,
             color = TextLow,
             textAlign = TextAlign.Center,

@@ -66,6 +66,7 @@ import cz.promptlab.h3video.util.MediaSaver
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -685,104 +686,175 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return out
     }
 
+    // ------------------------------------------------------------ fronta úloh
+
+    /** Jeden běh čekající ve frontě. Zadání se zmrazí ve chvíli zařazení. */
+    data class QueuedRun(
+        val id: Long,
+        val title: String,
+        val prompt: String,
+        val spust: () -> Unit,
+    )
+
+    private val _queue = MutableStateFlow<List<QueuedRun>>(emptyList())
+    val queue: StateFlow<List<QueuedRun>> = _queue.asStateFlow()
+
+    fun removeFromQueue(id: Long) {
+        _queue.value = _queue.value.filterNot { it.id == id }
+    }
+
+    init {
+        // Hlídač fronty: jakmile běh skončí (hotovo se chvíli ukáže a samo se
+        // odklidí; po chybě až po jejím zavření), spustí se další zařazený.
+        viewModelScope.launch {
+            GenerationEngine.state.collectLatest { s ->
+                when {
+                    s is GenState.Done && _queue.value.isNotEmpty() -> {
+                        kotlinx.coroutines.delay(1500)
+                        GenerationEngine.dismissResult()
+                        dalsiZFronty()
+                    }
+                    s is GenState.Idle && _queue.value.isNotEmpty() -> {
+                        kotlinx.coroutines.delay(300)
+                        dalsiZFronty()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun dalsiZFronty() {
+        if (GenerationEngine.isRunning) return
+        val next = _queue.value.firstOrNull() ?: return
+        _queue.value = _queue.value.drop(1)
+        next.spust()
+    }
+
     fun start() {
         val p = _params.value
         if (validation(p) != null) return
         settings.save(p)
+        // Vše jde přes frontu: když je volno, spustí se hned; když se generuje,
+        // běh počká se zadáním zmrazeným teď (prompt, volby; náhodný seed se
+        // losuje až při startu běhu, takže série dá pokaždé jiný výsledek).
+        _queue.value = _queue.value + makeRunner(p)
+        if (!GenerationEngine.isRunning) dalsiZFronty()
+    }
 
-        when (p.mode) {
+    /** Zmrazí aktuální zadání karty do spustitelného běhu pro frontu. */
+    private fun makeRunner(p: GenParams): QueuedRun {
+        val id = System.nanoTime()
+        return when (p.mode) {
             Mode.TALK -> {
                 // Pořadí obrázků a zvuků je závazné – podle něj se v promptu
                 // číslují <Picture N> a <Audio N>, takže se posílá přesně tak,
                 // jak se prompt skládal.
                 val s = _scene.value
-                GenerationEngine.start(
-                    p.copy(prompt = s.prompt),
-                    s.withImage.mapNotNull { it.image },
-                    talkAudios = s.voiced.mapNotNull { it.audio },
-                )
+                QueuedRun(id, p.mode.title, s.prompt) {
+                    GenerationEngine.start(
+                        p.copy(prompt = s.prompt),
+                        s.withImage.mapNotNull { it.image },
+                        talkAudios = s.voiced.mapNotNull { it.audio },
+                    )
+                }
             }
 
             Mode.TIMELINE -> {
                 val s = _timeline.value
-                resetOnlySegmentAfterRun = s.onlySegment > 0
-                GenerationEngine.start(
-                    p.copy(
-                        prompt = s.globalPrompt,
-                        timelineProject = s.project,
-                        timelineOnlySegment = s.onlySegment,
-                    ),
-                    s.withImage.mapNotNull { it.image },
-                    timelineScene = s,
-                )
+                QueuedRun(id, p.mode.title, s.globalPrompt) {
+                    resetOnlySegmentAfterRun = s.onlySegment > 0
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = s.globalPrompt,
+                            timelineProject = s.project,
+                            timelineOnlySegment = s.onlySegment,
+                        ),
+                        s.withImage.mapNotNull { it.image },
+                        timelineScene = s,
+                    )
+                }
             }
 
             Mode.ALLINONE -> {
                 val s = _aio.value
-                GenerationEngine.start(p.copy(prompt = s.prompt), s.uploadImages, aioScene = s)
+                QueuedRun(id, p.mode.title, s.prompt) {
+                    GenerationEngine.start(p.copy(prompt = s.prompt), s.uploadImages, aioScene = s)
+                }
             }
 
             Mode.EDIT -> {
                 val s = _edit.value
                 // Poměr a velikost se přebírají ze scény úpravy, aby popisek běhu
                 // i položka v galerii ukazovaly skutečné rozlišení obrázku.
-                GenerationEngine.start(
-                    p.copy(prompt = s.prompt, aspect = s.aspect, megapixels = s.megapixels),
-                    s.uploadImages,
-                    editScene = s,
-                )
+                QueuedRun(id, p.mode.title, s.prompt) {
+                    GenerationEngine.start(
+                        p.copy(prompt = s.prompt, aspect = s.aspect, megapixels = s.megapixels),
+                        s.uploadImages,
+                        editScene = s,
+                    )
+                }
             }
 
             Mode.UPSCALE -> {
                 val s = _upscale.value
-                GenerationEngine.start(p.copy(prompt = ""), s.uploadImages, upscaleScene = s)
+                QueuedRun(id, p.mode.title, "") {
+                    GenerationEngine.start(p.copy(prompt = ""), s.uploadImages, upscaleScene = s)
+                }
             }
 
             // Kroky se přepisují na hodnotu z předlohy Z-Image (8), aby ukazatel
             // průběhu počítal krok X/8 a ne podle nastavení videa.
-            Mode.IMAGE -> GenerationEngine.start(
-                p.copy(steps = cz.promptlab.h3video.comfy.ZImageBuilder.STEPS),
-                emptyList(),
-                t2i = true,
-            )
+            Mode.IMAGE -> QueuedRun(id, p.mode.title, p.prompt) {
+                GenerationEngine.start(
+                    p.copy(steps = cz.promptlab.h3video.comfy.ZImageBuilder.STEPS),
+                    emptyList(),
+                    t2i = true,
+                )
+            }
 
             // Délka jde do parametrů kvůli popisku v galerii; prompt je styl,
             // aby položka historie ukazovala, o jakou skladbu šlo.
             Mode.MUSIC -> {
                 val s = _music.value
-                GenerationEngine.start(
-                    p.copy(
-                        prompt = s.styl,
-                        seconds = s.seconds,
-                        steps = cz.promptlab.h3video.comfy.AceMusicBuilder.STEPS,
-                    ),
-                    emptyList(),
-                    musicScene = s,
-                )
+                QueuedRun(id, p.mode.title, s.styl) {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = s.styl,
+                            seconds = s.seconds,
+                            steps = cz.promptlab.h3video.comfy.AceMusicBuilder.STEPS,
+                        ),
+                        emptyList(),
+                        musicScene = s,
+                    )
+                }
             }
 
             Mode.RESTORE -> {
                 val s = _restore.value
-                GenerationEngine.start(
-                    p.copy(
-                        prompt = "Oprava staré fotky",
-                        steps = cz.promptlab.h3video.comfy.RestoreBuilder.STEPS,
-                    ),
-                    s.uploadImages,
-                    restoreScene = s,
-                )
+                QueuedRun(id, p.mode.title, "") {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = "Oprava staré fotky",
+                            steps = cz.promptlab.h3video.comfy.RestoreBuilder.STEPS,
+                        ),
+                        s.uploadImages,
+                        restoreScene = s,
+                    )
+                }
             }
 
             Mode.FACESWAP -> {
                 val s = _swap.value
-                GenerationEngine.start(
-                    p.copy(
-                        prompt = "Výměna tváře",
-                        steps = cz.promptlab.h3video.comfy.FaceSwapBuilder.STEPS,
-                    ),
-                    s.uploadImages,
-                    swapScene = s,
-                )
+                QueuedRun(id, p.mode.title, "") {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = "Výměna tváře",
+                            steps = cz.promptlab.h3video.comfy.FaceSwapBuilder.STEPS,
+                        ),
+                        s.uploadImages,
+                        swapScene = s,
+                    )
+                }
             }
         }
     }
@@ -1318,9 +1390,53 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _historyBytes = MutableStateFlow(historyStore.totalBytes())
     val historyBytes: StateFlow<Long> = _historyBytes.asStateFlow()
 
+    // Mazání s možností Vrátit: soubor se jen odsune do koše v cache a záznam
+    // se schová. Definitivně zmizí až po pár vteřinách, nebo dalším mazáním.
+    private val _smazane = MutableStateFlow<VideoItem?>(null)
+    val smazane: StateFlow<VideoItem?> = _smazane.asStateFlow()
+    private var smazaniJob: kotlinx.coroutines.Job? = null
+
+    private fun kosFile(item: VideoItem) =
+        File(getApplication<android.app.Application>().cacheDir, "kos_${item.fileName}")
+
     fun delete(item: VideoItem) {
-        historyStore.remove(item)
-        refreshHistory()
+        smazaniJob?.cancel()
+        val predchozi = _smazane.value
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                predchozi?.let { runCatching { kosFile(it).delete() } }
+                val src = item.file(getApplication())
+                val kos = kosFile(item)
+                runCatching {
+                    if (!src.renameTo(kos)) { src.copyTo(kos, overwrite = true); src.delete() }
+                }
+                historyStore.removeEntry(item)
+            }
+            _smazane.value = item
+            refreshHistory()
+            smazaniJob = viewModelScope.launch {
+                delay(6000)
+                _smazane.value = null
+                withContext(Dispatchers.IO) { runCatching { kosFile(item).delete() } }
+            }
+        }
+    }
+
+    fun undoDelete() {
+        val item = _smazane.value ?: return
+        smazaniJob?.cancel()
+        _smazane.value = null
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val kos = kosFile(item)
+                val cil = item.file(getApplication())
+                runCatching {
+                    if (!kos.renameTo(cil)) { kos.copyTo(cil, overwrite = true); kos.delete() }
+                }
+                historyStore.add(item)
+            }
+            refreshHistory()
+        }
     }
 
     /** Doplní do galerie telefonu videa, která tam z nějakého důvodu chybí. */

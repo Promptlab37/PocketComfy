@@ -81,6 +81,11 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                     minHeight = 58.dp,
                     singleLine = true,
                 )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Adresa se ukládá sama při psaní – tlačítko níž ji jen otestuje.",
+                    style = MaterialTheme.typography.bodySmall, color = TextLow
+                )
                 // Rychlé volby jsou jen v osobním sestavení (local.properties);
                 // veřejné žádné cizí adresy nenabízí.
                 if (AppSettings.SUGGESTED.isNotEmpty()) {

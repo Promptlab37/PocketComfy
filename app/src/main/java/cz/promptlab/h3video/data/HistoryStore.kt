@@ -99,6 +99,11 @@ class HistoryStore(private val ctx: Context) {
         persist(allLocked().filterNot { it.id == item.id })
     }
 
+    /** Vyřadí jen záznam a soubor nechá být – pro mazání s možností Vrátit. */
+    fun removeEntry(item: VideoItem) = synchronized(lock) {
+        persist(allLocked().filterNot { it.id == item.id })
+    }
+
     private fun persist(list: List<VideoItem>) {
         val arr = JSONArray()
         list.forEach {

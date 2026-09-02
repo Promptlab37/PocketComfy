@@ -38,6 +38,7 @@ import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
@@ -641,11 +642,15 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // Tlačítko je připnuté dole a nikdy neodjede z obrazovky – kvůli němu
         // se dřív muselo rolovat na konec celé stránky.
         Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-        val blocked = busy || problem != null
+        // Za běhu tlačítko nezhasíná – další zadání se zařadí do fronty a
+        // spustí se samo, jakmile aktuální běh skončí.
+        val fronta by vm.queue.collectAsStateWithLifecycle()
+        val blocked = problem != null
         GradientButton(
             text = when {
-                busy -> "Generování už běží"
                 problem != null -> problem
+                busy -> "Přidat do fronty" +
+                    (if (fronta.isNotEmpty()) " (čeká ${fronta.size})" else "")
                 mode == Mode.EDIT -> "Upravit obrázek"
                 mode == Mode.UPSCALE -> "Zvětšit obrázek"
                 mode == Mode.IMAGE -> "Vygenerovat obrázek"
@@ -657,7 +662,8 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             enabled = !blocked,
             icon = {
                 if (!blocked) Icon(
-                    Icons.Default.AutoAwesome, null, Modifier.size(20.dp), Color.White
+                    if (busy) Icons.Default.PlaylistAdd else Icons.Default.AutoAwesome,
+                    null, Modifier.size(20.dp), Color.White
                 )
             },
             onClick = {
@@ -670,10 +676,50 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         )
         if (busy) {
             Text(
-                "Až doběhne, tohle tlačítko zase ožije. Zadání ti tu zůstane.",
+                "Generování běží. Klidně uprav zadání a přidej další běh do fronty.",
                 style = MaterialTheme.typography.bodySmall, color = TextLow,
                 modifier = Modifier.padding(top = 6.dp)
             )
+        }
+        if (fronta.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Surface1)
+                    .border(1.dp, Outline1, RoundedCornerShape(14.dp))
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+            ) {
+                Text(
+                    "Ve frontě",
+                    style = MaterialTheme.typography.labelMedium, color = TextLow
+                )
+                fronta.forEachIndexed { i, run ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "${i + 1}. ${run.title}" +
+                                (if (run.prompt.isNotBlank()) " · ${run.prompt.take(38)}" else ""),
+                            style = MaterialTheme.typography.bodySmall, color = TextMid,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            Icons.Default.Close, "Odebrat z fronty",
+                            Modifier
+                                .size(26.dp)
+                                .clip(RoundedCornerShape(50))
+                                .clickable { vm.removeFromQueue(run.id) }
+                                .padding(5.dp),
+                            TextLow
+                        )
+                    }
+                }
+            }
         }
         }
     }
