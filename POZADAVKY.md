@@ -1,3 +1,5 @@
+***Česky** · [English](REQUIREMENTS.en.md)*
+
 # Co appka potřebuje na serveru
 
 PocketComfy je **dálkové ovládání ComfyUI z mobilu** — samo nic negeneruje,

@@ -1,3 +1,5 @@
+***Česky** · [English](INSTALL.en.md)*
+
 # Instalace krok za krokem
 
 Kompletní návod od nuly po první vygenerované video. Tři části:

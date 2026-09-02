@@ -1,5 +1,7 @@
 <div align="center">
 
+***Česky** · [English](README.en.md)*
+
 # 🎬 PocketComfy
 
 ### Celé AI studio z kapsy — na tvém vlastním počítači
