@@ -98,6 +98,7 @@ import cz.promptlab.h3video.data.SCHEDULERS
 import cz.promptlab.h3video.data.TURBO
 import cz.promptlab.h3video.util.CameraCapture
 import cz.promptlab.h3video.ui.theme.Amber
+import cz.promptlab.h3video.ui.theme.Danger
 import cz.promptlab.h3video.ui.theme.Cyan
 import cz.promptlab.h3video.ui.theme.Ok
 import cz.promptlab.h3video.ui.theme.Outline1
@@ -759,6 +760,43 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     label = { it.label },
                     onSelect = { v -> vm.update { it.copy(aspect = v) } }
                 )
+                // ✨ Vylepšovač: pár slov (klidně česky) → plný prompt psaný
+                // podle pravidel Z-Image (souvislé věty, světlo, styl).
+                val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
+                val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
+                val bezi = stavPrepisu is MainViewModel.RewriteState.Busy
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlineButton(
+                        if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
+                        color = Cyan,
+                    ) { if (!bezi) vm.vylepsiObrazovyPrompt() }
+                    if (bezi) {
+                        Spacer(Modifier.width(10.dp))
+                        androidx.compose.material3.CircularProgressIndicator(
+                            Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
+                        )
+                    }
+                    if (!bezi && puvodni != null) {
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            t("Vrátit původní"),
+                            style = MaterialTheme.typography.bodySmall, color = TextMid,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { vm.vratPuvodniPromptObrazku() }
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+                (stavPrepisu as? MainViewModel.RewriteState.Fail)?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        it.message,
+                        style = MaterialTheme.typography.bodySmall, color = Danger
+                    )
+                }
+
                 Spacer(Modifier.height(6.dp))
                 val (w, h) = cz.promptlab.h3video.comfy.ZImageBuilder.sizeFor(params.aspect)
                 Text(

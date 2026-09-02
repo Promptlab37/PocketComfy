@@ -31,6 +31,8 @@ call :klon https://github.com/city96/ComfyUI-GGUF
 REM Volitelne: tlacitko "Vylepsit prompt" (LLM prepise kratke zadani na plny
 REM H3 prompt). Model si uzel stahne sam pri prvnim pouziti - viz POZADAVKY.md.
 call :klon https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI
+REM Volitelne: totez pro kartu Obrazek (prompty pro Z-Image).
+call :klon https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm
 
 echo.
 echo === 2/2  Modely (volitelne, velke soubory) ===

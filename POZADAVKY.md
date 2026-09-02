@@ -101,6 +101,13 @@ Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy
   Uzel si model umí i sám stáhnout při prvním použití (nabídne ho v seznamu).
   Model se po přepsání uvolní z paměti, takže generování videa neomezí.
   Bez tohohle balíku appka funguje normálně, jen tlačítko ohlásí, že chybí.
+- **✨ Vylepšit prompt na kartě Obrázek** — totéž pro statické obrázky, jen
+  psané podle pravidel Z-Image (souvislé věty, důraz na světlo, bez
+  negativního promptu). Potřebuje balík
+  [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm)
+  a **jakýkoli instrukční model v GGUF** ve složce `models/LLM` — stačí ten,
+  který sis stáhl pro vylepšovač videa výš. Appka si z nabídky vybere sama
+  (přednost má odblokovaný).
 - **Karta Obrázek — přepínač „Bez cenzury" a model „Photoreal"** (18+):
   obojí vyžaduje vlastní soubory, které si stáhneš sám (CivitAI /
   Hugging Face, hledej Z-Image Turbo LoRA a finetuny). LoRA patří do

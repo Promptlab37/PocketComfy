@@ -67,6 +67,10 @@ object Katalog {
         "https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI",
         "tlačítko Vylepšit prompt (volitelné)"
     )
+    private val LLAMACPP = Balik(
+        "ComfyUI-llama-cpp_vlm", "https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm",
+        "tlačítko Vylepšit prompt na kartě Obrázek (volitelné)"
+    )
     private val PRAVEEN = Balik(
         "praveen-tools", "https://github.com/praveensahu/praveen-tools", "Zvětšit"
     )
@@ -96,6 +100,9 @@ object Katalog {
         "MiniMaxH3TeaCache" to TEACACHE,
         "UnetLoaderGGUF" to GGUF,
         "MiniMaxH3PromptWriter8B" to REWRITER,
+        "llama_cpp_model_loader" to LLAMACPP,
+        "llama_cpp_instruct_adv" to LLAMACPP,
+        "llama_cpp_parameters" to LLAMACPP,
         "ModelPreviewOverrideKJ" to KJ,
         "ImageConcanate" to KJ,
         "ResizeMask" to KJ,

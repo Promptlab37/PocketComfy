@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import cz.promptlab.h3video.comfy.ComfyClient
 import cz.promptlab.h3video.comfy.ComfyException
 import cz.promptlab.h3video.data.t
+import cz.promptlab.h3video.comfy.ImagePromptBuilder
 import cz.promptlab.h3video.comfy.PromptRewriteBuilder
 import cz.promptlab.h3video.data.AioMode
 import cz.promptlab.h3video.data.AioScene
@@ -1557,6 +1558,99 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * Odešle graf přepisovače a počká na text z náhledového uzlu.
+     * Společné pro kartu All in One i Obrázek — liší se jen graf.
+     */
+    private suspend fun spustPrepisAPockej(
+        client: ComfyClient,
+        wf: org.json.JSONObject,
+        uzelNahledu: String,
+    ): String {
+        val promptId = java.util.UUID.randomUUID().toString()
+        client.queuePrompt(wf, java.util.UUID.randomUUID().toString(), promptId)
+        // LLM se načítá z disku, první přepis klidně přes minutu.
+        val limit = System.currentTimeMillis() + 240_000
+        while (System.currentTimeMillis() < limit) {
+            val h = client.history(promptId)
+            if (h != null) {
+                val status = h.optJSONObject("status")
+                if (status?.optString("status_str") == "error") throw ComfyException(
+                    "rewrite error",
+                    "Přepis na serveru selhal — mrkni do logu ComfyUI.",
+                )
+                val text = h.optJSONObject("outputs")
+                    ?.optJSONObject(uzelNahledu)
+                    ?.optJSONArray("text")
+                if (text != null && text.length() > 0) return text.getString(0)
+                if (status?.optBoolean("completed") == true) throw ComfyException(
+                    "bez textu",
+                    "Server přepis dokončil, ale nevrátil text.",
+                )
+            }
+            delay(1500)
+        }
+        throw ComfyException("timeout", "Přepis trvá moc dlouho — zkus to znovu.")
+    }
+
+    /** Vrátí původní zadání na kartě Obrázek. */
+    fun vratPuvodniPromptObrazku() {
+        _rewriteOriginal.value?.let { puvodni -> update { it.copy(prompt = puvodni) } }
+        _rewriteOriginal.value = null
+    }
+
+    /**
+     * ✨ Vylepšit prompt na kartě **Obrázek**. Jede na obecném llama.cpp uzlu
+     * s pravidly pro Z-Image (souvislé věty, 80–200 slov, bez negativního
+     * promptu) — přepisovač od MiniMaxu píše scénář videa, sem by nesedl.
+     */
+    fun vylepsiObrazovyPrompt() {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val zadani = _params.value.prompt.trim()
+        if (zadani.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(
+                t("Nejdřív napiš aspoň pár slov o tom, co chceš.")
+            )
+            return
+        }
+        _rewriteState.value = RewriteState.Busy
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
+                        ?: throw ComfyException(
+                            "llama uzel chybi",
+                            "Server nemá uzly llama.cpp — bez nich prompt vylepšit nejde.",
+                        )
+                    val nabidka = spec.getJSONObject("input").getJSONObject("required")
+                        .getJSONArray("model").getJSONArray(0)
+                    val model = ImagePromptBuilder.vyberModel(
+                        (0 until nabidka.length()).map { nabidka.getString(it) }
+                    ) ?: throw ComfyException(
+                        "zadny model",
+                        "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
+                    )
+                    val wf = ImagePromptBuilder.build(
+                        zadani = zadani,
+                        model = model,
+                        seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                    )
+                    spustPrepisAPockej(client, wf, ImagePromptBuilder.N_PREVIEW)
+                }
+            }
+            vysledek.onSuccess { text ->
+                _rewriteOriginal.value = zadani
+                update { it.copy(prompt = ImagePromptBuilder.ocisti(text)) }
+                _rewriteState.value = RewriteState.Idle
+            }.onFailure { e ->
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl."
+                )
+            }
+        }
+    }
+
+    /**
      * Pošle zadání karty All in One přepisovači na serveru (MiniMax-H3 Prompt
      * Rewriter 8B nad odblokovaným Qwen3-VL) a výsledný plný H3 prompt dosadí
      * zpět do pole. Česky napsané zadání přeloží a rozepíše sám; u režimu
@@ -1638,32 +1732,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         firstImage = first,
                         lastImage = last,
                     )
-                    val promptId = java.util.UUID.randomUUID().toString()
-                    client.queuePrompt(wf, java.util.UUID.randomUUID().toString(), promptId)
-                    // LLM se načítá z disku, první přepis klidně přes minutu.
-                    val limit = System.currentTimeMillis() + 240_000
-                    while (System.currentTimeMillis() < limit) {
-                        val h = client.history(promptId)
-                        if (h != null) {
-                            val status = h.optJSONObject("status")
-                            if (status?.optString("status_str") == "error") throw ComfyException(
-                                "rewrite error",
-                                "Přepis na serveru selhal — mrkni do logu ComfyUI.",
-                            )
-                            val text = h.optJSONObject("outputs")
-                                ?.optJSONObject(PromptRewriteBuilder.N_PREVIEW)
-                                ?.optJSONArray("text")
-                            if (text != null && text.length() > 0) {
-                                return@runCatching text.getString(0)
-                            }
-                            if (status?.optBoolean("completed") == true) throw ComfyException(
-                                "bez textu",
-                                "Server přepis dokončil, ale nevrátil text.",
-                            )
-                        }
-                        delay(1500)
-                    }
-                    throw ComfyException("timeout", "Přepis trvá moc dlouho — zkus to znovu.")
+                    spustPrepisAPockej(client, wf, PromptRewriteBuilder.N_PREVIEW)
                 }
             }
             vysledek.onSuccess { text ->

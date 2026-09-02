@@ -103,6 +103,13 @@ check verifies classes.
   list). The model is released from VRAM after the rewrite, so it does not get
   in the way of video generation. Without this pack the app works normally — the
   button just reports that it is missing.
+- **✨ AI prompt enhancer on the Image card** — the same idea for still images,
+  but written to the Z-Image rules (flowing sentences, lighting first, no
+  negative prompt). Needs the
+  [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm)
+  pack and **any instruction-following GGUF** in `models/LLM` — the one you
+  already downloaded for the video enhancer will do. The app picks from the
+  list on its own (preferring an uncensored build).
 - **Image card — the "uncensored" toggle and the "Photoreal" model** (18+):
   both require files you download yourself (CivitAI / Hugging Face — look for
   Z-Image Turbo LoRAs and finetunes). LoRAs go into `models/loras/` and the app
