@@ -6,7 +6,7 @@
 
 ### Celé AI studio z kapsy — na tvém vlastním počítači
 
-**Video · Obrázky · Oprava starých fotek · Výměna tváře · Hudba s českým zpěvem**
+**Video · Obrázky · Oprava starých fotek · Výměna tváře · Domalování · Hudba s českým zpěvem**
 
 Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné předplatné,
 žádná data mimo tvůj dům — telefon je jen dálkový ovladač počítače s grafikou.
@@ -49,12 +49,12 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 - 🔗 **Řetěz na jedno klepnutí.** Vygeneruješ obrázek → „Upravit" → popíšeš změnu → „Zvětšit" → gigapixel. Bez stahování a přeposílání.
 - 📴 **Výpadek sítě nikdy nezabije úlohu.** Telefon může zhasnout, počítač počítá dál — appka se k běhu zase přilepí, klidně i po restartu.
 - 🎮 **Grafika na povel.** Tlačítkem v Nastavení ComfyUI na dálku vypneš (a jde se hrát) i zapneš.
-- 🖌️ **Maska prstem.** U výměny tváře začmáráš obličej přímo v appce — dvěma prsty přiblížíš na detaily, jedním maluješ; velikost štětce, krok zpět, guma.
+- 🖌️ **Maska prstem.** U výměny tváře i domalování začmáráš místo přímo v appce — dvěma prsty přiblížíš na detaily, jedním maluješ; velikost štětce, krok zpět, guma.
 - ✨ **Prompt napíše AI za tebe.** Napíšeš pár slov (klidně česky) a jazykový model z nich složí plný prompt — u videa záběry, časování a zvukovou stopu, u obrázku popis podle pravidel Z-Image. Běží to jako workflow ve tvém ComfyUI (chce k tomu jeden model navíc, [viz POZADAVKY](POZADAVKY.md)), takže nic neodchází z domu.
 - 📋 **Fronta úloh.** Zatímco se generuje, připravíš další zadání a přidáš ho do fronty — běhy jedou samy jeden po druhém a každý hotový se ohlásí notifikací.
 - 🗂️ **Galerie s filtrem a hledáním.** Videa / obrázky / hudba zvlášť, hledání v popisech, smazání jde vzít zpět. U každého výsledku vidíš, jak dlouho se počítal.
 
-## 🃏 Devět karet
+## 🃏 Deset karet
 
 | | Karta | Model | Co umí |
 |---|---|---|---|
@@ -65,6 +65,7 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 | ✏️ | **Úprava obrázku** | Krea 2 + Identity Edit | „dej jí červenou bundu" — tvář zůstane |
 | 🩹 | **Oprava fotky** | Qwen Image Edit 2511 | stará/poškozená fotka jako nová, i barevně |
 | 🎭 | **Výměna tváře** | Flux Fill + ACE++ | začmáráš obličej, vybereš novou tvář, hotovo |
+| 🖌️ | **Domalovat** | FLUX.2 Klein / Flux Fill | začmáráš místo, napíšeš co tam má být, přepíše se jen ono |
 | 🔎 | **Zvětšit** | SeedVR2 | gigapixel upscale po dlaždicích (2×2 až 4×4) |
 | 🎵 | **Hudba** | ACE-Step 1.5 | celá píseň z textu — styl, sloky, refrén, i český zpěv |
 
@@ -112,7 +113,7 @@ flowchart LR
 - `comfy/*Builder.kt` — dosazování hodnot do šablon (testy hlídají, že se nemění nic jiného)
 - `engine/GenerationEngine.kt` — upload → fronta → sledování → stažení; výpadek sítě běh nikdy neshodí
 - `comfy/ServerAudit.kt` — porovnání šablon s `/object_info` („co serveru chybí")
-- `engine/RunTexts.kt` — texty průběhu, jedna matice pro všech 9 karet
+- `engine/RunTexts.kt` — texty průběhu, jedna matice pro všech 10 karet
 
 ## ⚖️ Licence a upozornění
 

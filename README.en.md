@@ -6,7 +6,7 @@
 
 ### A whole AI studio in your pocket — running on your own PC
 
-**Video · Images · Old photo restoration · Face swap · Music with vocals**
+**Video · Images · Old photo restoration · Face swap · Inpainting · Music with vocals**
 
 A native Android client for your own ComfyUI server. No cloud, no subscription,
 no data leaving your home — the phone is just a remote control for the machine
@@ -59,7 +59,7 @@ PocketComfy is a **client** — it generates nothing on its own:
 - 📋 **Job queue.** While one run is going, prepare the next and add it to the queue — runs start automatically one after another, each finished one arrives as a notification.
 - 🗂️ **Gallery with filter and search.** Videos / images / music separately, search in prompts, undo delete. Each result shows how long it took.
 
-## 🃏 Nine cards
+## 🃏 Ten cards
 
 | | Card | Model | What it does |
 |---|---|---|---|
@@ -70,6 +70,7 @@ PocketComfy is a **client** — it generates nothing on its own:
 | ✏️ | **Image edit** | Krea 2 + Identity Edit | "give her a red jacket" — the face stays |
 | 🩹 | **Photo restore** | Qwen Image Edit 2511 | an old or damaged photo as new, including colorization |
 | 🎭 | **Face swap** | Flux Fill + ACE++ | scribble over the face, pick a new one, done |
+| 🖌️ | **Inpaint** | FLUX.2 Klein / Flux Fill | scribble over a spot, type what belongs there, only that changes |
 | 🔎 | **Upscale** | SeedVR2 | gigapixel upscale in tiles (2×2 up to 4×4) |
 | 🎵 | **Music** | ACE-Step 1.5 | a whole song from text — style, verses, chorus, vocals |
 
@@ -118,7 +119,7 @@ flowchart LR
 - `comfy/*Builder.kt` — value substitution into templates (tests assert nothing else changes)
 - `engine/GenerationEngine.kt` — upload → queue → watch → download; a network drop never kills a run
 - `comfy/ServerAudit.kt` — templates compared against `/object_info` ("what's missing on the server")
-- `engine/RunTexts.kt` — progress wording, one matrix for all nine cards
+- `engine/RunTexts.kt` — progress wording, one matrix for all ten cards
 
 Source comments are in Czech; identifiers and structure are self-explanatory,
 and this document plus [INSTALL.en.md](INSTALL.en.md) cover everything you need

@@ -70,6 +70,17 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/alimama-creative/FLUX.1-Turbo-Alpha/resolve/main/diffusion_pytorch_model.safetensors" "models\loras\FLUX.1-Turbo-Alpha.safetensors"
 )
 
+set /p ODP="Karta Domalovat - FLUX.2 Klein enkoder a VAE, cca 8,4 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors" "models\text_encoders\qwen_3_8b_fp8mixed.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors" "models\vae\flux2-vae.safetensors"
+  echo   [rucne] samotny model flux-2-klein-9b.safetensors vydava Black Forest Labs
+  echo          pod licenci, kterou je potreba na Hugging Face odklepnout:
+  echo          https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8
+  echo          Soubor uloz do models\diffusion_models pod nazvem flux-2-klein-9b.safetensors.
+  echo   Pozn.: druha volba karty jede na modelech z karty Vymena tvare.
+)
+
 echo.
 echo Tlacitko "Vylepsit prompt" - jazykovy model do models\LLM, cca 7 GB.
 echo   Bez nej karty jedou normalne, jen tlacitko ohlasi chybejici model.
