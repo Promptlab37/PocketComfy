@@ -157,6 +157,19 @@ class RestoreFaceSwapBuilderTest {
     }
 
     @Test
+    fun `tvar - imageSlots pokryje vsechny soubory sceny`() {
+        // 2.89 regrese: scéna nese 3 soubory (cíl, tvář, maska), ale limit
+        // slotů zůstal na 2 a engine masku při nahrávání uřízl.
+        val scena = cz.promptlab.h3video.data.FaceSwapScene(
+            target = File("c.png"), mask = File("m.png"), face = File("f.png")
+        )
+        assertTrue(
+            cz.promptlab.h3video.data.GenParams(mode = cz.promptlab.h3video.data.Mode.FACESWAP)
+                .imageSlots >= scena.uploadImages.size
+        )
+    }
+
+    @Test
     fun `faze podle trid`() {
         assertEquals(Stage.SAMPLING, RestoreBuilder.stageForClass("KSampler"))
         assertEquals(Stage.MODELS, RestoreBuilder.stageForClass("UNETLoader"))

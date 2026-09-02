@@ -121,8 +121,10 @@ data class GenParams(
             Mode.IMAGE -> 0
             Mode.MUSIC -> 0
             Mode.RESTORE -> 1
-            // Výměna tváře: cílová fotka s maskou a nová tvář.
-            Mode.FACESWAP -> 2
+            // Výměna tváře: cílová fotka, nová tvář a od 2.89 i samostatná
+            // maska štětce — TŘETÍ soubor. Ve 2.89 tu zůstala dvojka a engine
+            // masku při nahrávání uřízl (LoadImage pak dostal prázdný název).
+            Mode.FACESWAP -> 3
         }
 
     /**
