@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import cz.promptlab.h3video.comfy.ComfyClient
+import cz.promptlab.h3video.comfy.ComfyException
+import cz.promptlab.h3video.comfy.PromptRewriteBuilder
 import cz.promptlab.h3video.data.AioMode
 import cz.promptlab.h3video.data.AioScene
 import cz.promptlab.h3video.data.AioSlot
@@ -1527,6 +1529,148 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         aioStore.save(next)
     }
 
+    // ------------------------------------------------ ✨ vylepšení promptu (AI)
+
+    sealed interface RewriteState {
+        data object Idle : RewriteState
+        data object Busy : RewriteState
+        data class Fail(val message: String) : RewriteState
+    }
+
+    private val _rewriteState = MutableStateFlow<RewriteState>(RewriteState.Idle)
+    val rewriteState: StateFlow<RewriteState> = _rewriteState.asStateFlow()
+
+    /** Původní zadání před přepsáním — na jedno ťuknutí se dá vrátit. */
+    private val _rewriteOriginal = MutableStateFlow<String?>(null)
+    val rewriteOriginal: StateFlow<String?> = _rewriteOriginal.asStateFlow()
+
+    fun vratPuvodniPrompt() {
+        _rewriteOriginal.value?.let { setAioPrompt(it) }
+        _rewriteOriginal.value = null
+    }
+
+    /**
+     * Pošle zadání karty All in One přepisovači na serveru (MiniMax-H3 Prompt
+     * Rewriter 8B nad odblokovaným Qwen3-VL) a výsledný plný H3 prompt dosadí
+     * zpět do pole. Česky napsané zadání přeloží a rozepíše sám; u režimu
+     * „Z obrázku" dostane i snímek a popíše, co na něm vidí. LLM se po
+     * přepisu z VRAM uklidí, video pak jede jako obvykle.
+     */
+    fun vylepsiAioPrompt() {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val s = _aio.value
+        val p = _params.value
+        val zadani = s.prompt.trim()
+        if (zadani.isBlank()) {
+            _rewriteState.value = RewriteState.Fail("Nejdřív napiš aspoň pár slov o tom, co chceš.")
+            return
+        }
+        _rewriteState.value = RewriteState.Busy
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
+                        ?: throw ComfyException(
+                            "rewriter chybi",
+                            "Server nemá balík Prompt Rewriter — nainstaluj " +
+                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+                        )
+                    val req = spec.getJSONObject("input").getJSONObject("required")
+                    val nabidka = req.getJSONArray("model").getJSONArray(0)
+                    val model = PromptRewriteBuilder.vyberModel(
+                        (0 until nabidka.length()).map { nabidka.getString(it) }
+                    ) ?: throw ComfyException(
+                        "zadny model",
+                        "Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM.",
+                    )
+                    // Snímky podle režimu karty: Z obrázku pošle první (a při
+                    // zapnutém posledním snímku i ten); ostatní jedou z textu.
+                    var first: String? = null
+                    var last: String? = null
+                    if (s.mode == AioMode.IMAGE) {
+                        s.first.image?.let {
+                            first = client.uploadImage(it.readBytes(), "rw_first.png")
+                        }
+                        if (s.useLastFrame) s.last.image?.let {
+                            last = client.uploadImage(it.readBytes(), "rw_last.png")
+                        }
+                    } else if (s.mode == AioMode.KEYFRAMES) {
+                        s.keys.firstOrNull { it.image != null }?.image?.let {
+                            first = client.uploadImage(it.readBytes(), "rw_first.png")
+                        }
+                    }
+                    val task = when {
+                        first != null && last != null -> "FL2VA"
+                        first != null -> "I2VA"
+                        else -> "T2VA"
+                    }
+                    // Poměr stran a délka z toho, co má uživatel na kartě.
+                    val rozliseniEnum = req.getJSONArray("resolution").getJSONArray(0)
+                    val rozliseni = (0 until rozliseniEnum.length())
+                        .map { rozliseniEnum.getString(it) }
+                        .let { en ->
+                            en.firstOrNull { it == p.aspect.label }
+                                ?: en.firstOrNull { it == "16:9" } ?: en.first()
+                        }
+                    val durCfg = req.getJSONArray("duration").optJSONObject(1)
+                    val delka = Math.round(s.frames / 24f)
+                        .coerceIn(durCfg?.optInt("min", 2) ?: 2, durCfg?.optInt("max", 60) ?: 60)
+                    // České zadání model občas vyloží i jako nápis do obrazu —
+                    // tichý dovětek tomu předejde (do H3 promptu se nedostane,
+                    // je to instrukce pro přepisovač, ne pro video model).
+                    val zadaniProModel =
+                        "$zadani. Do not add any on-screen text or captions unless explicitly requested."
+                    val wf = PromptRewriteBuilder.build(
+                        prompt = zadaniProModel,
+                        model = model,
+                        task = task,
+                        resolution = rozliseni,
+                        durationSec = delka,
+                        seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                        firstImage = first,
+                        lastImage = last,
+                    )
+                    val promptId = java.util.UUID.randomUUID().toString()
+                    client.queuePrompt(wf, java.util.UUID.randomUUID().toString(), promptId)
+                    // LLM se načítá z disku, první přepis klidně přes minutu.
+                    val limit = System.currentTimeMillis() + 240_000
+                    while (System.currentTimeMillis() < limit) {
+                        val h = client.history(promptId)
+                        if (h != null) {
+                            val status = h.optJSONObject("status")
+                            if (status?.optString("status_str") == "error") throw ComfyException(
+                                "rewrite error",
+                                "Přepis na serveru selhal — mrkni do logu ComfyUI.",
+                            )
+                            val text = h.optJSONObject("outputs")
+                                ?.optJSONObject(PromptRewriteBuilder.N_PREVIEW)
+                                ?.optJSONArray("text")
+                            if (text != null && text.length() > 0) {
+                                return@runCatching text.getString(0)
+                            }
+                            if (status?.optBoolean("completed") == true) throw ComfyException(
+                                "bez textu",
+                                "Server přepis dokončil, ale nevrátil text.",
+                            )
+                        }
+                        delay(1500)
+                    }
+                    throw ComfyException("timeout", "Přepis trvá moc dlouho — zkus to znovu.")
+                }
+            }
+            vysledek.onSuccess { text ->
+                _rewriteOriginal.value = zadani
+                setAioPrompt(text.trim())
+                _rewriteState.value = RewriteState.Idle
+            }.onFailure { e ->
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl."
+                )
+            }
+        }
+    }
+
     fun setAioMode(mode: AioMode) {
         updateAio { it.copy(mode = mode) }
         hlidejProfilKCeste()
@@ -1957,11 +2101,33 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 s.copy(
                     targetThumb = s.target?.let { ImageUtils.loadFileThumb(it) },
                     faceThumb = s.face?.let { ImageUtils.loadFileThumb(it) },
+                    // Pojistka na masky z verzí ≤2.83: ukládaly se BEZ alfa
+                    // kanálu (past hasAlpha), server pak dostal prázdnou masku
+                    // a v místě tváře zbyla černá díra. Soubor bez alfy se tu
+                    // neuznává — appka si vyžádá namalovat masku znovu.
+                    maskPainted = s.maskPainted && s.target != null && pngMaAlfu(s.target),
                 )
             }
             if (restored.target != null || restored.face != null) _swap.value = restored
         }
     }
+
+    /**
+     * Má PNG alfa kanál? Čte se jen barevný typ z hlavičky IHDR (bajt 25):
+     * 6 = truecolor s alfou. Plné dekódování by tu bylo zbytečně drahé.
+     */
+    private fun pngMaAlfu(f: File): Boolean = runCatching {
+        f.inputStream().use { ins ->
+            val b = ByteArray(26)
+            var precteno = 0
+            while (precteno < 26) {
+                val n = ins.read(b, precteno, 26 - precteno)
+                if (n < 0) return false
+                precteno += n
+            }
+            b[25].toInt() == 6
+        }
+    }.getOrDefault(false)
 
     private fun updateSwap(block: (FaceSwapScene) -> FaceSwapScene) {
         val next = block(_swap.value)
@@ -2032,7 +2198,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }.getOrNull()
             } ?: return@launch
             val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(f) }
-            updateSwap { it.copy(target = f, targetThumb = thumb, maskPainted = true) }
+            // Kontrola po uložení: kdyby alfa kdykoli v budoucnu zase vypadla,
+            // maska se neuzná a tlačítko si řekne o novou — žádná černá díra.
+            val maAlfu = withContext(Dispatchers.IO) { pngMaAlfu(f) }
+            updateSwap { it.copy(target = f, targetThumb = thumb, maskPainted = maAlfu) }
         }
     }
 

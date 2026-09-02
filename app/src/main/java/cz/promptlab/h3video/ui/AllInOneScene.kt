@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,6 +49,7 @@ import cz.promptlab.h3video.data.AioSlot
 import cz.promptlab.h3video.data.Upscaler
 import cz.promptlab.h3video.data.planExtend
 import cz.promptlab.h3video.ui.theme.Cyan
+import cz.promptlab.h3video.ui.theme.Danger
 import cz.promptlab.h3video.ui.theme.Outline1
 import cz.promptlab.h3video.ui.theme.Surface2
 import cz.promptlab.h3video.ui.theme.TextLow
@@ -154,6 +156,53 @@ fun AllInOneSection(vm: MainViewModel) {
                     minHeight = 130.dp,
                     onClear = { vm.setAioPrompt("") },
                 )
+                // ✨ Vylepšovač: pár slov (klidně česky) → plný H3 prompt se
+                // záběry, časováním a zvukem. Přepisovač (Rewriter 8B) neumí
+                // Ref2VA, u Reference a listu postavy se proto neukazuje.
+                if (scene.mode != AioMode.CHARSHEET && scene.mode != AioMode.REFERENCE &&
+                    scene.mode != AioMode.UPSCALE
+                ) {
+                    val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
+                    val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
+                    val bezi = stavPrepisu is MainViewModel.RewriteState.Busy
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlineButton(
+                            if (bezi) "Přepisuji…" else "✨ Vylepšit prompt",
+                            color = Cyan,
+                        ) { if (!bezi) vm.vylepsiAioPrompt() }
+                        if (bezi) {
+                            Spacer(Modifier.width(10.dp))
+                            CircularProgressIndicator(
+                                Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
+                            )
+                        }
+                        if (!bezi && puvodni != null) {
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                "Vrátit původní",
+                                style = MaterialTheme.typography.bodySmall, color = TextMid,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { vm.vratPuvodniPrompt() }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    (stavPrepisu as? MainViewModel.RewriteState.Fail)?.let {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            it.message,
+                            style = MaterialTheme.typography.bodySmall, color = Danger
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "Napiš klidně česky pár slov — AI na tvém počítači z nich " +
+                            "složí plný anglický prompt (záběry, časování, zvuk).",
+                        style = MaterialTheme.typography.bodySmall, color = TextLow
+                    )
+                }
             }
         }
     }
