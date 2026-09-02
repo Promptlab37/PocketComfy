@@ -2096,38 +2096,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch {
+            // Masky z verzí ≤2.88 žily v alfa kanálu fotky — store je neuznává
+            // (nový soubor maska.png neexistuje) a appka si řekne o novou.
             val restored = withContext(Dispatchers.IO) {
                 val s = swapStore.load()
                 s.copy(
                     targetThumb = s.target?.let { ImageUtils.loadFileThumb(it) },
                     faceThumb = s.face?.let { ImageUtils.loadFileThumb(it) },
-                    // Pojistka na masky z verzí ≤2.83: ukládaly se BEZ alfa
-                    // kanálu (past hasAlpha), server pak dostal prázdnou masku
-                    // a v místě tváře zbyla černá díra. Soubor bez alfy se tu
-                    // neuznává — appka si vyžádá namalovat masku znovu.
-                    maskPainted = s.maskPainted && s.target != null && pngMaAlfu(s.target),
                 )
             }
             if (restored.target != null || restored.face != null) _swap.value = restored
         }
     }
-
-    /**
-     * Má PNG alfa kanál? Čte se jen barevný typ z hlavičky IHDR (bajt 25):
-     * 6 = truecolor s alfou. Plné dekódování by tu bylo zbytečně drahé.
-     */
-    private fun pngMaAlfu(f: File): Boolean = runCatching {
-        f.inputStream().use { ins ->
-            val b = ByteArray(26)
-            var precteno = 0
-            while (precteno < 26) {
-                val n = ins.read(b, precteno, 26 - precteno)
-                if (n < 0) return false
-                precteno += n
-            }
-            b[25].toInt() == 6
-        }
-    }.getOrDefault(false)
 
     private fun updateSwap(block: (FaceSwapScene) -> FaceSwapScene) {
         val next = block(_swap.value)
@@ -2158,9 +2138,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }.getOrNull()
             } ?: return@launch
             val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(target) }
-            updateSwap {
-                it.copy(target = target, targetThumb = thumb, maskPainted = false)
-            }
+            // Nová fotka = stará maska už nesedí, maže se.
+            withContext(Dispatchers.IO) { runCatching { swapStore.maskFile().delete() } }
+            updateSwap { it.copy(target = target, targetThumb = thumb, mask = null) }
         }
     }
 
@@ -2181,27 +2161,28 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             updateSwap { it.copy(face = null, faceThumb = null) }
         } else {
             runCatching { swapStore.targetFile().delete() }
-            updateSwap { it.copy(target = null, targetThumb = null, maskPainted = false) }
+            runCatching { swapStore.maskFile().delete() }
+            updateSwap { it.copy(target = null, targetThumb = null, mask = null) }
         }
     }
 
-    /** Uloží fotku s namalovanou maskou (alfa 0 tam, kde uživatel čmáral). */
-    fun ulozSwapMasku(bmp: android.graphics.Bitmap) {
+    /**
+     * Uloží masku štětce jako samostatný černobílý PNG (bílá = vyměnit).
+     * Fotka zůstává netknutá — gumování do alfy dřív černilo její pixely
+     * a černé okraje dělaly tmavý šev kolem vyměněné tváře.
+     */
+    fun ulozSwapMasku(maska: android.graphics.Bitmap) {
         viewModelScope.launch {
             val f = withContext(Dispatchers.IO) {
                 runCatching {
-                    val target = swapStore.targetFile()
-                    target.outputStream().use {
-                        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                    val soubor = swapStore.maskFile()
+                    soubor.outputStream().use {
+                        maska.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
                     }
-                    target
+                    soubor.takeIf { it.length() > 0 }
                 }.getOrNull()
             } ?: return@launch
-            val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(f) }
-            // Kontrola po uložení: kdyby alfa kdykoli v budoucnu zase vypadla,
-            // maska se neuzná a tlačítko si řekne o novou — žádná černá díra.
-            val maAlfu = withContext(Dispatchers.IO) { pngMaAlfu(f) }
-            updateSwap { it.copy(target = f, targetThumb = thumb, maskPainted = maAlfu) }
+            updateSwap { it.copy(mask = f) }
         }
     }
 

@@ -7,24 +7,28 @@ import java.io.File
 
 /**
  * Karta **Výměna tváře** — uživatelovo ACE++ workflow (Flux Fill inpaint
- * s portrétní LoRA). Cílová fotka nese ručně namalovanou masku obličeje
- * v průhlednosti (stejně jako maska z editoru ComfyUI): kde uživatel
- * v appce začmáral, tam je alfa 0 a uzel LoadImage z toho udělá masku.
+ * s portrétní LoRA). Maska je od 2.89 SAMOSTATNÝ soubor (bílá = vyměnit,
+ * černá = nechat) a cílová fotka zůstává netknutá — dřívější gumování do
+ * alfa kanálu zároveň černilo pixely fotky a černé okraje se pak
+ * přimíchávaly do prolnutí (tmavý šev kolem masky) a braly modelu kontext.
  *
- * Dosazují se JEN dvě fotky a seed; celý inpaint řetěz je z předlohy.
+ * Dosazují se JEN tři obrázky a seed; celý inpaint řetěz je z předlohy.
  */
 @Immutable
 data class FaceSwapScene(
-    /** Cílová fotka (PNG s vymaskovaným obličejem v alfě). */
+    /** Cílová fotka — čistá, bez zásahů. */
     val target: File? = null,
     val targetThumb: Bitmap? = null,
-    /** Je na cílové fotce namalovaná maska? Bez ní není co měnit. */
-    val maskPainted: Boolean = false,
+    /** Maska štětcem: bílá = vyměnit, černá = nechat. Bez ní není co měnit. */
+    val mask: File? = null,
     /** Fotka s novou tváří. */
     val face: File? = null,
     val faceThumb: Bitmap? = null,
 ) {
-    val uploadImages: List<File> get() = listOfNotNull(target, face)
+    val maskPainted: Boolean get() = mask != null
+
+    /** Pořadí je závazné — stavitel čte [cíl, tvář, maska]. */
+    val uploadImages: List<File> get() = listOfNotNull(target, face, mask)
 }
 
 /** Co kartě chybí, než se dá spustit. */
@@ -44,30 +48,30 @@ fun faceSwapHints(s: FaceSwapScene): List<String> {
     return out
 }
 
-/** Soubory karty ve vlastní složce; příznak masky v nastavení. */
+/** Soubory karty ve vlastní složce. */
 class FaceSwapStore(private val ctx: Context) {
 
     fun dir(): File = File(ctx.filesDir, "faceswap").also { it.mkdirs() }
 
-    /** Cílová fotka se drží v PNG kvůli alfa kanálu s maskou. */
     fun targetFile(): File = File(dir(), "cil.png")
     fun faceFile(): File = File(dir(), "tvar.png")
 
-    private val sp = ctx.getSharedPreferences("h3video", Context.MODE_PRIVATE)
+    /** Maska ve vlastním souboru — fotka se malováním nemění. */
+    fun maskFile(): File = File(dir(), "maska.png")
 
     fun load(): FaceSwapScene {
         val target = targetFile().takeIf { it.exists() && it.length() > 0 }
         val face = faceFile().takeIf { it.exists() && it.length() > 0 }
-        return FaceSwapScene(
-            target = target,
-            maskPainted = target != null && sp.getBoolean(KEY_MASK, false),
-            face = face,
-        )
+        // Maska z verzí ≤2.88 žila v alfa kanálu cílové fotky — nový soubor
+        // neexistuje, takže se stará maska automaticky neuzná a appka si
+        // řekne o novou. Přesně to chceme.
+        val mask = if (target != null) {
+            maskFile().takeIf { it.exists() && it.length() > 0 }
+        } else null
+        return FaceSwapScene(target = target, mask = mask, face = face)
     }
 
-    fun save(s: FaceSwapScene) {
-        sp.edit().putBoolean(KEY_MASK, s.maskPainted).apply()
+    fun save(@Suppress("UNUSED_PARAMETER") s: FaceSwapScene) {
+        // Všechno podstatné žije v souborech — není co zapisovat.
     }
-
-    private companion object { const val KEY_MASK = "faceswapMask" }
 }

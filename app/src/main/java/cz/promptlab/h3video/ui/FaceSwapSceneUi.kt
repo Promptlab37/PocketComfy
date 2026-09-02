@@ -407,21 +407,22 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
                     if (tahy.isEmpty()) "Nejdřív začmárej obličej" else "Hotovo — použít masku",
                     enabled = tahy.isNotEmpty(),
                     onClick = {
-                        val out = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-                        // KLÍČOVÉ: předloha z JPEGu má hasAlpha=false a ta vlajka
-                        // se kopíruje dál — PNG by se pak uložilo BEZ alfa kanálu,
-                        // vygumovaná maska by zmizela a server by nedostal co
-                        // vyměnit (černá díra místo tváře, 1. 9. 2026).
-                        out.setHasAlpha(true)
+                        // Maska jde od 2.89 jako SAMOSTATNÝ černobílý obrázek
+                        // (bílá = vyměnit) a fotka zůstává netknutá. Dřívější
+                        // gumování do alfy zároveň černilo pixely fotky —
+                        // černé okraje se pak přimíchávaly do prolnutí a kolem
+                        // vyměněné tváře zůstával tmavý šev.
+                        val out = Bitmap.createBitmap(
+                            bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888
+                        )
                         val canvas = android.graphics.Canvas(out)
+                        canvas.drawColor(android.graphics.Color.BLACK)
                         val paint = android.graphics.Paint().apply {
                             isAntiAlias = true
+                            color = android.graphics.Color.WHITE
                             style = android.graphics.Paint.Style.STROKE
                             strokeCap = android.graphics.Paint.Cap.ROUND
                             strokeJoin = android.graphics.Paint.Join.ROUND
-                            xfermode = android.graphics.PorterDuffXfermode(
-                                android.graphics.PorterDuff.Mode.CLEAR
-                            )
                         }
                         tahy.forEach { tah ->
                             if (tah.body.isEmpty()) return@forEach

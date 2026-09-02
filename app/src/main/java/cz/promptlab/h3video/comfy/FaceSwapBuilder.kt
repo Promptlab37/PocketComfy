@@ -21,6 +21,7 @@ object FaceSwapBuilder {
     const val N_UNET = "340"
     const val N_TARGET = "239"
     const val N_FACE = "240"
+    const val N_MASK = "244"
     const val N_LORA = "337"
     const val N_CROP = "420"
     const val N_STITCH = "421"
@@ -40,13 +41,15 @@ object FaceSwapBuilder {
         build(template(ctx), seed, images)
 
     /**
-     * [images] v pořadí: cílová fotka s maskou v alfě, nová tvář.
-     * Stejné sestavení z textu předlohy, ať jde graf ověřit testem.
+     * [images] v pořadí: čistá cílová fotka, nová tvář, maska štětce
+     * (černobílý PNG, bílá = vyměnit). Stejné sestavení z textu předlohy,
+     * ať jde graf ověřit testem.
      */
     fun build(template: String, seed: Long, images: List<String>): JSONObject {
         val wf = JSONObject(template)
         wf.inputs(N_TARGET).put("image", images.getOrElse(0) { "" })
         wf.inputs(N_FACE).put("image", images.getOrElse(1) { "" })
+        wf.inputs(N_MASK).put("image", images.getOrElse(2) { "" })
         wf.inputs(N_SAMPLER).put("seed", seed)
         return wf
     }

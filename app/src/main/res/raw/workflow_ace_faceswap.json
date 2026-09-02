@@ -35,13 +35,23 @@
   "239": {
     "class_type": "LoadImage",
     "inputs": { "image": "" },
-    "_meta": { "title": "Cílová fotka s maskou" }
+    "_meta": { "title": "Cílová fotka" }
+  },
+  "244": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Maska štětce (bílá = vyměnit)" }
+  },
+  "245": {
+    "class_type": "ImageToMask",
+    "inputs": { "image": ["244", 0], "channel": "red" },
+    "_meta": { "title": "Maska z obrázku" }
   },
   "420": {
     "class_type": "InpaintCropImproved",
     "inputs": {
       "image": ["239", 0],
-      "mask": ["239", 1],
+      "mask": ["245", 0],
       "downscale_algorithm": "bilinear",
       "upscale_algorithm": "bicubic",
       "preresize": false,

@@ -79,17 +79,18 @@ class RestoreFaceSwapBuilderTest {
     // ------------------------------------------------------------- tvář
 
     @Test
-    fun `tvar - dosadi se cil, tvar a seed`() {
-        val wf = FaceSwapBuilder.build(swap, 7L, listOf("cil.png", "tvar.png"))
+    fun `tvar - dosadi se cil, tvar, maska a seed`() {
+        val wf = FaceSwapBuilder.build(swap, 7L, listOf("cil.png", "tvar.png", "maska.png"))
         assertEquals("cil.png", wf.inputs(FaceSwapBuilder.N_TARGET).getString("image"))
         assertEquals("tvar.png", wf.inputs(FaceSwapBuilder.N_FACE).getString("image"))
+        assertEquals("maska.png", wf.inputs(FaceSwapBuilder.N_MASK).getString("image"))
         assertEquals(7L, wf.inputs(FaceSwapBuilder.N_SAMPLER).getLong("seed"))
         bezVisicichOdkazu(wf)
     }
 
     @Test
     fun `tvar - vyladene hodnoty zustavaji`() {
-        val wf = FaceSwapBuilder.build(swap, 1L, listOf("a.png", "b.png"))
+        val wf = FaceSwapBuilder.build(swap, 1L, listOf("a.png", "b.png", "m.png"))
         val s = wf.inputs(FaceSwapBuilder.N_SAMPLER)
         assertEquals(12, s.getInt("steps"))
         assertEquals("euler", s.getString("sampler_name"))
@@ -110,12 +111,16 @@ class RestoreFaceSwapBuilderTest {
     }
 
     @Test
-    fun `tvar - maska jde pres alfa kanal cile do inpaint retezu`() {
-        val wf = FaceSwapBuilder.build(swap, 1L, listOf("cil.png", "tvar.png"))
-        // maska z LoadImage (výstup 1) vede do výřezu
+    fun `tvar - maska jde ze samostatneho souboru pres ImageToMask`() {
+        val wf = FaceSwapBuilder.build(swap, 1L, listOf("cil.png", "tvar.png", "maska.png"))
+        // maska: LoadImage(244) → ImageToMask(245, kanál red) → výřez
+        assertEquals("ImageToMask", wf.getJSONObject("245").getString("class_type"))
+        assertEquals(FaceSwapBuilder.N_MASK,
+            wf.inputs("245").getJSONArray("image").getString(0))
+        assertEquals("red", wf.inputs("245").getString("channel"))
         val maska = wf.inputs(FaceSwapBuilder.N_CROP).getJSONArray("mask")
-        assertEquals(FaceSwapBuilder.N_TARGET, maska.getString(0))
-        assertEquals(1, maska.getInt(1))
+        assertEquals("245", maska.getString(0))
+        assertEquals(0, maska.getInt(1))
         // výsledek se vlepuje zpátky přes stitcher z výřezu
         assertEquals(FaceSwapBuilder.N_CROP,
             wf.inputs(FaceSwapBuilder.N_STITCH).getJSONArray("stitcher").getString(0))
@@ -135,15 +140,20 @@ class RestoreFaceSwapBuilderTest {
         )
         assertEquals(
             "Vyber fotku s novou tváří.",
-            faceSwapProblem(FaceSwapScene(target = File("c.png"), maskPainted = true))
+            faceSwapProblem(FaceSwapScene(target = File("c.png"), mask = File("m.png")))
         )
         assertNull(
             faceSwapProblem(
                 FaceSwapScene(
-                    target = File("c.png"), maskPainted = true, face = File("f.png")
+                    target = File("c.png"), mask = File("m.png"), face = File("f.png")
                 )
             )
         )
+        // Pořadí nahrávání je závazné pro stavitele: cíl, tvář, maska.
+        val scena = FaceSwapScene(
+            target = File("c.png"), mask = File("m.png"), face = File("f.png")
+        )
+        assertEquals(listOf("c.png", "f.png", "m.png"), scena.uploadImages.map { it.name })
     }
 
     @Test
