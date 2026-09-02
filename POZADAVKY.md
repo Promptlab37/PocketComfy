@@ -27,7 +27,7 @@ chybí u tebe).
 | praveen-tools | ImageTileSplit/Merge, LoadImageWithFilename | Zvětšit |
 | VideoHelperSuite / KJNodes* | VHS_VideoCombine, PathchSageAttentionKJ, INTConstant, ModelPreviewOverrideKJ, ImageConcanate, ResizeMask | video karty, živý náhled, Výměna tváře |
 | nody Krea 2 Edit* | Krea2EditModelPatch, Krea2EditGroundedEncode, SpectrumApplyMiniMaxH3, H3CacheBust | Úprava obrázku, video karty |
-| ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | Výměna tváře |
+| ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | Výměna tváře, Domalovat |
 | ComfyUI-MiniMaxH3-TeaCache | MiniMaxH3TeaCache | video karty (volitelné zrychlení) |
 | Comfyui-QwenEditUtils | QwenEditConfigPreparer, TextEncodeQwenImageEditPlusCustom | Oprava fotky |
 | ComfyUI_essentials | ImageResize+ | Výměna tváře |
@@ -58,20 +58,27 @@ Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy
 - `krea2_turbo_fp8_scaled.safetensors` (Úprava obrázku)
 - `z_image_turbo_bf16.safetensors` (karta Obrázek)
 - `qwen_image_edit_2511_fp8_e4m3fn.safetensors` (Oprava fotky)
-- `flux1-Fill-Dev_FP8.safetensors` (Výměna tváře)
+- `flux1-Fill-Dev_FP8.safetensors` (Výměna tváře, Domalovat — volba Flux Fill)
+- `flux-2-klein-9b.safetensors` (Domalovat — výchozí volba FLUX.2 Klein;
+  stáhni fp8 vydání z [black-forest-labs/FLUX.2-klein-9b-fp8](https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8),
+  ~9,5 GB, licenci je potřeba na Hugging Face odklepnout, a ulož pod tímhle názvem)
 
 **text_encoders/**
 - `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` (MiniMax H3)
 - `qwen3vl_4b_fp8_scaled.safetensors` (Krea 2)
 - `qwen_3_4b.safetensors` (karta Obrázek)
 - `qwen_2.5_vl_7b_fp8_scaled.safetensors` (Oprava fotky)
-- `clip_l.safetensors` + `t5xxl_fp16.safetensors` (Výměna tváře)
+- `clip_l.safetensors` + `t5xxl_fp16.safetensors` (Výměna tváře, Domalovat — Flux Fill)
+- `qwen_3_8b_fp8mixed.safetensors` (Domalovat — FLUX.2 Klein), z
+  [Comfy-Org/vae-text-encorder-for-flux-klein-9b](https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b)
 
 **vae/**
 - `minimax_h3_video_vae_fp16.safetensors`
 - `minimax_h3_audio_vae_fp32.safetensors`
 - `qwen_image_vae.safetensors` (Krea 2)
-- `ae.sft` (karta Obrázek — FLUX/Z-Image autoenkodér)
+- `ae.sft` (karta Obrázek a Domalovat — FLUX/Z-Image autoenkodér)
+- `flux2-vae.safetensors` (Domalovat — FLUX.2 Klein), ze stejného repozitáře
+  jako enkodér výš
 
 **loras/**
 - `krea2_identity_edit_v1_2.safetensors` (drží identitu při úpravě obrázku)

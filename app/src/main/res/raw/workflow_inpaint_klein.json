@@ -1,0 +1,152 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "flux-2-klein-9b.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": { "title": "FLUX.2 Klein 9B" }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen_3_8b_fp8mixed.safetensors",
+      "type": "flux2",
+      "device": "default"
+    },
+    "_meta": { "title": "Textový enkodér Klein" }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "flux2-vae.safetensors" },
+    "_meta": { "title": "VAE" }
+  },
+  "10": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Fotka" }
+  },
+  "11": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Maska štětce (bílá = domalovat)" }
+  },
+  "12": {
+    "class_type": "ImageToMask",
+    "inputs": { "image": ["11", 0], "channel": "red" },
+    "_meta": { "title": "Maska z obrázku" }
+  },
+  "20": {
+    "class_type": "InpaintCropImproved",
+    "inputs": {
+      "image": ["10", 0],
+      "mask": ["12", 0],
+      "downscale_algorithm": "bilinear",
+      "upscale_algorithm": "bicubic",
+      "preresize": false,
+      "preresize_mode": "ensure minimum resolution",
+      "preresize_min_width": 1024,
+      "preresize_min_height": 1024,
+      "preresize_max_width": 16384,
+      "preresize_max_height": 16384,
+      "mask_fill_holes": true,
+      "mask_expand_pixels": 0,
+      "mask_invert": false,
+      "mask_blend_pixels": 24,
+      "mask_hipass_filter": 0.1,
+      "extend_for_outpainting": false,
+      "extend_up_factor": 1.0,
+      "extend_down_factor": 1.0,
+      "extend_left_factor": 1.0,
+      "extend_right_factor": 1.0,
+      "context_from_mask_extend_factor": 1.5,
+      "output_resize_to_target_size": true,
+      "output_target_width": 1024,
+      "output_target_height": 1024,
+      "output_padding": "32",
+      "device_mode": "cpu (compatible)"
+    },
+    "_meta": { "title": "Výřez kolem masky" }
+  },
+  "21": {
+    "class_type": "GetImageSize",
+    "inputs": { "image": ["20", 1] },
+    "_meta": { "title": "Rozměry výřezu" }
+  },
+  "22": {
+    "class_type": "VAEEncode",
+    "inputs": { "pixels": ["20", 1], "vae": ["3", 0] },
+    "_meta": { "title": "Výřez do latentu" }
+  },
+  "23": {
+    "class_type": "SetLatentNoiseMask",
+    "inputs": { "samples": ["22", 0], "mask": ["20", 2] },
+    "_meta": { "title": "Přemalovat jen pod maskou" }
+  },
+  "30": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "clip": ["2", 0], "text": "" },
+    "_meta": { "title": "Zadání" }
+  },
+  "31": {
+    "class_type": "ReferenceLatent",
+    "inputs": { "conditioning": ["30", 0], "latent": ["22", 0] },
+    "_meta": { "title": "Původní výřez jako reference" }
+  },
+  "32": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": { "conditioning": ["31", 0] },
+    "_meta": { "title": "Prázdný negativ" }
+  },
+  "40": {
+    "class_type": "Flux2Scheduler",
+    "inputs": { "steps": 4, "width": ["21", 0], "height": ["21", 1] },
+    "_meta": { "title": "Sigmy" }
+  },
+  "41": {
+    "class_type": "KSamplerSelect",
+    "inputs": { "sampler_name": "euler" },
+    "_meta": { "title": "Sampler" }
+  },
+  "42": {
+    "class_type": "RandomNoise",
+    "inputs": { "noise_seed": 0 },
+    "_meta": { "title": "Šum" }
+  },
+  "43": {
+    "class_type": "CFGGuider",
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["31", 0],
+      "negative": ["32", 0],
+      "cfg": 1.0
+    },
+    "_meta": { "title": "Vedení" }
+  },
+  "44": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": ["42", 0],
+      "guider": ["43", 0],
+      "sampler": ["41", 0],
+      "sigmas": ["40", 0],
+      "latent_image": ["23", 0]
+    },
+    "_meta": { "title": "Vzorkování" }
+  },
+  "50": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["44", 0], "vae": ["3", 0] },
+    "_meta": { "title": "Dekódování" }
+  },
+  "51": {
+    "class_type": "InpaintStitchImproved",
+    "inputs": { "stitcher": ["20", 0], "inpainted_image": ["50", 0] },
+    "_meta": { "title": "Vlepení zpět do fotky" }
+  },
+  "60": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["51", 0], "filename_prefix": "PocketInpaint" },
+    "_meta": { "title": "Uložení" }
+  }
+}

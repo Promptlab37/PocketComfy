@@ -86,6 +86,19 @@ enum class Mode(
     ),
 
     /**
+     * Domalování do masky (inpainting): začmáráš kus fotky, napíšeš, co tam
+     * má být, a přepíše se jen ten kus. Výchozí je **FLUX.2 Klein 9B**
+     * (destilovaný, 4 kroky, rozumí větě), druhá volba **Flux Fill dev**
+     * trénovaný přímo na díry v obraze. Okolí masky se vyřízne, přemaluje
+     * v plném rozlišení a vlepí zpět — zbytek fotky se nepřepočítává.
+     */
+    INPAINT(
+        titleCs = "Domalovat",
+        shortCs = "Domalovat",
+        detailCs = "Začmáráš místo, napíšeš co tam má být, přepíše se jen ono"
+    ),
+
+    /**
      * Uživatelovo SeedVR2 „gigapixel" workflow — dlaždice, každá na 3200 px,
      * slepení. Předloha je jeho export 1:1; dosazuje se jen fotka, mřížka
      * a seed. Druhá karta, která nevyrábí video.

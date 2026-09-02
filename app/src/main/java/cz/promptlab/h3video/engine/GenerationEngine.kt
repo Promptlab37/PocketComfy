@@ -8,6 +8,7 @@ import cz.promptlab.h3video.comfy.AioBuilder
 import cz.promptlab.h3video.comfy.Krea2Builder
 import cz.promptlab.h3video.comfy.AceMusicBuilder
 import cz.promptlab.h3video.comfy.FaceSwapBuilder
+import cz.promptlab.h3video.comfy.InpaintBuilder
 import cz.promptlab.h3video.comfy.RestoreBuilder
 import cz.promptlab.h3video.comfy.SeedVr2Builder
 import cz.promptlab.h3video.comfy.ZImageBuilder
@@ -87,6 +88,8 @@ sealed interface GenState {
         val isRestore: Boolean = false,
         /** Beh meni tvar (ACE++) - texty "Menim tvar". */
         val isSwap: Boolean = false,
+        /** Beh domalovava do masky (inpaint) - texty "Domalovavam". */
+        val isInpaint: Boolean = false,
     ) : GenState
 
     data class Done(
@@ -193,6 +196,9 @@ object GenerationEngine {
     /** Běží výměna tváře (ACE++)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var swapRun: Boolean = false
 
+    /** Běží domalování do masky (Klein / Flux Fill)? Vlastní workflow z APK, výsledek PNG. */
+    @Volatile private var inpaintRun: Boolean = false
+
     /**
      * Mapa „číslo uzlu → třída" z odeslaného grafu. U karty All in One se podle
      * ní poznávají fáze: čísla uzlů se mezi šablonami liší (uzel 3 je u SeedVR2
@@ -203,6 +209,7 @@ object GenerationEngine {
     private fun stageOf(node: String?): Stage = when {
         restoreRun -> RestoreBuilder.stageForClass(nodeClasses[node])
         swapRun -> FaceSwapBuilder.stageForClass(nodeClasses[node])
+        inpaintRun -> InpaintBuilder.stageForClass(nodeClasses[node])
         musicRun -> AceMusicBuilder.stageForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.stageForClass(nodeClasses[node])
         upscaleRun -> SeedVr2Builder.stageForClass(nodeClasses[node])
@@ -214,6 +221,7 @@ object GenerationEngine {
     private fun rangeOf(node: String?): Pair<Float, Float> = when {
         restoreRun -> RestoreBuilder.rangeForClass(nodeClasses[node])
         swapRun -> FaceSwapBuilder.rangeForClass(nodeClasses[node])
+        inpaintRun -> InpaintBuilder.rangeForClass(nodeClasses[node])
         musicRun -> AceMusicBuilder.rangeForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.rangeForClass(nodeClasses[node])
         upscaleRun -> SeedVr2Builder.rangeForClass(nodeClasses[node])
@@ -231,6 +239,7 @@ object GenerationEngine {
     private fun reportsSteps(node: String?): Boolean = when {
         restoreRun -> RestoreBuilder.reportsSteps(nodeClasses[node])
         swapRun -> FaceSwapBuilder.reportsSteps(nodeClasses[node])
+        inpaintRun -> InpaintBuilder.reportsSteps(nodeClasses[node])
         musicRun -> AceMusicBuilder.reportsSteps(nodeClasses[node])
         t2iRun -> ZImageBuilder.reportsSteps(nodeClasses[node])
         upscaleRun -> SeedVr2Builder.reportsSteps(nodeClasses[node])
@@ -288,6 +297,8 @@ object GenerationEngine {
         restoreScene: cz.promptlab.h3video.data.RestoreScene? = null,
         /** Výměna tváře: ACE++, vlastní workflow z APK, výsledkem je PNG. */
         swapScene: cz.promptlab.h3video.data.FaceSwapScene? = null,
+        /** Domalovat: Klein / Flux Fill, vlastní workflow z APK, výsledkem je PNG. */
+        inpaintScene: cz.promptlab.h3video.data.InpaintScene? = null,
     ) {
         if (isRunning) return
         job?.cancel()
@@ -298,7 +309,9 @@ object GenerationEngine {
         musicRun = musicScene != null
         restoreRun = restoreScene != null
         swapRun = swapScene != null
+        inpaintRun = inpaintScene != null
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !swapRun &&
+            !inpaintRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
         settings.activeEdit = editRun
@@ -307,11 +320,14 @@ object GenerationEngine {
         settings.activeMusic = musicRun
         settings.activeRestore = restoreRun
         settings.activeSwap = swapRun
+        settings.activeInpaint = inpaintRun
         startedAt = System.currentTimeMillis()
         label = if (restoreScene != null) {
             "Oprava fotky"
         } else if (swapScene != null) {
             "Výměna tváře"
+        } else if (inpaintScene != null) {
+            "Domalovat · " + inpaintScene.model.title
         } else if (musicScene != null) {
             "Hudba · " + musicScene.seconds + " s"
         } else if (t2i) {
@@ -334,7 +350,7 @@ object GenerationEngine {
             runCatching {
                 runGeneration(
                     params, images, talkAudios, timelineScene, aioScene, editScene,
-                    upscaleScene, t2i, musicScene, restoreScene, swapScene,
+                    upscaleScene, t2i, musicScene, restoreScene, swapScene, inpaintScene,
                 )
             }
                 .onFailure { e ->
@@ -386,10 +402,11 @@ object GenerationEngine {
             musicRun = settings.activeMusic
             restoreRun = settings.activeRestore
             swapRun = settings.activeSwap
+            inpaintRun = settings.activeInpaint
             aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun &&
-                !swapRun && settings.activeAio
+                !swapRun && !inpaintRun && settings.activeAio
             nodeClasses = if (aioRun || editRun || upscaleRun || t2iRun || musicRun ||
-                restoreRun || swapRun
+                restoreRun || swapRun || inpaintRun
             ) {
                 withContext(Dispatchers.IO) {
                     runCatching {
@@ -397,6 +414,7 @@ object GenerationEngine {
                             when {
                                 restoreRun -> RestoreBuilder.nodeClasses(it)
                                 swapRun -> FaceSwapBuilder.nodeClasses(it)
+                                inpaintRun -> InpaintBuilder.nodeClasses(it)
                                 musicRun -> AceMusicBuilder.nodeClasses(it)
                                 t2iRun -> ZImageBuilder.nodeClasses(it)
                                 upscaleRun -> SeedVr2Builder.nodeClasses(it)
@@ -502,6 +520,7 @@ object GenerationEngine {
         musicScene: cz.promptlab.h3video.data.MusicScene? = null,
         restoreScene: cz.promptlab.h3video.data.RestoreScene? = null,
         swapScene: cz.promptlab.h3video.data.FaceSwapScene? = null,
+        inpaintScene: cz.promptlab.h3video.data.InpaintScene? = null,
     ) {
         val client = ComfyClient(settings.serverUrl)
 
@@ -531,6 +550,7 @@ object GenerationEngine {
             musicScene != null -> null     // dtto
             restoreScene != null -> null   // dtto
             swapScene != null -> null      // dtto
+            inpaintScene != null -> null   // dtto
             aioScene != null -> aioScene.sablona
             params.mode == cz.promptlab.h3video.data.Mode.TALK -> "r2v.json"
             else -> null
@@ -611,6 +631,10 @@ object GenerationEngine {
             swapScene != null ->
                 FaceSwapBuilder.build(app, seed, names)
 
+            // Domalování do masky: Klein 9B, nebo Flux Fill podle volby karty.
+            inpaintScene != null ->
+                InpaintBuilder.build(app, inpaintScene.model, inpaintScene.prompt, seed, names)
+
             // Karta All in One nestaví graf z předlohy zabalené v APK, ale
             // z hotové šablony balíku ComfyUI-ALLinONE-MinimaxH3 stažené přímo
             // ze serveru (viz fetchTemplate výš). Po aktualizaci balíku tak
@@ -643,6 +667,7 @@ object GenerationEngine {
         if (musicScene != null) nodeClasses = AceMusicBuilder.nodeClasses(workflow)
         if (restoreScene != null) nodeClasses = RestoreBuilder.nodeClasses(workflow)
         if (swapScene != null) nodeClasses = FaceSwapBuilder.nodeClasses(workflow)
+        if (inpaintScene != null) nodeClasses = InpaintBuilder.nodeClasses(workflow)
 
         val promptId = UUID.randomUUID().toString().lowercase()
         // Značka do logu: od téhle chvíle patří hlášky uzlů našemu běhu.
@@ -1457,6 +1482,7 @@ object GenerationEngine {
             isMusic = musicRun,
             isRestore = restoreRun,
             isSwap = swapRun,
+            isInpaint = inpaintRun,
         )
     }
 

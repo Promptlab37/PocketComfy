@@ -130,6 +130,8 @@ data class GenParams(
             // maska štětce — TŘETÍ soubor. Ve 2.89 tu zůstala dvojka a engine
             // masku při nahrávání uřízl (LoadImage pak dostal prázdný název).
             Mode.FACESWAP -> 3
+            // Domalovat: fotka a samostatná maska štětce.
+            Mode.INPAINT -> 2
         }
 
     /**

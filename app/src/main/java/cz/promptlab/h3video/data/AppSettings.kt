@@ -169,6 +169,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeSwap", false)
         set(v) = sp.edit().putBoolean("activeSwap", v).apply()
 
+    /** Běží rozdělané domalování do masky? Kvůli textům a fázím po restartu. */
+    var activeInpaint: Boolean
+        get() = sp.getBoolean("activeInpaint", false)
+        set(v) = sp.edit().putBoolean("activeInpaint", v).apply()
+
     // ------------------------------------------------------------ parametry
 
     /** Prompt se pamatuje zvlášť pro každou kartu – jsou to jiné druhy zadání. */

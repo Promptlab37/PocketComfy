@@ -43,7 +43,8 @@ object Katalog {
     )
     private val INPAINT = Balik(
         "ComfyUI-Inpaint-CropAndStitch",
-        "https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch", "Výměna tváře"
+        "https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch",
+        "Výměna tváře a Domalovat"
     )
     private val QWENUTILS = Balik(
         "Comfyui-QwenEditUtils", "https://github.com/lrzjason/Comfyui-QwenEditUtils",
@@ -154,8 +155,24 @@ object Katalog {
             "$HF/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-fp32.safetensors"
         ),
         "flux1-Fill-Dev_FP8.safetensors" to Soubor(
-            "models/diffusion_models", "Výměna tváře",
+            "models/diffusion_models", "Výměna tváře a Domalovat (volba Flux Fill)",
             "$HF/Academia-SD/flux1-Fill-Dev-FP8/resolve/main/flux1-Fill-Dev_FP8.safetensors"
+        ),
+        // Domalovat, výchozí volba. Odkaz vede na stránku modelu, ne rovnou na
+        // soubor: Black Forest Labs ho vydává pod licencí, kterou je potřeba na
+        // Hugging Face nejdřív odklepnout (jinak stahování vrací 401). Appka
+        // čeká soubor pod tímhle jménem, tak ho tak ulož.
+        "flux-2-klein-9b.safetensors" to Soubor(
+            "models/diffusion_models", "Domalovat (volba FLUX.2 Klein)",
+            "$HF/black-forest-labs/FLUX.2-klein-9b-fp8"
+        ),
+        "qwen_3_8b_fp8mixed.safetensors" to Soubor(
+            "models/text_encoders", "Domalovat (volba FLUX.2 Klein)",
+            "$HF/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors"
+        ),
+        "flux2-vae.safetensors" to Soubor(
+            "models/vae", "Domalovat (volba FLUX.2 Klein)",
+            "$HF/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors"
         ),
         "clip_l.safetensors" to Soubor(
             "models/text_encoders", "Výměna tváře",

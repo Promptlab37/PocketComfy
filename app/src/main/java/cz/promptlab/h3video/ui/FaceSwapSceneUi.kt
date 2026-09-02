@@ -240,12 +240,22 @@ private class Tah(val brushPx: Float) {
 }
 
 /**
- * Malování masky přes celou obrazovku. Kde uživatel čmárá, tam se při
- * uložení vymaže alfa kanál — LoadImage v ComfyUI z toho udělá masku,
- * stejně jako u masky namalované v editoru ComfyUI.
+ * Malování masky přes celou obrazovku. Výsledkem je samostatný černobílý
+ * obrázek (bílá = pracovat, černá = nechat) — fotka zůstává netknutá.
+ *
+ * Editor používají dvě karty (Výměna tváře a Domalovat), proto jsou texty
+ * parametry: každá karta mluví o svém výsledku, ne obecně o „masce".
  */
 @Composable
-fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
+fun MaskEditor(
+    bitmap: Bitmap,
+    onDone: (Bitmap) -> Unit,
+    onClose: () -> Unit,
+    titulek: String = t("Začmárej obličej, který se vymění"),
+    podtitulek: String = t("Klidně s přesahem přes okraje tváře — přechod se změkčí sám. ") +
+        t("Dvěma prsty přiblížíš na detaily."),
+    vyzva: String = t("Nejdřív začmárej obličej"),
+) {
     val tahy = remember { mutableStateListOf<Tah>() }
     var brushDp by remember { mutableFloatStateOf(42f) }
     var box by remember { mutableStateOf(IntSize.Zero) }
@@ -291,12 +301,11 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text(
-                    t("Začmárej obličej, který se vymění"),
+                    titulek,
                     style = MaterialTheme.typography.titleMedium, color = TextHi
                 )
                 Text(
-                    t("Klidně s přesahem přes okraje tváře — přechod se změkčí sám. ") +
-                        t("Dvěma prsty přiblížíš na detaily."),
+                    podtitulek,
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
             }
@@ -406,7 +415,7 @@ fun MaskEditor(bitmap: Bitmap, onDone: (Bitmap) -> Unit, onClose: () -> Unit) {
                 }
                 Spacer(Modifier.height(8.dp))
                 GradientButton(
-                    if (tahy.isEmpty()) t("Nejdřív začmárej obličej") else t("Hotovo — použít masku"),
+                    if (tahy.isEmpty()) vyzva else t("Hotovo — použít masku"),
                     enabled = tahy.isNotEmpty(),
                     onClick = {
                         // Maska jde od 2.89 jako SAMOSTATNÝ černobílý obrázek

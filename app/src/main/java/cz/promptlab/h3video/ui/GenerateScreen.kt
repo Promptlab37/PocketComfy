@@ -246,12 +246,13 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
     val musicScene by vm.music.collectAsStateWithLifecycle()
     val restoreScene by vm.restore.collectAsStateWithLifecycle()
     val swapScene by vm.swap.collectAsStateWithLifecycle()
+    val inpaintScene by vm.inpaint.collectAsStateWithLifecycle()
     // Dostupnost AIO balíku doráží asynchronně – bez ní v klíčích by hláška
     // „server nemá balík" zůstala viset i po úspěšné kontrole (a naopak).
     val aioAvailable by vm.aioAvailable.collectAsStateWithLifecycle()
     val problem = remember(
         params, talkScene, timelineScene, aioScene, editScene, upscaleScene, musicScene,
-        restoreScene, swapScene, aioAvailable,
+        restoreScene, swapScene, inpaintScene, aioAvailable,
     ) {
         vm.validation(params)
     }
@@ -260,7 +261,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
     val keyboard = LocalSoftwareKeyboardController.current
     val hints = remember(
         params, talkScene, aioScene, editScene, upscaleScene, musicScene, restoreScene, swapScene,
-        aioAvailable,
+        inpaintScene, aioAvailable,
     ) {
         vm.hints(params)
     }
@@ -329,6 +330,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // ---------------------------------------------------- výměna tváře
         if (mode == Mode.FACESWAP) {
             FaceSwapSection(vm)
+        }
+
+        // ------------------------------------------------------- domalovat
+        if (mode == Mode.INPAINT) {
+            InpaintSection(vm)
         }
 
         // -------------------------------------------------------- All in One
@@ -665,6 +671,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 mode == Mode.MUSIC -> t("Vygenerovat skladbu")
                 mode == Mode.RESTORE -> t("Opravit fotku")
                 mode == Mode.FACESWAP -> t("Vyměnit tvář")
+                mode == Mode.INPAINT -> t("Domalovat do masky")
                 else -> t("Vygenerovat video")
             },
             enabled = !blocked,

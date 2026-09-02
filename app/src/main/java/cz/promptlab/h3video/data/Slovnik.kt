@@ -734,6 +734,48 @@ object Slovnik {
         "Vygenerovat skladbu" to "Generate a song",
         "Opravit fotku" to "Restore the photo",
 
+        // ------------------------------------------------ domalovat
+        "Domalovat" to "Inpaint",
+        "Začmáráš místo, napíšeš co tam má být, přepíše se jen ono" to
+            "Scribble over a spot, type what belongs there, only that gets repainted",
+        "Novější a rychlý (4 kroky), nejlíp rozumí zadání" to
+            "Newer and fast (4 steps), best at understanding the prompt",
+        "Klasika na maskování, věrnější textury, ale pomalejší" to
+            "The classic masking model — truer textures, but slower",
+        "Fotka, do které se maluje" to "The photo you paint into",
+        "Fotka k domalování" to "Photo to inpaint",
+        "Vyber fotku a pak prstem začmárej místo, které se má přemalovat" to
+            "Pick a photo, then scribble over the spot to repaint",
+        "Co má na tom místě být" to "What belongs in that spot",
+        "Popiš to jako výsledný obraz, ne jako příkaz" to
+            "Describe the finished picture, not a command",
+        "dřevěná lavička pod stromem, dopolední světlo" to
+            "a wooden bench under a tree, late morning light",
+        "Čím domalovat" to "What to inpaint with",
+        "Když se výsledek nepovede, zkus druhý model — každý kreslí jinak" to
+            "If a result disappoints, try the other model — they paint differently",
+        "Začmárej místo, které se přemaluje" to "Scribble over the spot to repaint",
+        "Maluj s malým přesahem — okraje se prolnou samy. " to
+            "Paint slightly past the edges — the transition blends itself. ",
+        "Nejdřív začmárej místo" to "Scribble over a spot first",
+        "Domalovat do masky" to "Inpaint the mask",
+        "Vyber fotku, do které se má domalovávat." to "Pick a photo to inpaint into.",
+        "Začmárej prstem místo, které se má přemalovat." to
+            "Scribble over the spot that should be repainted.",
+        "Napiš, co má na zamaskovaném místě být." to "Type what should be in the masked spot.",
+        "Popiš celé místo i s okolím („muž v černé bundě na lavičce“), ne jen samotnou věc — model píše obraz, ne příkaz." to
+            "Describe the whole spot with its surroundings (\"a man in a black jacket on a bench\"), not just the object — the model paints a picture, it does not follow orders.",
+        "Načítám model na domalování" to "Loading the inpainting model",
+        "Model na domalování + textový enkodér" to "Inpainting model + text encoder",
+        "Vyřezávám okolí masky" to "Cropping around the mask",
+        "Domalovávám do masky" to "Inpainting the mask",
+        "Vlepuji domalovaný kus zpět" to "Stitching the repainted piece back",
+        "Domalování do masky" to "Inpainting",
+        "Odebrat" to "Remove",
+        "Vybrat fotku" to "Pick a photo",
+        "Malovat masku" to "Paint the mask",
+        "Nejdřív napiš aspoň pár slov o tom, co chceš." to
+            "Type at least a few words about what you want first.",
         "Jazyk" to "Language",
         "Podle telefonu" to "System",
         "Čeština" to "Czech",

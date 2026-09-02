@@ -13,7 +13,7 @@ import cz.promptlab.h3video.comfy.Stage
  * o videu. Tady je KOMPLETNÍ matice — každý druh běhu × každá fáze — a
  * obrazovka i služba ji jen čtou.
  */
-enum class RunKind { VIDEO, EDIT, T2I, RESTORE, SWAP, UPSCALE, MUSIC }
+enum class RunKind { VIDEO, EDIT, T2I, RESTORE, SWAP, INPAINT, UPSCALE, MUSIC }
 
 val GenState.Running.kind: RunKind
     get() = when {
@@ -21,6 +21,7 @@ val GenState.Running.kind: RunKind
         isUpscale -> RunKind.UPSCALE
         isRestore -> RunKind.RESTORE
         isSwap -> RunKind.SWAP
+        isInpaint -> RunKind.INPAINT
         isT2i -> RunKind.T2I
         isImage -> RunKind.EDIT
         else -> RunKind.VIDEO
@@ -32,7 +33,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
     Stage.UPLOADING -> when (kind) {
         RunKind.VIDEO -> t("Odesílám podklady")
         RunKind.EDIT, RunKind.RESTORE, RunKind.UPSCALE -> t("Odesílám fotku")
-        RunKind.SWAP -> t("Odesílám fotky")
+        RunKind.SWAP, RunKind.INPAINT -> t("Odesílám fotky")
         RunKind.T2I, RunKind.MUSIC -> t("Připravuji zadání")
     }
     Stage.QUEUED -> t("Ve frontě")
@@ -42,6 +43,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.T2I -> t("Načítám Z-Image")
         RunKind.RESTORE -> t("Načítám Qwen Edit")
         RunKind.SWAP -> t("Načítám Flux Fill")
+        RunKind.INPAINT -> t("Načítám model na domalování")
         RunKind.UPSCALE -> t("Načítám SeedVR2")
         RunKind.MUSIC -> t("Načítám ACE-Step")
     }
@@ -49,6 +51,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.VIDEO -> t("Připravuji podklady")
         RunKind.EDIT, RunKind.RESTORE -> t("Načítám fotku")
         RunKind.SWAP -> t("Připravuji výřez tváře")
+        RunKind.INPAINT -> t("Vyřezávám okolí masky")
         RunKind.UPSCALE -> t("Dělím na dlaždice")
         RunKind.T2I -> t("Připravuji plátno")
         RunKind.MUSIC -> t("Připravuji zadání")
@@ -65,6 +68,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.T2I -> t("Generuji obrázek")
         RunKind.RESTORE -> t("Opravuji fotku")
         RunKind.SWAP -> t("Měním tvář")
+        RunKind.INPAINT -> t("Domalovávám do masky")
         RunKind.UPSCALE -> t("Zvětšuji obrázek")
         RunKind.MUSIC -> t("Skládám hudbu")
     }
@@ -77,6 +81,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.VIDEO -> t("Skládám video")
         RunKind.MUSIC -> t("Ukládám skladbu")
         RunKind.SWAP -> t("Vlepuji tvář zpět")
+        RunKind.INPAINT -> t("Vlepuji domalovaný kus zpět")
         RunKind.UPSCALE -> t("Slepuji dlaždice")
         else -> t("Ukládám obrázek")
     }
@@ -96,6 +101,7 @@ fun stageDetailText(stage: Stage, kind: RunKind): String = when {
         RunKind.T2I -> t("Z-Image Turbo + textový enkodér")
         RunKind.RESTORE -> t("Qwen Image Edit 2511 + LoRA")
         RunKind.SWAP -> t("Flux Fill + portrétní LoRA")
+        RunKind.INPAINT -> t("Model na domalování + textový enkodér")
         RunKind.UPSCALE -> "SeedVR2 + VAE"
         RunKind.MUSIC -> "ACE-Step 1.5 Turbo"
     }
@@ -130,6 +136,7 @@ fun mainPhaseTitle(kind: RunKind): String = when (kind) {
     RunKind.T2I -> t("Nový obrázek")
     RunKind.RESTORE -> t("Oprava fotky")
     RunKind.SWAP -> t("Výměna tváře")
+    RunKind.INPAINT -> t("Domalování do masky")
     RunKind.UPSCALE -> t("Zvětšování")
     RunKind.MUSIC -> t("Skládání hudby")
 }

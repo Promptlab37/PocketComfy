@@ -26,7 +26,7 @@ machine, including target folders and download links).
 | praveen-tools | ImageTileSplit/Merge, LoadImageWithFilename | Upscale |
 | VideoHelperSuite / KJNodes* | VHS_VideoCombine, PathchSageAttentionKJ, INTConstant, ModelPreviewOverrideKJ, ImageConcanate, ResizeMask | video cards, live preview, Face swap |
 | Krea 2 Edit nodes* | Krea2EditModelPatch, Krea2EditGroundedEncode, SpectrumApplyMiniMaxH3, H3CacheBust | Image edit, video cards |
-| ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | Face swap |
+| ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | Face swap, Inpaint |
 | ComfyUI-MiniMaxH3-TeaCache | MiniMaxH3TeaCache | video cards (optional speed-up) |
 | Comfyui-QwenEditUtils | QwenEditConfigPreparer, TextEncodeQwenImageEditPlusCustom | Photo restore |
 | ComfyUI_essentials | ImageResize+ | Face swap |
@@ -58,20 +58,27 @@ check verifies classes.
 - `krea2_turbo_fp8_scaled.safetensors` (Image edit)
 - `z_image_turbo_bf16.safetensors` (Image)
 - `qwen_image_edit_2511_fp8_e4m3fn.safetensors` (Photo restore)
-- `flux1-Fill-Dev_FP8.safetensors` (Face swap)
+- `flux1-Fill-Dev_FP8.safetensors` (Face swap, Inpaint — the Flux Fill option)
+- `flux-2-klein-9b.safetensors` (Inpaint — the default FLUX.2 Klein option;
+  grab the fp8 release from [black-forest-labs/FLUX.2-klein-9b-fp8](https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8),
+  ~9.5 GB, you have to accept the licence on Hugging Face, and save it under this name)
 
 **text_encoders/**
 - `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` (MiniMax H3)
 - `qwen3vl_4b_fp8_scaled.safetensors` (Krea 2)
 - `qwen_3_4b.safetensors` (Image)
 - `qwen_2.5_vl_7b_fp8_scaled.safetensors` (Photo restore)
-- `clip_l.safetensors` + `t5xxl_fp16.safetensors` (Face swap)
+- `clip_l.safetensors` + `t5xxl_fp16.safetensors` (Face swap, Inpaint — Flux Fill)
+- `qwen_3_8b_fp8mixed.safetensors` (Inpaint — FLUX.2 Klein), from
+  [Comfy-Org/vae-text-encorder-for-flux-klein-9b](https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b)
 
 **vae/**
 - `minimax_h3_video_vae_fp16.safetensors`
 - `minimax_h3_audio_vae_fp32.safetensors`
 - `qwen_image_vae.safetensors` (Krea 2)
-- `ae.sft` (Image — the FLUX/Z-Image autoencoder)
+- `ae.sft` (Image and Inpaint — the FLUX/Z-Image autoencoder)
+- `flux2-vae.safetensors` (Inpaint — FLUX.2 Klein), from the same repository as
+  the encoder above
 
 **loras/**
 - `krea2_identity_edit_v1_2.safetensors` (keeps identity during image edits)

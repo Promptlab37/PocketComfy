@@ -27,6 +27,11 @@ import cz.promptlab.h3video.data.FaceSwapScene
 import cz.promptlab.h3video.data.FaceSwapStore
 import cz.promptlab.h3video.data.faceSwapHints
 import cz.promptlab.h3video.data.faceSwapProblem
+import cz.promptlab.h3video.data.InpaintModel
+import cz.promptlab.h3video.data.InpaintScene
+import cz.promptlab.h3video.data.InpaintStore
+import cz.promptlab.h3video.data.inpaintHints
+import cz.promptlab.h3video.data.inpaintProblem
 import cz.promptlab.h3video.data.MusicScene
 import cz.promptlab.h3video.data.MusicStore
 import cz.promptlab.h3video.data.musicHints
@@ -627,6 +632,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.MUSIC -> musicProblem(_music.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
             Mode.FACESWAP -> faceSwapProblem(_swap.value)
+            Mode.INPAINT -> inpaintProblem(_inpaint.value)
         }
     }
 
@@ -667,6 +673,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (p.mode == Mode.MUSIC) return musicHints(_music.value)
         if (p.mode == Mode.RESTORE) return emptyList()
         if (p.mode == Mode.FACESWAP) return faceSwapHints(_swap.value)
+        if (p.mode == Mode.INPAINT) return inpaintHints(_inpaint.value)
         // Dialogy jedou referenční cestou (ref2va). Turbo LoRA je trénovaná
         // jen na text a snímky, takže se tam vyplatí profil Kvalita.
         val refCesta = p.mode.usesRefModel
@@ -884,6 +891,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         ),
                         s.uploadImages,
                         swapScene = s,
+                    )
+                }
+            }
+
+            Mode.INPAINT -> {
+                val s = _inpaint.value
+                QueuedRun(id, p.mode.title, s.prompt) {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = s.prompt,
+                            steps = cz.promptlab.h3video.comfy.InpaintBuilder.stepsFor(s.model),
+                        ),
+                        s.uploadImages,
+                        inpaintScene = s,
                     )
                 }
             }
@@ -2263,6 +2284,80 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }.getOrNull()
             } ?: return@launch
             updateSwap { it.copy(mask = f) }
+        }
+    }
+
+    // ------------------------------------------------------------ domalovat
+
+    private val inpaintStore = InpaintStore(app)
+
+    private val _inpaint = MutableStateFlow(InpaintScene())
+    val inpaint: StateFlow<InpaintScene> = _inpaint.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val restored = withContext(Dispatchers.IO) {
+                val s = inpaintStore.load()
+                s.copy(thumb = s.source?.let { ImageUtils.loadFileThumb(it) })
+            }
+            if (restored.source != null || restored.prompt.isNotBlank()) _inpaint.value = restored
+        }
+    }
+
+    private fun updateInpaint(block: (InpaintScene) -> InpaintScene) {
+        val next = block(_inpaint.value)
+        _inpaint.value = next
+        inpaintStore.save(next)
+    }
+
+    fun setInpaintPrompt(text: String) = updateInpaint { it.copy(prompt = text) }
+    fun setInpaintModel(model: InpaintModel) = updateInpaint { it.copy(model = model) }
+
+    /**
+     * Fotka se ukládá jako PNG a delší hrana se omezuje, aby se dala v telefonu
+     * malovat maska bez došlé paměti. Model stejně pracuje na výřezu kolem
+     * masky, takže o detail se tím nepřijde.
+     */
+    fun pickInpaintImage(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val source = withContext(Dispatchers.IO) {
+                runCatching {
+                    val bmp = ImageUtils.loadUpright(getApplication(), uri, 2560)
+                        ?: return@runCatching null
+                    val f = inpaintStore.sourceFile()
+                    f.outputStream().use {
+                        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                    f
+                }.getOrNull()
+            } ?: return@launch
+            val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(source) }
+            // Nová fotka = stará maska už nesedí, maže se.
+            withContext(Dispatchers.IO) { runCatching { inpaintStore.maskFile().delete() } }
+            updateInpaint { it.copy(source = source, thumb = thumb, mask = null) }
+        }
+    }
+
+    fun clearInpaintImage() {
+        runCatching { inpaintStore.sourceFile().delete() }
+        runCatching { inpaintStore.maskFile().delete() }
+        updateInpaint { it.copy(source = null, thumb = null, mask = null) }
+    }
+
+    /** Maska štětce jako samostatný černobílý PNG (bílá = přemalovat). */
+    fun ulozInpaintMasku(maska: android.graphics.Bitmap) {
+        viewModelScope.launch {
+            val f = withContext(Dispatchers.IO) {
+                runCatching {
+                    val soubor = inpaintStore.maskFile()
+                    soubor.outputStream().use {
+                        maska.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
+                    }
+                    soubor.takeIf { it.length() > 0 }
+                }.getOrNull()
+            } ?: return@launch
+            updateInpaint { it.copy(mask = f) }
         }
     }
 
