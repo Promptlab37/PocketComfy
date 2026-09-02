@@ -48,6 +48,23 @@ object InpaintBuilder {
     fun stepsFor(model: InpaintModel): Int =
         if (model == InpaintModel.KLEIN) KLEIN_STEPS else FILL_STEPS
 
+    /**
+     * Klein je editační model: dostane původní výřez jako referenci a zadání
+     * čte jako **příkaz, co s ním udělat**. Holý popis („very well-rounded
+     * man") pro něj znamená „tohle tam je, nech to být" — ověřeno na běhu
+     * z 2. 9. 2026, kde se pod maskou změnilo jen 3,9 % pixelů a k nepoznání.
+     * Proto se jeho zadání zabalí do instrukce; Flux Fill nic takového nechce,
+     * ten maluje do díry rovnou to, co je v textu.
+     */
+    fun zadaniProModel(model: InpaintModel, prompt: String): String {
+        val text = prompt.trim()
+        if (model != InpaintModel.KLEIN || text.isEmpty()) return text
+        return "Repaint the masked region of the image so that it shows: $text. " +
+            "Actually change that region — do not return it unchanged. " +
+            "Match the surrounding lighting, perspective and grain, and keep " +
+            "the rest of the image exactly as it is."
+    }
+
     private val cached = HashMap<InpaintModel, String>()
 
     private fun template(ctx: Context, model: InpaintModel): String = cached.getOrPut(model) {
@@ -70,7 +87,7 @@ object InpaintBuilder {
         val wf = JSONObject(template)
         wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
         wf.inputs(N_MASK).put("image", images.getOrElse(1) { "" })
-        wf.inputs(N_TEXT).put("text", prompt)
+        wf.inputs(N_TEXT).put("text", zadaniProModel(model, prompt))
         if (model == InpaintModel.KLEIN) {
             wf.inputs(N_NOISE).put("noise_seed", seed)
         } else {

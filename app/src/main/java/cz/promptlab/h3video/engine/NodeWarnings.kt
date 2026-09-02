@@ -22,10 +22,16 @@ object NodeWarnings {
      *    Stejně to má každé ACE++ workflow.
      * 2. `clip missing: ['text_projection.weight']` — standardní hláška
      *    dvojitého CLIP loaderu u Fluxu, ten klíč se nepoužívá.
+     * 3. `Missing weight for layer model.lm_head` — karta Domalovat s modelem
+     *    FLUX.2 Klein. Textový enkodér je Qwen3 8B **bez generovací hlavy**:
+     *    v `qwen_3_8b_fp8mixed.safetensors` klíč `lm_head` opravdu není
+     *    (ověřeno v hlavičce souboru, 935 klíčů) a být nemá — z enkodéru se
+     *    berou skryté stavy, ne slova. ComfyUI to jen ohlásí a jede dál.
      */
     private val NESKODNE = listOf(
         Regex("""lora .*img_in\.weight shape .* is invalid for input of size""", RegexOption.IGNORE_CASE),
         Regex("""clip missing: \['text_projection\.weight'\]""", RegexOption.IGNORE_CASE),
+        Regex("""Missing weight for layer model\.lm_head""", RegexOption.IGNORE_CASE),
     )
 
     /** Je hláška známá a neškodná (tedy se uživateli neukazuje)? */

@@ -51,6 +51,7 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 - 🎮 **Grafika na povel.** Tlačítkem v Nastavení ComfyUI na dálku vypneš (a jde se hrát) i zapneš.
 - 🖌️ **Maska prstem.** U výměny tváře i domalování začmáráš místo přímo v appce — dvěma prsty přiblížíš na detaily, jedním maluješ; velikost štětce, krok zpět, guma.
 - ✨ **Prompt napíše AI za tebe.** Napíšeš pár slov (klidně česky) a jazykový model z nich složí plný prompt — u videa záběry, časování a zvukovou stopu, u obrázku popis podle pravidel Z-Image. Běží to jako workflow ve tvém ComfyUI (chce k tomu jeden model navíc, [viz POZADAVKY](POZADAVKY.md)), takže nic neodchází z domu.
+- 🌐 **Piš česky.** Tlačítko u zadání pošle text na překlad do angličtiny — obsah zůstane, jen bude v jazyce, kterému modely rozumí nejlíp. Překládá stejný model na tvém počítači jako vylepšovač promptu.
 - 📋 **Fronta úloh.** Zatímco se generuje, připravíš další zadání a přidáš ho do fronty — běhy jedou samy jeden po druhém a každý hotový se ohlásí notifikací.
 - 🗂️ **Galerie s filtrem a hledáním.** Videa / obrázky / hudba zvlášť, hledání v popisech, smazání jde vzít zpět. U každého výsledku vidíš, jak dlouho se počítal.
 
@@ -65,7 +66,7 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 | ✏️ | **Úprava obrázku** | Krea 2 + Identity Edit | „dej jí červenou bundu" — tvář zůstane |
 | 🩹 | **Oprava fotky** | Qwen Image Edit 2511 | stará/poškozená fotka jako nová, i barevně |
 | 🎭 | **Výměna tváře** | Flux Fill + ACE++ | začmáráš obličej, vybereš novou tvář, hotovo |
-| 🖌️ | **Domalovat** | FLUX.2 Klein / Flux Fill | začmáráš místo, napíšeš co tam má být, přepíše se jen ono |
+| 🖌️ | **Domalovat** | Flux Fill / FLUX.2 Klein | začmáráš místo, napíšeš co tam má být, přepíše se jen ono |
 | 🔎 | **Zvětšit** | SeedVR2 | gigapixel upscale po dlaždicích (2×2 až 4×4) |
 | 🎵 | **Hudba** | ACE-Step 1.5 | celá píseň z textu — styl, sloky, refrén, i český zpěv |
 

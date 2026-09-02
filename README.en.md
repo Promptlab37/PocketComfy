@@ -56,6 +56,7 @@ PocketComfy is a **client** — it generates nothing on its own:
 - 🎮 **GPU on demand.** A button in Settings starts and stops ComfyUI remotely, so you can free the GPU for games.
 - 🖌️ **Paint the mask with your finger.** For face swap you scribble over the face right in the app — pinch to zoom for detail, brush size, undo, eraser.
 - ✨ **Let AI write the prompt.** Type a few words and a language model expands them into a full prompt — shots, timing and soundscape for video, a Z-Image style description for stills. It runs as a workflow inside your own ComfyUI (one extra model required, [see REQUIREMENTS](REQUIREMENTS.en.md)), so nothing leaves the house.
+- 🌐 **Write in your own language.** A button under the prompt translates it into English — same content, just in the language the models understand best. It uses the same local model as the prompt enhancer.
 - 📋 **Job queue.** While one run is going, prepare the next and add it to the queue — runs start automatically one after another, each finished one arrives as a notification.
 - 🗂️ **Gallery with filter and search.** Videos / images / music separately, search in prompts, undo delete. Each result shows how long it took.
 
@@ -70,7 +71,7 @@ PocketComfy is a **client** — it generates nothing on its own:
 | ✏️ | **Image edit** | Krea 2 + Identity Edit | "give her a red jacket" — the face stays |
 | 🩹 | **Photo restore** | Qwen Image Edit 2511 | an old or damaged photo as new, including colorization |
 | 🎭 | **Face swap** | Flux Fill + ACE++ | scribble over the face, pick a new one, done |
-| 🖌️ | **Inpaint** | FLUX.2 Klein / Flux Fill | scribble over a spot, type what belongs there, only that changes |
+| 🖌️ | **Inpaint** | Flux Fill / FLUX.2 Klein | scribble over a spot, type what belongs there, only that changes |
 | 🔎 | **Upscale** | SeedVR2 | gigapixel upscale in tiles (2×2 up to 4×4) |
 | 🎵 | **Music** | ACE-Step 1.5 | a whole song from text — style, verses, chorus, vocals |
 

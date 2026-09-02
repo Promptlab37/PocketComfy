@@ -22,6 +22,13 @@ import org.json.JSONObject
  */
 object Krea2Builder {
 
+    /**
+     * Kroky z předlohy. Karta je do nastavení nedosazuje (jedou z workflow
+     * 1:1), ale ukazatel průběhu je vědět musí — jinak by ukazoval počet
+     * kroků z nastavení videa, které s touhle kartou nemá nic společného.
+     */
+    const val STEPS = 12
+
     const val N_CLIP = "1"
     const val N_UNET = "2"
     const val N_VAE = "3"

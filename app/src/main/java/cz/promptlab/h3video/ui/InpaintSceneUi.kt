@@ -136,15 +136,26 @@ fun InpaintSection(vm: MainViewModel) {
 
     SectionCard(
         title = t("Co má na tom místě být"),
-        subtitle = t("Popiš to jako výsledný obraz, ne jako příkaz")
+        // Každý model čte zadání jinak: Flux Fill maluje do díry to, co
+        // popíšeš, kdežto Klein bere zadání jako příkaz k úpravě — popis
+        // typu „muž s břichem" pro něj znamená „nech to tak".
+        subtitle = if (scene.model == InpaintModel.KLEIN)
+            t("Klein poslouchá příkazy — napiš, co se s tím místem má stát")
+        else t("Popiš to jako výsledný obraz, ne jako příkaz")
     ) {
-        DarkTextField(
-            value = scene.prompt,
-            onValueChange = { vm.setInpaintPrompt(it) },
-            placeholder = t("dřevěná lavička pod stromem, dopolední světlo"),
-            minHeight = 100.dp,
-            onClear = { vm.setInpaintPrompt("") },
-        )
+        Column {
+            DarkTextField(
+                value = scene.prompt,
+                onValueChange = { vm.setInpaintPrompt(it) },
+                placeholder = if (scene.model == InpaintModel.KLEIN)
+                    t("posaď ho na dřevěnou lavičku pod stromem")
+                else t("dřevěná lavička pod stromem, dopolední světlo"),
+                minHeight = 100.dp,
+                onClear = { vm.setInpaintPrompt("") },
+            )
+            Spacer(Modifier.height(10.dp))
+            PrekladPromptu(vm, MainViewModel.PromptPole.DOMALOVAT)
+        }
     }
 
     SkladaciSekce(

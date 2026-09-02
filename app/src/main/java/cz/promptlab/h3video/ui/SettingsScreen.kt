@@ -464,6 +464,50 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             }
         }
 
+        // Spodní systémová tlačítka ukusují kus obrazovky přímo pod tlačítkem
+        // Generovat. Schovaná se vytáhnou přejetím od spodního okraje, takže
+        // se z telefonu nikam neztratí — proto je to zapnuté ve výchozím stavu.
+        val kontext = androidx.compose.ui.platform.LocalContext.current
+        var skryvat by remember {
+            mutableStateOf(cz.promptlab.h3video.data.AppSettings(kontext).skryvatNavigaci)
+        }
+        SectionCard(
+            title = t("Schovat navigační tlačítka"),
+            subtitle = t("Víc místa na obrazovce; vytáhneš je přejetím zespodu"),
+            trailing = {
+                Switch(
+                    checked = skryvat,
+                    onCheckedChange = { zapnuto ->
+                        skryvat = zapnuto
+                        cz.promptlab.h3video.data.AppSettings(kontext).skryvatNavigaci = zapnuto
+                        // Projeví se hned, ne až po přepnutí aplikace.
+                        (kontext as? android.app.Activity)?.let { a ->
+                            val rizeni = androidx.core.view.WindowCompat
+                                .getInsetsController(a.window, a.window.decorView)
+                            rizeni.systemBarsBehavior = androidx.core.view
+                                .WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                            val lista = androidx.core.view.WindowInsetsCompat.Type.navigationBars()
+                            if (zapnuto) rizeni.hide(lista) else rizeni.show(lista)
+                        }
+                    },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Violet,
+                        uncheckedTrackColor = Surface2,
+                        uncheckedBorderColor = Outline1,
+                    )
+                )
+            }
+        ) {
+            Text(
+                if (skryvat)
+                    t("Lišta s tlačítky je pryč, dokud ji nepotřebuješ — přejeď prstem " +
+                        "od spodního okraje a na chvíli se ukáže.")
+                else t("Lišta s tlačítky zůstává vidět pořád."),
+                style = MaterialTheme.typography.bodySmall, color = TextMid
+            )
+        }
+
         UpdateCard(vm)
 
         SectionCard(title = t("O aplikaci")) {

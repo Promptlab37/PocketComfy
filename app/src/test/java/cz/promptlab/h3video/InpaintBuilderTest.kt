@@ -52,7 +52,8 @@ class InpaintBuilderTest {
         )
         assertEquals("foto.png", wf.inputs(InpaintBuilder.N_IMAGE).getString("image"))
         assertEquals("maska.png", wf.inputs(InpaintBuilder.N_MASK).getString("image"))
-        assertEquals("dřevěná lavička", wf.inputs(InpaintBuilder.N_TEXT).getString("text"))
+        // Klein dostává zadání zabalené do instrukce (viz vlastní test níž).
+        assertTrue(wf.inputs(InpaintBuilder.N_TEXT).getString("text").contains("dřevěná lavička"))
         assertEquals(42L, wf.inputs(InpaintBuilder.N_NOISE).getLong("noise_seed"))
         bezVisicichOdkazu(wf)
     }
@@ -137,6 +138,33 @@ class InpaintBuilderTest {
         // Klein nemá KSampler a Fill nemá RandomNoise — čísla uzlů se nesmí plést.
         assertFalse(k.has(InpaintBuilder.N_SAMPLER))
         assertFalse(f.has(InpaintBuilder.N_NOISE))
+    }
+
+    @Test
+    fun `klein dostane zadani jako prikaz, fill doslova`() {
+        // Klein drží původní výřez jako referenci a holý popis pro něj znamená
+        // „nech to být" — proto se jeho zadání balí do instrukce. Flux Fill
+        // maluje do díry rovnou to, co je v textu, tomu se nesmí sahat.
+        val k = InpaintBuilder.build(klein, InpaintModel.KLEIN, "dřevěná lavička", 1L,
+            listOf("a.png", "m.png"))
+        val textK = k.inputs(InpaintBuilder.N_TEXT).getString("text")
+        assertTrue(textK.contains("dřevěná lavička"))
+        assertTrue(textK.startsWith("Repaint the masked region"))
+
+        val f = InpaintBuilder.build(fill, InpaintModel.FILL, "dřevěná lavička", 1L,
+            listOf("a.png", "m.png"))
+        assertEquals("dřevěná lavička", f.inputs(InpaintBuilder.N_TEXT).getString("text"))
+
+        // Prázdné zadání se nesmí proměnit v instrukci bez obsahu.
+        assertEquals("", InpaintBuilder.zadaniProModel(InpaintModel.KLEIN, "   "))
+    }
+
+    @Test
+    fun `vychozi model karty je Flux Fill`() {
+        // Klein na popisné zadání často nezmění nic (ověřeno na běhu 2. 9. 2026),
+        // takže výchozí je model trénovaný přímo na domalovávání.
+        assertEquals(InpaintModel.FILL, InpaintScene().model)
+        assertEquals(InpaintModel.FILL, InpaintModel.entries.first())
     }
 
     @Test

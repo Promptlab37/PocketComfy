@@ -91,13 +91,17 @@ fun ImageEditSection(vm: MainViewModel) {
         title = t("Co se má změnit"),
         subtitle = t("Napiš to jednoduše, běžnou větou")
     ) {
-        DarkTextField(
-            value = scene.prompt,
-            onValueChange = { vm.setEditPrompt(it) },
-            placeholder = t("Dej jí červenou bundu a přesaď je na zasněženou horskou cestu"),
-            minHeight = 110.dp,
-            onClear = { vm.setEditPrompt("") },
-        )
+        Column {
+            DarkTextField(
+                value = scene.prompt,
+                onValueChange = { vm.setEditPrompt(it) },
+                placeholder = t("Dej jí červenou bundu a přesaď je na zasněženou horskou cestu"),
+                minHeight = 110.dp,
+                onClear = { vm.setEditPrompt("") },
+            )
+            Spacer(Modifier.height(10.dp))
+            PrekladPromptu(vm, cz.promptlab.h3video.MainViewModel.PromptPole.UPRAVA)
+        }
     }
 
     // Rozlišení a jemné páčky nikdo nemění při každém běhu – jsou sbalené,

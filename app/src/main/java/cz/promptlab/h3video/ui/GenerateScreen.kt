@@ -778,6 +778,13 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                         if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
                         color = Cyan,
                     ) { if (!bezi) vm.vylepsiObrazovyPrompt() }
+                    Spacer(Modifier.width(8.dp))
+                    // Kdo si prompt napsal sám, nechce ho rozepsat — chce ho
+                    // jen anglicky. To dělá druhé tlačítko.
+                    OutlineButton(
+                        if (bezi) t("Překládám…") else t("🌐 Přeložit"),
+                        color = cz.promptlab.h3video.ui.theme.Violet,
+                    ) { if (!bezi) vm.prelozPrompt(MainViewModel.PromptPole.OBRAZEK) }
                     if (bezi) {
                         Spacer(Modifier.width(10.dp))
                         androidx.compose.material3.CircularProgressIndicator(

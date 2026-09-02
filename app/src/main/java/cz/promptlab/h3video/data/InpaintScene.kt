@@ -14,16 +14,24 @@ enum class InpaintModel(
     private val titleCs: String,
     private val detailCs: String,
 ) {
-    /** Destilovaný editační model: 4 kroky, rozumí větě, drží okolí. */
-    KLEIN(
-        titleCs = "FLUX.2 Klein",
-        detailCs = "Novější a rychlý (4 kroky), nejlíp rozumí zadání",
-    ),
-
-    /** Model trénovaný přímo na díry v obraze — stejný jako u výměny tváře. */
+    /**
+     * Model trénovaný přímo na díry v obraze. Výchozí, protože dělá přesně to,
+     * co karta slibuje: co napíšeš, to do masky namaluje.
+     */
     FILL(
         titleCs = "Flux Fill",
-        detailCs = "Klasika na maskování, věrnější textury, ale pomalejší",
+        detailCs = "Domaluje do masky to, co popíšeš — na tohle je trénovaný",
+    ),
+
+    /**
+     * Destilovaný editační model (4 kroky). Zadání ale bere jako **příkaz
+     * k úpravě** a původní výřez drží jako referenci — na pouhý popis („muž
+     * s břichem") často odpoví tím, že nechá všechno být. Proto se jeho
+     * zadání posílá jako instrukce a v kartě je popsaný jinak.
+     */
+    KLEIN(
+        titleCs = "FLUX.2 Klein",
+        detailCs = "Rychlejší (4 kroky), ale poslouchá příkazy — „dej mu plnovous“",
     );
 
     val title: String get() = t(titleCs)
@@ -47,7 +55,7 @@ data class InpaintScene(
     val mask: File? = null,
     /** Co má na zamaskovaném místě být. */
     val prompt: String = "",
-    val model: InpaintModel = InpaintModel.KLEIN,
+    val model: InpaintModel = InpaintModel.FILL,
 ) {
     val maskPainted: Boolean get() = mask != null
 
@@ -93,6 +101,19 @@ class InpaintStore(private val ctx: Context) {
         val mask = if (source != null) {
             maskFile().takeIf { it.exists() && it.length() > 0 }
         } else null
+        // Verze 2.97 měla jako výchozí Klein. Ten ale na popisné zadání často
+        // nezměnil nic (drží původní výřez jako referenci), takže výchozí je
+        // od 2.98 Flux Fill — a jednou se přepíše i uložená volba z 2.97,
+        // kterou si nikdo vědomě nevybral.
+        if (!sp.getBoolean("inpaintMig298", false)) {
+            val stare = sp.getString("inpaintScene", "") ?: ""
+            val opravene = runCatching {
+                org.json.JSONObject(stare).put("model", InpaintModel.FILL.name).toString()
+            }.getOrDefault(stare)
+            // Zadání zůstává, mění se jen model.
+            sp.edit().putBoolean("inpaintMig298", true)
+                .putString("inpaintScene", opravene).apply()
+        }
         val raw = sp.getString("inpaintScene", "") ?: ""
         val ulozene = runCatching { org.json.JSONObject(raw) }.getOrNull()
         return InpaintScene(
@@ -100,7 +121,7 @@ class InpaintStore(private val ctx: Context) {
             mask = mask,
             prompt = ulozene?.optString("prompt").orEmpty(),
             model = runCatching { InpaintModel.valueOf(ulozene?.optString("model").orEmpty()) }
-                .getOrDefault(InpaintModel.KLEIN),
+                .getOrDefault(InpaintModel.FILL),
         )
     }
 

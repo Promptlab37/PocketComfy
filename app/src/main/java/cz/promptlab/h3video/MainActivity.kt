@@ -10,6 +10,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import cz.promptlab.h3video.data.AppSettings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.fadeIn
@@ -119,6 +123,40 @@ class MainActivity : ComponentActivity() {
             }
         }
         setContent { H3Theme { Root() } }
+    }
+
+    /**
+     * Schová spodní navigační tlačítka, dokud je appka vepředu — na kartách je
+     * pod nimi tlačítko Generovat a lišta ukusuje kus obrazovky. Vytáhnou se
+     * přejetím od spodního okraje a samy zase zmizí
+     * (`BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE`), takže se z telefonu nikam
+     * neztratí. Stavový řádek s hodinami a baterií zůstává vidět.
+     *
+     * Volá se i při návratu do popředí: systém lištu po přepnutí aplikace,
+     * odemčení nebo skrytí klávesnice vrací zpátky.
+     */
+    private fun schovejNavigaci() {
+        runCatching {
+            val app = AppSettings(this)
+            val rizeni = WindowCompat.getInsetsController(window, window.decorView)
+            rizeni.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            if (app.skryvatNavigaci) {
+                rizeni.hide(WindowInsetsCompat.Type.navigationBars())
+            } else {
+                rizeni.show(WindowInsetsCompat.Type.navigationBars())
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        schovejNavigaci()
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) schovejNavigaci()
     }
 }
 

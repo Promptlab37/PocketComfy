@@ -254,16 +254,34 @@ object GenerationEngine {
     /** Sekundy na JEDEN krok tak, jak je počítá server. */
     @Volatile private var secPerServerStep: Double = 0.0
 
-    /** Krok přepočtený na to, co si uživatel nastavil (1..plannedSteps). */
-    private val displayedStep: Int
-        get() = if (srvMax > 0 && plannedSteps > 0)
-            Math.ceil(srvStep.toDouble() / srvMax * plannedSteps).toInt().coerceIn(0, plannedSteps)
-        else 0
+    /**
+     * Kolik kroků se uživateli ukazuje.
+     *
+     * `plannedSteps` je počet z předlohy dané karty. Když ho appka nezná
+     * (SeedVR2 si dlaždice i kroky řídí sám), je nula a ukazuje se rovnou to,
+     * co hlásí server. Dřív se v takovém případě propsal počet kroků
+     * z nastavení VIDEA, takže obrazovka průběhu tvrdila „10 kroků" i u karet,
+     * které s tím nastavením nemají nic společného.
+     */
+    private val zobrazenyPocetKroku: Int
+        get() = if (plannedSteps > 0) plannedSteps else srvMax
 
-    /** Tempo přepočtené na uživatelův krok, ať sedí s tím, co vidí. */
+    /** Krok přepočtený na to, co uživatel vidí (1..[zobrazenyPocetKroku]). */
+    private val displayedStep: Int
+        get() = when {
+            srvMax <= 0 -> 0
+            plannedSteps > 0 -> Math.ceil(srvStep.toDouble() / srvMax * plannedSteps)
+                .toInt().coerceIn(0, plannedSteps)
+            else -> srvStep
+        }
+
+    /** Tempo přepočtené na zobrazený krok, ať sedí s tím, co vidí. */
     private val displayedSecondsPerStep: Double
-        get() = if (secPerServerStep > 0 && srvMax > 0 && plannedSteps > 0)
-            secPerServerStep * srvMax / plannedSteps else 0.0
+        get() = when {
+            secPerServerStep <= 0 || srvMax <= 0 -> 0.0
+            plannedSteps > 0 -> secPerServerStep * srvMax / plannedSteps
+            else -> secPerServerStep
+        }
 
     fun init(context: Context) {
         if (::app.isInitialized) return
@@ -1464,7 +1482,7 @@ object GenerationEngine {
             stage = stage,
             overall = if (authoritative) overall else max(overall, prev?.overall ?: 0f),
             step = displayedStep,
-            totalSteps = plannedSteps,
+            totalSteps = zobrazenyPocetKroku,
             queuePosition = queuePos,
             startedAt = startedAt,
             etaSeconds = etaNow(),

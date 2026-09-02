@@ -826,7 +826,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // i položka v galerii ukazovaly skutečné rozlišení obrázku.
                 QueuedRun(id, p.mode.title, s.prompt) {
                     GenerationEngine.start(
-                        p.copy(prompt = s.prompt, aspect = s.aspect, megapixels = s.megapixels),
+                        p.copy(
+                            prompt = s.prompt, aspect = s.aspect, megapixels = s.megapixels,
+                            // Krea 2 jede na krocích z předlohy, ne na těch
+                            // z nastavení videa — ukazatel to musí vědět.
+                            steps = cz.promptlab.h3video.comfy.Krea2Builder.STEPS,
+                        ),
                         s.uploadImages,
                         editScene = s,
                     )
@@ -836,7 +841,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.UPSCALE -> {
                 val s = _upscale.value
                 QueuedRun(id, p.mode.title, "") {
-                    GenerationEngine.start(p.copy(prompt = ""), s.uploadImages, upscaleScene = s)
+                    // Kroky SeedVR2 si řídí uzel sám (dlaždice × kroky), appka
+                    // je nezná — nula říká ukazateli „ptej se serveru".
+                    GenerationEngine.start(
+                        p.copy(prompt = "", steps = 0), s.uploadImages, upscaleScene = s
+                    )
                 }
             }
 
@@ -1611,6 +1620,84 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             delay(1500)
         }
         throw ComfyException("timeout", "Přepis trvá moc dlouho — zkus to znovu.")
+    }
+
+    // ------------------------------------------------ 🌐 překlad promptu (AI)
+
+    /** Pole se zadáním, které umí překladač obsloužit. */
+    enum class PromptPole { OBRAZEK, AIO, UPRAVA, DOMALOVAT }
+
+    private fun textPole(pole: PromptPole): String = when (pole) {
+        PromptPole.OBRAZEK -> _params.value.prompt
+        PromptPole.AIO -> _aio.value.prompt
+        PromptPole.UPRAVA -> _edit.value.prompt
+        PromptPole.DOMALOVAT -> _inpaint.value.prompt
+    }
+
+    private fun zapisPole(pole: PromptPole, text: String) = when (pole) {
+        PromptPole.OBRAZEK -> update { it.copy(prompt = text) }
+        PromptPole.AIO -> setAioPrompt(text)
+        PromptPole.UPRAVA -> setEditPrompt(text)
+        PromptPole.DOMALOVAT -> setInpaintPrompt(text)
+    }
+
+    /** Vrátí zadání, jak vypadalo před přepisem nebo překladem. */
+    fun vratPuvodni(pole: PromptPole) {
+        _rewriteOriginal.value?.let { zapisPole(pole, it) }
+        _rewriteOriginal.value = null
+    }
+
+    /**
+     * 🌐 **Přeložit do angličtiny.** Modely rozumí anglicky nejlíp, ale psát
+     * anglicky je otrava — tohle vezme českou větu a vrátí ji anglicky, beze
+     * změny obsahu (na rozdíl od ✨, které zadání rozepisuje). Jede na stejném
+     * llama.cpp uzlu a stejném modelu v `models/LLM` jako vylepšovač.
+     */
+    fun prelozPrompt(pole: PromptPole) {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val zadani = textPole(pole).trim()
+        if (zadani.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(t("Nejdřív něco napiš, ať je co překládat."))
+            return
+        }
+        _rewriteState.value = RewriteState.Busy
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
+                        ?: throw ComfyException(
+                            "chybi uzel",
+                            "Na serveru chybí balík ComfyUI-llama-cpp_vlm — bez něj " +
+                                "překladač nepojede.",
+                        )
+                    val nabidka = spec.optJSONObject("input")?.optJSONObject("required")
+                        ?.optJSONArray("model")?.optJSONArray(0)
+                        ?: throw ComfyException("chybi model", "Uzel nenabízí žádný model.")
+                    val model = ImagePromptBuilder.vyberModel(
+                        (0 until nabidka.length()).map { nabidka.getString(it) }
+                    ) ?: throw ComfyException(
+                        "zadny model",
+                        "V models/LLM není žádný GGUF model, ze kterého by šlo překládat.",
+                    )
+                    val wf = ImagePromptBuilder.buildPreklad(
+                        text = zadani,
+                        model = model,
+                        seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                    )
+                    spustPrepisAPockej(client, wf, ImagePromptBuilder.N_PREVIEW)
+                }
+            }
+            vysledek.onSuccess { text ->
+                _rewriteOriginal.value = zadani
+                zapisPole(pole, ImagePromptBuilder.ocisti(text))
+                _rewriteState.value = RewriteState.Idle
+            }.onFailure { e ->
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Překlad se nepovedl.")
+                )
+            }
+        }
     }
 
     /** Vrátí původní zadání na kartě Obrázek. */

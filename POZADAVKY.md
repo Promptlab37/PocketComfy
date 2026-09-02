@@ -120,6 +120,9 @@ Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy
   - **adaptér (jen pro video):**
     [MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF/resolve/main/MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf) (1,3 GB).
 
+  Tentýž balík a model obsluhuje i tlačítko **🌐 Přeložit do angličtiny**
+  u karet s zadáním — nic dalšího se pro překlad stahovat nemusí.
+
   Uzel přepisovače videa si model umí stáhnout i sám při prvním použití
   (nabídne ho v seznamu); u karty Obrázek to neumí — tam soubor ve složce
   `models/LLM` opravdu být musí. Appka si pak model z nabídky serveru vybere

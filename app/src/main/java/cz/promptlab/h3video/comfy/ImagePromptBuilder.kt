@@ -48,10 +48,46 @@ Keep every detail the user asked for and add only what makes the scene concrete.
 Never swap the subject for a different one and never refuse."""
 
     /**
+     * Návod pro překlad. Schválně nic nevylepšuje: kdo si prompt napsal sám,
+     * chce ho anglicky, ne přepsaný. Model tedy nesmí nic přidat ani ubrat.
+     */
+    private const val SYSTEM_PREKLAD =
+        """You are a translation engine for image and video prompts.
+Translate the user's text into English and output ONLY the translation:
+no preamble, no quotes around the answer, no notes, no explanation.
+
+Rules:
+- Keep the meaning, the order and EVERY detail. Add nothing, drop nothing.
+- Keep the style of a prompt — do not turn it into a sentence about a prompt.
+- Leave technical tokens exactly as they are: <Picture 1>, <d>…</d>, [S1],
+  numbers, model names, camera terms, words already in English.
+- Text that should appear inside the image stays in its original language,
+  in the same quotation marks.
+- If the text already is English, repeat it unchanged.
+- Never comment on the content and never refuse."""
+
+    /**
      * @param zadani krátký nápad uživatele (klidně česky)
      * @param model soubor v `models/LLM`, viz [vyberModel]
      */
-    fun build(zadani: String, model: String, seed: Long): JSONObject {
+    fun build(zadani: String, model: String, seed: Long): JSONObject =
+        graf(zadani, model, seed, SYSTEM, maxTokens = 400, teplota = 0.65)
+
+    /**
+     * Překlad zadání do angličtiny — bez vylepšování. Nižší teplota a víc
+     * tokenů: dlouhý prompt se musí vejít celý, ale nesmí se rozjet.
+     */
+    fun buildPreklad(text: String, model: String, seed: Long): JSONObject =
+        graf(text, model, seed, SYSTEM_PREKLAD, maxTokens = 900, teplota = 0.15)
+
+    private fun graf(
+        zadani: String,
+        model: String,
+        seed: Long,
+        system: String,
+        maxTokens: Int,
+        teplota: Double,
+    ): JSONObject {
         val wf = JSONObject()
         wf.put(
             N_LOADER,
@@ -73,14 +109,14 @@ Never swap the subject for a different one and never refuse."""
             uzel(
                 "llama_cpp_parameters", "Nastavení generování",
                 JSONObject()
-                    .put("max_tokens", 400)
+                    .put("max_tokens", maxTokens)
                     .put("top_k", 40)
                     .put("top_p", 0.9)
                     .put("min_p", 0.05)
                     .put("typical_p", 1.0)
                     // Nižší teplota než výchozí 0.8 — prompt má být konkrétní,
                     // ne básnický; model si pak míň vymýšlí vlastní scénu.
-                    .put("temperature", 0.65)
+                    .put("temperature", teplota)
                     .put("repeat_penalty", 1.05)
                     .put("frequency_penalty", 0.0)
                     .put("present_penalty", 0.0)
@@ -99,7 +135,7 @@ Never swap the subject for a different one and never refuse."""
                     .put("parameters", odkaz(N_PARAMS))
                     .put("preset_prompt", "Empty - Nothing")
                     .put("custom_prompt", zadani)
-                    .put("system_prompt", SYSTEM)
+                    .put("system_prompt", system)
                     .put("inference_mode", "one by one")
                     .put("max_frames", 24)
                     .put("max_size", 256)

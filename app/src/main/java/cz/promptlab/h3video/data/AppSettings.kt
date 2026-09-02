@@ -169,6 +169,16 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeSwap", false)
         set(v) = sp.edit().putBoolean("activeSwap", v).apply()
 
+    /**
+     * Schovávat spodní navigační tlačítka, dokud je appka vepředu? Vytáhnou se
+     * přejetím od spodního okraje. Zapnuté ve výchozím stavu — na telefonu
+     * s tlačítkovou lištou ukusovala kus obrazovky přímo pod tlačítkem
+     * Generovat.
+     */
+    var skryvatNavigaci: Boolean
+        get() = sp.getBoolean("skryvatNavigaci", true)
+        set(v) = sp.edit().putBoolean("skryvatNavigaci", v).apply()
+
     /** Běží rozdělané domalování do masky? Kvůli textům a fázím po restartu. */
     var activeInpaint: Boolean
         get() = sp.getBoolean("activeInpaint", false)

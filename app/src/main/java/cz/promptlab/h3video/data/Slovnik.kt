@@ -738,10 +738,6 @@ object Slovnik {
         "Domalovat" to "Inpaint",
         "Začmáráš místo, napíšeš co tam má být, přepíše se jen ono" to
             "Scribble over a spot, type what belongs there, only that gets repainted",
-        "Novější a rychlý (4 kroky), nejlíp rozumí zadání" to
-            "Newer and fast (4 steps), best at understanding the prompt",
-        "Klasika na maskování, věrnější textury, ale pomalejší" to
-            "The classic masking model — truer textures, but slower",
         "Fotka, do které se maluje" to "The photo you paint into",
         "Fotka k domalování" to "Photo to inpaint",
         "Vyber fotku a pak prstem začmárej místo, které se má přemalovat" to
@@ -776,6 +772,27 @@ object Slovnik {
         "Malovat masku" to "Paint the mask",
         "Nejdřív napiš aspoň pár slov o tom, co chceš." to
             "Type at least a few words about what you want first.",
+        "🌐 Přeložit do angličtiny" to "🌐 Translate to English",
+        "🌐 Přeložit" to "🌐 Translate",
+        "Překládám…" to "Translating…",
+        "Překlad se nepovedl." to "The translation failed.",
+        "Nejdřív něco napiš, ať je co překládat." to
+            "Type something first, so there is text to translate.",
+        "Napiš zadání česky a nech ho přeložit — obsah zůstane, jen bude anglicky." to
+            "Write the prompt in your own language and have it translated — same content, just in English.",
+        "Domaluje do masky to, co popíšeš — na tohle je trénovaný" to
+            "Paints into the mask whatever you describe — that is what it was trained for",
+        "Rychlejší (4 kroky), ale poslouchá příkazy — „dej mu plnovous“" to
+            "Faster (4 steps) but takes orders — \"give him a full beard\"",
+        "Klein poslouchá příkazy — napiš, co se s tím místem má stát" to
+            "Klein takes orders — write what should happen to that spot",
+        "posaď ho na dřevěnou lavičku pod stromem" to "sit him on a wooden bench under a tree",
+        "Schovat navigační tlačítka" to "Hide the navigation buttons",
+        "Víc místa na obrazovce; vytáhneš je přejetím zespodu" to
+            "More room on screen; swipe up from the bottom to get them back",
+        "Lišta s tlačítky je pryč, dokud ji nepotřebuješ — přejeď prstem od spodního okraje a na chvíli se ukáže." to
+            "The button bar stays hidden until you need it — swipe up from the bottom edge and it appears for a moment.",
+        "Lišta s tlačítky zůstává vidět pořád." to "The button bar stays visible all the time.",
         "Jazyk" to "Language",
         "Podle telefonu" to "System",
         "Čeština" to "Czech",

@@ -173,6 +173,13 @@ fun AllInOneSection(vm: MainViewModel) {
                             if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
                             color = Cyan,
                         ) { if (!bezi) vm.vylepsiAioPrompt() }
+                        Spacer(Modifier.width(8.dp))
+                        // Vylepšovač zadání rozepíše; tohle ho jen přeloží,
+                        // když si člověk scénu napsal sám a chce ji anglicky.
+                        OutlineButton(
+                            if (bezi) t("Překládám…") else t("🌐 Přeložit"),
+                            color = cz.promptlab.h3video.ui.theme.Violet,
+                        ) { if (!bezi) vm.prelozPrompt(MainViewModel.PromptPole.AIO) }
                         if (bezi) {
                             Spacer(Modifier.width(10.dp))
                             CircularProgressIndicator(

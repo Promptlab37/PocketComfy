@@ -121,6 +121,9 @@ check verifies classes.
   - **adapter (video only):**
     [MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF/resolve/main/MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf) (1.3 GB).
 
+  The same pack and model also power the **🌐 Translate to English** button
+  next to the prompt fields — nothing extra to download for translation.
+
   The video rewriter node can also download a model itself on first use (it
   offers one in the list); the Image card cannot — there the file really has to
   sit in `models/LLM`. The app then picks a model from the server's list on its
