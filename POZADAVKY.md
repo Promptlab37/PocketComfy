@@ -1,103 +1,103 @@
-﻿# Co appka potĹ™ebuje na serveru
+# Co appka potřebuje na serveru
 
-PocketComfy je **dĂˇlkovĂ© ovlĂˇdĂˇnĂ­ ComfyUI z mobilu** â€” samo nic negeneruje,
-vĹˇechno poÄŤĂ­tĂˇ tvĹŻj poÄŤĂ­taÄŤ. Tenhle soubor Ĺ™Ă­kĂˇ, co na nÄ›m musĂ­ bĂ˝t.
-Seznam je vygenerovanĂ˝ pĹ™Ă­mo z workflow, kterĂˇ appka pouĹľĂ­vĂˇ (stejnĂˇ data
-ÄŤte tlaÄŤĂ­tko **NastavenĂ­ â†’ Zkontrolovat server**, kterĂ© vypĂ­Ĺˇe, co konkrĂ©tnÄ›
-chybĂ­ u tebe).
+PocketComfy je **dálkové ovládání ComfyUI z mobilu** — samo nic negeneruje,
+všechno počítá tvůj počítač. Tenhle soubor říká, co na něm musí být.
+Seznam je vygenerovaný přímo z workflow, která appka používá (stejná data
+čte tlačítko **Nastavení → Zkontrolovat server**, které vypíše, co konkrétně
+chybí u tebe).
 
-## ZĂˇklad
+## Základ
 
-- **ComfyUI** â€” aktuĂˇlnĂ­ verze (nody MiniMax H3 jsou souÄŤĂˇstĂ­ ComfyUI,
-  `comfy_extras/nodes_minimax_h3`), spuĹˇtÄ›nĂ© s `--listen 0.0.0.0`.
-- Telefon na stejnĂ© sĂ­ti, nebo VPN (napĹ™. Tailscale).
-- DoporuÄŤenĂ©: **ComfyUI-Manager** â€” chybÄ›jĂ­cĂ­ custom nody pĹ™es nÄ›j
-  doinstalujeĹˇ na pĂˇr kliknutĂ­.
+- **ComfyUI** — aktuální verze (nody MiniMax H3 jsou součástí ComfyUI,
+  `comfy_extras/nodes_minimax_h3`), spuštěné s `--listen 0.0.0.0`.
+- Telefon na stejné síti, nebo VPN (např. Tailscale).
+- Doporučené: **ComfyUI-Manager** — chybějící custom nody přes něj
+  doinstaluješ na pár kliknutí.
 
 ## Custom nody (podle karet)
 
-| BalĂ­k | Poskytuje | PotĹ™ebujĂ­ karty |
+| Balík | Poskytuje | Potřebují karty |
 |---|---|---|
-| ComfyUI-ALLinONE-MinimaxH3 | Ĺˇablony workflow, endpoint `/h3one` | All in One, Dialogy |
-| rgthree-comfy | Power Lora Loader, Any Switch | video karty, VĂ˝mÄ›na tvĂˇĹ™e |
-| LSI-Minimax-Segment-Timeline | LSIMinimaxTimeline(+Render) | ÄŚasovĂˇ osa |
-| ComfyUI-SeedVR2_VideoUpscaler | SeedVR2 nody | ZvÄ›tĹˇit |
-| praveen-tools | ImageTileSplit/Merge, LoadImageWithFilename | ZvÄ›tĹˇit |
-| VideoHelperSuite / KJNodes* | VHS_VideoCombine, PathchSageAttentionKJ, INTConstant, ModelPreviewOverrideKJ, ImageConcanate, ResizeMask | video karty, ĹľivĂ˝ nĂˇhled, VĂ˝mÄ›na tvĂˇĹ™e |
-| nody Krea 2 Edit* | Krea2EditModelPatch, Krea2EditGroundedEncode, SpectrumApplyMiniMaxH3, H3CacheBust | Ăšprava obrĂˇzku, video karty |
-| ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | VĂ˝mÄ›na tvĂˇĹ™e |
-| ComfyUI-MiniMaxH3-TeaCache | MiniMaxH3TeaCache | video karty (volitelnĂ© zrychlenĂ­) |
+| ComfyUI-ALLinONE-MinimaxH3 | šablony workflow, endpoint `/h3one` | All in One, Dialogy |
+| rgthree-comfy | Power Lora Loader, Any Switch | video karty, Výměna tváře |
+| LSI-Minimax-Segment-Timeline | LSIMinimaxTimeline(+Render) | Časová osa |
+| ComfyUI-SeedVR2_VideoUpscaler | SeedVR2 nody | Zvětšit |
+| praveen-tools | ImageTileSplit/Merge, LoadImageWithFilename | Zvětšit |
+| VideoHelperSuite / KJNodes* | VHS_VideoCombine, PathchSageAttentionKJ, INTConstant, ModelPreviewOverrideKJ, ImageConcanate, ResizeMask | video karty, živý náhled, Výměna tváře |
+| nody Krea 2 Edit* | Krea2EditModelPatch, Krea2EditGroundedEncode, SpectrumApplyMiniMaxH3, H3CacheBust | Úprava obrázku, video karty |
+| ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | Výměna tváře |
+| ComfyUI-MiniMaxH3-TeaCache | MiniMaxH3TeaCache | video karty (volitelné zrychlení) |
 | Comfyui-QwenEditUtils | QwenEditConfigPreparer, TextEncodeQwenImageEditPlusCustom | Oprava fotky |
-| ComfyUI_essentials | ImageResize+ | VĂ˝mÄ›na tvĂˇĹ™e |
-| Impact Pack* | ImpactGaussianBlurMask | VĂ˝mÄ›na tvĂˇĹ™e |
-| ComfyUI-GGUF | UnetLoaderGGUF | ObrĂˇzek â€” jen volitelnĂ˝ alternativnĂ­ model ve formĂˇtu GGUF |
+| ComfyUI_essentials | ImageResize+ | Výměna tváře |
+| Impact Pack* | ImpactGaussianBlurMask | Výměna tváře |
+| ComfyUI-GGUF | UnetLoaderGGUF | Obrázek — jen volitelný alternativní model ve formátu GGUF |
 
-Karty **ObrĂˇzek** (Z-Image) a **Hudba** (ACE-Step 1.5) jedou jen na
-vestavÄ›nĂ˝ch uzlech ComfyUI â€” ĹľĂˇdnĂ˝ custom balĂ­k nepotĹ™ebujĂ­
-(ComfyUI-GGUF je potĹ™eba aĹľ pro volitelnĂ˝ alternativnĂ­ model).
+Karty **Obrázek** (Z-Image) a **Hudba** (ACE-Step 1.5) jedou jen na
+vestavěných uzlech ComfyUI — žádný custom balík nepotřebují
+(ComfyUI-GGUF je potřeba až pro volitelný alternativní model).
 
-Pozn.: balĂ­ky LSI-Minimax-Segment-Timeline a balĂ­k s uzly Krea2Edit/H3
-nejsou veĹ™ejnÄ› dostupnĂ© â€” bez nich nepojedou karty ÄŚasovĂˇ osa a Ăšprava
-obrĂˇzku (a ĹľivĂ˝ nĂˇhled u videa). OstatnĂ­ karty fungujĂ­ normĂˇlnÄ›.
+Pozn.: balíky LSI-Minimax-Segment-Timeline a balík s uzly Krea2Edit/H3
+nejsou veřejně dostupné — bez nich nepojedou karty Časová osa a Úprava
+obrázku (a živý náhled u videa). Ostatní karty fungují normálně.
 
-\* Na referenÄŤnĂ­m serveru tyhle tĹ™Ă­dy poskytuje balĂ­k `comfyui-workflow-encrypt`;
-pĹ™i ÄŤistĂ© instalaci pochĂˇzejĂ­ z VideoHelperSuite, KJNodes a balĂ­ku Krea 2 Edit.
-Rozhoduje tĹ™Ă­da uzlu, ne jmĂ©no balĂ­ku â€” kontrola v appce ovÄ›Ĺ™uje tĹ™Ă­dy.
+\* Na referenčním serveru tyhle třídy poskytuje balík `comfyui-workflow-encrypt`;
+při čisté instalaci pocházejí z VideoHelperSuite, KJNodes a balíku Krea 2 Edit.
+Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy.
 
-## Modely (sloĹľka `models/`)
+## Modely (složka `models/`)
 
 **checkpoints/**
 - `ace_step_1.5_turbo_aio.safetensors` (karta Hudba)
 
 **diffusion_models/**
-- `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video z textu/obrĂˇzkĹŻ)
-- `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (reference â†’ video, Dialogy)
-- `krea2_turbo_fp8_scaled.safetensors` (Ăšprava obrĂˇzku)
-- `z_image_turbo_bf16.safetensors` (karta ObrĂˇzek)
+- `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video z textu/obrázků)
+- `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (reference → video, Dialogy)
+- `krea2_turbo_fp8_scaled.safetensors` (Úprava obrázku)
+- `z_image_turbo_bf16.safetensors` (karta Obrázek)
 - `qwen_image_edit_2511_fp8_e4m3fn.safetensors` (Oprava fotky)
-- `flux1-Fill-Dev_FP8.safetensors` (VĂ˝mÄ›na tvĂˇĹ™e)
+- `flux1-Fill-Dev_FP8.safetensors` (Výměna tváře)
 
 **text_encoders/**
 - `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` (MiniMax H3)
 - `qwen3vl_4b_fp8_scaled.safetensors` (Krea 2)
-- `qwen_3_4b.safetensors` (karta ObrĂˇzek)
+- `qwen_3_4b.safetensors` (karta Obrázek)
 - `qwen_2.5_vl_7b_fp8_scaled.safetensors` (Oprava fotky)
-- `clip_l.safetensors` + `t5xxl_fp16.safetensors` (VĂ˝mÄ›na tvĂˇĹ™e)
+- `clip_l.safetensors` + `t5xxl_fp16.safetensors` (Výměna tváře)
 
 **vae/**
 - `minimax_h3_video_vae_fp16.safetensors`
 - `minimax_h3_audio_vae_fp32.safetensors`
 - `qwen_image_vae.safetensors` (Krea 2)
-- `ae.sft` (karta ObrĂˇzek â€” FLUX/Z-Image autoenkodĂ©r)
+- `ae.sft` (karta Obrázek — FLUX/Z-Image autoenkodér)
 
 **loras/**
-- `krea2_identity_edit_v1_2.safetensors` (drĹľĂ­ identitu pĹ™i ĂşpravÄ› obrĂˇzku)
-- zrychlovacĂ­ (Turbo) LoRA podle vĂ˝bÄ›ru v appce â€” nabĂ­dka se ÄŤte ze serveru
+- `krea2_identity_edit_v1_2.safetensors` (drží identitu při úpravě obrázku)
+- zrychlovací (Turbo) LoRA podle výběru v appce — nabídka se čte ze serveru
 - `Qwen-Image-Edit-2511-Lightning-4steps-V1.0-fp32.safetensors`,
   `qwen_image_edit_2511_upscale.safetensors`, `flymy_realism.safetensors` (Oprava fotky)
-- `comfyui_portrait_lora64.safetensors` (ACE++), `FLUX.1-Turbo-Alpha.safetensors` (VĂ˝mÄ›na tvĂˇĹ™e)
+- `comfyui_portrait_lora64.safetensors` (ACE++), `FLUX.1-Turbo-Alpha.safetensors` (Výměna tváře)
 
-**SeedVR2** (karta ZvÄ›tĹˇit): `seedvr2_ema_7b-Q4_K_M.gguf` a
-`ema_vae_fp16.safetensors` si balĂ­k **stĂˇhne sĂˇm pĹ™i prvnĂ­m pouĹľitĂ­**.
+**SeedVR2** (karta Zvětšit): `seedvr2_ema_7b-Q4_K_M.gguf` a
+`ema_vae_fp16.safetensors` si balík **stáhne sám při prvním použití**.
 
-## VolitelnĂ©
+## Volitelné
 
-- **Higgs Audio Studio** (port 7860) â€” jen pro namlouvĂˇnĂ­ replik na kartÄ›
-  Dialogy; bez nÄ›j zbytek appky funguje normĂˇlnÄ›.
-- **SpouĹˇtÄ›ÄŤ na poÄŤĂ­taÄŤi** (port 8190) â€” umĂ­ ComfyUI na dĂˇlku zapnout
-  a vypnout (uvolnit grafiku). Bez nÄ›j musĂ­ ComfyUI bÄ›Ĺľet, kdyĹľ appku pouĹľĂ­vĂˇĹˇ.
-- **Karta ObrĂˇzek â€” pĹ™epĂ­naÄŤ â€žBez cenzury" a model â€žPhotoreal"** (18+):
-  obojĂ­ vyĹľaduje vlastnĂ­ soubory, kterĂ© si stĂˇhneĹˇ sĂˇm (CivitAI /
-  Hugging Face, hledej Z-Image Turbo LoRA a finetuny). LoRA patĹ™Ă­ do
-  `models/loras/` a appka nabĂ­dne **kaĹľdou, kterĂˇ mĂˇ v nĂˇzvu
-  `zimage`/`zit`** â€” pojmenuj ji tak a objevĂ­ se sama. AlternativnĂ­ model
-  (safetensors do `models/diffusion_models/`, GGUF k tomu chce balĂ­k
-  ComfyUI-GGUF) oÄŤekĂˇvĂˇ appka pod nĂˇzvem `zimage_nsfw_photoreal_v61_Q8.gguf`.
-  Bez tÄ›chto souborĹŻ karta ObrĂˇzek normĂˇlnÄ› jede na zĂˇkladnĂ­m Z-Image Turbo.
+- **Higgs Audio Studio** (port 7860) — jen pro namlouvání replik na kartě
+  Dialogy; bez něj zbytek appky funguje normálně.
+- **Spouštěč na počítači** (port 8190) — umí ComfyUI na dálku zapnout
+  a vypnout (uvolnit grafiku). Bez něj musí ComfyUI běžet, když appku používáš.
+- **Karta Obrázek — přepínač „Bez cenzury" a model „Photoreal"** (18+):
+  obojí vyžaduje vlastní soubory, které si stáhneš sám (CivitAI /
+  Hugging Face, hledej Z-Image Turbo LoRA a finetuny). LoRA patří do
+  `models/loras/` a appka nabídne **každou, která má v názvu
+  `zimage`/`zit`** — pojmenuj ji tak a objeví se sama. Alternativní model
+  (safetensors do `models/diffusion_models/`, GGUF k tomu chce balík
+  ComfyUI-GGUF) očekává appka pod názvem `zimage_nsfw_photoreal_v61_Q8.gguf`.
+  Bez těchto souborů karta Obrázek normálně jede na základním Z-Image Turbo.
 
-## Jak ovÄ›Ĺ™it, Ĺľe mĂˇĹˇ vĹˇechno
+## Jak ověřit, že máš všechno
 
-V appce: **NastavenĂ­ â†’ Co serveru chybĂ­ â†’ Zkontrolovat server.** Appka se
-zeptĂˇ serveru na kaĹľdou tĹ™Ă­du uzlu ze svĂ˝ch workflow a u vĂ˝bÄ›rovĂ˝ch vstupĹŻ
-(modely, LoRA, VAE) ovÄ›Ĺ™Ă­, Ĺľe server soubor opravdu nabĂ­zĂ­. Co chybĂ­, vypĂ­Ĺˇe
-jmenovitÄ› â€” nody doinstaluj pĹ™es ComfyUI-Manager, modely nahraj do sloĹľek vĂ˝Ĺˇ.
+V appce: **Nastavení → Co serveru chybí → Zkontrolovat server.** Appka se
+zeptá serveru na každou třídu uzlu ze svých workflow a u výběrových vstupů
+(modely, LoRA, VAE) ověří, že server soubor opravdu nabízí. Co chybí, vypíše
+jmenovitě — nody doinstaluj přes ComfyUI-Manager, modely nahraj do složek výš.
