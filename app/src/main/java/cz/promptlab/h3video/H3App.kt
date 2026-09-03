@@ -26,6 +26,8 @@ class H3App : Application() {
         }
         runCatching { GenerationService.ensureChannels(this) }
         runCatching { GenerationEngine.init(this) }
+        // Fronta běhů je věc procesu, ne obrazovky — hlídač musí běžet od startu.
+        runCatching { cz.promptlab.h3video.engine.RunQueue.init() }
     }
 
     /**

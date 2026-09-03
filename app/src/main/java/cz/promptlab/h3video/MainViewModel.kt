@@ -65,6 +65,8 @@ import cz.promptlab.h3video.data.MIN_SECONDS
 import cz.promptlab.h3video.data.composePrompt
 import cz.promptlab.h3video.engine.GenState
 import cz.promptlab.h3video.engine.GenerationEngine
+import cz.promptlab.h3video.engine.QueuedRun
+import cz.promptlab.h3video.engine.RunQueue
 import cz.promptlab.h3video.higgs.HiggsClient
 import cz.promptlab.h3video.higgs.HiggsLauncher
 import cz.promptlab.h3video.higgs.Voice
@@ -726,47 +728,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // ------------------------------------------------------------ fronta úloh
 
-    /** Jeden běh čekající ve frontě. Zadání se zmrazí ve chvíli zařazení. */
-    data class QueuedRun(
-        val id: Long,
-        val title: String,
-        val prompt: String,
-        val spust: () -> Unit,
-    )
+    /**
+     * Fronta žije v [RunQueue] na úrovni procesu, ne tady. Do 3.00 byla ve
+     * ViewModelu a při zahození obrazovky na pozadí (dlouhé video, zamčený
+     * telefon) zmizela i s druhým zařazeným během. Tady je jen průchod.
+     */
+    val queue: StateFlow<List<QueuedRun>> get() = RunQueue.queue
 
-    private val _queue = MutableStateFlow<List<QueuedRun>>(emptyList())
-    val queue: StateFlow<List<QueuedRun>> = _queue.asStateFlow()
-
-    fun removeFromQueue(id: Long) {
-        _queue.value = _queue.value.filterNot { it.id == id }
-    }
-
-    init {
-        // Hlídač fronty: jakmile běh skončí (hotovo se chvíli ukáže a samo se
-        // odklidí; po chybě až po jejím zavření), spustí se další zařazený.
-        viewModelScope.launch {
-            GenerationEngine.state.collectLatest { s ->
-                when {
-                    s is GenState.Done && _queue.value.isNotEmpty() -> {
-                        kotlinx.coroutines.delay(1500)
-                        GenerationEngine.dismissResult()
-                        dalsiZFronty()
-                    }
-                    s is GenState.Idle && _queue.value.isNotEmpty() -> {
-                        kotlinx.coroutines.delay(300)
-                        dalsiZFronty()
-                    }
-                }
-            }
-        }
-    }
-
-    private fun dalsiZFronty() {
-        if (GenerationEngine.isRunning) return
-        val next = _queue.value.firstOrNull() ?: return
-        _queue.value = _queue.value.drop(1)
-        next.spust()
-    }
+    fun removeFromQueue(id: Long) = RunQueue.remove(id)
 
     fun start() {
         val p = _params.value
@@ -775,8 +744,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // Vše jde přes frontu: když je volno, spustí se hned; když se generuje,
         // běh počká se zadáním zmrazeným teď (prompt, volby; náhodný seed se
         // losuje až při startu běhu, takže série dá pokaždé jiný výsledek).
-        _queue.value = _queue.value + makeRunner(p)
-        if (!GenerationEngine.isRunning) dalsiZFronty()
+        RunQueue.add(makeRunner(p))
     }
 
     /** Zmrazí aktuální zadání karty do spustitelného běhu pro frontu. */
