@@ -558,6 +558,10 @@ object GenerationEngine {
         // takže se nic neohlašuje jako selhání – jen se čeká a je vidět, na co.
         awaitServer(client)
 
+        // --- 0b2. místo na grafice. Když je málo volné VRAM, model se dohrává
+        // po částech z RAM a běh se natáhne i několikanásobně.
+        uvolniPametKdyzTreba(client)
+
         // --- 0c. šablona balíku (jen All in One a Dialogy). Stahuje se DŘÍV,
         // než se nahraje jediný obrázek: když balík na serveru chybí, spadne to
         // hned, a ne až po zbytečném nahrání šesti fotek.
@@ -721,6 +725,58 @@ object GenerationEngine {
 
         // --- 5. výsledek
         finishFromHistory(client, promptId, effective)
+    }
+
+    /**
+     * Uklidí paměť grafiky, než se pošle úloha — a když nepomůže, řekne proč.
+     *
+     * Modely se do VRAM vejdou jen tehdy, když tam je místo. Když ho není,
+     * ComfyUI je dohrává po částech z RAM a stejné generování trvá klidně
+     * několikrát déle. Nejčastější příčiny jsou dvě:
+     *
+     * 1. **ComfyUI si drží model z minulé úlohy.** To se dá vyřešit z appky:
+     *    `/free` mu řekne, ať vlastní modely pustí. Sahá se VÝHRADNĚ na to,
+     *    co drží ComfyUI — cizí programy se tím nevypínají.
+     * 2. **Paměť drží něco jiného na počítači** (hra, prohlížeč, jiný nástroj).
+     *    S tím appka nic udělat nesmí ani nemůže, tak to aspoň napíše do
+     *    průběhu, ať uživatel neřeší, „proč je to najednou pomalé".
+     *
+     * Uvolňuje se jen při skutečném nedostatku (pod 60 % karty volných), aby
+     * dvě stejné úlohy po sobě nemusely model načítat zbytečně dvakrát.
+     */
+    private suspend fun uvolniPametKdyzTreba(client: ComfyClient) {
+        val pred = withContext(Dispatchers.IO) { runCatching { client.vram() }.getOrNull() }
+            ?: return
+        val (volnoPred, celkem) = pred
+        if (volnoPred.toDouble() / celkem >= 0.60) return
+
+        publish(Stage.UPLOADING, 0.018f, note = "Uvolňuji paměť grafiky")
+        val po = withContext(Dispatchers.IO) {
+            runCatching {
+                client.freeMemory()
+                // ComfyUI uvolňuje na dalším průchodu smyčkou fronty.
+                kotlinx.coroutines.delay(1200)
+                client.vram()
+            }.getOrNull()
+        } ?: return
+        val (volnoPo, _) = po
+        val gb = { b: Long -> b.toDouble() / (1024 * 1024 * 1024) }
+        Log.i(
+            TAG,
+            "VRAM pred %.1f GB, po uvolneni %.1f GB z %.1f GB".format(
+                gb(volnoPred), gb(volnoPo), gb(celkem)
+            )
+        )
+        // Pořád málo → drží to někdo jiný než ComfyUI. Uživatel je jediný,
+        // kdo s tím může něco udělat, tak ať to ví.
+        if (volnoPo.toDouble() / celkem < 0.55) {
+            publish(
+                Stage.UPLOADING, 0.02f,
+                note = "Na grafice je volných jen %.1f z %.1f GB — něco jiného na počítači ji drží. Generování bude pomalejší.".format(
+                    gb(volnoPo), gb(celkem)
+                ),
+            )
+        }
     }
 
     /**

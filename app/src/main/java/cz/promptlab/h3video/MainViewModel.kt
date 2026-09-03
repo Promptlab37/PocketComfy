@@ -2427,6 +2427,49 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun inpaintLoraNabidka(model: InpaintModel, vse: List<String>): List<String> =
         cz.promptlab.h3video.data.loryProModel(model, vse)
 
+    // ------------------------------------------------------- paměť grafiky
+
+    /** Hláška o paměti grafiky pro Nastavení (prázdné = ještě se neptalo). */
+    private val _vramStav = MutableStateFlow("")
+    val vramStav: StateFlow<String> = _vramStav.asStateFlow()
+
+    private val _vramPracuje = MutableStateFlow(false)
+    val vramPracuje: StateFlow<Boolean> = _vramPracuje.asStateFlow()
+
+    /**
+     * Zjistí volnou paměť grafiky a nabídne její uvolnění. Uvolňuje se jen to,
+     * co drží ComfyUI — cizí programy appka nevypíná (a vypínat nesmí).
+     */
+    fun zjistiVram(uvolnit: Boolean = false) {
+        if (_vramPracuje.value) return
+        _vramPracuje.value = true
+        viewModelScope.launch {
+            val text = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    if (uvolnit) {
+                        client.freeMemory()
+                        kotlinx.coroutines.delay(1200)
+                    }
+                    val (volno, celkem) = client.vram()
+                        ?: return@runCatching t("Server o paměti grafiky nic neřekl.")
+                    val gb = { b: Long -> b.toDouble() / (1024 * 1024 * 1024) }
+                    val podil = volno.toDouble() / celkem
+                    val zaklad = t("Volných %.1f z %.1f GB.")
+                        .format(gb(volno), gb(celkem))
+                    zaklad + " " + when {
+                        podil >= 0.75 -> t("Grafika je volná, generování poběží naplno.")
+                        podil >= 0.55 -> t("Na obrázky to stačí; u videa se může model dohrávat z RAM.")
+                        else -> t("Málo místa — něco jiného na počítači grafiku drží. " +
+                            "Zavři hru nebo prohlížeč a zkus uvolnit znovu.")
+                    }
+                }.getOrElse { t("Nepodařilo se zeptat serveru na paměť grafiky.") }
+            }
+            _vramStav.value = text
+            _vramPracuje.value = false
+        }
+    }
+
     fun refreshInpaintLoras() {
         if (_inpaintLoras.value.isNotEmpty()) return
         viewModelScope.launch {

@@ -464,6 +464,41 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             }
         }
 
+        // Když je grafika plná, model se dohrává po částech z RAM a stejné
+        // generování trvá i několikrát déle. Appka umí říct ComfyUI, ať pustí
+        // svoje modely; na cizí programy nesahá.
+        val vramStav by vm.vramStav.collectAsStateWithLifecycle()
+        val vramPracuje by vm.vramPracuje.collectAsStateWithLifecycle()
+        SectionCard(
+            title = t("Paměť grafiky"),
+            subtitle = t("Když je plná, generování se táhne")
+        ) {
+            Column {
+                Text(
+                    if (vramStav.isBlank())
+                        t("Zjisti, kolik je na grafice volno, a případně uvolni, co si drží ComfyUI.")
+                    else vramStav,
+                    style = MaterialTheme.typography.bodySmall, color = TextMid
+                )
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlineButton(
+                        if (vramPracuje) t("Zjišťuji…") else t("Zjistit stav"),
+                        modifier = Modifier.weight(1f),
+                    ) { if (!vramPracuje) vm.zjistiVram(uvolnit = false) }
+                    OutlineButton(
+                        t("Uvolnit paměť"),
+                        modifier = Modifier.weight(1f),
+                    ) { if (!vramPracuje) vm.zjistiVram(uvolnit = true) }
+                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    t("Uvolní se jen modely, které drží ComfyUI. Cizí programy appka nevypíná."),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow
+                )
+            }
+        }
+
         // Spodní systémová tlačítka ukusují kus obrazovky přímo pod tlačítkem
         // Generovat. Schovaná se vytáhnou přejetím od spodního okraje, takže
         // se z telefonu nikam neztratí — proto je to zapnuté ve výchozím stavu.

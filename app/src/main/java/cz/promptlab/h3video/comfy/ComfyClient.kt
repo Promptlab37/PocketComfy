@@ -48,6 +48,32 @@ class ComfyClient(baseUrl: String) {
         JSONObject(r.body!!.string())
     }
 
+    /** Volná a celková paměť grafiky v bajtech, jak ji vidí ComfyUI. */
+    fun vram(): Pair<Long, Long>? = runCatching {
+        val d = systemStats().optJSONArray("devices")?.optJSONObject(0) ?: return null
+        val volno = d.optLong("vram_free", 0L)
+        val celkem = d.optLong("vram_total", 0L)
+        if (celkem <= 0L) null else volno to celkem
+    }.getOrNull()
+
+    /**
+     * Řekne ComfyUI, ať pustí modely z paměti grafiky.
+     *
+     * Sahá VÝHRADNĚ na to, co drží ComfyUI samo — cizí programy (hra, prohlížeč,
+     * jiný nástroj) tím nikdo nevypíná ani neomezuje. Používá se před během,
+     * když je na kartě málo místa: bez toho se model dohrává po částech z RAM
+     * a generování se natáhne i několikanásobně.
+     */
+    fun freeMemory(): Boolean = runCatching {
+        val payload = JSONObject()
+            .put("unload_models", true)
+            .put("free_memory", true)
+        http.newCall(
+            Request.Builder().url("$base/free")
+                .post(payload.toString().toRequestBody(JSON)).build()
+        ).execute().use { it.isSuccessful }
+    }.getOrDefault(false)
+
     /**
      * Rychlá otázka „odpovídáš?". Používá se v čekací smyčce před generováním a
      * pro ukazatel stavu na hlavní obrazovce, proto má vlastní krátké čekání –

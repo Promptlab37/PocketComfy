@@ -807,6 +807,25 @@ object Slovnik {
             "How much of the original spot may be discarded",
         "1,00 = pod maskou vzniká všechno znovu. Na dokreslení detailu (ne výměnu obsahu) zkus 0,50–0,70 — tvar a póza zůstanou." to
             "1.00 = everything under the mask is generated from scratch. To add detail rather than replace content, try 0.50–0.70 — shape and pose stay.",
+        "Paměť grafiky" to "GPU memory",
+        "Když je plná, generování se táhne" to "When it is full, generating drags on",
+        "Zjisti, kolik je na grafice volno, a případně uvolni, co si drží ComfyUI." to
+            "Check how much room the GPU has and, if needed, release what ComfyUI is holding.",
+        "Zjistit stav" to "Check",
+        "Zjišťuji…" to "Checking…",
+        "Uvolnit paměť" to "Free memory",
+        "Uvolní se jen modely, které drží ComfyUI. Cizí programy appka nevypíná." to
+            "Only models held by ComfyUI are released. The app never shuts down other programs.",
+        "Volných %.1f z %.1f GB." to "%.1f of %.1f GB free.",
+        "Grafika je volná, generování poběží naplno." to
+            "The GPU is free, generating will run at full speed.",
+        "Na obrázky to stačí; u videa se může model dohrávat z RAM." to
+            "Enough for images; for video the model may have to stream from RAM.",
+        "Málo místa — něco jiného na počítači grafiku drží. Zavři hru nebo prohlížeč a zkus uvolnit znovu." to
+            "Not much room — something else on the PC is holding the GPU. Close a game or browser and try releasing again.",
+        "Server o paměti grafiky nic neřekl." to "The server reported nothing about GPU memory.",
+        "Nepodařilo se zeptat serveru na paměť grafiky." to
+            "Could not ask the server about GPU memory.",
         "Jazyk" to "Language",
         "Podle telefonu" to "System",
         "Čeština" to "Czech",
