@@ -48,6 +48,7 @@ import cz.promptlab.h3video.ui.theme.Outline1
 import cz.promptlab.h3video.ui.theme.Surface2
 import cz.promptlab.h3video.ui.theme.TextLow
 import cz.promptlab.h3video.ui.theme.TextMid
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -158,9 +159,18 @@ fun InpaintSection(vm: MainViewModel) {
         }
     }
 
+    // Nabídka LoRA se čte ze serveru, ať se nová stažená objeví sama. Sbírá se
+    // jako stav — dorazí až po chvíli a karta se na ni musí překreslit.
+    LaunchedEffect(Unit) { vm.refreshInpaintLoras() }
+    val vsechnyLory by vm.inpaintLoras.collectAsStateWithLifecycle()
+    val lory = vm.inpaintLoraNabidka(scene.model, vsechnyLory)
+
     SkladaciSekce(
-        title = t("Model"),
-        souhrn = scene.model.title,
+        title = t("Model a doladění"),
+        souhrn = scene.model.title +
+            (if (scene.lora.isNotBlank()) " · LoRA" else "") +
+            (if (scene.model == InpaintModel.FILL && scene.sila < 1f)
+                " · síla %.2f".format(scene.sila) else ""),
         klic = "nastaveni-inpaint",
     ) {
         SectionCard(
@@ -177,6 +187,52 @@ fun InpaintSection(vm: MainViewModel) {
                 Text(
                     scene.model.detail,
                     style = MaterialTheme.typography.bodySmall, color = TextLow
+                )
+            }
+        }
+
+        // Základní modely mají o některých motivech jen mlhavou představu —
+        // hlavně o anatomii. LoRA trénovaná přímo na to je jediné, co s tím
+        // spolehlivě pohne; musí ale patřit ke stejné rodině jako model.
+        SectionCard(
+            title = t("Doplňková LoRA"),
+            subtitle = if (lory.isEmpty())
+                t("Na serveru není žádná LoRA pro tenhle model")
+            else t("Pomůže tam, kde model sám tápe — třeba na anatomii")
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PillRow(
+                    items = listOf("") + lory,
+                    selected = scene.lora,
+                    label = { if (it.isEmpty()) t("Žádná") else it.substringBeforeLast(".") },
+                    onSelect = { vm.setInpaintLora(it) },
+                )
+                if (scene.lora.isNotBlank()) {
+                    LabeledSlider(
+                        label = t("Síla LoRA"),
+                        value = "%.2f".format(scene.loraSila),
+                        position = scene.loraSila,
+                        range = 0.2f..1.4f,
+                        onChange = { vm.setInpaintLoraSila((it * 20).roundToInt() / 20f) },
+                        note = t("Kolem 0,8–1,0 bývá nejjistější; víc už deformuje okolí."),
+                    )
+                }
+            }
+        }
+
+        if (scene.model == InpaintModel.FILL) {
+            SectionCard(
+                title = t("Síla přemalování"),
+                subtitle = t("Kolik z původního místa se smí zahodit")
+            ) {
+                LabeledSlider(
+                    label = t("Síla"),
+                    value = "%.2f".format(scene.sila),
+                    position = scene.sila,
+                    range = 0.3f..1f,
+                    onChange = { vm.setInpaintSila((it * 20).roundToInt() / 20f) },
+                    note = t("1,00 = pod maskou vzniká všechno znovu. Na dokreslení " +
+                        "detailu (ne výměnu obsahu) zkus 0,50–0,70 — tvar a póza zůstanou."),
                 )
             }
         }

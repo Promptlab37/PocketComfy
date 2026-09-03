@@ -3,6 +3,7 @@ package cz.promptlab.h3video.comfy
 import android.content.Context
 import cz.promptlab.h3video.R
 import cz.promptlab.h3video.data.InpaintModel
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -73,9 +74,13 @@ object InpaintBuilder {
         ctx.resources.openRawResource(res).bufferedReader().use { it.readText() }
     }
 
+    /** Odvázaná LoRA se do grafu vkládá, jen když je vybraná (Klein). */
+    const val N_LORA_KLEIN = "5"
+
     fun build(
         ctx: Context, model: InpaintModel, prompt: String, seed: Long, images: List<String>,
-    ): JSONObject = build(template(ctx, model), model, prompt, seed, images)
+        lora: String = "", loraSila: Float = 0.9f, sila: Float = 1f,
+    ): JSONObject = build(template(ctx, model), model, prompt, seed, images, lora, loraSila, sila)
 
     /**
      * [images] v pořadí: fotka, maska štětce (černobílý PNG, bílá = domalovat).
@@ -83,6 +88,7 @@ object InpaintBuilder {
      */
     fun build(
         template: String, model: InpaintModel, prompt: String, seed: Long, images: List<String>,
+        lora: String = "", loraSila: Float = 0.9f, sila: Float = 1f,
     ): JSONObject {
         val wf = JSONObject(template)
         wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
@@ -90,8 +96,40 @@ object InpaintBuilder {
         wf.inputs(N_TEXT).put("text", zadaniProModel(model, prompt))
         if (model == InpaintModel.KLEIN) {
             wf.inputs(N_NOISE).put("noise_seed", seed)
+            // Klein: LoraLoaderModelOnly mezi UNETLoader a vedení. Bez vybrané
+            // LoRA se graf šablony nezmění ani o bajt.
+            if (lora.isNotBlank()) {
+                wf.put(
+                    N_LORA_KLEIN,
+                    JSONObject()
+                        .put("class_type", "LoraLoaderModelOnly")
+                        .put(
+                            "inputs",
+                            JSONObject()
+                                .put("model", JSONArray().put("1").put(0))
+                                .put("lora_name", lora)
+                                .put("strength_model", loraSila.toDouble()),
+                        )
+                        .put("_meta", JSONObject().put("title", "Doplňková LoRA")),
+                )
+                wf.inputs("43").put("model", JSONArray().put(N_LORA_KLEIN).put(0))
+            }
         } else {
             wf.inputs(N_SAMPLER).put("seed", seed)
+            // Flux Fill: síla přemalování. 1,0 = pod maskou vzniká všechno
+            // znovu, nižší hodnota nechá tvar z předlohy a jen ho dokreslí.
+            wf.inputs(N_SAMPLER).put("denoise", sila.coerceIn(0.1f, 1f).toDouble())
+            // LoRA jde do stávajícího Power Lora Loaderu vedle Turba, ať se
+            // aplikuje na model i na textový enkodér.
+            if (lora.isNotBlank()) {
+                wf.inputs("4").put(
+                    "lora_2",
+                    JSONObject()
+                        .put("on", true)
+                        .put("lora", lora)
+                        .put("strength", loraSila.toDouble()),
+                )
+            }
         }
         return wf
     }
@@ -101,7 +139,7 @@ object InpaintBuilder {
 
     fun stageForClass(cls: String?): Stage = when (cls) {
         "UNETLoader", "CLIPLoader", "DualCLIPLoader", "VAELoader",
-        "Power Lora Loader (rgthree)" -> Stage.MODELS
+        "Power Lora Loader (rgthree)", "LoraLoaderModelOnly" -> Stage.MODELS
         "LoadImage", "ImageToMask", "InpaintCropImproved", "GetImageSize",
         "VAEEncode", "SetLatentNoiseMask" -> Stage.REFERENCES
         "CLIPTextEncode", "ReferenceLatent", "ConditioningZeroOut", "FluxGuidance",

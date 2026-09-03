@@ -2398,7 +2398,45 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setInpaintPrompt(text: String) = updateInpaint { it.copy(prompt = text) }
-    fun setInpaintModel(model: InpaintModel) = updateInpaint { it.copy(model = model) }
+    fun setInpaintModel(model: InpaintModel) = updateInpaint {
+        // LoRA patří vždycky k jedné rodině modelů — po přepnutí modelu už
+        // vybraná sedět nemusí, tak se zahodí (jinak by běh spadl na
+        // nesedící tvary vah).
+        it.copy(model = model, lora = "")
+    }
+    fun setInpaintLora(lora: String) = updateInpaint { it.copy(lora = lora) }
+    fun setInpaintLoraSila(v: Float) = updateInpaint { it.copy(loraSila = v) }
+    fun setInpaintSila(v: Float) = updateInpaint { it.copy(sila = v) }
+
+    /**
+     * Nabídka LoRA pro domalování, čtená ze serveru. Filtruje se podle rodiny
+     * modelu: adaptér pro FLUX.1 se na FLUX.2 Klein nenasadí (jiné tvary vah)
+     * a naopak, takže míchat je nemá smysl ani nabízet.
+     */
+    private val _inpaintLoras = MutableStateFlow<List<String>>(emptyList())
+
+    /**
+     * Musí být vidět jako stav: seznam dorazí ze serveru až za chvíli po
+     * otevření karty a obrazovka se na něj musí překreslit. (Čtení
+     * `_inpaintLoras.value` přímo v composable by nechalo nabídku navždy
+     * prázdnou — stejná past jako u validace tlačítka Generovat.)
+     */
+    val inpaintLoras: StateFlow<List<String>> = _inpaintLoras.asStateFlow()
+
+    /** Filtr rodiny modelu žije v [loryProModel], ať jde ověřit testem. */
+    fun inpaintLoraNabidka(model: InpaintModel, vse: List<String>): List<String> =
+        cz.promptlab.h3video.data.loryProModel(model, vse)
+
+    fun refreshInpaintLoras() {
+        if (_inpaintLoras.value.isNotEmpty()) return
+        viewModelScope.launch {
+            val nalezene = withContext(Dispatchers.IO) {
+                runCatching { ComfyClient(settings.serverUrl).loraNames() }
+                    .getOrDefault(emptyList())
+            }
+            if (nalezene.isNotEmpty()) _inpaintLoras.value = nalezene
+        }
+    }
 
     /**
      * Fotka se ukládá jako PNG a delší hrana se omezuje, aby se dala v telefonu

@@ -56,11 +56,43 @@ data class InpaintScene(
     /** Co má na zamaskovaném místě být. */
     val prompt: String = "",
     val model: InpaintModel = InpaintModel.FILL,
+    /**
+     * Doplňková LoRA do přemalování (prázdné = žádná). Základní modely mají
+     * o některých motivech — hlavně anatomii — jen mlhavou představu; LoRA
+     * trénovaná na to konkrétní je jediné, co s tím spolehlivě hne.
+     */
+    val lora: String = "",
+    val loraSila: Float = 0.9f,
+    /**
+     * Síla přemalování (denoise) u Flux Fillu. 1,0 = pod maskou vzniká všechno
+     * znovu, nižší hodnota nechá tvar i pózu z předlohy a jen je dokreslí —
+     * na dolaďování detailu je 0,5–0,7 obvykle lepší než plný přepis.
+     */
+    val sila: Float = 1.0f,
 ) {
     val maskPainted: Boolean get() = mask != null
 
     /** Pořadí je závazné — stavitel čte [fotka, maska]. */
     val uploadImages: List<File> get() = listOfNotNull(source, mask)
+}
+
+/**
+ * Nabídka LoRA pro daný model. Adaptér patří vždycky k jedné rodině vah:
+ * LoRA pro FLUX.1 se na FLUX.2 Klein nenasadí (jiné tvary) a naopak, takže
+ * míchat je nemá smysl ani nabízet. Rodina se pozná ze jména souboru — je to
+ * jediné, co server o LoRA prozradí.
+ */
+fun loryProModel(model: InpaintModel, vse: List<String>): List<String> {
+    val flux2Znaky = listOf("klein", "flux2", "flux.2", "f2k")
+    return when (model) {
+        InpaintModel.KLEIN -> vse.filter { jmeno ->
+            flux2Znaky.any { jmeno.contains(it, ignoreCase = true) }
+        }
+        InpaintModel.FILL -> vse.filter { jmeno ->
+            val flux = jmeno.contains("flux", true) || jmeno.contains("-f1", true)
+            flux && flux2Znaky.none { jmeno.contains(it, ignoreCase = true) }
+        }
+    }.sorted()
 }
 
 /** Co kartě chybí, než se dá spustit. */
@@ -122,6 +154,9 @@ class InpaintStore(private val ctx: Context) {
             prompt = ulozene?.optString("prompt").orEmpty(),
             model = runCatching { InpaintModel.valueOf(ulozene?.optString("model").orEmpty()) }
                 .getOrDefault(InpaintModel.FILL),
+            lora = ulozene?.optString("lora").orEmpty(),
+            loraSila = (ulozene?.optDouble("loraSila", 0.9) ?: 0.9).toFloat(),
+            sila = (ulozene?.optDouble("sila", 1.0) ?: 1.0).toFloat(),
         )
     }
 
@@ -131,6 +166,9 @@ class InpaintStore(private val ctx: Context) {
             org.json.JSONObject()
                 .put("prompt", s.prompt)
                 .put("model", s.model.name)
+                .put("lora", s.lora)
+                .put("loraSila", s.loraSila.toDouble())
+                .put("sila", s.sila.toDouble())
                 .toString()
         ).apply()
     }

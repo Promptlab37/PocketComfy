@@ -204,6 +204,49 @@ class InpaintBuilderTest {
     }
 
     @Test
+    fun `lora a sila premalovani se dosadi podle modelu`() {
+        // Flux Fill: LoRA jde do stávajícího Power Lora Loaderu vedle Turba,
+        // síla přemalování do denoise KSampleru.
+        val f = InpaintBuilder.build(
+            fill, InpaintModel.FILL, "x", 1L, listOf("a.png", "m.png"),
+            lora = "nipplediffusion-f1.safetensors", loraSila = 0.85f, sila = 0.6f,
+        )
+        val l = f.inputs("4").getJSONObject("lora_2")
+        assertEquals("nipplediffusion-f1.safetensors", l.getString("lora"))
+        assertEquals(0.85, l.getDouble("strength"), 0.001)
+        assertTrue(l.getBoolean("on"))
+        assertEquals(0.6, f.inputs(InpaintBuilder.N_SAMPLER).getDouble("denoise"), 0.001)
+        // Turbo LoRA z předlohy zůstává.
+        assertEquals(
+            "FLUX.1-Turbo-Alpha.safetensors",
+            f.inputs("4").getJSONObject("lora_1").getString("lora")
+        )
+
+        // Klein: samostatný LoraLoaderModelOnly mezi modelem a vedením.
+        val k = InpaintBuilder.build(
+            klein, InpaintModel.KLEIN, "x", 1L, listOf("a.png", "m.png"),
+            lora = "FLUX2_NAHOTASQNSFW_F2K9B_v1.0.safetensors", loraSila = 1.0f,
+        )
+        assertEquals("LoraLoaderModelOnly",
+            k.getJSONObject(InpaintBuilder.N_LORA_KLEIN).getString("class_type"))
+        assertEquals("1",
+            k.inputs(InpaintBuilder.N_LORA_KLEIN).getJSONArray("model").getString(0))
+        assertEquals(InpaintBuilder.N_LORA_KLEIN,
+            k.inputs("43").getJSONArray("model").getString(0))
+        bezVisicichOdkazu(k)
+    }
+
+    @Test
+    fun `bez vybrane lory se sablona nemeni`() {
+        val s = InpaintBuilder.build(klein, InpaintModel.KLEIN, "x", 1L, listOf("a.png", "m.png"))
+        assertFalse(s.has(InpaintBuilder.N_LORA_KLEIN))
+        assertEquals("1", s.inputs("43").getJSONArray("model").getString(0))
+        val f = InpaintBuilder.build(fill, InpaintModel.FILL, "x", 1L, listOf("a.png", "m.png"))
+        assertFalse(f.inputs("4").has("lora_2"))
+        assertEquals(1.0, f.inputs(InpaintBuilder.N_SAMPLER).getDouble("denoise"), 0.001)
+    }
+
+    @Test
     fun `faze podle trid`() {
         assertEquals(Stage.MODELS, InpaintBuilder.stageForClass("UNETLoader"))
         assertEquals(Stage.REFERENCES, InpaintBuilder.stageForClass("InpaintCropImproved"))

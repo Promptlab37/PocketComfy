@@ -651,7 +651,12 @@ object GenerationEngine {
 
             // Domalování do masky: Klein 9B, nebo Flux Fill podle volby karty.
             inpaintScene != null ->
-                InpaintBuilder.build(app, inpaintScene.model, inpaintScene.prompt, seed, names)
+                InpaintBuilder.build(
+                    app, inpaintScene.model, inpaintScene.prompt, seed, names,
+                    lora = inpaintScene.lora,
+                    loraSila = inpaintScene.loraSila,
+                    sila = inpaintScene.sila,
+                )
 
             // Karta All in One nestaví graf z předlohy zabalené v APK, ale
             // z hotové šablony balíku ComfyUI-ALLinONE-MinimaxH3 stažené přímo

@@ -793,6 +793,20 @@ object Slovnik {
         "Lišta s tlačítky je pryč, dokud ji nepotřebuješ — přejeď prstem od spodního okraje a na chvíli se ukáže." to
             "The button bar stays hidden until you need it — swipe up from the bottom edge and it appears for a moment.",
         "Lišta s tlačítky zůstává vidět pořád." to "The button bar stays visible all the time.",
+        "Model a doladění" to "Model and tuning",
+        "Doplňková LoRA" to "Extra LoRA",
+        "Pomůže tam, kde model sám tápe — třeba na anatomii" to
+            "Helps where the model is vague on its own — anatomy, for instance",
+        "Na serveru není žádná LoRA pro tenhle model" to "The server has no LoRA for this model",
+        "Žádná" to "None",
+        "Síla LoRA" to "LoRA strength",
+        "Kolem 0,8–1,0 bývá nejjistější; víc už deformuje okolí." to
+            "Around 0.8–1.0 is the safe range; more starts deforming the surroundings.",
+        "Síla přemalování" to "Repaint strength",
+        "Kolik z původního místa se smí zahodit" to
+            "How much of the original spot may be discarded",
+        "1,00 = pod maskou vzniká všechno znovu. Na dokreslení detailu (ne výměnu obsahu) zkus 0,50–0,70 — tvar a póza zůstanou." to
+            "1.00 = everything under the mask is generated from scratch. To add detail rather than replace content, try 0.50–0.70 — shape and pose stay.",
         "Jazyk" to "Language",
         "Podle telefonu" to "System",
         "Čeština" to "Czech",
