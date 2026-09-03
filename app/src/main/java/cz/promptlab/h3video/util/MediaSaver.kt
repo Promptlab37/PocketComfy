@@ -105,6 +105,44 @@ object MediaSaver {
         true
     }.getOrDefault(false)
 
+    /**
+     * Uloží 3D model do Stažených souborů. Do galerie nepatří — telefon ho
+     * neumí zobrazit a mezi fotkami by jen překážel. `.glb` otevře Blender,
+     * prohlížeč 3D ve Windows i herní enginy.
+     */
+    fun save3dToDownloads(ctx: Context, file: File, displayName: String): Boolean = runCatching {
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "model/gltf-binary")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                put(
+                    MediaStore.MediaColumns.RELATIVE_PATH,
+                    Environment.DIRECTORY_DOWNLOADS + "/" + ALBUM
+                )
+                put(MediaStore.MediaColumns.IS_PENDING, 1)
+            }
+        }
+        val resolver = ctx.contentResolver
+        // Před Androidem 10 se do Stažených přes MediaStore zapisovat nedá,
+        // tam se soubor položí rovnou do složky.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            val dir = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+                ALBUM
+            ).apply { mkdirs() }
+            file.copyTo(File(dir, displayName), overwrite = true)
+            return true
+        }
+        val uri: Uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+            ?: return false
+        resolver.openOutputStream(uri)?.use { out -> file.inputStream().use { it.copyTo(out) } }
+            ?: return false
+        values.clear()
+        values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        true
+    }.getOrDefault(false)
+
     fun shareIntent(ctx: Context, file: File): Intent {
         val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
         return Intent(Intent.ACTION_SEND).apply {

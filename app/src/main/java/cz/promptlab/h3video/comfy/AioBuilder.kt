@@ -53,6 +53,30 @@ object AioBuilder {
     /** Prodloužení: kontext ze zdrojového videa. */
     const val N_EXTEND_CONTEXT = "18"
 
+    // --- přemalování ve videu (šablona mask.json) --------------------------
+    /** Ořez zdrojového videa na zpracovávaný úsek. */
+    const val N_MASK_SLICE = "34"
+    /** Příprava snímků a zvuku pro H3 (délka úseku, cílové fps). */
+    const val N_MASK_PREPARE = "18"
+    /** Checkpoint SAM 3, který objekt sleduje napříč snímky. */
+    const val N_MASK_SAM = "19"
+    /** Text pro SAM 3 — co ve videu hledat. */
+    const val N_MASK_TARGET = "20"
+    /** Sledování: kolik objektů se má chytit. */
+    const val N_MASK_TRACK = "21"
+
+    /**
+     * Váhy, které si šablona `mask.json` na rozdíl od ostatních nenese —
+     * má u všech loaderů prázdno a čeká, že je dosadí ten, kdo ji spouští.
+     * Jména jsou stejná jako v ostatních šablonách balíku.
+     */
+    const val VAE_VIDEO = "minimax_h3_video_vae_fp16.safetensors"
+    const val VAE_AUDIO = "minimax_h3_audio_vae_fp32.safetensors"
+    const val UNET_FL2VA = "minimax_h3_fl2va_pruned_int8_convrot.safetensors"
+    /** Referenční váhy — jede na nich karta Dlouhé video. */
+    const val UNET_REF2VA = "minimax_h3_ref2va_pruned_int8_convrot.safetensors"
+    const val SAM3_CKPT = "sam3.1_multiplex_fp16.safetensors"
+
     /** List postavy: složení promptu (popis postavy jde do `string_a`). */
     const val N_SHEET_PROMPT = "17"
 
@@ -223,6 +247,24 @@ object AioBuilder {
 
             AioMode.EXTEND -> wf.inputs(N_EXTRA).put("file", video.orEmpty())
 
+            AioMode.MASK -> {
+                wf.inputs(N_EXTRA).put("file", video.orEmpty())
+                // Zpracovává se jen úsek od začátku – delší video by znamenalo
+                // sledovat a přegenerovat i to, co uživatel měnit nechce.
+                wf.inputs(N_MASK_SLICE).put("duration", scene.seconds.toDouble())
+                wf.inputs(N_MASK_PREPARE).put("max_seconds", scene.seconds.toDouble())
+                wf.inputs(N_MASK_SAM).put("ckpt_name", SAM3_CKPT)
+                wf.inputs(N_MASK_TARGET).put("text", scene.maskTarget.trim())
+                wf.inputs(N_MASK_TRACK).put("max_objects", scene.maskObjects.coerceIn(1, 8))
+                // Čím se sledovaný kus nahradí. Stejné sloty jako u referencí,
+                // takže i stejné pořadí nahrávání a značky <Picture N> v promptu.
+                images.forEachIndexed { idx, name ->
+                    val id = newId()
+                    wf.put(id, loadImage(name, "Náhrada ${idx + 1}"))
+                    wf.inputs(N_COND).put("ref_images.ref_image_$idx", link(id))
+                }
+            }
+
             else -> Unit // z textu se nic nepřipojuje
         }
         return wf
@@ -239,6 +281,17 @@ object AioBuilder {
         wf.inputs(N_CLIP).put("clip_name", p.clipName)
         if (p.unetFl2va.isNotBlank() && !referencni) {
             wf.inputs(N_UNET).put("unet_name", p.unetFl2va)
+        }
+        // Šablona přemalování přichází s prázdnými loadery – ostatní si své
+        // váhy nesou samy a přepisovat je není proč.
+        if (wf.inputs(N_UNET).optString("unet_name").isBlank()) {
+            wf.inputs(N_UNET).put("unet_name", UNET_FL2VA)
+        }
+        if (wf.optJSONObject(N_VAE_VIDEO)?.optJSONObject("inputs")
+                ?.optString("vae_name").isNullOrBlank()
+        ) {
+            wf.inputs(N_VAE_VIDEO).put("vae_name", VAE_VIDEO)
+            wf.inputs(N_VAE_AUDIO).put("vae_name", VAE_AUDIO)
         }
         wf.inputs(N_SHIFT).put("shift_video", p.shiftVideo.toDouble())
         wf.inputs(N_SHIFT).put("shift_audio", p.shiftAudio.toDouble())
@@ -261,9 +314,14 @@ object AioBuilder {
 
         wf.inputs(N_COND).apply {
             put("prompt", scene.prompt.trim())
-            put("width", res.width)
-            put("height", res.height)
-            put("length", frames)
+            // U přemalování jsou rozměry i délka odkazy na výřez kolem
+            // sledovaného objektu – přepsat je čísly by rozhodilo masku
+            // i vlepení zpátky do původního záběru.
+            if (!scene.mode.fixedSize) {
+                put("width", res.width)
+                put("height", res.height)
+                put("length", frames)
+            }
             // Reference se posílají v nastavené velikosti; „max" znamená 2048 px
             // a mnohonásobně delší běh, proto se sem posílá volba z parametrů.
             if (has("ref_image_size")) put("ref_image_size", p.refImageSize)
@@ -432,9 +490,19 @@ object AioBuilder {
         .put("prompt", scene.prompt.trim())
         .put("seed", p.seed)
         .put("steps", p.steps)
-        .put("width", p.resolution.width)
-        .put("height", p.resolution.height)
-        .put("frames", scene.frames)
+        // Rozměry a délka patří do otisku jen tam, kde je appka opravdu
+        // dosazuje. U přemalování si je určuje výřez kolem sledovaného
+        // objektu — mít je v otisku znamená zbytečně zahazovat mezipaměť
+        // pokaždé, když si uživatel jinde přepne rozlišení.
+        .apply {
+            if (!scene.mode.fixedSize) {
+                put("width", p.resolution.width)
+                put("height", p.resolution.height)
+                put("frames", scene.frames)
+            } else {
+                put("seconds", scene.seconds)
+            }
+        }
         .put("files", JSONArray().also { arr ->
             scene.uploadImages.forEach { arr.put(it.name + ":" + it.length()) }
             scene.uploadVideo?.let { arr.put(it.name + ":" + it.length()) }

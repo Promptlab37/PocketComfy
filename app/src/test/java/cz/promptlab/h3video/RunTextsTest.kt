@@ -22,9 +22,14 @@ class RunTextsTest {
     private val vsechnyFaze = Stage.entries.toList()
     private val vsechnyDruhy = RunKind.entries.toList()
 
+    /**
+     * Karty, které video NEVYRÁBĚJÍ, o něm nesmí mluvit. Dlouhé video se sem
+     * nepočítá — to video vyrábí a mluvit o něm má, stejně jako obyčejný běh.
+     */
     @Test
     fun `zadny neVideo beh nikdy nemluvi o videu`() {
-        vsechnyDruhy.filter { it != RunKind.VIDEO }.forEach { druh ->
+        val videove = setOf(RunKind.VIDEO, RunKind.LONG)
+        vsechnyDruhy.filterNot { it in videove }.forEach { druh ->
             vsechnyFaze.forEach { faze ->
                 val t = stageText(faze, druh).lowercase()
                 assertFalse("$druh/$faze: '$t'", "video" in t)

@@ -30,6 +30,18 @@ enum class Mode(
     ),
 
     /**
+     * Až šest navazujících úseků v JEDNOM běhu (balík H3-Motion-Context-MultiRef).
+     * Úseky si předávají kontext přímo v latentu, takže mezi nimi není vidět
+     * sešívání — na rozdíl od Časové osy, kde je každý segment vlastní úloha,
+     * a od All in One → Prodloužit, které umí jedno navázání na běh.
+     */
+    LONG(
+        titleCs = "Dlouhé video",
+        shortCs = "Dlouhé",
+        detailCs = "Až šest navazujících úseků najednou, každý s vlastním zadáním"
+    ),
+
+    /**
      * Kolegovy LSI nody: dlouhé video po segmentech. Každý segment je vlastní
      * běh do 15 s a navazuje na poslední snímek předchozího, takže výsledek
      * není limitovaný jedním záběrem modelu.
@@ -99,6 +111,18 @@ enum class Mode(
     ),
 
     /**
+     * Z jedné fotky 3D model se sítí a texturami — **Microsoft TRELLIS.2**,
+     * nativně v ComfyUI (od 0.34), žádný custom node. Čtyři průchody modelu
+     * (struktura → tvar → zjemnění → textura), pak remesh, rozbalení UV
+     * a pečení map. Jediná karta, jejímž výstupem je `.glb`.
+     */
+    MODEL3D(
+        titleCs = "3D model",
+        shortCs = "3D",
+        detailCs = "TRELLIS.2 — z fotky předmětu model se sítí a texturami"
+    ),
+
+    /**
      * Uživatelovo SeedVR2 „gigapixel" workflow — dlaždice, každá na 3200 px,
      * slepení. Předloha je jeho export 1:1; dosazuje se jen fotka, mřížka
      * a seed. Druhá karta, která nevyrábí video.
@@ -124,12 +148,73 @@ enum class Mode(
     val short: String get() = t(shortCs)
     val detail: String get() = t(detailCs)
 
-    /** Jede se na referenčních (ref2va) vahách? U dialogů ano. */
-    val usesRefModel: Boolean get() = this == TALK
+    /** Jede se na referenčních (ref2va) vahách? U dialogů a dlouhého videa ano. */
+    val usesRefModel: Boolean get() = this == TALK || this == LONG
 
     /** Vyrábí tahle karta video? Obrázkové karty vrací PNG, Hudba MP3. */
     val isVideo: Boolean
-        get() = this == ALLINONE || this == TALK || this == TIMELINE
+        get() = this == ALLINONE || this == TALK || this == TIMELINE || this == LONG
+}
+
+/**
+ * Co karta z „Nastavení" opravdu použije.
+ *
+ * Vzniklo po výtce, že appka nabízí volby, které se na výsledku neprojeví —
+ * u zvětšení celý panel, u přemalování rozlišení. Nabízet knoflík, který graf
+ * zahodí, je horší než ho neukázat: uživatel podle něj rozhoduje a pak nechápe,
+ * proč se nic nezměnilo.
+ *
+ * Pravdou je vždycky stavitel grafu. Když se sem něco přidá, musí to jít
+ * ověřit testem — viz `NastaveniKaretTest`.
+ */
+data class Ovlada(
+    /** Určuje plátno appka, nebo si ho karta bere odjinud? */
+    val rozliseni: Boolean = true,
+    /** Kroky, sampler a plánovač. */
+    val kroky: Boolean = true,
+    /** Turbo LoRA a další LoRA. */
+    val lora: Boolean = true,
+    /** Výběr vah modelu. */
+    val model: Boolean = true,
+    /** Sigma shift obrazu i zvuku. */
+    val shift: Boolean = true,
+    /** Profil (Turbo / Kvalita) — nese s sebou i textový enkodér. */
+    val profil: Boolean = true,
+) {
+    /** Má vůbec smysl panel Nastavení ukazovat? */
+    val neco: Boolean get() = rozliseni || kroky || lora || model || shift || profil
+
+    companion object {
+        val NIC = Ovlada(false, false, false, false, false, false)
+    }
+}
+
+/**
+ * Co z nastavení dává na téhle kartě smysl.
+ *
+ * @param aioRezim režim karty All in One (jinde se ignoruje)
+ * @param dlouheNavazuje dlouhé video navazuje na hotové video (plátno pak
+ *        určuje ono, ne appka)
+ */
+fun ovladaProKartu(
+    mode: Mode,
+    aioRezim: AioMode = AioMode.TEXT,
+    dlouheNavazuje: Boolean = false,
+): Ovlada = when (mode) {
+    Mode.ALLINONE -> when (aioRezim) {
+        // Zvětšení nespouští model vůbec — šablona nemá ani UNET, ani prompt.
+        AioMode.UPSCALE -> Ovlada.NIC
+        // List postavy má vzorkování, rozlišení i choreografii vyladěné
+        // v šabloně; stavitel z parametrů bere jen enkodér, Sage a náhled.
+        AioMode.CHARSHEET -> Ovlada(
+            rozliseni = false, kroky = false, lora = false, model = false, shift = false,
+        )
+        // Přemalování: plátno určuje výřez kolem sledovaného objektu.
+        AioMode.MASK -> Ovlada(rozliseni = false)
+        else -> Ovlada()
+    }
+    Mode.LONG -> Ovlada(rozliseni = !dlouheNavazuje)
+    else -> Ovlada()
 }
 
 /**

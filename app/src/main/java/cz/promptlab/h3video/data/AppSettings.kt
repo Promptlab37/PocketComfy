@@ -184,6 +184,16 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeInpaint", false)
         set(v) = sp.edit().putBoolean("activeInpaint", v).apply()
 
+    /** Běží dlouhé video (řetěz navazujících úseků)? */
+    var activeLong: Boolean
+        get() = sp.getBoolean("activeLong", false)
+        set(v) = sp.edit().putBoolean("activeLong", v).apply()
+
+    /** Běží stavba 3D modelu (TRELLIS.2)? */
+    var activeModel3d: Boolean
+        get() = sp.getBoolean("activeModel3d", false)
+        set(v) = sp.edit().putBoolean("activeModel3d", v).apply()
+
     // ------------------------------------------------------------ parametry
 
     /** Prompt se pamatuje zvlášť pro každou kartu – jsou to jiné druhy zadání. */

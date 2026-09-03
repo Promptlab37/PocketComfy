@@ -11,6 +11,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +25,8 @@ import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,15 +38,24 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.promptlab.h3video.MainViewModel
+import cz.promptlab.h3video.data.DlssStyl
+import cz.promptlab.h3video.data.UpscaleMetoda
 import cz.promptlab.h3video.data.UpscaleScene
+import cz.promptlab.h3video.data.upscaleHints
 import cz.promptlab.h3video.ui.theme.Outline1
 import cz.promptlab.h3video.ui.theme.Surface2
 import cz.promptlab.h3video.ui.theme.TextLow
 import cz.promptlab.h3video.ui.theme.TextMid
+import kotlin.math.roundToInt
 
 /**
- * Karta **Zvětšit** — SeedVR2 gigapixel podle uživatelova workflow. Jediné
- * dvě volby: fotka a mřížka dlaždic; všechno ostatní je vyladěné v předloze.
+ * Karta **Zvětšit** — dvě cesty k větší nebo ostřejší fotce.
+ *
+ * *SeedVR2 gigapixel* jede podle uživatelova workflow převzatého 1:1; volí se
+ * jen fotka a mřížka dlaždic, zbytek je vyladěný v předloze. *DLSS 5* je od
+ * 3.02 rychlá alternativa: nedokresluje, jen rekonstruuje, co ve fotce je,
+ * zato v sekundách. Nastavení má proto vlastní — míru zvětšení, styl, sílu
+ * a rekonstrukci pleti.
  */
 @Composable
 fun UpscaleSection(vm: MainViewModel) {
@@ -97,6 +109,25 @@ fun UpscaleSection(vm: MainViewModel) {
     }
 
     SectionCard(
+        title = t("Čím zvětšit"),
+        subtitle = t("Dvě různé cesty — jedna dokresluje, druhá rekonstruuje")
+    ) {
+        Column {
+            PillRow(
+                items = UpscaleMetoda.entries.toList(),
+                selected = scene.metoda,
+                label = { t(it.stitek) },
+                onSelect = { vm.setUpscaleMetoda(it) },
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                t(scene.metoda.popis),
+                style = MaterialTheme.typography.bodySmall, color = TextLow
+            )
+        }
+    }
+
+    if (scene.metoda == UpscaleMetoda.SEEDVR2) SectionCard(
         title = t("Velikost zvětšení"),
         subtitle = t("Fotka se rozdělí na dlaždice, každá se zvětší na 3200 px a slepí se")
     ) {
@@ -115,6 +146,73 @@ fun UpscaleSection(vm: MainViewModel) {
                 t("Víc dlaždic = větší výsledek, ale úměrně delší běh. 2×2 je vyladěné výchozí."),
                 style = MaterialTheme.typography.bodySmall, color = TextLow
             )
+        }
+    }
+
+    if (scene.metoda == UpscaleMetoda.DLSS) SectionCard(
+        title = t("Nastavení DLSS 5"),
+        subtitle = t("Neural Rendering na grafické kartě, výsledek za pár sekund")
+    ) {
+        Column {
+            Text(t("Zvětšení"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+            Spacer(Modifier.height(8.dp))
+            PillRow(
+                items = UpscaleScene.DLSS_NASOBKY,
+                selected = scene.dlssNasobek,
+                label = { if (it == "1x") t("1× jen doostřit") else it },
+                onSelect = { vm.setDlssNasobek(it) },
+            )
+
+            Spacer(Modifier.height(14.dp))
+            Text(t("Styl"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+            Spacer(Modifier.height(8.dp))
+            PillRow(
+                items = DlssStyl.entries.toList(),
+                selected = scene.dlssStyl,
+                label = { t(it.stitek) },
+                onSelect = { vm.setDlssStyl(it) },
+            )
+
+            Spacer(Modifier.height(14.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(t("Síla"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                Slider(
+                    value = scene.dlssSila,
+                    onValueChange = { v -> vm.setDlssSila((v * 20).roundToInt() / 20f) },
+                    valueRange = 0f..1f,
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    colors = sliderColors()
+                )
+                Text(
+                    "%.2f".format(scene.dlssSila),
+                    style = MaterialTheme.typography.labelMedium, color = TextMid
+                )
+            }
+            Text(
+                t("Nad 1.00 už runtime nic nepřidá; níž se výsledek přimíchává zpátky k předloze."),
+                style = MaterialTheme.typography.bodySmall, color = TextLow
+            )
+
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(t("Rekonstruovat pleť"), style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        t("Model si sám najde kůži a dopočítá póry. Na fotky bez lidí to vypni."),
+                        style = MaterialTheme.typography.bodySmall, color = TextLow
+                    )
+                }
+                Switch(
+                    checked = scene.dlssPlet,
+                    onCheckedChange = { vm.setDlssPlet(it) },
+                    colors = switchColors(),
+                )
+            }
+
+            upscaleHints(scene).forEach { hint ->
+                Spacer(Modifier.height(6.dp))
+                Text(hint, style = MaterialTheme.typography.bodySmall, color = TextLow)
+            }
         }
     }
 }

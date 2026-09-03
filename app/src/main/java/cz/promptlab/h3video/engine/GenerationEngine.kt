@@ -7,10 +7,13 @@ import android.util.Log
 import cz.promptlab.h3video.comfy.AioBuilder
 import cz.promptlab.h3video.comfy.Krea2Builder
 import cz.promptlab.h3video.comfy.AceMusicBuilder
+import cz.promptlab.h3video.comfy.DlssBuilder
 import cz.promptlab.h3video.comfy.FaceSwapBuilder
 import cz.promptlab.h3video.comfy.InpaintBuilder
+import cz.promptlab.h3video.comfy.LongVideoBuilder
 import cz.promptlab.h3video.comfy.RestoreBuilder
 import cz.promptlab.h3video.comfy.SeedVr2Builder
+import cz.promptlab.h3video.comfy.Trellis2Builder
 import cz.promptlab.h3video.comfy.ZImageBuilder
 import cz.promptlab.h3video.comfy.ComfyClient
 import cz.promptlab.h3video.comfy.ComfyException
@@ -80,6 +83,12 @@ sealed interface GenState {
         val isImage: Boolean = false,
         /** Beh je zvetsovani (SeedVR2) - jeste jine texty nez uprava. */
         val isUpscale: Boolean = false,
+        /** Zvětšení běží přes DLSS 5, ne přes SeedVR2 — jiné texty průběhu. */
+        val isDlss: Boolean = false,
+        /** Dlouhé video: řetěz navazujících úseků v jednom běhu. */
+        val isLong: Boolean = false,
+        /** 3D model: výsledkem je GLB, ne video ani fotka. */
+        val isModel3d: Boolean = false,
         /** Beh je novy obrazek z textu (Z-Image) - "Generuji", ne "Upravuji". */
         val isT2i: Boolean = false,
         /** Beh sklada hudbu (ACE-Step) - vysledkem je MP3, texty "Skladam". */
@@ -199,6 +208,12 @@ object GenerationEngine {
     /** Běží domalování do masky (Klein / Flux Fill)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var inpaintRun: Boolean = false
 
+    /** Běží dlouhé video? Graf se skládá v appce, výsledkem je jedno MP4. */
+    @Volatile private var longRun: Boolean = false
+
+    /** Běží stavba 3D modelu (TRELLIS.2)? Výsledkem je GLB, ne video ani fotka. */
+    @Volatile private var model3dRun: Boolean = false
+
     /**
      * Mapa „číslo uzlu → třída" z odeslaného grafu. U karty All in One se podle
      * ní poznávají fáze: čísla uzlů se mezi šablonami liší (uzel 3 je u SeedVR2
@@ -210,9 +225,12 @@ object GenerationEngine {
         restoreRun -> RestoreBuilder.stageForClass(nodeClasses[node])
         swapRun -> FaceSwapBuilder.stageForClass(nodeClasses[node])
         inpaintRun -> InpaintBuilder.stageForClass(nodeClasses[node])
+        longRun -> LongVideoBuilder.stageForClass(nodeClasses[node])
+        model3dRun -> Trellis2Builder.stageForClass(nodeClasses[node])
         musicRun -> AceMusicBuilder.stageForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.stageForClass(nodeClasses[node])
-        upscaleRun -> SeedVr2Builder.stageForClass(nodeClasses[node])
+        upscaleRun -> DlssBuilder.stageForClass(nodeClasses[node])
+            ?: SeedVr2Builder.stageForClass(nodeClasses[node])
         editRun -> Krea2Builder.stageForClass(nodeClasses[node])
         aioRun -> AioBuilder.stageForClass(nodeClasses[node])
         else -> WorkflowBuilder.stageFor(node)
@@ -222,9 +240,12 @@ object GenerationEngine {
         restoreRun -> RestoreBuilder.rangeForClass(nodeClasses[node])
         swapRun -> FaceSwapBuilder.rangeForClass(nodeClasses[node])
         inpaintRun -> InpaintBuilder.rangeForClass(nodeClasses[node])
+        longRun -> LongVideoBuilder.rangeForClass(nodeClasses[node])
+        model3dRun -> Trellis2Builder.rangeForClass(nodeClasses[node])
         musicRun -> AceMusicBuilder.rangeForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.rangeForClass(nodeClasses[node])
-        upscaleRun -> SeedVr2Builder.rangeForClass(nodeClasses[node])
+        upscaleRun -> DlssBuilder.rangeForClass(nodeClasses[node])
+            ?: SeedVr2Builder.rangeForClass(nodeClasses[node])
         editRun -> Krea2Builder.rangeForClass(nodeClasses[node])
         aioRun -> AioBuilder.rangeForClass(nodeClasses[node])
         else -> WorkflowBuilder.rangeFor(node)
@@ -240,9 +261,12 @@ object GenerationEngine {
         restoreRun -> RestoreBuilder.reportsSteps(nodeClasses[node])
         swapRun -> FaceSwapBuilder.reportsSteps(nodeClasses[node])
         inpaintRun -> InpaintBuilder.reportsSteps(nodeClasses[node])
+        longRun -> LongVideoBuilder.reportsSteps(nodeClasses[node])
+        model3dRun -> Trellis2Builder.reportsSteps(nodeClasses[node])
         musicRun -> AceMusicBuilder.reportsSteps(nodeClasses[node])
         t2iRun -> ZImageBuilder.reportsSteps(nodeClasses[node])
-        upscaleRun -> SeedVr2Builder.reportsSteps(nodeClasses[node])
+        upscaleRun -> DlssBuilder.reportsSteps(nodeClasses[node]) ||
+            SeedVr2Builder.reportsSteps(nodeClasses[node])
         editRun -> Krea2Builder.reportsSteps(nodeClasses[node])
         aioRun -> AioBuilder.reportsSteps(nodeClasses[node])
         else -> WorkflowBuilder.reportsSteps(node)
@@ -317,6 +341,10 @@ object GenerationEngine {
         swapScene: cz.promptlab.h3video.data.FaceSwapScene? = null,
         /** Domalovat: Klein / Flux Fill, vlastní workflow z APK, výsledkem je PNG. */
         inpaintScene: cz.promptlab.h3video.data.InpaintScene? = null,
+        /** Dlouhé video: řetěz navazujících úseků, graf se skládá v appce. */
+        longScene: cz.promptlab.h3video.data.LongScene? = null,
+        /** 3D model: TRELLIS.2, vlastní workflow z APK, výsledkem je GLB. */
+        model3dScene: cz.promptlab.h3video.data.Model3dScene? = null,
     ) {
         if (isRunning) return
         job?.cancel()
@@ -328,8 +356,10 @@ object GenerationEngine {
         restoreRun = restoreScene != null
         swapRun = swapScene != null
         inpaintRun = inpaintScene != null
+        longRun = longScene != null
+        model3dRun = model3dScene != null
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !swapRun &&
-            !inpaintRun &&
+            !inpaintRun && !longRun && !model3dRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
         settings.activeEdit = editRun
@@ -339,6 +369,8 @@ object GenerationEngine {
         settings.activeRestore = restoreRun
         settings.activeSwap = swapRun
         settings.activeInpaint = inpaintRun
+        settings.activeLong = longRun
+        settings.activeModel3d = model3dRun
         startedAt = System.currentTimeMillis()
         label = if (restoreScene != null) {
             "Oprava fotky"
@@ -369,6 +401,7 @@ object GenerationEngine {
                 runGeneration(
                     params, images, talkAudios, timelineScene, aioScene, editScene,
                     upscaleScene, t2i, musicScene, restoreScene, swapScene, inpaintScene,
+                    longScene, model3dScene,
                 )
             }
                 .onFailure { e ->
@@ -421,10 +454,12 @@ object GenerationEngine {
             restoreRun = settings.activeRestore
             swapRun = settings.activeSwap
             inpaintRun = settings.activeInpaint
+            longRun = settings.activeLong
+            model3dRun = settings.activeModel3d
             aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun &&
-                !swapRun && !inpaintRun && settings.activeAio
+                !swapRun && !inpaintRun && !longRun && !model3dRun && settings.activeAio
             nodeClasses = if (aioRun || editRun || upscaleRun || t2iRun || musicRun ||
-                restoreRun || swapRun || inpaintRun
+                restoreRun || swapRun || inpaintRun || longRun || model3dRun
             ) {
                 withContext(Dispatchers.IO) {
                     runCatching {
@@ -500,8 +535,11 @@ object GenerationEngine {
         musicRun = settings.activeMusic
         restoreRun = settings.activeRestore
         swapRun = settings.activeSwap
+        inpaintRun = settings.activeInpaint
+        longRun = settings.activeLong
+        model3dRun = settings.activeModel3d
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun &&
-            !swapRun && settings.activeAio
+            !swapRun && !inpaintRun && !longRun && !model3dRun && settings.activeAio
         label = settings.activeLabel
         startedAt = System.currentTimeMillis()
         // Službu na popředí nesmí appka odnést pádem, když ji systém odmítne
@@ -539,6 +577,8 @@ object GenerationEngine {
         restoreScene: cz.promptlab.h3video.data.RestoreScene? = null,
         swapScene: cz.promptlab.h3video.data.FaceSwapScene? = null,
         inpaintScene: cz.promptlab.h3video.data.InpaintScene? = null,
+        longScene: cz.promptlab.h3video.data.LongScene? = null,
+        model3dScene: cz.promptlab.h3video.data.Model3dScene? = null,
     ) {
         val client = ComfyClient(settings.serverUrl)
 
@@ -560,7 +600,9 @@ object GenerationEngine {
 
         // --- 0b2. místo na grafice. Když je málo volné VRAM, model se dohrává
         // po částech z RAM a běh se natáhne i několikanásobně.
-        uvolniPametKdyzTreba(client)
+        // 3D model a dlouhé video si berou skoro celou kartu — u nich se
+        // paměť uvolňuje vždycky, ne až když je jí málo.
+        uvolniPametKdyzTreba(client, vzdycky = model3dScene != null || longScene != null)
 
         // --- 0c. šablona balíku (jen All in One a Dialogy). Stahuje se DŘÍV,
         // než se nahraje jediný obrázek: když balík na serveru chybí, spadne to
@@ -573,6 +615,8 @@ object GenerationEngine {
             restoreScene != null -> null   // dtto
             swapScene != null -> null      // dtto
             inpaintScene != null -> null   // dtto
+            longScene != null -> null      // dtto — graf staví appka
+            model3dScene != null -> null   // dtto
             aioScene != null -> aioScene.sablona
             params.mode == cz.promptlab.h3video.data.Mode.TALK -> "r2v.json"
             else -> null
@@ -602,7 +646,8 @@ object GenerationEngine {
 
         // Referenční video a zvuk (jen reference → video). Streamem, do kořene input
         // složky – VHS_LoadVideo i LoadAudio čtou právě odtud.
-        val videoName = aioScene?.uploadVideo?.let { uploadMediaWithRetry(client, it, 0.05f) }
+        val videoName = (aioScene?.uploadVideo ?: longScene?.uploadVideo)
+            ?.let { uploadMediaWithRetry(client, it, 0.05f) }
         // Namluvené repliky (dialogy). Pořadí je závazné – podle něj se
         // v promptu číslují značky <Audio N>.
         val talkNames = talkAudios.mapIndexed { i, f ->
@@ -625,17 +670,23 @@ object GenerationEngine {
             editScene != null ->
                 Krea2Builder.build(app, editScene, seed, names)
 
-            // Zvětšit jede na uživatelově SeedVR2 workflow z APK.
+            // Zvětšit má dvě metody: uživatelovo SeedVR2 workflow z APK, nebo
+            // rychlé doostření přes NVIDIA DLSS 5 (balík ComfyUI-DLSS5-Enhancer).
             upscaleScene != null ->
-                SeedVr2Builder.build(app, upscaleScene, seed, names)
+                if (upscaleScene.metoda == cz.promptlab.h3video.data.UpscaleMetoda.DLSS)
+                    DlssBuilder.build(app, upscaleScene, names)
+                else SeedVr2Builder.build(app, upscaleScene, seed, names)
 
             // Obrázek z textu jede na uživatelově Z-Image Turbo workflow z APK.
             t2i ->
                 ZImageBuilder.build(
                     app, effective.prompt, effective.aspect, seed,
-                    // PerfecZion je odvázaný sám o sobě – LoRA se s ním nemíchá
-                    // (je trénovaná na základní Turbo a jen by kazila výsledek).
-                    nsfwLora = effective.zimageNsfw && effective.zimageModel.isBlank(),
+                    // LoRA je trénovaná na základní Turbo. Photoreal je odvázaný
+                    // sám o sobě, Klein a ERNIE jsou jiná architektura – u nich
+                    // by uzel LoraLoaderModelOnly graf jen shodil.
+                    nsfwLora = effective.zimageNsfw &&
+                        cz.promptlab.h3video.comfy.T2iModel.zId(effective.zimageModel) ==
+                        cz.promptlab.h3video.comfy.T2iModel.TURBO,
                     nsfwSila = effective.zimageNsfwSila,
                     model = effective.zimageModel,
                     loraFile = effective.zimageNsfwLora,
@@ -652,6 +703,15 @@ object GenerationEngine {
             // Výměna tváře jede na uživatelově ACE++ workflow z APK.
             swapScene != null ->
                 FaceSwapBuilder.build(app, seed, names)
+
+            // 3D model: TRELLIS.2 z vlastní předlohy v APK, výsledkem je GLB.
+            model3dScene != null ->
+                Trellis2Builder.build(app, model3dScene, seed, names)
+
+            // Dlouhé video: graf se neskládá z předlohy, staví ho appka podle
+            // počtu úseků. Šablona by nešla — počet vzorkovacích řetězů se mění.
+            longScene != null ->
+                LongVideoBuilder.build(longScene, effective, seed, videoName, names)
 
             // Domalování do masky: Klein 9B, nebo Flux Fill podle volby karty.
             inpaintScene != null ->
@@ -685,7 +745,10 @@ object GenerationEngine {
             // LSI uzly si sampling řídí samy a na šablonách balíku neběží.
             else -> WorkflowBuilder.build(app, effective, lsiTimeline)
         }
-        plannedSteps = effective.steps
+        // Čtyři průchody TRELLISu dohromady — bez toho by ukazatel počítal
+        // s krokem jednoho průchodu a doskočil na sto procent už po prvním.
+        plannedSteps = if (model3dScene != null) Trellis2Builder.STEPS_CELKEM
+        else effective.steps
         // Podle tříd uzlů se u šablon balíku poznávají fáze běhu.
         if (jedeNaAio) nodeClasses = AioBuilder.nodeClasses(workflow)
         if (editScene != null) nodeClasses = Krea2Builder.nodeClasses(workflow)
@@ -695,6 +758,8 @@ object GenerationEngine {
         if (restoreScene != null) nodeClasses = RestoreBuilder.nodeClasses(workflow)
         if (swapScene != null) nodeClasses = FaceSwapBuilder.nodeClasses(workflow)
         if (inpaintScene != null) nodeClasses = InpaintBuilder.nodeClasses(workflow)
+        if (longScene != null) nodeClasses = LongVideoBuilder.nodeClasses(workflow)
+        if (model3dScene != null) nodeClasses = Trellis2Builder.nodeClasses(workflow)
 
         val promptId = UUID.randomUUID().toString().lowercase()
         // Značka do logu: od téhle chvíle patří hlášky uzlů našemu běhu.
@@ -744,11 +809,17 @@ object GenerationEngine {
      * Uvolňuje se jen při skutečném nedostatku (pod 60 % karty volných), aby
      * dvě stejné úlohy po sobě nemusely model načítat zbytečně dvakrát.
      */
-    private suspend fun uvolniPametKdyzTreba(client: ComfyClient) {
+    /**
+     * @param vzdycky uvolnit i při dostatku volné paměti. Používá se u karet,
+     *   které si berou skoro celou grafiku (3D model, dlouhé video) — tam
+     *   nestačí uvolňovat až pod 60 %: TRELLIS spadl na nedostatek paměti
+     *   uprostřed běhu, protože zbytek karty držel model z předchozí úlohy.
+     */
+    private suspend fun uvolniPametKdyzTreba(client: ComfyClient, vzdycky: Boolean = false) {
         val pred = withContext(Dispatchers.IO) { runCatching { client.vram() }.getOrNull() }
             ?: return
         val (volnoPred, celkem) = pred
-        if (volnoPred.toDouble() / celkem >= 0.60) return
+        if (!vzdycky && volnoPred.toDouble() / celkem >= 0.60) return
 
         publish(Stage.UPLOADING, 0.018f, note = "Uvolňuji paměť grafiky")
         val po = withContext(Dispatchers.IO) {
@@ -1557,6 +1628,11 @@ object GenerationEngine {
             label = label,
             isImage = editRun || upscaleRun || t2iRun || restoreRun || swapRun,
             isUpscale = upscaleRun,
+            // Pozná se z tříd odeslaného grafu, takže to přežije i znovupřipojení
+            // po ukončení appky (nodeClasses se obnovují z uloženého workflow).
+            isDlss = upscaleRun && DlssBuilder.jeDlss(nodeClasses),
+            isLong = longRun,
+            isModel3d = model3dRun,
             isT2i = t2iRun,
             isMusic = musicRun,
             isRestore = restoreRun,

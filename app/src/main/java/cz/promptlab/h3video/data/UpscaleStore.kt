@@ -22,6 +22,11 @@ class UpscaleStore(private val ctx: Context) {
             JSONObject()
                 .put("source", s.source?.name ?: "")
                 .put("grid", s.grid)
+                .put("metoda", s.metoda.name)
+                .put("dlssNasobek", s.dlssNasobek)
+                .put("dlssStyl", s.dlssStyl.name)
+                .put("dlssSila", s.dlssSila.toDouble())
+                .put("dlssPlet", s.dlssPlet)
                 .toString()
         ).apply()
     }
@@ -37,6 +42,14 @@ class UpscaleStore(private val ctx: Context) {
                 source = src,
                 thumb = src?.let { ImageUtils.loadFileThumb(it) },
                 grid = root.optString("grid").takeIf { it in UpscaleScene.GRIDS } ?: "2x2",
+                metoda = UpscaleMetoda.entries
+                    .firstOrNull { it.name == root.optString("metoda") } ?: UpscaleMetoda.SEEDVR2,
+                dlssNasobek = root.optString("dlssNasobek")
+                    .takeIf { it in UpscaleScene.DLSS_NASOBKY } ?: "1x",
+                dlssStyl = DlssStyl.entries
+                    .firstOrNull { it.name == root.optString("dlssStyl") } ?: DlssStyl.PRIROZENY,
+                dlssSila = root.optDouble("dlssSila", 1.0).toFloat().coerceIn(0f, 2f),
+                dlssPlet = root.optBoolean("dlssPlet", true),
             )
         }.getOrDefault(UpscaleScene())
     }

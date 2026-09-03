@@ -32,6 +32,16 @@ import cz.promptlab.h3video.data.InpaintScene
 import cz.promptlab.h3video.data.InpaintStore
 import cz.promptlab.h3video.data.inpaintHints
 import cz.promptlab.h3video.data.inpaintProblem
+import cz.promptlab.h3video.data.LongScene
+import cz.promptlab.h3video.data.LongStart
+import cz.promptlab.h3video.data.LongStore
+import cz.promptlab.h3video.data.LongUsek
+import cz.promptlab.h3video.data.longHints
+import cz.promptlab.h3video.data.longProblem
+import cz.promptlab.h3video.data.Model3dScene
+import cz.promptlab.h3video.data.Model3dStore
+import cz.promptlab.h3video.data.model3dHints
+import cz.promptlab.h3video.data.model3dProblem
 import cz.promptlab.h3video.data.MusicScene
 import cz.promptlab.h3video.data.MusicStore
 import cz.promptlab.h3video.data.musicHints
@@ -81,6 +91,9 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -531,7 +544,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun hlidejProfilKCeste() {
         val p = _params.value
         if (!p.profile.bezReferenci) return
-        val referencni = p.mode == Mode.TALK ||
+        val referencni = p.mode == Mode.TALK || p.mode == Mode.LONG ||
             (p.mode == Mode.ALLINONE && _aio.value.mode.usesRefWeights)
         if (referencni) update { Profile.V2_TURBO.applyTo(it) }
     }
@@ -618,7 +631,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // Poslední pojistka u profilu jen pro fl2va cestu. UI ho u referenčních
         // karet nenabízí a přepnutí karty ho vymění, ale uložené nastavení
         // z dřívějška by se sem jinak protlačilo.
-        val referencni = p.mode == Mode.TALK ||
+        val referencni = p.mode == Mode.TALK || p.mode == Mode.LONG ||
             (p.mode == Mode.ALLINONE && _aio.value.mode.usesRefWeights)
         if (referencni && p.profile.bezReferenci) {
             return "Profil ${p.profile.title} nejde použít s referencemi – přepni profil."
@@ -626,9 +639,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return when (p.mode) {
             Mode.TALK -> validateScene(_scene.value)
             Mode.TIMELINE -> timelineProblem(_timeline.value)
+            Mode.LONG -> longProblem(_long.value)
             Mode.ALLINONE -> aioProblem(_aio.value)
             Mode.EDIT -> imageEditProblem(_edit.value)
             Mode.UPSCALE -> upscaleProblem(_upscale.value)
+            Mode.MODEL3D -> model3dProblem(_model3d.value)
             Mode.IMAGE ->
                 if (p.prompt.isBlank()) t("Napiš, co má na obrázku být.") else null
             Mode.MUSIC -> musicProblem(_music.value)
@@ -661,6 +676,39 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Upozornění, které nebrání spuštění – jen se hodí vědět. */
+    /**
+     * Všechny scény karet dohromady. Slouží jen jako spouštěč přepočtu —
+     * hodnoty se pak čtou přímo z jednotlivých toků.
+     *
+     * Vzniklo z chyby ve 3.04: obrazovka si hlášku „co chybí" pamatovala podle
+     * ručně vypsaného seznamu scén, a když u nových karet (3D model, Dlouhé
+     * video) v tom seznamu chyběly, tlačítko zůstalo šedivé i po vyplnění.
+     * Takhle se na kartu zapomenout nedá — přibude tok a přepočet jede sám.
+     */
+    private val vsechnySceny: List<StateFlow<Any?>> get() = listOf(
+        _params, _scene, _timeline, _aio, _edit, _upscale, _music,
+        _restore, _swap, _inpaint, _long, _model3d, _aioAvailable,
+    )
+
+    /**
+     * Co kartě chybí, než se dá spustit. `null` = může se generovat.
+     *
+     * MUSÍ být `by lazy`. Stavy jednotlivých karet (`_scene`, `_aio`, `_long`,
+     * `_model3d`, …) se zakládají až níž v téhle třídě, takže při obyčejném
+     * `val` by se [vsechnySceny] přečetlo ještě před nimi, seznam by obsahoval
+     * `null` a appka by spadla hned při startu — což se ve 3.05 stalo.
+     */
+    val problem: StateFlow<String?> by lazy {
+        combine(vsechnySceny) { validation(_params.value) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, null)
+    }
+
+    /** Upozornění ke kartě — nebrání spuštění. Stejný důvod pro `by lazy`. */
+    val hints: StateFlow<List<String>> by lazy {
+        combine(vsechnySceny) { hints(_params.value) }
+            .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+    }
+
     fun hints(p: GenParams): List<String> {
         val out = mutableListOf<String>()
         // Karta All in One jede na cizí šabloně a má vlastní pravidla; upozornění
@@ -785,6 +833,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val s = _aio.value
                 QueuedRun(id, p.mode.title, s.prompt) {
                     GenerationEngine.start(p.copy(prompt = s.prompt), s.uploadImages, aioScene = s)
+                }
+            }
+
+            Mode.MODEL3D -> {
+                val s = _model3d.value
+                QueuedRun(id, p.mode.title, "") {
+                    GenerationEngine.start(p, s.uploadImages, model3dScene = s)
+                }
+            }
+
+            Mode.LONG -> {
+                val s = _long.value
+                // Popisek běhu nese první úsek — je to to, čím video začíná.
+                val popis = s.aktivniUseky.firstOrNull()?.prompt.orEmpty()
+                QueuedRun(id, p.mode.title, popis) {
+                    GenerationEngine.start(
+                        p.copy(prompt = popis),
+                        s.uploadImages,
+                        longScene = s,
+                    )
                 }
             }
 
@@ -1855,6 +1923,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setAioSeconds(seconds: Float) = updateAio { it.copy(seconds = seconds) }
 
+    fun setAioMaskTarget(text: String) = updateAio { it.copy(maskTarget = text) }
+
+    fun setAioMaskObjects(n: Int) = updateAio { it.copy(maskObjects = n) }
+
     fun setAioUseLastFrame(on: Boolean) = updateAio { it.copy(useLastFrame = on) }
 
     fun setAioRefVideoAudio(on: Boolean) = updateAio { it.copy(refVideoAudio = on) }
@@ -1997,6 +2069,144 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    // ----------------------------------------------------------- 3D model
+
+    private val model3dStore = Model3dStore(app)
+
+    private val _model3d = MutableStateFlow(Model3dScene())
+    val model3d: StateFlow<Model3dScene> = _model3d.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _model3d.value = withContext(Dispatchers.IO) { model3dStore.load() }
+        }
+    }
+
+    private fun updateModel3d(block: (Model3dScene) -> Model3dScene) {
+        val next = block(_model3d.value)
+        _model3d.value = next
+        model3dStore.save(next)
+    }
+
+    fun setModel3dKvalita(k: cz.promptlab.h3video.data.Model3dKvalita) =
+        updateModel3d { it.copy(kvalita = k) }
+
+    fun setModel3dDetail(v: Int) = updateModel3d { it.copy(detail = v) }
+
+    fun setModel3dTextura(v: Int) = updateModel3d { it.copy(textura = v) }
+
+    /**
+     * Fotka pro 3D model se kopíruje beze změny — pozadí z ní odstraní až
+     * server (BiRefNet) a zmenšovat vstup by mu jen ubralo detail.
+     */
+    fun pickModel3dImage(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val target = model3dStore.imageFile()
+            val thumb = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), uri, target)
+            } ?: return@launch
+            updateModel3d { it.copy(source = target, thumb = thumb) }
+        }
+    }
+
+    fun clearModel3dImage() = updateModel3d { s ->
+        s.source?.delete(); s.copy(source = null, thumb = null)
+    }
+
+    // ------------------------------------------------------- dlouhé video
+
+    private val longStore = LongStore(app)
+
+    private val _long = MutableStateFlow(LongScene())
+    val long: StateFlow<LongScene> = _long.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _long.value = withContext(Dispatchers.IO) { longStore.load() }
+        }
+    }
+
+    private fun updateLong(block: (LongScene) -> LongScene) {
+        val next = block(_long.value)
+        _long.value = next
+        longStore.save(next)
+    }
+
+    fun setLongStart(z: LongStart) = updateLong { it.copy(zacatek = z) }
+
+    fun setLongStartPrompt(text: String) = updateLong { it.copy(startPrompt = text) }
+
+    fun setLongStartSeconds(v: Float) = updateLong { it.copy(startSeconds = v) }
+
+    fun setLongRychlyZacatek(on: Boolean) = updateLong { it.copy(rychlyZacatek = on) }
+
+    fun setLongSpolecnaLora(name: String) = updateLong { it.copy(spolecnaLora = name) }
+
+    fun setLongSpolecnaLoraSila(v: Float) = updateLong { it.copy(spolecnaLoraSila = v) }
+
+    fun setLongUsekPrompt(key: Int, text: String) = updateLong { s ->
+        s.copy(useky = s.useky.map { if (it.key == key) it.copy(prompt = text) else it })
+    }
+
+    fun setLongUsekSeconds(key: Int, v: Float) = updateLong { s ->
+        s.copy(useky = s.useky.map { if (it.key == key) it.copy(seconds = v) else it })
+    }
+
+    fun setLongUsekLora(key: Int, name: String) = updateLong { s ->
+        s.copy(useky = s.useky.map { if (it.key == key) it.copy(lora = name) else it })
+    }
+
+    fun setLongUsekLoraSila(key: Int, v: Float) = updateLong { s ->
+        s.copy(useky = s.useky.map { if (it.key == key) it.copy(loraSila = v) else it })
+    }
+
+    fun addLongUsek() = updateLong { s ->
+        if (!s.canAddUsek) s
+        else s.copy(useky = s.useky + LongUsek(key = (s.useky.maxOfOrNull { it.key } ?: 0) + 1))
+    }
+
+    fun removeLongUsek(key: Int) = updateLong { s ->
+        if (s.useky.size <= 1) s else s.copy(useky = s.useky.filterNot { it.key == key })
+    }
+
+    fun pickLongVideo(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val file = importMedia(uri, "long_zdroj") ?: return@launch
+            updateLong { it.copy(sourceVideo = file) }
+        }
+    }
+
+    fun clearLongVideo() = updateLong { s ->
+        s.sourceVideo?.delete(); s.copy(sourceVideo = null, sourceThumb = null)
+    }
+
+    fun addLongRef() = updateLong { s ->
+        if (s.refs.size >= AioScene.MAX_REFS) s
+        else s.copy(refs = s.refs + AioSlot(key = (s.refs.maxOfOrNull { it.key } ?: 0) + 1))
+    }
+
+    fun removeLongRef(key: Int) = updateLong { s ->
+        s.refs.firstOrNull { it.key == key }?.image?.delete()
+        s.copy(refs = s.refs.filterNot { it.key == key })
+    }
+
+    fun pickLongRef(key: Int, uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val target = longStore.imageFile(key)
+            val thumb = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), uri, target)
+            } ?: return@launch
+            updateLong { s ->
+                s.copy(refs = s.refs.map {
+                    if (it.key == key) it.copy(image = target, thumb = thumb) else it
+                })
+            }
+        }
+    }
+
     // ------------------------------------------------------------- nastavení
 
     fun setServer(url: String) { _server.value = url }
@@ -2062,9 +2272,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         R.raw.workflow_krea2_edit,
                         R.raw.workflow_seedvr2_upscale,
                         R.raw.workflow_zimage_t2i,
+                        R.raw.workflow_flux2_klein_t2i,
+                        R.raw.workflow_ernie_t2i,
+                        R.raw.workflow_dlss_enhance,
+                        R.raw.workflow_trellis2,
                         R.raw.workflow_ace_music,
                         R.raw.workflow_qwen_restore,
                         R.raw.workflow_ace_faceswap,
+                        R.raw.workflow_inpaint_klein,
+                        R.raw.workflow_inpaint_fill,
                     ).map { id ->
                         res.openRawResource(id).bufferedReader().use { it.readText() }
                     }
@@ -2519,6 +2735,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setUpscaleGrid(grid: String) = updateUpscale { it.copy(grid = grid) }
 
+    fun setUpscaleMetoda(m: cz.promptlab.h3video.data.UpscaleMetoda) =
+        updateUpscale { it.copy(metoda = m) }
+
+    fun setDlssNasobek(n: String) = updateUpscale { it.copy(dlssNasobek = n) }
+
+    fun setDlssStyl(s: cz.promptlab.h3video.data.DlssStyl) = updateUpscale { it.copy(dlssStyl = s) }
+
+    fun setDlssSila(v: Float) = updateUpscale { it.copy(dlssSila = v) }
+
+    fun setDlssPlet(v: Boolean) = updateUpscale { it.copy(dlssPlet = v) }
+
     /**
      * Fotka ke zvětšení se kopíruje BAJT PO BAJTU — žádné zmenšení na 2048 px
      * ani překódování do JPEG jako u referencí. Zmenšovat vstup upscaleru by
@@ -2566,8 +2793,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Pošle hotový obrázek (typicky z karty Úprava) rovnou do karty Zvětšit —
      * zkopíruje soubor beze změny a přepne kartu. Odsud vede tlačítko
      * „Zvětšit" na obrazovce výsledku.
+     *
+     * `metoda` rovnou přepne i způsob zvětšení, aby tlačítko „Doostřit (DLSS)"
+     * nevedlo do karty nastavené na SeedVR2 a uživatel to nemusel přepínat.
      */
-    fun posliDoZvetseni(item: VideoItem) {
+    fun posliDoZvetseni(
+        item: VideoItem,
+        metoda: cz.promptlab.h3video.data.UpscaleMetoda =
+            cz.promptlab.h3video.data.UpscaleMetoda.SEEDVR2,
+    ) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
@@ -2580,7 +2814,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }.getOrNull()
             } ?: return@launch
             val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(vysledek) }
-            updateUpscale { it.copy(source = vysledek, thumb = thumb) }
+            updateUpscale { it.copy(source = vysledek, thumb = thumb, metoda = metoda) }
             setMode(Mode.UPSCALE)
             selectTab(Tab.CREATE)
         }

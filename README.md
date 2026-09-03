@@ -53,21 +53,23 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 - ✨ **Prompt napíše AI za tebe.** Napíšeš pár slov (klidně česky) a jazykový model z nich složí plný prompt — u videa záběry, časování a zvukovou stopu, u obrázku popis podle pravidel Z-Image. Běží to jako workflow ve tvém ComfyUI (chce k tomu jeden model navíc, [viz POZADAVKY](POZADAVKY.md)), takže nic neodchází z domu.
 - 🌐 **Piš česky.** Tlačítko u zadání pošle text na překlad do angličtiny — obsah zůstane, jen bude v jazyce, kterému modely rozumí nejlíp. Překládá stejný model na tvém počítači jako vylepšovač promptu.
 - 📋 **Fronta úloh.** Zatímco se generuje, připravíš další zadání a přidáš ho do fronty — běhy jedou samy jeden po druhém a každý hotový se ohlásí notifikací.
-- 🗂️ **Galerie s filtrem a hledáním.** Videa / obrázky / hudba zvlášť, hledání v popisech, smazání jde vzít zpět. U každého výsledku vidíš, jak dlouho se počítal.
+- 🗂️ **Galerie s filtrem a hledáním.** Videa / obrázky / hudba / 3D modely zvlášť, hledání v popisech, smazání jde vzít zpět. U každého výsledku vidíš, jak dlouho se počítal.
 
-## 🃏 Deset karet
+## 🃏 Dvanáct karet
 
 | | Karta | Model | Co umí |
 |---|---|---|---|
 | 🎬 | **All in One** | MiniMax H3 | video z textu, obrázku, referencí, klíčových snímků; prodloužení; upscale |
 | 🗣️ | **Dialogy** | MiniMax H3 + Higgs Audio | postavy z fotek řeknou tvoje repliky (i česky) |
 | 🎞️ | **Časová osa** | MiniMax H3 + LSI | dlouhé video poskládané ze segmentů |
+| 🎬 | **Dlouhé video** | MiniMax H3 + H3 Motion Context | až šest navazujících úseků v jednom běhu, každý s vlastním zadáním a LoRA |
 | 🖼️ | **Obrázek** | Z-Image Turbo | nová fotka z textu za pár sekund |
 | ✏️ | **Úprava obrázku** | Krea 2 + Identity Edit | „dej jí červenou bundu" — tvář zůstane |
 | 🩹 | **Oprava fotky** | Qwen Image Edit 2511 | stará/poškozená fotka jako nová, i barevně |
 | 🎭 | **Výměna tváře** | Flux Fill + ACE++ | začmáráš obličej, vybereš novou tvář, hotovo |
 | 🖌️ | **Domalovat** | Flux Fill / FLUX.2 Klein | začmáráš místo, napíšeš co tam má být, přepíše se jen ono |
 | 🔎 | **Zvětšit** | SeedVR2 | gigapixel upscale po dlaždicích (2×2 až 4×4) |
+| 🧊 | **3D model** | TRELLIS.2 | z fotky předmětu síť s PBR texturami (`.glb`), otáčení prstem |
 | 🎵 | **Hudba** | ACE-Step 1.5 | celá píseň z textu — styl, sloky, refrén, i český zpěv |
 
 <div align="center">
@@ -114,7 +116,7 @@ flowchart LR
 - `comfy/*Builder.kt` — dosazování hodnot do šablon (testy hlídají, že se nemění nic jiného)
 - `engine/GenerationEngine.kt` — upload → fronta → sledování → stažení; výpadek sítě běh nikdy neshodí
 - `comfy/ServerAudit.kt` — porovnání šablon s `/object_info` („co serveru chybí")
-- `engine/RunTexts.kt` — texty průběhu, jedna matice pro všech 10 karet
+- `engine/RunTexts.kt` — texty průběhu, jedna matice pro všech 12 karet
 
 ## ⚖️ Licence a upozornění
 

@@ -1,0 +1,73 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": { "unet_name": "flux-2-klein-9b.safetensors", "weight_dtype": "default" },
+    "_meta": { "title": "FLUX.2 Klein 9B" }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": { "clip_name": "qwen_3_8b_fp8mixed.safetensors", "type": "flux2", "device": "default" },
+    "_meta": { "title": "Qwen3 8B (text encoder)" }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "flux2-vae.safetensors" },
+    "_meta": { "title": "FLUX.2 VAE" }
+  },
+  "10": {
+    "class_type": "EmptyFlux2LatentImage",
+    "inputs": { "width": 1024, "height": 1024, "batch_size": 1 },
+    "_meta": { "title": "Prázdný latent" }
+  },
+  "30": {
+    "class_type": "CLIPTextEncode",
+    "inputs": { "clip": ["2", 0], "text": "" },
+    "_meta": { "title": "Zadání" }
+  },
+  "32": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": { "conditioning": ["30", 0] },
+    "_meta": { "title": "Prázdný zápor" }
+  },
+  "40": {
+    "class_type": "Flux2Scheduler",
+    "inputs": { "steps": 4, "width": 1024, "height": 1024 },
+    "_meta": { "title": "Plán kroků" }
+  },
+  "41": {
+    "class_type": "KSamplerSelect",
+    "inputs": { "sampler_name": "euler" },
+    "_meta": { "title": "Vzorkovač" }
+  },
+  "42": {
+    "class_type": "RandomNoise",
+    "inputs": { "noise_seed": 0 },
+    "_meta": { "title": "Šum" }
+  },
+  "43": {
+    "class_type": "CFGGuider",
+    "inputs": { "model": ["1", 0], "positive": ["30", 0], "negative": ["32", 0], "cfg": 1.0 },
+    "_meta": { "title": "Vedení" }
+  },
+  "44": {
+    "class_type": "SamplerCustomAdvanced",
+    "inputs": {
+      "noise": ["42", 0],
+      "guider": ["43", 0],
+      "sampler": ["41", 0],
+      "sigmas": ["40", 0],
+      "latent_image": ["10", 0]
+    },
+    "_meta": { "title": "Vzorkování" }
+  },
+  "50": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["44", 0], "vae": ["3", 0] },
+    "_meta": { "title": "Do obrázku" }
+  },
+  "60": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["50", 0], "filename_prefix": "PocketKlein" },
+    "_meta": { "title": "Uložit" }
+  }
+}

@@ -104,6 +104,7 @@ fun AllInOneSection(vm: MainViewModel) {
             UpscaleSekce(vm, scene)
         }
         AioMode.CHARSHEET -> CharSheetSekce(vm, scene)
+        AioMode.MASK -> PremalovatSekce(vm, scene)
         AioMode.TEXT -> Unit
     }
 
@@ -230,18 +231,33 @@ fun AllInOneSection(vm: MainViewModel) {
 
     // Délku nemá smysl nabízet u zvětšení (nic se negeneruje) ani u listu
     // postavy (choreografie kamery v šabloně je vyladěná na 124 snímků).
+    //
+    // U přemalování je to jinak: délku výsledku určuje zdrojové video, ne
+    // uživatel. Posuvník tu proto říká, KOLIK Z NĚJ se zpracuje — dřív se
+    // tvářil jako „délka videa", což byla lež.
     if (scene.mode != AioMode.UPSCALE && scene.mode != AioMode.CHARSHEET) {
+        val premalovani = scene.mode == AioMode.MASK
         SectionCard(
-            title = if (scene.mode == AioMode.EXTEND) t("O kolik prodloužit") else t("Délka videa"),
-            subtitle = t("Model počítá po blocích 17 snímků, délka se proto zaokrouhlí")
+            title = when {
+                scene.mode == AioMode.EXTEND -> t("O kolik prodloužit")
+                premalovani -> t("Kolik videa zpracovat")
+                else -> t("Délka videa")
+            },
+            subtitle = if (premalovani)
+                t("Bere se úsek od začátku. Delší úsek = víc snímků k přegenerování.")
+            else t("Model počítá po blocích 17 snímků, délka se proto zaokrouhlí")
         ) {
             val strop = if (scene.mode == AioMode.EXTEND) AioScene.MAX_EXTEND_SECONDS else 15f
             LabeledSlider(
                 label = t("Sekundy"),
-                value = if (scene.mode == AioMode.EXTEND) {
-                    val (_, _, nove) = planExtend(scene.seconds)
-                    "%.1f s navíc".format(nove / 24f)
-                } else "%.1f s (%d snímků)".format(scene.frames / 24f, scene.frames),
+                value = when {
+                    scene.mode == AioMode.EXTEND -> {
+                        val (_, _, nove) = planExtend(scene.seconds)
+                        "%.1f s navíc".format(nove / 24f)
+                    }
+                    premalovani -> t("prvních %.0f s videa").format(scene.seconds)
+                    else -> "%.1f s (%d snímků)".format(scene.frames / 24f, scene.frames)
+                },
                 position = scene.seconds,
                 range = 2f..strop,
                 onChange = { vm.setAioSeconds(it.roundToInt().toFloat()) },
@@ -443,6 +459,57 @@ private fun KeyframeSekce(vm: MainViewModel, scene: AioScene) {
                 )
             }
         }
+    }
+}
+
+/**
+ * Přemalování ve videu: zdrojové video, co v něm sledovat, a čím to nahradit.
+ *
+ * Masku uživatel nemaluje — napíše, co se má sledovat, a SAM 3 to najde na
+ * každém snímku. Text jde do modelu tak, jak ho uživatel napsal, proto je
+ * u pole napsané, že anglicky a krátce („head", ne „ta hlava vlevo").
+ */
+@Composable
+private fun PremalovatSekce(vm: MainViewModel, scene: AioScene) {
+    VideoSekce(
+        vm, scene,
+        titulek = t("Video, ve kterém se má přemalovávat"),
+        popis = t("Zpracuje se úsek od začátku, zbytek záběru i zvuk zůstanou"),
+    )
+
+    SectionCard(
+        title = t("Co ve videu sledovat"),
+        subtitle = t("Krátce a anglicky — „head\", „the red car\". SAM 3 to najde na každém snímku")
+    ) {
+        Column {
+            DarkTextField(
+                value = scene.maskTarget,
+                onValueChange = { vm.setAioMaskTarget(it) },
+                placeholder = "head",
+                minHeight = 52.dp,
+                singleLine = true,
+                onClear = { vm.setAioMaskTarget("") },
+            )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                t("Kolik objektů"),
+                style = MaterialTheme.typography.labelMedium, color = TextLow
+            )
+            Spacer(Modifier.height(6.dp))
+            PillRow(
+                items = listOf(1, 2, 3),
+                selected = scene.maskObjects,
+                label = { it.toString() },
+                onSelect = { vm.setAioMaskObjects(it) },
+            )
+        }
+    }
+
+    SectionCard(
+        title = t("Čím to nahradit (nepovinné)"),
+        subtitle = t("Bez fotek se přemaluje jen podle popisu; s fotkou drží podobu")
+    ) {
+        RefsMrizka(vm, scene)
     }
 }
 

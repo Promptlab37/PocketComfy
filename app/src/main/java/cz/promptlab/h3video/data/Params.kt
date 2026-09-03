@@ -62,9 +62,9 @@ data class GenParams(
      */
     val rewriteHudba: Boolean = false,
     /**
-     * Karta Obrázek: jiný model místo základního Turbo ze šablony. Prázdné =
-     * šablona 1:1. Jediná další volba je PerfecZion (odvázaný finetune) —
-     * s ním LoRA není potřeba a jede na 12 kroků s dpmpp_3m_sde (dle autora).
+     * Karta Obrázek: kterým modelem se fotka staví. Ukládá se `id` z výčtu
+     * `T2iModel` („turbo", „photoreal", „base", „klein", „ernie"). Prázdno
+     * a starý zápis názvem souboru se čtou dál jako Turbo / Photoreal.
      */
     val zimageModel: String = "",
     /**
@@ -119,6 +119,8 @@ data class GenParams(
             Mode.TALK -> MAX_SPEAKERS
             Mode.TIMELINE -> TimelineScene.MAX_SEGMENTS
             Mode.ALLINONE -> AioScene.MAX_REFS
+            // Dlouhé video: reference drží podobu napříč všemi úseky.
+            Mode.LONG -> AioScene.MAX_REFS
             // Úprava obrázku: upravovaná fotka a nepovinná vkládaná osoba.
             Mode.EDIT -> 2
             Mode.UPSCALE -> 1
@@ -126,6 +128,8 @@ data class GenParams(
             Mode.IMAGE -> 0
             Mode.MUSIC -> 0
             Mode.RESTORE -> 1
+            // 3D model: jedna fotka předmětu.
+            Mode.MODEL3D -> 1
             // Výměna tváře: cílová fotka, nová tvář a od 2.89 i samostatná
             // maska štětce — TŘETÍ soubor. Ve 2.89 tu zůstala dvojka a engine
             // masku při nahrávání uřízl (LoadImage pak dostal prázdný název).

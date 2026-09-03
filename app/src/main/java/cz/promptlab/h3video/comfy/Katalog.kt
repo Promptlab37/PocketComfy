@@ -75,6 +75,25 @@ object Katalog {
     private val PRAVEEN = Balik(
         "praveen-tools", "https://github.com/praveensahu/praveen-tools", "Zvětšit"
     )
+    private val MULTIREF = Balik(
+        "ComfyUI-H3-Motion-Context-MultiRef",
+        "https://github.com/seitanism/ComfyUI-H3-Motion-Context-MultiRef",
+        "Dlouhé video"
+    )
+    private val MASKVID = Balik(
+        "MaskVidExperiments", "https://github.com/drozbay/MaskVidExperiments",
+        "All in One → Přemalovat ve videu"
+    )
+    private val H3UPSCALER = Balik(
+        "Comfyui_Minimax_h3_latent_Upscaler",
+        "https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler",
+        "Dlouhé video — rychlý první záběr (volitelné)"
+    )
+    private val DLSS5 = Balik(
+        "ComfyUI-DLSS5-Enhancer",
+        "https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer",
+        "Zvětšit — metoda DLSS 5 (po instalaci ještě install_runtime.py)"
+    )
     private val LSI = Balik(
         "LSI-Minimax-Segment-Timeline", "", "Časová osa (balík není veřejný)"
     )
@@ -89,6 +108,20 @@ object Katalog {
         "SeedVR2VideoUpscaler" to SEEDVR2,
         "SeedVR2LoadDiTModel" to SEEDVR2,
         "SeedVR2LoadVAEModel" to SEEDVR2,
+        "MiniMaxH3StreamLiveExtensionAVToVHS" to MULTIREF,
+        "MiniMaxH3StartMaskedContext" to MULTIREF,
+        "MiniMaxH3GeneratedAVMaskedContext" to MULTIREF,
+        "MiniMaxH3StartCanvasSelector" to MULTIREF,
+        "MiniMaxH3CropTo32" to MULTIREF,
+        "MVEx_MaskCleanup" to MASKVID,
+        "MVEx_SubjectCrop" to MASKVID,
+        "MVEx_SubjectUncrop" to MASKVID,
+        "MVEx_MaskToLatentSpace" to MASKVID,
+        "MVEx_LatentMaskToMask" to MASKVID,
+        "MinimaxH3LatentUpscaler3D" to H3UPSCALER,
+        "DLSS5Settings" to DLSS5,
+        "DLSS5EnhanceImages" to DLSS5,
+        "DLSS5EnhanceVideoFile" to DLSS5,
         "ImageTileSplit" to PRAVEEN,
         "ImageTileMerge" to PRAVEEN,
         "LoadImageWithFilename" to PRAVEEN,
@@ -206,6 +239,60 @@ object Katalog {
         "minimax_h3_audio_vae_fp32.safetensors" to Soubor("models/vae", "video karty"),
         "qwen3vl_4b_fp8_scaled.safetensors" to Soubor("models/text_encoders", "Úprava obrázku"),
         "taeh3.safetensors" to Soubor("models/vae_approx", "živý náhled u videa"),
+        // Karta Obrázek, modely přidané ve 3.02. Váhy Kleina má Black Forest
+        // Labs za souhlasem s licencí, encodér a VAE přebalil Comfy-Org.
+        "z_image_bf16.safetensors" to Soubor(
+            "models/diffusion_models", "Obrázek — Z-Image Base"
+        ),
+        "flux-2-klein-9b.safetensors" to Soubor(
+            "models/diffusion_models", "Obrázek — FLUX.2 Klein a Domalovat",
+            "$HF/black-forest-labs/FLUX.2-klein-9B"
+        ),
+        "qwen_3_8b_fp8mixed.safetensors" to Soubor(
+            "models/text_encoders", "Obrázek — FLUX.2 Klein a Domalovat",
+            "$HF/Comfy-Org/flux2-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors"
+        ),
+        "flux2-vae.safetensors" to Soubor(
+            "models/vae", "Obrázek — FLUX.2 Klein a ERNIE, Domalovat",
+            "$HF/Comfy-Org/flux2-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors"
+        ),
+        // Přemalování ve videu a dlouhé video (3.03).
+        "sam3.1_multiplex_fp16.safetensors" to Soubor(
+            "models/checkpoints", "All in One \u2192 P\u0159emalovat ve videu",
+            "$HF/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors"
+        ),
+        "minimax_h3_latent_upscaler_3d_fp16.safetensors" to Soubor(
+            "models/latent_upscale_models", "Dlouh\u00e9 video \u2014 rychl\u00fd prvn\u00ed z\u00e1b\u011br",
+            "$HF/LBH-123-AI/Minimax_h3_latent_Upscaler/resolve/main/minimax_h3_latent_upscaler_3d_fp16.safetensors"
+        ),
+        // Karta 3D model (3.04). Uzly jsou v jádru ComfyUI od 0.34, chybět
+        // můžou jen váhy.
+        "trellis_2_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "3D model",
+            "$HF/Comfy-Org/TRELLIS.2/resolve/main/diffusion_models/trellis_2_int8_convrot.safetensors"
+        ),
+        "trellis_2_shape_vae_bf16.safetensors" to Soubor(
+            "models/vae", "3D model",
+            "$HF/Comfy-Org/TRELLIS.2/resolve/main/vae/trellis_2_shape_vae_bf16.safetensors"
+        ),
+        "trellis_2_texture_vae_bf16.safetensors" to Soubor(
+            "models/vae", "3D model",
+            "$HF/Comfy-Org/TRELLIS.2/resolve/main/vae/trellis_2_texture_vae_bf16.safetensors"
+        ),
+        "dino_v3_vit_l.safetensors" to Soubor(
+            "models/clip_vision", "3D model",
+            "$HF/Comfy-Org/TRELLIS.2/resolve/main/clip_vision/dino_v3_vit_l.safetensors"
+        ),
+        "birefnet.safetensors" to Soubor(
+            "models/background_removal", "3D model (odstran\u011bn\u00ed pozad\u00ed)",
+            "$HF/Comfy-Org/BiRefNet/resolve/main/background_removal/birefnet.safetensors"
+        ),
+        "ernie-image-turbo-Q8_0.gguf" to Soubor(
+            "models/unet", "Obrázek — ERNIE Image Turbo"
+        ),
+        "ministral-3-3b.safetensors" to Soubor(
+            "models/text_encoders", "Obrázek — ERNIE Image Turbo"
+        ),
     )
 
     fun balikProUzel(trida: String): Balik? = UZLY[trida]

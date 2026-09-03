@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,6 +78,8 @@ fun ResultScreen(
     onSaved: () -> Unit = {},
     /** Poslat hotový obrázek rovnou do karty Zvětšit (jen u obrázků). */
     onUpscale: (() -> Unit)? = null,
+    /** Totéž, ale rovnou s metodou DLSS 5 — doostření za pár sekund. */
+    onSharpen: (() -> Unit)? = null,
     /** Poslat hotový obrázek rovnou do karty Úprava obrázku (jen u obrázků). */
     onEdit: (() -> Unit)? = null,
     /** Rozhýbat obrázek — poslat do All in One → Z obrázku (jen u obrázků). */
@@ -91,10 +94,10 @@ fun ResultScreen(
     val ctx = LocalContext.current
     var saved by remember(item.id) { mutableStateOf(item.inGallery) }
 
+    Box(Modifier.fillMaxSize().background(Ink)) {
     Column(
         Modifier
             .fillMaxSize()
-            .background(Ink)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -107,6 +110,7 @@ fun ResultScreen(
             when {
                 item.isImage -> t("Obrázek je hotový")
                 item.isAudio -> t("Skladba je hotová")
+                item.isModel3d -> t("3D model je hotový")
                 else -> t("Video je hotové")
             },
             style = MaterialTheme.typography.headlineSmall, color = TextHi
@@ -188,6 +192,14 @@ fun ResultScreen(
                 )
                 if (naCelou) ZoomovaciObrazek(it) { naCelou = false }
             }
+        } else if (item.isModel3d) {
+            // Model jde otáčet tahem prstu a přibližovat štípnutím.
+            Model3dPrehlizec(item.file(ctx))
+            Text(
+                t("Táhni prstem pro otáčení, štípnutím přiblížíš"),
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+                modifier = Modifier.padding(top = 4.dp)
+            )
         } else if (item.isAudio) {
             // Skladba nemá obraz – přehrávač zvládne MP3 taky, jen by ukázal
             // černý obdélník. Vlastní řádek s play/pauzou je srozumitelnější.
@@ -222,6 +234,11 @@ fun ResultScreen(
                     cz.promptlab.h3video.util.MediaSaver.saveImageToGallery(
                         ctx, item.file(ctx), "H3_${item.createdAt}.$ext"
                     )
+                } else if (item.isModel3d) {
+                    val ext = item.fileName.substringAfterLast('.', "glb")
+                    cz.promptlab.h3video.util.MediaSaver.save3dToDownloads(
+                        ctx, item.file(ctx), "H3_${item.createdAt}.$ext"
+                    )
                 } else {
                     cz.promptlab.h3video.util.MediaSaver.saveToGallery(
                         ctx, item.file(ctx), "H3_${item.createdAt}.mp4"
@@ -235,6 +252,7 @@ fun ResultScreen(
                         !ok -> t("Uložení se nepovedlo")
                         item.isAudio -> t("Uloženo do Hudba/H3 Video")
                         item.isImage -> t("Uloženo do Obrázky/H3 Video")
+                        item.isModel3d -> t("Uloženo do Stažené/H3 Video")
                         else -> t("Uloženo do Filmy/H3 Video")
                     },
                     Toast.LENGTH_SHORT
@@ -252,6 +270,7 @@ fun ResultScreen(
                         when {
                             item.isAudio -> t("Sdílet skladbu")
                             item.isImage -> t("Sdílet obrázek")
+                            item.isModel3d -> t("Sdílet 3D model")
                             else -> t("Sdílet video")
                         }
                     )
@@ -262,7 +281,9 @@ fun ResultScreen(
         // Rozcestník: z hotového obrázku se pokračuje jedním klepnutím —
         // rozhýbat do videa, upravit, nebo zvětšit. Bez stahování a
         // znovunahrávání.
-        if (item.isImage && (onAnimate != null || onEdit != null || onUpscale != null)) {
+        if (item.isImage &&
+            (onAnimate != null || onEdit != null || onUpscale != null || onSharpen != null)
+        ) {
             Spacer(Modifier.height(16.dp))
             Text(
                 t("Pokračuj s obrázkem"),
@@ -295,6 +316,14 @@ fun ResultScreen(
                     onClick = onUpscale,
                 )
             }
+            if (onSharpen != null) {
+                Spacer(Modifier.height(8.dp))
+                OutlineButton(
+                    t("Doostřit (DLSS 5 — pár sekund)"),
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onSharpen,
+                )
+            }
         }
 
         Spacer(Modifier.height(16.dp))
@@ -302,6 +331,47 @@ fun ResultScreen(
         Spacer(Modifier.height(10.dp))
         OutlineButton(t("Zavřít"), modifier = Modifier.fillMaxWidth(), onClick = onClose)
         Spacer(Modifier.height(26.dp))
+    }
+
+    // Křížek v rohu: zavřít má jít hned, ne až po odrolování na konec.
+    Box(
+        Modifier
+            .align(Alignment.TopEnd)
+            .padding(top = 8.dp, end = 8.dp)
+            .size(44.dp)
+            .clip(RoundedCornerShape(50))
+            .background(Surface1.copy(alpha = 0.85f))
+            .clickable { onClose() },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(Icons.Default.Close, t("Zavřít"), Modifier.size(24.dp), TextHi)
+    }
+    }
+}
+
+/**
+ * Srozumitelná rada k technické hlášce ze serveru. `null` = nemám co dodat.
+ *
+ * Zatím jen došlá paměť grafiky — to je zdaleka nejčastější selhání a surová
+ * hláška z PyTorche („Allocation on device 0 would exceed allowed memory")
+ * uživateli neřekne nic o tom, co má udělat.
+ */
+fun radaKChybe(message: String): String? {
+    val m = message.lowercase()
+    val doslaPamet = "out of memory" in m || "exceed allowed memory" in m ||
+        "cuda out of memory" in m
+    if (!doslaPamet) return null
+    val uTvaru = "vaedecodeshapetrellis" in m || "trellis" in m
+    return buildString {
+        append(t("Grafické kartě došla paměť."))
+        append(' ')
+        if (uTvaru) {
+            append(t("U 3D modelu spadl převod tvaru na síť — to je paměťový vrchol celého běhu."))
+            append(' ')
+            append(t("Sniž na kartě Jemnost tvaru na 1024."))
+            append(' ')
+        }
+        append(t("Zavři ostatní aplikace, které používají grafiku (hry, prohlížeč s videem) a zkus to znovu."))
     }
 }
 
@@ -325,6 +395,21 @@ fun FailureScreen(
         Spacer(Modifier.height(12.dp))
         Text(t("Nepovedlo se"), style = MaterialTheme.typography.headlineSmall, color = TextHi)
         Spacer(Modifier.height(12.dp))
+        // Došlá paměť grafiky je nejčastější selhání a surová hláška z PyTorche
+        // nikomu neřekne, co s tím. Rada patří nad ni, ne pod ni.
+        radaKChybe(message)?.let { rada ->
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(Surface1)
+                    .border(1.dp, Amber, RoundedCornerShape(16.dp))
+                    .padding(16.dp)
+            ) {
+                Text(rada, style = MaterialTheme.typography.bodyMedium, color = Amber)
+            }
+            Spacer(Modifier.height(12.dp))
+        }
         Box(
             Modifier
                 .fillMaxWidth()
@@ -419,6 +504,8 @@ private fun ZoomovaciObrazek(bmp: android.graphics.Bitmap, onClose: () -> Unit) 
                 .onSizeChanged { box = it }
                 .pointerInput(Unit) {
                     detectTapGestures(
+                        // Ťuknutí zavírá jen u nezvětšeného obrázku — u zvětšeného
+                        // by to zavřelo při každém nechtěném doteku. Od toho je křížek.
                         onTap = { if (scale <= 1f) onClose() },
                         onDoubleTap = {
                             if (scale > 1f) {
@@ -440,17 +527,20 @@ private fun ZoomovaciObrazek(bmp: android.graphics.Bitmap, onClose: () -> Unit) 
                     }
                     .transformable(stav),
             )
+            // Křížek je vždycky vidět a vždycky zavírá — i když je obrázek
+            // přiblížený. Dřív byl menší a splýval se světlými fotkami.
             Box(
                 Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 40.dp, end = 16.dp)
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Surface1.copy(alpha = 0.8f))
+                    .statusBarsPadding()
+                    .padding(top = 12.dp, end = 12.dp)
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(Color.Black.copy(alpha = 0.55f))
                     .clickable { onClose() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Close, t("Zavřít"), Modifier.size(20.dp), TextHi)
+                Icon(Icons.Default.Close, t("Zavřít"), Modifier.size(26.dp), Color.White)
             }
         }
     }

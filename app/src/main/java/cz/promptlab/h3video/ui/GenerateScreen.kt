@@ -82,6 +82,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cz.promptlab.h3video.comfy.T2iModel
 import cz.promptlab.h3video.MainViewModel
 import cz.promptlab.h3video.ServerState
 import cz.promptlab.h3video.ServerStatus
@@ -247,24 +248,19 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
     val restoreScene by vm.restore.collectAsStateWithLifecycle()
     val swapScene by vm.swap.collectAsStateWithLifecycle()
     val inpaintScene by vm.inpaint.collectAsStateWithLifecycle()
+    val longScene by vm.long.collectAsStateWithLifecycle()
+    val model3dScene by vm.model3d.collectAsStateWithLifecycle()
     // Dostupnost AIO balíku doráží asynchronně – bez ní v klíčích by hláška
     // „server nemá balík" zůstala viset i po úspěšné kontrole (a naopak).
     val aioAvailable by vm.aioAvailable.collectAsStateWithLifecycle()
-    val problem = remember(
-        params, talkScene, timelineScene, aioScene, editScene, upscaleScene, musicScene,
-        restoreScene, swapScene, inpaintScene, aioAvailable,
-    ) {
-        vm.validation(params)
-    }
+    // Hlášku „co chybí" i upozornění počítá ViewModel ze VŠECH karet naráz.
+    // Dřív si je obrazovka pamatovala podle ručně vypsaného seznamu scén —
+    // a na nové karty se v něm dalo zapomenout, což se taky stalo.
+    val problem by vm.problem.collectAsStateWithLifecycle()
 
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
-    val hints = remember(
-        params, talkScene, aioScene, editScene, upscaleScene, musicScene, restoreScene, swapScene,
-        inpaintScene, aioAvailable,
-    ) {
-        vm.hints(params)
-    }
+    val hints by vm.hints.collectAsStateWithLifecycle()
     val mode = params.mode
 
     // imePadding: appka jede edge-to-edge, takže adjustResize z manifestu nic
@@ -287,7 +283,16 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // ---------------------------------------------------------- karty
         ModeTabs(mode) { vm.setMode(it) }
 
-        val referencniCesta = mode == Mode.TALK ||
+        // Dlouhé video staví každý úsek přes ReferenceToVideo, takže jede
+        // na ref2va vahách vždycky — profil bez referencí by na něm nefungoval.
+        // Co z Nastavení tahle karta doopravdy použije. Zbytek se neukazuje.
+        val ovlada = cz.promptlab.h3video.data.ovladaProKartu(
+            mode, aioScene.mode,
+            dlouheNavazuje = longScene.zacatek ==
+                cz.promptlab.h3video.data.LongStart.EXISTING_VIDEO,
+        )
+
+        val referencniCesta = mode == Mode.TALK || mode == Mode.LONG ||
             (mode == Mode.ALLINONE && aioScene.mode.usesRefWeights)
 
         // ------------------------------------------------- mluvící scéna
@@ -295,6 +300,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // z toho se nemíchá s obrázky ostatních karet.
         if (mode == Mode.TALK) {
             TalkSceneSection(vm)
+        }
+
+        // ------------------------------------------------------ dlouhé video
+        if (mode == Mode.LONG) {
+            LongVideoSection(vm)
         }
 
         // ------------------------------------------------------- Časová osa
@@ -305,6 +315,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // ---------------------------------------------------- úprava obrázku
         if (mode == Mode.EDIT) {
             ImageEditSection(vm)
+        }
+
+        // --------------------------------------------------------- 3D model
+        if (mode == Mode.MODEL3D) {
+            Model3dSection(vm)
         }
 
         // ---------------------------------------------------------- zvětšit
@@ -382,14 +397,14 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
 
         // Vsechno, co se nemeni pri kazdem behu, je sbalene do jedne sekce.
         // Hlavni obrazovka tak zustava: vstupy, zadani, Generovat.
-        if (mode.isVideo) SkladaciSekce(
+        if (mode.isVideo && ovlada.neco) SkladaciSekce(
             title = t("Nastavení"),
             souhrn = params.profile.title + " · " + params.resolution.label +
                 (if (mode == Mode.TIMELINE && params.spectrum) " · Spectrum" else ""),
             klic = "nastaveni-" + mode.name,
         ) {
             // ------------------------------------------------------- Turbo / Kvalita
-            ProfilePicker(params.profile, referencniCesta) { vm.setProfile(it) }
+            if (ovlada.profil) ProfilePicker(params.profile, referencniCesta) { vm.setProfile(it) }
 
             // Spectrum má vliv na zvuk, takže nepatří schované v pokročilém nastavení.
             // Karta All in One jede na cizí šabloně, ve které uzel Spectrum vůbec
@@ -419,7 +434,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 )
             }
             // ---------------------------------------------------------- rozlišení
-            SectionCard(
+            // Ukazuje se jen tam, kde plátno opravdu určuje appka. Jinak by to
+            // byl knoflík, co nic nedělá: u zvětšení se nic negeneruje,
+            // u přemalování plátno určuje výřez kolem sledovaného objektu
+            // a u dlouhého videa při navázání ho diktuje zdrojové video.
+            if (ovlada.rozliseni) SectionCard(
                 title = t("Rozlišení"),
                 subtitle = t("Megapixely × poměr stran, zaokrouhleno na násobek 32"),
                 trailing = {
@@ -486,9 +505,9 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             // ------------------------------------------------------ model a LoRA
             // Model je nad LoRA schválně: nejdřív se vybírá, na čem se generuje,
             // teprve pak čím se to dolaďuje.
-            ModelCard(vm, params)
+            if (ovlada.model) ModelCard(vm, params)
 
-            LoraCard(vm, params)
+            if (ovlada.lora) LoraCard(vm, params)
 
             val onWorkflowDefaults = remember(params) { vm.matchesWorkflow(params) }
             SectionCard(
@@ -546,34 +565,38 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                 }
                             }
 
-                            LabeledSlider(
-                                label = t("Počet kroků"), value = "${params.steps}",
-                                position = params.steps.toFloat(), range = 4f..40f,
-                                onChange = { v -> vm.update { it.copy(steps = v.toInt()) } },
-                                note = t("Workflow používá 8 s Turbo LoRA.")
-                            )
+                            if (ovlada.kroky) {
+                                LabeledSlider(
+                                    label = t("Počet kroků"), value = "${params.steps}",
+                                    position = params.steps.toFloat(), range = 4f..40f,
+                                    onChange = { v -> vm.update { it.copy(steps = v.toInt()) } },
+                                    note = t("Workflow používá 8 s Turbo LoRA.")
+                                )
 
-                            Dropdown("Sampler", SAMPLERS, params.sampler, { it }) { v ->
-                                vm.update { it.copy(sampler = v) }
-                            }
-                            Dropdown(t("Plánovač (scheduler)"), SCHEDULERS, params.scheduler, { it }) { v ->
-                                vm.update { it.copy(scheduler = v) }
+                                Dropdown("Sampler", SAMPLERS, params.sampler, { it }) { v ->
+                                    vm.update { it.copy(sampler = v) }
+                                }
+                                Dropdown(t("Plánovač (scheduler)"), SCHEDULERS, params.scheduler, { it }) { v ->
+                                    vm.update { it.copy(scheduler = v) }
+                                }
                             }
 
-                            LabeledSlider(
-                                label = t("Sigma shift – obraz"),
-                                value = "%.2f".format(params.shiftVideo),
-                                position = params.shiftVideo, range = 1f..20f,
-                                onChange = { v -> vm.update { it.copy(shiftVideo = v) } },
-                                note = t("Hodnota z workflow je 12,19.")
-                            )
-                            LabeledSlider(
-                                label = t("Sigma shift – zvuk"),
-                                value = "%.1f".format(params.shiftAudio),
-                                position = params.shiftAudio, range = 1f..10f,
-                                onChange = { v -> vm.update { it.copy(shiftAudio = v) } },
-                                note = "Hodnota z workflow je 3."
-                            )
+                            if (ovlada.shift) {
+                                LabeledSlider(
+                                    label = t("Sigma shift – obraz"),
+                                    value = "%.2f".format(params.shiftVideo),
+                                    position = params.shiftVideo, range = 1f..20f,
+                                    onChange = { v -> vm.update { it.copy(shiftVideo = v) } },
+                                    note = t("Hodnota z workflow je 12,19.")
+                                )
+                                LabeledSlider(
+                                    label = t("Sigma shift – zvuk"),
+                                    value = "%.1f".format(params.shiftAudio),
+                                    position = params.shiftAudio, range = 1f..10f,
+                                    onChange = { v -> vm.update { it.copy(shiftAudio = v) } },
+                                    note = "Hodnota z workflow je 3."
+                                )
+                            }
                             LabeledSlider(
                                 label = t("Komprese videa (CRF)"), value = "${params.crf}",
                                 position = params.crf.toFloat(), range = 10f..30f,
@@ -659,10 +682,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // Za běhu tlačítko nezhasíná – další zadání se zařadí do fronty a
         // spustí se samo, jakmile aktuální běh skončí.
         val fronta by vm.queue.collectAsStateWithLifecycle()
-        val blocked = problem != null
+        val chybi = problem
+        val blocked = chybi != null
         GradientButton(
             text = when {
-                problem != null -> problem
+                chybi != null -> chybi
                 busy -> t("Přidat do fronty") +
                     (if (fronta.isNotEmpty()) t(" (čeká %d)").format(fronta.size) else "")
                 mode == Mode.EDIT -> t("Upravit obrázek")
@@ -672,6 +696,9 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 mode == Mode.RESTORE -> t("Opravit fotku")
                 mode == Mode.FACESWAP -> t("Vyměnit tvář")
                 mode == Mode.INPAINT -> t("Domalovat do masky")
+                // 3D model není video — tlačítko to nesmí slibovat.
+                mode == Mode.MODEL3D -> t("Postavit 3D model")
+                mode == Mode.LONG -> t("Vygenerovat dlouhé video")
                 else -> t("Vygenerovat video")
             },
             enabled = !blocked,
@@ -823,34 +850,27 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
             Column {
                 Text(t("Model"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                 Spacer(Modifier.height(8.dp))
-                val jeOdvazany =
-                    params.zimageModel == cz.promptlab.h3video.comfy.ZImageBuilder.NSFW_MODEL_FILE
+                val model = T2iModel.zId(params.zimageModel)
                 PillRow(
-                    items = listOf(t("Turbo (základ)"), t("Photoreal (odvázaný)")),
-                    selected = if (jeOdvazany) t("Photoreal (odvázaný)") else t("Turbo (základ)"),
-                    label = { it },
-                    onSelect = { v ->
-                        vm.update {
-                            it.copy(
-                                zimageModel = if (v.startsWith("Photoreal"))
-                                    cz.promptlab.h3video.comfy.ZImageBuilder.NSFW_MODEL_FILE
-                                else ""
-                            )
-                        }
-                    }
+                    items = T2iModel.entries.toList(),
+                    selected = model,
+                    label = { t(it.stitek) },
+                    onSelect = { m -> vm.update { it.copy(zimageModel = m.id) } }
                 )
-                if (jeOdvazany) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        t("NSFW Photorealistic v6.1 — nic neodmítá, jede na 12 kroků. ") +
-                            t("LoRA níž s ním není potřeba."),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
-                    )
-                }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    t(model.popis),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    t("%d kroků").format(model.kroky),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow
+                )
             }
-            // LoRA patří jen k základnímu Turbo — odvázaný finetune to má
-            // „v sobě" a míchání by výsledek jen kazilo, tak se neukazuje.
-            if (params.zimageModel.isBlank()) Column {
+            // LoRA je trénovaná na Z-Image Turbo. Photoreal to má „v sobě",
+            // Klein a ERNIE jsou úplně jiné modely — u nich by uzel jen spadl.
+            if (T2iModel.zId(params.zimageModel) == T2iModel.TURBO) Column {
                 ToggleRow(
                     t("Bez cenzury"),
                     t("Přimíchá odvázanou LoRA — model pak nic neodmítá"),

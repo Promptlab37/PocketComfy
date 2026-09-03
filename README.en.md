@@ -60,19 +60,21 @@ PocketComfy is a **client** — it generates nothing on its own:
 - 📋 **Job queue.** While one run is going, prepare the next and add it to the queue — runs start automatically one after another, each finished one arrives as a notification.
 - 🗂️ **Gallery with filter and search.** Videos / images / music separately, search in prompts, undo delete. Each result shows how long it took.
 
-## 🃏 Ten cards
+## 🃏 Twelve cards
 
 | | Card | Model | What it does |
 |---|---|---|---|
 | 🎬 | **All in One** | MiniMax H3 | video from text, image, references or keyframes; extension; upscale |
 | 🗣️ | **Dialogue** | MiniMax H3 + Higgs Audio | characters from photos speak your lines |
 | 🎞️ | **Timeline** | MiniMax H3 + LSI | long video assembled from segments |
+| 🎬 | **Long video** | MiniMax H3 + H3 Motion Context | up to six chained sections in one run, each with its own brief and LoRA |
 | 🖼️ | **Image** | Z-Image Turbo | a new picture from text in seconds |
 | ✏️ | **Image edit** | Krea 2 + Identity Edit | "give her a red jacket" — the face stays |
 | 🩹 | **Photo restore** | Qwen Image Edit 2511 | an old or damaged photo as new, including colorization |
 | 🎭 | **Face swap** | Flux Fill + ACE++ | scribble over the face, pick a new one, done |
 | 🖌️ | **Inpaint** | Flux Fill / FLUX.2 Klein | scribble over a spot, type what belongs there, only that changes |
 | 🔎 | **Upscale** | SeedVR2 | gigapixel upscale in tiles (2×2 up to 4×4) |
+| 🧊 | **3D model** | TRELLIS.2 | a mesh with PBR textures (`.glb`) from one photo, orbit with your finger |
 | 🎵 | **Music** | ACE-Step 1.5 | a whole song from text — style, verses, chorus, vocals |
 
 <div align="center">

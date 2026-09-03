@@ -37,6 +37,15 @@ data class VideoItem(
         get() = fileName.substringAfterLast('.', "").lowercase() in
             listOf("mp3", "flac", "wav", "opus", "ogg", "m4a")
 
+    /**
+     * Je výsledek 3D model (karta 3D model)? Přípona `.glb` — obrázkový
+     * náhled k němu neexistuje, takže galerie i obrazovka výsledku musí
+     * počítat s tím, že se nedá vykreslit ani přehrát.
+     */
+    val isModel3d: Boolean
+        get() = fileName.substringAfterLast('.', "").lowercase() in
+            listOf("glb", "gltf")
+
     companion object {
         fun videosDir(ctx: Context): File =
             File(ctx.filesDir, "videos").also { it.mkdirs() }

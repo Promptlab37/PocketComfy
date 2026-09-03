@@ -55,6 +55,8 @@ class AioStore(private val ctx: Context) {
                 .put("upscaleMultiplier", s.upscaleMultiplier)
                 .put("sheetPanels", s.sheetPanels)
                 .put("sheetPhotoreal", s.sheetPhotoreal)
+                .put("maskTarget", s.maskTarget)
+                .put("maskObjects", s.maskObjects)
                 .toString()
         ).apply()
     }
@@ -103,6 +105,8 @@ class AioStore(private val ctx: Context) {
                 upscaleMultiplier = root.optInt("upscaleMultiplier", 2),
                 sheetPanels = root.optInt("sheetPanels", 6),
                 sheetPhotoreal = root.optBoolean("sheetPhotoreal", false),
+                maskTarget = root.optString("maskTarget"),
+                maskObjects = root.optInt("maskObjects", 1).coerceIn(1, 8),
             )
         }.getOrDefault(AioScene())
     }

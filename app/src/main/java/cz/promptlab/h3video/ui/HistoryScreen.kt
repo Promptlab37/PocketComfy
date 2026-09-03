@@ -9,6 +9,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +30,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.ViewInAr
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Icon
@@ -82,21 +85,30 @@ fun HistoryScreen(
         items
             .filter {
                 when (filtr) {
-                    "video" -> !it.isImage && !it.isAudio
+                    // 3D model není video — bez téhle výjimky by se dostal
+                    // mezi videa a galerie by ho zkoušela přehrát.
+                    "video" -> !it.isImage && !it.isAudio && !it.isModel3d
                     "obrazek" -> it.isImage
                     "hudba" -> it.isAudio
+                    "model3d" -> it.isModel3d
                     else -> true
                 }
             }
             .filter { hledani.isBlank() || it.prompt.contains(hledani.trim(), ignoreCase = true) }
     }
-    // Filtr má smysl, až když je v galerii víc druhů výsledků.
-    val druhu = remember(items) {
+    // Filtr nabízí jen druhy, které v galerii opravdu jsou — a rovnou s počtem,
+    // ať je vidět, čeho kolik. Prázdné čipy dělaly z galerie nepřehlednou změť.
+    val druhy = remember(items) {
         listOf(
-            items.any { !it.isImage && !it.isAudio },
-            items.any { it.isImage },
-            items.any { it.isAudio },
-        ).count { it }
+            Druh("video", t("Videa"), items.count { !it.isImage && !it.isAudio && !it.isModel3d }),
+            Druh("obrazek", t("Obrázky"), items.count { it.isImage }),
+            Druh("hudba", t("Hudba"), items.count { it.isAudio }),
+            Druh("model3d", t("3D modely"), items.count { it.isModel3d }),
+        ).filter { it.pocet > 0 }
+    }
+    // Když v galerii zbyl jen jeden druh, vybraný filtr by mohl ukazovat prázdno.
+    LaunchedEffect(druhy) {
+        if (filtr != "vse" && druhy.none { it.klic == filtr }) filtr = "vse"
     }
 
     Box(modifier.fillMaxSize()) {
@@ -124,12 +136,17 @@ fun HistoryScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (druhu > 1) item(key = "filtr") {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FiltrChip(t("Vše"), filtr == "vse") { filtr = "vse" }
-                    FiltrChip(t("Videa"), filtr == "video") { filtr = "video" }
-                    FiltrChip(t("Obrázky"), filtr == "obrazek") { filtr = "obrazek" }
-                    FiltrChip(t("Hudba"), filtr == "hudba") { filtr = "hudba" }
+            if (druhy.size > 1) item(key = "filtr") {
+                // Vodorovné rolování: druhů může být pět a na úzkém telefonu
+                // by se poslední čip jinak nevešel.
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FiltrChip("${t("Vše")} · ${items.size}", filtr == "vse") { filtr = "vse" }
+                    druhy.forEach { d ->
+                        FiltrChip("${d.nazev} · ${d.pocet}", filtr == d.klic) { filtr = d.klic }
+                    }
                 }
             }
             if (items.size >= 6) item(key = "hledani") {
@@ -190,6 +207,9 @@ fun HistoryScreen(
     }
 }
 
+/** Jeden druh výsledku v galerii — kvůli čipům filtru. */
+private data class Druh(val klic: String, val nazev: String, val pocet: Int)
+
 @Composable
 private fun FiltrChip(text: String, vybrano: Boolean, onClick: () -> Unit) {
     Text(
@@ -218,6 +238,8 @@ private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit
             // nemá – dlaždici dělá nota.
             when {
                 item.isAudio -> null
+                // GLB nemá z čeho udělat náhled — dlaždici dělá ikona.
+                item.isModel3d -> null
                 // Zmenšený náhled – plné PNG (klidně gigapixel ze Zvětšit)
                 // by na dlaždici sežralo desítky MB a seznam by cukal.
                 item.isImage -> cz.promptlab.h3video.util.ImageUtils.loadFileThumb(item.file(ctx))
@@ -253,8 +275,12 @@ private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit
             if (item.isAudio) {
                 Icon(Icons.Default.MusicNote, null, Modifier.size(30.dp), TextLow)
             }
-            // Obrázek se nepřehrává – trojúhelník by sliboval video.
-            if (!item.isImage && !item.isAudio) Box(
+            // 3D model taky ne – a hlavně se nedá přehrát.
+            if (item.isModel3d) {
+                Icon(Icons.Default.ViewInAr, null, Modifier.size(30.dp), TextLow)
+            }
+            // Obrázek ani model se nepřehrávají – trojúhelník by sliboval video.
+            if (!item.isImage && !item.isAudio && !item.isModel3d) Box(
                 Modifier
                     .size(30.dp)
                     .clip(RoundedCornerShape(50))

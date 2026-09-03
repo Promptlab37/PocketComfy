@@ -38,7 +38,16 @@ enum class AioMode(
      * snímků) i rozlišení jsou v šabloně vyladěné na vteřinu přesně – proto se
      * do nich na rozdíl od ostatních režimů nesahá.
      */
-    CHARSHEET("charsheet", "List postavy", "Z fotek složí otočný list postavy", "charsheet.json");
+    CHARSHEET("charsheet", "List postavy", "Z fotek složí otočný list postavy", "charsheet.json"),
+
+    /**
+     * Přemalování kusu videa (šablona `mask.json` balíku, od jeho verze 0.15).
+     * Napíšeš, co se má ve videu sledovat — SAM 3 to projde napříč snímky,
+     * MaskVidExperiments z toho udělá masku v latentu, H3 tu oblast přegeneruje
+     * podle referencí a vlepí ji zpátky do původního rozlišení. Zbytek záběru
+     * i zvuk zůstávají netknuté.
+     */
+    MASK("mask", "Přemalovat ve videu", "Vymění sledovaný kus záběru, zbytek nechá", "mask.json");
 
     /** Název a popis v jazyce rozhraní (překlad až při čtení). */
     val nazev: String get() = t(nazevCs)
@@ -52,6 +61,16 @@ enum class AioMode(
 
     /** Jede na referenčních (ref2va) vahách? */
     val usesRefWeights: Boolean get() = this == REFERENCE || this == CHARSHEET
+
+    /**
+     * Určuje si rozměry a délku šablona sama?
+     *
+     * U přemalování ano: šířka, výška i délka v podmínce nejsou čísla, ale
+     * odkazy na výřez kolem sledovaného objektu a na přípravu videa. Kdyby je
+     * appka přepsala svými hodnotami jako u ostatních režimů, výřez a maska by
+     * si přestaly odpovídat a vlepení zpátky by sedlo mimo.
+     */
+    val fixedSize: Boolean get() = this == MASK
 }
 
 /** Zvětšovač v režimu [AioMode.UPSCALE]. */
@@ -105,6 +124,14 @@ data class AioScene(
     val sheetPanels: Int = 6,
     /** List postavy: fotorealistický styl místo stylu podle první reference. */
     val sheetPhotoreal: Boolean = false,
+    /**
+     * Přemalování: co se má ve videu sledovat. Jde do SAM 3 jako text, takže
+     * to má být krátké pojmenování objektu („head", „the red car"), ne popis
+     * scény. Anglicky — model je na ni trénovaný.
+     */
+    val maskTarget: String = "",
+    /** Přemalování: kolik objektů se má sledovat (nejčastěji jeden). */
+    val maskObjects: Int = 1,
 ) {
     /** Šablona, kterou je potřeba stáhnout ze serveru. */
     val sablona: String
@@ -131,7 +158,8 @@ data class AioScene(
         get() = when (mode) {
             AioMode.TEXT, AioMode.EXTEND, AioMode.UPSCALE -> emptyList()
             AioMode.IMAGE -> listOfNotNull(first.image, last.image.takeIf { useLastFrame })
-            AioMode.REFERENCE, AioMode.CHARSHEET -> refsWithImage.mapNotNull { it.image }
+            AioMode.REFERENCE, AioMode.CHARSHEET, AioMode.MASK ->
+                refsWithImage.mapNotNull { it.image }
             AioMode.KEYFRAMES -> keysWithImage.mapNotNull { it.image }
         }
 
@@ -139,7 +167,7 @@ data class AioScene(
     val uploadVideo: File?
         get() = when (mode) {
             AioMode.REFERENCE -> refVideo
-            AioMode.EXTEND, AioMode.UPSCALE -> sourceVideo
+            AioMode.EXTEND, AioMode.UPSCALE, AioMode.MASK -> sourceVideo
             else -> null
         }
 
@@ -183,6 +211,14 @@ fun aioProblem(s: AioScene): String? {
         AioMode.CHARSHEET ->
             if (s.refsWithImage.isEmpty())
                 t("Přidej aspoň jednu fotku postavy, ze které má list vzniknout.") else null
+        // Fotka náhrady je NEPOVINNÁ: uzel dostává i popis scény, takže
+        // „nahraď hlavu helmou" projde i bez přiložené fotky helmy. Balík ji
+        // doporučuje kvůli držení podoby, ale vyžadovat ji by bylo přehnané.
+        AioMode.MASK -> when {
+            s.sourceVideo == null -> t("Vyber video, ve kterém se má přemalovávat.")
+            s.maskTarget.isBlank() -> t("Napiš, co se má ve videu sledovat — třeba „head\".")
+            else -> null
+        }
     }
 }
 
@@ -191,6 +227,18 @@ fun aioProblem(s: AioScene): String? {
  */
 fun aioHints(s: AioScene, p: GenParams): List<String> {
     val out = mutableListOf<String>()
+    if (s.mode == AioMode.MASK) {
+        out += t(
+            "Délku výsledku určuje zdrojové video — posuvník říká jen to, kolik " +
+                "vteřin od začátku se přegeneruje."
+        )
+        if (s.refsWithImage.isEmpty()) {
+            out += t(
+                "Bez fotky náhrady se model řídí jen popisem. Když má vzniknout " +
+                    "konkrétní člověk nebo věc, přilož ji."
+            )
+        }
+    }
     if (s.mode == AioMode.UPSCALE) {
         out += "Zvětšování nic negeneruje – model MiniMax se vůbec nespustí, " +
             "takže na profilu, krocích ani rozlišení tady nezáleží."

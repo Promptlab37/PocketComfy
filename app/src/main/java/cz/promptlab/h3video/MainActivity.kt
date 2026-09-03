@@ -382,6 +382,12 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             GenerationEngine.dismissResult()
                             vm.posliDoZvetseni(s.item)
                         },
+                        onSharpen = {
+                            GenerationEngine.dismissResult()
+                            vm.posliDoZvetseni(
+                                s.item, cz.promptlab.h3video.data.UpscaleMetoda.DLSS
+                            )
+                        },
                         onEdit = {
                             GenerationEngine.dismissResult()
                             vm.posliDoUpravy(s.item)
@@ -434,6 +440,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onUpscale = {
                         opened = null
                         vm.posliDoZvetseni(open)
+                    },
+                    onSharpen = {
+                        opened = null
+                        vm.posliDoZvetseni(open, cz.promptlab.h3video.data.UpscaleMetoda.DLSS)
                     },
                     onEdit = {
                         opened = null

@@ -58,6 +58,7 @@ object Slovnik {
         "Načítám fotku" to "Loading the photo",
         "Připravuji výřez tváře" to "Preparing the face crop",
         "Dělím na dlaždice" to "Splitting into tiles",
+        "Spouštím DLSS 5" to "Starting DLSS 5",
         "Připravuji plátno" to "Preparing the canvas",
         "Zpracovávám prompt" to "Processing the prompt",
         "Čtu zadání skladby" to "Reading the song brief",
@@ -69,6 +70,7 @@ object Slovnik {
         "Opravuji fotku" to "Restoring the photo",
         "Měním tvář" to "Swapping the face",
         "Zvětšuji obrázek" to "Upscaling the image",
+        "Doostřuji fotku" to "Sharpening the photo",
         "Skládám hudbu" to "Composing the music",
         "Dekóduji obraz a zvuk" to "Decoding video and audio",
         "Dekóduji zvuk" to "Decoding audio",
@@ -832,5 +834,151 @@ object Slovnik {
         "Angličtina" to "English",
         "Jazyk rozhraní; nepřeložené části zůstanou česky." to
             "Interface language; untranslated parts stay in Czech.",
+
+        // ------------------------------------ Zvětšit: metoda DLSS 5 (3.02)
+        "Čím zvětšit" to "How to upscale",
+        "Dvě různé cesty — jedna dokresluje, druhá rekonstruuje" to
+            "Two different routes — one invents detail, the other reconstructs it",
+        "SeedVR2 (gigapixel)" to "SeedVR2 (gigapixel)",
+        "DLSS 5 (rychlé)" to "DLSS 5 (fast)",
+        "Difuzní model dokreslí detaily, které v předloze nejsou. Minuty až desítky minut." to
+            "A diffusion model invents detail the source never had. Minutes to tens of minutes.",
+        "NVIDIA Neural Rendering rekonstruuje, co ve fotce je. Sekundy, ale nic si nevymýšlí." to
+            "NVIDIA Neural Rendering reconstructs what the photo holds. Seconds, but it invents nothing.",
+        "Nastavení DLSS 5" to "DLSS 5 settings",
+        "Neural Rendering na grafické kartě, výsledek za pár sekund" to
+            "Neural Rendering on the graphics card, done in seconds",
+        "Zvětšení" to "Upscaling",
+        "1× jen doostřit" to "1× sharpen only",
+        "Styl" to "Style",
+        "Výchozí" to "Default",
+        "Přirozený" to "Natural",
+        "Filmový" to "Cinematic",
+        "Nad 1.00 už runtime nic nepřidá; níž se výsledek přimíchává zpátky k předloze." to
+            "Above 1.00 the runtime adds nothing more; below it the result blends back to the source.",
+        "Rekonstruovat pleť" to "Reconstruct skin",
+        "Model si sám najde kůži a dopočítá póry. Na fotky bez lidí to vypni." to
+            "The model finds skin on its own and rebuilds pores. Turn it off for photos without people.",
+        "Zvětšení 3× je „Ultra Performance\" — DLSS má na rekonstrukci nejmíň podkladu a výsledek bývá měkčí než při 2×." to
+            "3× is \"Ultra Performance\" — DLSS has the least to reconstruct from and the result tends to be softer than 2×.",
+        "Doostření DLSS 5" to "DLSS 5 sharpening",
+        "NVIDIA Neural Rendering, žádný difuzní model" to
+            "NVIDIA Neural Rendering, no diffusion model",
+        "Rekonstrukce na grafické kartě, jde to rychle" to
+            "Reconstruction on the graphics card, it goes fast",
+
+        // ------------------------------------ Obrázek: výběr modelu (3.02)
+        "Z-Image Turbo" to "Z-Image Turbo",
+        "Z-Image Base" to "Z-Image Base",
+        "FLUX.2 Klein 9B" to "FLUX.2 Klein 9B",
+        "ERNIE Image Turbo" to "ERNIE Image Turbo",
+        "Nejrychlejší. Fotorealismus za pár sekund, na text v obraze slabší." to
+            "The fastest. Photorealism in seconds, weaker at text inside the image.",
+        "NSFW Photorealistic v6.1 — nic neodmítá. LoRA s ním není potřeba." to
+            "NSFW Photorealistic v6.1 — refuses nothing. No LoRA needed with it.",
+        "Nedestilovaný základ. Poslouchá zadání líp než Turbo, ale trvá to násobně dýl." to
+            "The undistilled base. Follows the brief better than Turbo, but takes several times longer.",
+        "Nejlíp drží složité zadání a text v obraze. Velký model, načítá se dýl." to
+            "Best at complex briefs and text inside the image. A big model, slower to load.",
+        "Baidu ERNIE na architektuře FLUX.2. Jiný rukopis než Z-Image." to
+            "Baidu ERNIE on the FLUX.2 architecture. A different handwriting than Z-Image.",
+        "%d kroků" to "%d steps",
+
+        // ------------------------------- Dlouhé video a přemalování (3.03)
+        "Dlouhé video" to "Long video",
+        "Dlouhé" to "Long",
+        "Až šest navazujících úseků najednou, každý s vlastním zadáním" to
+            "Up to six chained sections in one run, each with its own brief",
+        "Odkud začít" to "Where to start",
+        "Buď se naváže na hotové video, nebo se první záběr vyrobí" to
+            "Either continue a finished video, or generate the first shot",
+        "Navázat na video" to "Continue a video",
+        "Začít od nuly" to "Start from scratch",
+        "Vezme hotové video a plynule na jeho konec naváže další úseky" to
+            "Takes a finished video and seamlessly chains more sections onto its end",
+        "První záběr vznikne z popisu a další úseky na něj navážou" to
+            "The first shot comes from your brief and the rest chain onto it",
+        "Video, na které se navazuje" to "Video being continued",
+        "Jeho konec se použije jako kontext prvního úseku" to
+            "Its ending becomes the context for section one",
+        "První záběr" to "First shot",
+        "Vznikne z popisu a všechny úseky pak navazují na něj" to
+            "Generated from the brief; every section chains onto it",
+        "Rychlý první záběr" to "Fast first shot",
+        "Úseky" to "Sections",
+        "Každý je vlastní záběr — navazují na sebe v tomhle pořadí" to
+            "Each is its own shot — they chain in this order",
+        "Úsek %d" to "Section %d",
+        "Odebrat úsek" to "Remove section",
+        "Přidat úsek (max %d)" to "Add a section (max %d)",
+        "Nepovinné — drží podobu postav a věcí ve všech úsecích" to
+            "Optional — keeps people and things looking the same across sections",
+        "Vybrat video z galerie" to "Pick a video from the gallery",
+        "Vyber video, na které se má navázat." to "Pick the video to continue.",
+        "Napiš, co má být v prvním záběru." to "Describe the first shot.",
+        "Vyplň zadání aspoň u jednoho úseku." to "Fill in at least one section.",
+        "Úseky bez zadání se přeskočí — do videa se nedostanou." to
+            "Sections with no brief are skipped — they never reach the video.",
+        "Generuji úseky" to "Generating sections",
+        "Slepuji úseky do videa" to "Joining the sections into one video",
+        "Generování úseků" to "Generating sections",
+        "Načítám MiniMax H3" to "Loading MiniMax H3",
+        "Připravuji navázání" to "Preparing the continuation",
+        "MiniMax H3 (referenční váhy) + enkodér" to "MiniMax H3 (reference weights) + encoder",
+        "Každý úsek je vlastní vzorkování, jede se popořadě" to
+            "Each section is its own sampling pass, run in order",
+
+        // ------------------------------- All in One → Přemalovat ve videu
+        "Přemalovat ve videu" to "Repaint in video",
+        "Vymění sledovaný kus záběru, zbytek nechá" to
+            "Replaces the tracked part of the shot and leaves the rest",
+        "Video, ve kterém se má přemalovávat" to "Video to repaint in",
+        "Zpracuje se úsek od začátku, zbytek záběru i zvuk zůstanou" to
+            "A stretch from the start is processed; the rest of the shot and the audio stay",
+        "Co ve videu sledovat" to "What to track in the video",
+        "Kolik objektů" to "How many objects",
+        "Čím to nahradit" to "What to replace it with",
+        "Fotky toho, co se má na sledovaném místě objevit" to
+            "Photos of what should appear in the tracked spot",
+        "Vyber video, ve kterém se má přemalovávat." to "Pick the video to repaint in.",
+        "Přidej aspoň jednu fotku toho, čím se to má nahradit." to
+            "Add at least one photo of the replacement.",
+
+        // ------------------------------------------ 3D model, TRELLIS.2 (3.04)
+        "3D model" to "3D model",
+        "3D" to "3D",
+        "TRELLIS.2 — z fotky p\u0159edm\u011btu model se s\u00edt\u00ed a texturami" to
+            "TRELLIS.2 — a textured mesh from a photo of an object",
+        "Fotka p\u0159edm\u011btu" to "Photo of the object",
+        "Pozad\u00ed odstran\u00ed server s\u00e1m — sta\u010d\u00ed b\u011b\u017en\u00e1 fotka z telefonu" to
+            "The server removes the background — an ordinary phone photo is enough",
+        "Co m\u00e1 z modelu vyl\u00e9zt" to "What you get out",
+        "Rozd\u00edl nen\u00ed v tvaru, ale v tom, co se s modelem d\u00e1 d\u011blat d\u00e1l" to
+            "The difference is not the shape, but what you can do with it afterwards",
+        "Rychl\u00e1" to "Fast",
+        "Pln\u00e9 textury (PBR)" to "Full textures (PBR)",
+        "Detail" to "Detail",
+        "Jemnost s\u00edt\u011b a velikost textury" to "Mesh detail and texture size",
+        "Jemnost tvaru" to "Shape detail",
+        "Textura" to "Texture",
+        "3D model je hotov\u00fd" to "The 3D model is ready",
+        "Na\u010d\u00edt\u00e1m TRELLIS.2" to "Loading TRELLIS.2",
+        "Odstra\u0148uji pozad\u00ed" to "Removing the background",
+        "Stav\u00edm tvar modelu" to "Building the shape",
+        "Pe\u010du textury a rozbaluji UV" to "Baking textures and unwrapping UVs",
+        "P\u0159eb\u00edr\u00e1m model" to "Fetching the model",
+        "Stavba 3D modelu" to "Building the 3D model",
+        "\u010cty\u0159i pr\u016fchody: struktura, tvar, zjemn\u011bn\u00ed, textura" to
+            "Four passes: structure, shape, refinement, texture",
+        "Vyber fotku p\u0159edm\u011btu, ze kter\u00e9 se m\u00e1 model ud\u011blat." to
+            "Pick a photo of the object to build the model from.",
+
+        // ---------------------------- opravy nelogi\u010dnost\u00ed na kart\u00e1ch (3.04)
+        "Kolik videa zpracovat" to "How much of the video to process",
+        "Bere se \u00fasek od za\u010d\u00e1tku. Del\u0161\u00ed \u00fasek = v\u00edc sn\u00edmk\u016f k p\u0159egenerov\u00e1n\u00ed." to
+            "A stretch from the start is taken. Longer stretch = more frames to regenerate.",
+        "\u010c\u00edm to nahradit (nepovinn\u00e9)" to "What to replace it with (optional)",
+        "Bez fotek se p\u0159emaluje jen podle popisu; s fotkou dr\u017e\u00ed podobu" to
+            "Without photos it repaints from the description alone; a photo keeps the likeness",
     )
 }

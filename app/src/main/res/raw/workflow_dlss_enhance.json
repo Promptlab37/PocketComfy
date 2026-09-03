@@ -1,0 +1,40 @@
+{
+  "10": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Fotka" }
+  },
+  "20": {
+    "class_type": "DLSS5Settings",
+    "inputs": {
+      "upscaling_mode": "1x (DLAA / native)",
+      "nr_preset": "Default",
+      "nr_style": "Default",
+      "nr_intensity": 1.0,
+      "local_tone_strength": 1.0,
+      "local_structure_strength": 1.5,
+      "skin_structure_strength": 2.0,
+      "automatic_mask": true,
+      "dlss_model_preset": "M",
+      "motion": "none",
+      "scene_change_threshold": 0.24,
+      "warmup_frames": 0,
+      "runtime_dir": ""
+    },
+    "_meta": { "title": "Nastavení DLSS 5" }
+  },
+  "30": {
+    "class_type": "DLSS5EnhanceImages",
+    "inputs": {
+      "images": ["10", 0],
+      "settings": ["20", 0],
+      "verify_neural_rendering": true
+    },
+    "_meta": { "title": "Doostření DLSS 5" }
+  },
+  "40": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["30", 0], "filename_prefix": "PocketDLSS" },
+    "_meta": { "title": "Uložit" }
+  }
+}
