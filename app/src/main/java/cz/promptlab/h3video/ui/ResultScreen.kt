@@ -116,9 +116,13 @@ fun ResultScreen(
             style = MaterialTheme.typography.headlineSmall, color = TextHi
         )
         Text(
-            // U videa, na které aplikace navázala po restartu, délku neznáme –
-            // pak se ukáže jen popis, ne matoucí "0,0 s".
-            (if (item.seconds > 0f) "%.1f s · %s".format(item.seconds, item.resolution)
+            // U 3D modelu nemá délka ani rozlišení smysl — zajímá formát
+            // a velikost souboru, protože s ním člověk pracuje dál jinde.
+            (if (item.isModel3d) {
+                val f = item.fileName.substringAfterLast('.', "glb").uppercase()
+                val mb = item.file(ctx).length() / (1024.0 * 1024.0)
+                "%s · %.1f MB".format(f, mb)
+            } else if (item.seconds > 0f) "%.1f s · %s".format(item.seconds, item.resolution)
             else item.resolution) +
                 if (item.tookSeconds > 0)
                     t(" · hotovo za ") +
@@ -212,7 +216,15 @@ fun ResultScreen(
 
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(
-                if (saved) t("V galerii telefonu") else t("Uložit do galerie"),
+                when {
+                    // Model do galerie telefonu nepatří a „uložit do galerie"
+                    // by lhalo. Formát patří rovnou na tlačítko.
+                    item.isModel3d && saved -> t("Uloženo do Stažených")
+                    item.isModel3d -> t("Uložit .%s do Stažených")
+                        .format(item.fileName.substringAfterLast('.', "glb").uppercase())
+                    saved -> t("V galerii telefonu")
+                    else -> t("Uložit do galerie")
+                },
                 modifier = Modifier.weight(1f),
                 color = if (saved) Ok else TextMid,
                 icon = {

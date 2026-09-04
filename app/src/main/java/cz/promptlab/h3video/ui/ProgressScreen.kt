@@ -122,6 +122,9 @@ fun ProgressScreen(
     onMinimize: () -> Unit,
     onCancel: () -> Unit,
     queueCount: Int = 0,
+    /** Fronta čekajících běhů — ukazuje se rovnou tady, ne až po zavření. */
+    fronta: List<cz.promptlab.h3video.engine.QueuedRun> = emptyList(),
+    onRemoveFromQueue: (Long) -> Unit = {},
 ) {
     val progress by animateFloatAsState(
         targetValue = state.overall,
@@ -340,16 +343,24 @@ fun ProgressScreen(
         }
 
         Spacer(Modifier.height(10.dp))
-        Text(
-            if (queueCount > 0)
-                "Ve frontě čeká ${queueCount}× další běh – naskočí sám."
-            else
+        if (fronta.isNotEmpty()) {
+            // Celá fronta rovnou tady: dřív se tu ukazoval jen počet a seznam
+            // byl schovaný pod obrazovkou průběhu, kam se za běhu nedalo.
+            FrontaPruh(
+                fronta,
+                onRemove = onRemoveFromQueue,
+                modifier = Modifier.padding(horizontal = 4.dp),
+                prvni = state.label.ifBlank { null },
+            )
+        } else {
+            Text(
                 t("Telefon můžeš zamknout, generování běží na počítači dál."),
-            style = MaterialTheme.typography.bodySmall,
-            color = TextLow,
-            textAlign = TextAlign.Center,
-            maxLines = 1
-        )
+                style = MaterialTheme.typography.bodySmall,
+                color = TextLow,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
         }
 }
 
