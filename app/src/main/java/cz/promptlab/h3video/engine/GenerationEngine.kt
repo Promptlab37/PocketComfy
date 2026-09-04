@@ -1195,16 +1195,22 @@ object GenerationEngine {
             listOf("png", "jpg", "jpeg", "webp")
         fun isSound(name: String) = name.substringAfterLast('.', "").lowercase() in
             listOf("mp3", "flac", "wav", "opus", "ogg", "m4a")
+        fun isModel(name: String) = name.substringAfterLast('.', "").lowercase() in
+            listOf("glb", "gltf")
 
         // Priorita hlavního výstupu: video > zvuk > obrázek. Kdyby graf vracel
         // video i samostatnou stopu zvuku, výsledkem karty je video.
         var mainVideo: OutFile? = null
         var mainAudio: OutFile? = null
+        var mainModel: OutFile? = null
         val pictures = mutableListOf<OutFile>()
         for (key in outputs.keys()) {
             val o = outputs.optJSONObject(key) ?: continue
-            // Zvukové uzly (SaveAudioMP3…) hlásí soubory pod klíčem "audio".
-            for (arrayKey in listOf("images", "videos", "gifs", "audio")) {
+            // Zvukové uzly (SaveAudioMP3…) hlásí soubory pod klíčem "audio",
+            // `SaveGLB` pod klíčem "3d". Bez něj běh 3D modelu doběhl, soubor
+            // na serveru vznikl, ale appka hlásila „ComfyUI nevrátilo žádný
+            // soubor" — hledala jen tam, kam se 3D nikdy nezapisuje.
+            for (arrayKey in listOf("images", "videos", "gifs", "audio", "3d")) {
                 val arr = o.optJSONArray(arrayKey) ?: continue
                 for (i in 0 until arr.length()) {
                     val f = arr.getJSONObject(i)
@@ -1217,12 +1223,15 @@ object GenerationEngine {
                     when {
                         isPicture(out.filename) -> pictures += out
                         isSound(out.filename) -> if (mainAudio == null) mainAudio = out
+                        // 3D model je hlavní výstup stejně jako video — jen se
+                        // nepřehrává, ale otáčí.
+                        isModel(out.filename) -> if (mainModel == null) mainModel = out
                         else -> if (mainVideo == null) mainVideo = out
                     }
                 }
             }
         }
-        val main: OutFile? = mainVideo ?: mainAudio
+        val main: OutFile? = mainVideo ?: mainAudio ?: mainModel
         // Karta Úprava obrázku žádné video nevyrábí – jejím výsledkem je PNG.
         // Když tedy video není, bere se jako hlavní výstup první obrázek a
         // ostatní zůstanou jako doplňkové (list postavy má obojí).
@@ -1239,6 +1248,9 @@ object GenerationEngine {
         val pripona = when {
             jenObrazek -> filename.substringAfterLast('.', "png").lowercase()
             isSound(filename) -> filename.substringAfterLast('.', "mp3").lowercase()
+            // Model si musí svou příponu nést — pod .mp4 by ho neotevřelo nic
+            // a galerie by ho považovala za video.
+            isModel(filename) -> filename.substringAfterLast('.', "glb").lowercase()
             // I video si nese svou skutečnou příponu – webm přejmenované
             // na .mp4 by některé přehrávače odmítly.
             else -> filename.substringAfterLast('.', "mp4").lowercase()

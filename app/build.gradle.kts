@@ -37,11 +37,18 @@ android {
     compileSdk = 35
 
     defaultConfig {
+        // Filament (prohlížeč 3D modelu) nese nativní knihovny pro každou
+        // architekturu zvlášť a se všemi čtyřmi má APK přes 30 MB. Zůstávají
+        // dvě, které se opravdu použijí: arm64 pro telefony a x86_64 pro
+        // emulátor. Starší 32bitové telefony (armeabi-v7a) appka stejně
+        // neutáhne a x86 emulátor už nikdo nepoužívá.
+        ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
+
         applicationId = "cz.promptlab.h3video"
         minSdk = 26
         targetSdk = 35
-        versionCode = 123
-        versionName = "3.11"
+        versionCode = 130
+        versionName = "3.18"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
         buildConfigField("String", "DEFAULT_SERVER", "\"$defaultServer\"")
@@ -104,6 +111,15 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-process:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+
+    // Prohlížeč 3D modelu (karta 3D model). Compose-nativní nadstavba nad
+    // Google Filamentem — jediná udržovaná cesta, jak na Androidu vykreslit
+    // .glb. Sceneform Google v roce 2021 zahodil a holý Filament je stovky
+    // řádků na jednu kostku. WebView s model-viewerem to nezvládl.
+    // POZOR na verzi: 4.x je přeložené Kotlinem 2.4 a projekt jede na 2.0 —
+    // překlad pak padá na „incompatible version of Kotlin". 2.2.1 je poslední,
+    // která stojí na Kotlinu 1.9, tedy na tom, co náš překladač přečte.
+    implementation("io.github.sceneview:sceneview:2.2.1")
 
     val composeBom = platform("androidx.compose:compose-bom:2024.09.03")
     implementation(composeBom)

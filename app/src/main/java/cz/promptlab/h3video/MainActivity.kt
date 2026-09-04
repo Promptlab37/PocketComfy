@@ -52,6 +52,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
+import cz.promptlab.h3video.ui.theme.Ok
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -180,6 +185,24 @@ private fun Root(vm: MainViewModel = viewModel()) {
     // Průběh se dá sbalit, aby šlo mezitím listovat galerií nebo měnit nastavení.
     val running = state as? GenState.Running
     var progressExpanded by remember { mutableStateOf(true) }
+
+    /**
+     * Odložený výsledek: hotový běh, který si NEMÁ vzít celou obrazovku.
+     *
+     * Dokončení úlohy na pozadí je podle pravidel rozhraní věc pro nenápadné
+     * oznámení s akcí, ne pro okno přes celou obrazovku — to patří jen tam, kde
+     * musí uživatel rozhodnout. Dřív se výsledek otevřel vždycky a překryl
+     * i prohlížený obrázek nebo rozepsané zadání.
+     *
+     * Na celou obrazovku se otevře jen tehdy, když uživatel na běh opravdu
+     * čekal (má otevřený průběh) a zrovna si nic neprohlíží.
+     */
+    var vysledekOdlozen by remember { mutableStateOf(false) }
+    LaunchedEffect(state) {
+        if (state is GenState.Done) {
+            vysledekOdlozen = !(progressExpanded && opened == null)
+        }
+    }
     LaunchedEffect(running?.startedAt) { if (running != null) progressExpanded = true }
 
     // po dokončení se obnoví seznam v galerii
@@ -325,6 +348,15 @@ private fun Root(vm: MainViewModel = viewModel()) {
             if (running != null && !progressExpanded && !imeOtevrena) {
                 MiniProgress(running) { progressExpanded = true }
             }
+            // Hotový výsledek, který si nevzal obrazovku: nabídne se proužkem,
+            // dokud ho uživatel neotevře nebo neodklidí. Nic neblokuje.
+            (state as? GenState.Done)?.takeIf { vysledekOdlozen && !imeOtevrena }?.let { s ->
+                HotovoPruh(
+                    item = s.item,
+                    onOpen = { vysledekOdlozen = false },
+                    onDismiss = { GenerationEngine.dismissResult() },
+                )
+            }
             if (!imeOtevrena) BottomBar(
                 tab = tab,
                 updateWaiting = updateState is UpdateState.Available,
@@ -352,13 +384,15 @@ private fun Root(vm: MainViewModel = viewModel()) {
                         onMinimize = { progressExpanded = false },
                         onCancel = { GenerationEngine.cancel() },
                         queueCount = fronta.size,
+                        fronta = fronta,
+                        onRemoveFromQueue = { vm.removeFromQueue(it) },
                     )
                 }
             }
         }
 
         AnimatedVisibility(
-            visible = state is GenState.Done,
+            visible = state is GenState.Done && !vysledekOdlozen,
             enter = fadeIn(), exit = fadeOut()
         ) {
             (state as? GenState.Done)?.let { s ->
@@ -511,6 +545,53 @@ private fun Header(tab: Tab, version: String) {
  * zvýšená plocha nad obsahem, ne jako tenká čára; musí být na první pohled vidět,
  * že se tím dá vrátit zpátky k úloze.
  */
+/**
+ * Proužek „hotovo" nad spodní lištou. Nenápadné oznámení s akcí — přesně to,
+ * co patří k dokončení práce na pozadí. Klepnutím se výsledek otevře, křížkem
+ * se odklidí; do ničeho, co uživatel dělá, nezasahuje.
+ */
+@Composable
+private fun HotovoPruh(item: VideoItem, onOpen: () -> Unit, onDismiss: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Surface1)
+            .border(1.dp, Cyan.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+            .clickable { onOpen() }
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Default.CheckCircle, null, Modifier.size(20.dp), Ok)
+        Spacer(Modifier.width(10.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                when {
+                    item.isModel3d -> t("3D model je hotový")
+                    item.isImage -> t("Obrázek je hotový")
+                    item.isAudio -> t("Skladba je hotová")
+                    else -> t("Video je hotové")
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            Text(
+                t("Klepni pro zobrazení"),
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+            )
+        }
+        Icon(
+            Icons.Default.Close, t("Odklidit"),
+            Modifier
+                .size(30.dp)
+                .clip(RoundedCornerShape(50))
+                .clickable { onDismiss() }
+                .padding(6.dp),
+            TextMid,
+        )
+    }
+}
+
 @Composable
 private fun MiniProgress(state: GenState.Running, onExpand: () -> Unit) {
     val progress by animateFloatAsState(state.overall, label = "mini")

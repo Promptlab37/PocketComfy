@@ -280,6 +280,13 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             onRetry = { vm.refreshServerStatus() }
         )
 
+        // Fronta je vidět hned nahoře, ne až pod tlačítkem na konci stránky.
+        val frontaNahore by vm.queue.collectAsStateWithLifecycle()
+        if (frontaNahore.isNotEmpty()) {
+            FrontaPruh(frontaNahore, onRemove = { vm.removeFromQueue(it) })
+            Spacer(Modifier.height(12.dp))
+        }
+
         // ---------------------------------------------------------- karty
         ModeTabs(mode) { vm.setMode(it) }
 
@@ -723,46 +730,6 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 modifier = Modifier.padding(top = 6.dp)
             )
         }
-        if (fronta.isNotEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Surface1)
-                    .border(1.dp, Outline1, RoundedCornerShape(14.dp))
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Text(
-                    t("Ve frontě"),
-                    style = MaterialTheme.typography.labelMedium, color = TextLow
-                )
-                fronta.forEachIndexed { i, run ->
-                    Row(
-                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "${i + 1}. ${run.title}" +
-                                (if (run.prompt.isNotBlank()) " · ${run.prompt.take(38)}" else ""),
-                            style = MaterialTheme.typography.bodySmall, color = TextMid,
-                            maxLines = 1,
-                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Icon(
-                            Icons.Default.Close, t("Odebrat z fronty"),
-                            Modifier
-                                .size(26.dp)
-                                .clip(RoundedCornerShape(50))
-                                .clickable { vm.removeFromQueue(run.id) }
-                                .padding(5.dp),
-                            TextLow
-                        )
-                    }
-                }
-            }
-        }
         }
     }
 }
@@ -855,7 +822,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     items = T2iModel.entries.toList(),
                     selected = model,
                     label = { t(it.stitek) },
-                    onSelect = { m -> vm.update { it.copy(zimageModel = m.id) } }
+                    onSelect = { m -> vm.update { it.copy(zimageModel = m.id) } },
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(

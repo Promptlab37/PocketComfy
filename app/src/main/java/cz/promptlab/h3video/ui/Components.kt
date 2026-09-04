@@ -25,6 +25,19 @@ import androidx.compose.foundation.layout.ColumnScope
 import cz.promptlab.h3video.ui.theme.TextHi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PlaylistPlay
+import androidx.compose.runtime.saveable.rememberSaveable
+import cz.promptlab.h3video.ui.theme.Cyan
+import androidx.compose.foundation.layout.Spacer
+import cz.promptlab.h3video.data.t
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -153,7 +166,17 @@ fun SkladaciSekce(
     }
 }
 
-/** Vodorovná řada přepínacích „pilulek". */
+/**
+ * Řada přepínacích „pilulek" s náznakem, že pokračuje za okrajem.
+ *
+ * Vodorovné rolování samo o sobě nikdo nepozná: na kartě Obrázek kvůli tomu
+ * tři z pěti modelů vypadaly, že v appce vůbec nejsou. Proto se u okraje,
+ * kde je ještě něco schované, vykreslí stín a šipka — a jakmile se doroluje
+ * na konec, zmizí. Platí to pro VŠECHNY řady v appce naráz.
+ *
+ * @param pozadi barva, do které stín přechází. Výchozí je pozadí karty;
+ *   na jiném podkladu se předá jeho barva, aby stín nebyl vidět jako obdélník.
+ */
 @Composable
 fun <T> PillRow(
     items: List<T>,
@@ -161,15 +184,141 @@ fun <T> PillRow(
     label: (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
+    pozadi: Color = Surface1,
 ) {
-    Row(
+    val stav = rememberScrollState()
+    Box(modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .horizontalScroll(stav),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items.forEach { item ->
+                Pill(label(item), item == selected) { onSelect(item) }
+            }
+        }
+        OkrajSNaznakem(stav.canScrollBackward, pozadi, doleva = true, Modifier.align(Alignment.CenterStart))
+        OkrajSNaznakem(stav.canScrollForward, pozadi, doleva = false, Modifier.align(Alignment.CenterEnd))
+    }
+}
+
+/** Stín a šipka u okraje řady, když je za ním ještě něco schované. */
+@Composable
+private fun OkrajSNaznakem(
+    videt: Boolean,
+    pozadi: Color,
+    doleva: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(visible = videt, enter = fadeIn(), exit = fadeOut(), modifier = modifier) {
+        Row(
+            Modifier
+                .height(38.dp)
+                .width(34.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        if (doleva) listOf(pozadi, pozadi.copy(alpha = 0f))
+                        else listOf(pozadi.copy(alpha = 0f), pozadi)
+                    )
+                ),
+            horizontalArrangement = if (doleva) Arrangement.Start else Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                if (doleva) Icons.Default.ChevronLeft else Icons.Default.ChevronRight,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = TextMid,
+            )
+        }
+    }
+}
+
+/**
+ * Pruh s frontou běhů — vidět je na hlavní obrazovce i během generování.
+ *
+ * Sbalený ukazuje jen počet, klepnutím se rozbalí celý seznam i s křížky na
+ * odebrání. Dřív byla fronta až úplně dole pod tlačítkem a během generování ji
+ * překryla obrazovka průběhu — tedy zrovna ve chvíli, kdy člověka zajímá.
+ *
+ * @param prvni popis běhu, který zrovna běží. Když je, ukáže se nad frontou,
+ *   aby bylo vidět celé pořadí, ne jen to, co čeká.
+ */
+@Composable
+fun FrontaPruh(
+    fronta: List<cz.promptlab.h3video.engine.QueuedRun>,
+    onRemove: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    prvni: String? = null,
+) {
+    if (fronta.isEmpty() && prvni == null) return
+    var rozbaleno by rememberSaveable { mutableStateOf(false) }
+
+    Column(
         modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Surface1)
+            .border(1.dp, Outline1, RoundedCornerShape(14.dp))
     ) {
-        items.forEach { item ->
-            Pill(label(item), item == selected) { onSelect(item) }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable { rozbaleno = !rozbaleno }
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Default.PlaylistPlay, null, Modifier.size(20.dp), Cyan)
+            Spacer(Modifier.width(10.dp))
+            Text(
+                if (fronta.isEmpty()) t("Právě běží")
+                else t("Ve frontě čeká %d").format(fronta.size),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                if (rozbaleno) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                if (rozbaleno) t("Sbalit") else t("Zobrazit frontu"),
+                Modifier.size(22.dp), TextMid,
+            )
+        }
+        AnimatedVisibility(rozbaleno) {
+            Column(Modifier.padding(start = 12.dp, end = 6.dp, bottom = 10.dp)) {
+                prvni?.let {
+                    Text(
+                        t("Běží: %s").format(it),
+                        style = MaterialTheme.typography.bodySmall, color = Cyan,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(bottom = 4.dp, end = 6.dp),
+                    )
+                }
+                fronta.forEachIndexed { i, run ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "${i + 1}. ${run.title}" +
+                                (if (run.prompt.isNotBlank()) " · ${run.prompt.take(38)}" else ""),
+                            style = MaterialTheme.typography.bodySmall, color = TextMid,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            Icons.Default.Close, t("Odebrat z fronty"),
+                            Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(50))
+                                .clickable { onRemove(run.id) }
+                                .padding(6.dp),
+                            TextLow
+                        )
+                    }
+                }
+            }
         }
     }
 }
