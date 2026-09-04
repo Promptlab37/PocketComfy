@@ -13,7 +13,8 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 data class UpdateInfo(
-    val versionCode: Int,
+    /** Značka vydání, jak je na GitHubu. Slouží i k pojmenování staženého souboru. */
+    val znacka: String,
     val versionName: String,
     val notes: String,
     /** Adresa assetu v GitHub API, ne veřejný odkaz – privátní repo jinak nepustí. */
@@ -27,7 +28,7 @@ data class UpdateInfo(
  * – limit GitHubu (60 dotazů za hodinu na IP adresu) jedna kontrola denně ani
  * nenačne a APK se stahuje přes `browser_download_url`, který limit nemá.
  *
- * Číslo verze se bere ze značky vydání ve tvaru `v<versionCode>` (např. `v3`).
+ * Verze se bere ze značky vydání, viz [jeNovejsiVydani].
  */
 object UpdateChecker {
 
@@ -48,6 +49,36 @@ object UpdateChecker {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode.toInt()
         else @Suppress("DEPRECATION") info.versionCode
     }.getOrDefault(0)
+
+    /**
+     * Je vydání se značkou [znacka] novější než nainstalovaná aplikace?
+     *
+     * Snese oba tvary, které se v repozitáři objevily:
+     *  - `v131` — přímo číslo sestavení, porovná se s [kodTed];
+     *  - `v3.19` — jméno verze, porovná se po částech s [jmenoTed].
+     *
+     * Dřív se ze značky brávalo jen to, co je před tečkou. Ze značky `v3.19`
+     * tak vyšlo „3", což je proti sestavení 129 méně — a aplikace mlčky
+     * hlásila, že je aktuální, i když vydání bylo nové. Neznámý tvar proto
+     * teď raději spadne s hláškou, než aby se tvářil, že není co stahovat.
+     */
+    fun jeNovejsiVydani(znacka: String, kodTed: Int, jmenoTed: String): Boolean {
+        val cislo = znacka.trimStart('v', 'V').trim()
+        val casti = cislo.split('.')
+        if (casti.any { it.toIntOrNull() == null }) throw IllegalStateException(
+            "Vydání „$znacka\" nemá čitelné číslo verze"
+        )
+        if (casti.size == 1) return casti[0].toInt() > kodTed
+
+        val ted = jmenoTed.trim().split('.').map { it.toIntOrNull() ?: 0 }
+        val nove = casti.map { it.toInt() }
+        for (i in 0 until maxOf(ted.size, nove.size)) {
+            val a = nove.getOrElse(i) { 0 }
+            val b = ted.getOrElse(i) { 0 }
+            if (a != b) return a > b
+        }
+        return false
+    }
 
     fun currentVersionName(ctx: Context): String = runCatching {
         ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName ?: "?"
@@ -79,8 +110,7 @@ object UpdateChecker {
 
             val j = JSONObject(r.body!!.string())
             val tag = j.optString("tag_name")
-            val code = tag.trimStart('v', 'V').substringBefore('.').toIntOrNull()
-                ?: throw IllegalStateException("Vydání „$tag\" nemá čitelné číslo verze")
+            val novejsi = jeNovejsiVydani(tag, currentVersionCode(ctx), currentVersionName(ctx))
 
             val assets = j.optJSONArray("assets")
                 ?: throw IllegalStateException("Vydání neobsahuje soubor APK")
@@ -96,9 +126,9 @@ object UpdateChecker {
             }
             if (url.isNullOrBlank()) throw IllegalStateException("Vydání neobsahuje soubor APK")
 
-            if (code <= currentVersionCode(ctx)) return null
+            if (!novejsi) return null
             return UpdateInfo(
-                versionCode = code,
+                znacka = tag,
                 versionName = j.optString("name").ifBlank { tag },
                 notes = j.optString("body").trim(),
                 assetUrl = url,
@@ -132,7 +162,8 @@ object UpdateChecker {
 
         response.use { r ->
             if (!r.isSuccessful) throw IllegalStateException("Stažení selhalo (${r.code})")
-            val target = File(ctx.cacheDir, "update-${info.versionCode}.apk")
+            val nazev = info.znacka.filter { it.isLetterOrDigit() || it == '.' }
+            val target = File(ctx.cacheDir, "update-$nazev.apk")
             val tmp = File(ctx.cacheDir, target.name + ".part")
             val total = if (info.sizeBytes > 0) info.sizeBytes else r.body!!.contentLength()
             r.body!!.byteStream().use { input ->
