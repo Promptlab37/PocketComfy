@@ -57,6 +57,14 @@ data class GenParams(
     /** Která LoRA se přimíchá — na serveru jich je víc (zimage_*). */
     val zimageNsfwLora: String = "zimage_nsfw_v1.safetensors",
     /**
+     * Druhá LoRA, nepovinná (prázdné = žádná). Jedna LoRA umí jednu věc:
+     * anatomii, nebo kůži, nebo styl. Řetěz dvou je nejmenší způsob, jak je
+     * spojit — víc jich už model rozhodí.
+     */
+    val zimageNsfwLora2: String = "",
+    /** Síla druhé LoRA. */
+    val zimageNsfwSila2: Float = 1f,
+    /**
      * Smí vylepšovač promptu přidat podkresovou hudbu? Ve svém formátu ji
      * vyplňuje vždycky, i bez vyzvání — proto se ve výchozím stavu vyhazuje.
      */

@@ -40,6 +40,3 @@ keystore/
 *.ckpt
 *.pt
 *.bin
-
-# Screenshoty do README jsou soucasti repa
-!docs/screenshoty/*.png

@@ -284,6 +284,8 @@ class AppSettings(ctx: Context) {
             zimageNsfwSila = sp.getFloat("zimageNsfwSila", defaults.zimageNsfwSila),
             zimageModel = sp.getString("zimageModel", defaults.zimageModel)!!,
             zimageNsfwLora = sp.getString("zimageNsfwLora", defaults.zimageNsfwLora)!!,
+            zimageNsfwLora2 = sp.getString("zimageNsfwLora2", defaults.zimageNsfwLora2)!!,
+            zimageNsfwSila2 = sp.getFloat("zimageNsfwSila2", defaults.zimageNsfwSila2),
             rewriteHudba = sp.getBoolean("rewriteHudba", defaults.rewriteHudba),
             extraLoras = extraLoras,
             // Enkodér patří k profilu, ne k uloženému nastavení – jinak by po
@@ -322,6 +324,8 @@ class AppSettings(ctx: Context) {
             putFloat("zimageNsfwSila", p.zimageNsfwSila)
             putString("zimageModel", p.zimageModel)
             putString("zimageNsfwLora", p.zimageNsfwLora)
+            putString("zimageNsfwLora2", p.zimageNsfwLora2)
+            putFloat("zimageNsfwSila2", p.zimageNsfwSila2)
             putBoolean("rewriteHudba", p.rewriteHudba)
         }.apply()
         extraLoras = p.extraLoras

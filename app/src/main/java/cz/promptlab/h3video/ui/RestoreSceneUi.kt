@@ -20,6 +20,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
+import cz.promptlab.h3video.ui.theme.Amber
+import cz.promptlab.h3video.ui.theme.TextLow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -35,9 +43,14 @@ import cz.promptlab.h3video.ui.theme.Surface2
 import cz.promptlab.h3video.ui.theme.TextMid
 
 /**
- * Karta **Oprava fotky** — nejjednodušší karta v appce: fotka a tlačítko.
- * Opravovací zadání je vyladěné v předloze (škrábance, kolorizace,
- * doostření, opravy potrhaných okrajů), není tu co nastavovat.
+ * Karta **Oprava fotky**. Ve výchozím stavu je to fotka a tlačítko —
+ * opravovací zadání je vyladěné v předloze (škrábance, kolorizace,
+ * doostření, potrhané okraje).
+ *
+ * Pod tím je nepovinné vlastní zadání a cílená LoRA, pro případ, kdy nejde
+ * o starou fotku, ale o opravu konkrétního kusu hotového obrázku. Vlastní
+ * zadání předlohové NAHRAZUJE: v tom předlohovém stojí „no shape
+ * deformation", takže by cílenou opravu tvaru rovnou popřelo.
  */
 @Composable
 fun RestoreSection(vm: MainViewModel) {
@@ -86,6 +99,52 @@ fun RestoreSection(vm: MainViewModel) {
                     Icons.Default.AddPhotoAlternate, "Vybrat fotku",
                     Modifier.align(Alignment.Center).size(34.dp), TextMid
                 )
+            }
+        }
+    }
+
+    val loras by vm.restoreLoras.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { vm.refreshRestoreLoras() }
+
+    SectionCard(
+        title = t("Cílená oprava"),
+        subtitle = t("Nepovinné. Prázdné = obecná záchrana staré fotky jako dosud")
+    ) {
+        Column {
+            DarkTextField(
+                value = scene.pokyn,
+                onValueChange = { v -> vm.updateRestore { it.copy(pokyn = v) } },
+                placeholder = t("Co se má opravit — anglicky, model je na ni trénovaný"),
+                minHeight = 92.dp,
+                onClear = { vm.updateRestore { it.copy(pokyn = "") } },
+            )
+            if (scene.pokyn.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    t("Vlastní zadání nahradí opravovací zadání předlohy."),
+                    style = MaterialTheme.typography.bodySmall, color = Amber
+                )
+            }
+
+            if (loras.isNotEmpty()) {
+                Spacer(Modifier.height(12.dp))
+                LoraSeznam(
+                    nadpis = t("Cílená LoRA (nepovinná)"),
+                    seznam = loras,
+                    vybrana = scene.lora,
+                    prazdna = t("Žádná"),
+                    onVybrat = { lora -> vm.updateRestore { it.copy(lora = lora) } },
+                )
+                if (scene.lora.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    SilaLory(scene.loraSila) { v ->
+                        vm.updateRestore { it.copy(loraSila = v) }
+                    }
+                    Text(
+                        t("Řadí se za tři LoRA předlohy. Některé chtějí v zadání spouštěcí slovo."),
+                        style = MaterialTheme.typography.bodySmall, color = TextLow
+                    )
+                }
             }
         }
     }

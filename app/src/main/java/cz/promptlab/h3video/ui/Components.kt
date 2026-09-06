@@ -38,6 +38,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import cz.promptlab.h3video.ui.theme.Cyan
 import androidx.compose.foundation.layout.Spacer
 import cz.promptlab.h3video.data.t
+import androidx.compose.material3.Slider
+import kotlin.math.roundToInt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -320,6 +322,71 @@ fun FrontaPruh(
                 }
             }
         }
+    }
+}
+
+/**
+ * Výběr jedné LoRA ze seznamu, který přišel ze serveru.
+ *
+ * Používají ho karty Obrázek i Oprava, ať se vybírá všude stejně. S [prazdna]
+ * je první položkou „žádná" — to je pro nepovinné LoRA jediný způsob, jak se
+ * dá volba zase zrušit.
+ *
+ * @param orez předpona, která je ve všech názvech stejná, a v seznamu tedy
+ *   jen překáží (třeba `zimage_`).
+ */
+@Composable
+fun LoraSeznam(
+    nadpis: String,
+    seznam: List<String>,
+    vybrana: String,
+    onVybrat: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    prazdna: String? = null,
+    orez: String = "",
+) {
+    if (seznam.isEmpty()) return
+    Column(modifier) {
+        Text(nadpis, style = MaterialTheme.typography.labelMedium, color = TextLow)
+        Spacer(Modifier.height(6.dp))
+        val polozky = (if (prazdna != null) listOf("") else emptyList()) + seznam
+        polozky.forEach { lora ->
+            val jeVybrana = vybrana == lora
+            Text(
+                if (lora.isEmpty()) prazdna!!
+                else lora.removeSuffix(".safetensors").removePrefix(orez),
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (jeVybrana) Cyan else TextMid,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(if (jeVybrana) Cyan.copy(alpha = .12f) else Color.Transparent)
+                    .clickable { onVybrat(lora) }
+                    .padding(horizontal = 10.dp, vertical = 7.dp)
+            )
+        }
+    }
+}
+
+/**
+ * Posuvník síly LoRA. Rozsah i krok jsou všude stejné, ať se to nechová
+ * pokaždé jinak.
+ */
+@Composable
+fun SilaLory(hodnota: Float, popisek: String = "Síla", onZmena: (Float) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(t(popisek), style = MaterialTheme.typography.labelMedium, color = TextLow)
+        Slider(
+            value = hodnota,
+            onValueChange = { v -> onZmena((v * 20).roundToInt() / 20f) },
+            valueRange = 0.5f..1.2f,
+            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+            colors = sliderColors()
+        )
+        Text(
+            "%.2f".format(hodnota),
+            style = MaterialTheme.typography.labelMedium, color = TextMid
+        )
     }
 }
 

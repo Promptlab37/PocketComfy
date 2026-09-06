@@ -17,6 +17,19 @@ import java.io.File
 data class RestoreScene(
     val source: File? = null,
     val thumb: Bitmap? = null,
+    /**
+     * Co se má opravit. Prázdné = pevné zadání předlohy, tedy obecná záchrana
+     * staré fotky. Vyplněné zadání předlohu NAHRADÍ — nedá se skládat, protože
+     * v ní stojí „no shape deformation", což je pravý opak cílené opravy.
+     */
+    val pokyn: String = "",
+    /**
+     * Cílená LoRA nad rámec předlohy (prázdné = žádná). Předloha už tři LoRA
+     * řetězí (Lightning, upscale, realismus), tahle se přivěsí na konec.
+     */
+    val lora: String = "",
+    /** Síla cílené LoRA. */
+    val loraSila: Float = 1f,
 ) {
     val uploadImages: List<File> get() = listOfNotNull(source)
 }
@@ -33,14 +46,29 @@ class RestoreStore(private val ctx: Context) {
     private val sp = ctx.getSharedPreferences("h3video", Context.MODE_PRIVATE)
 
     fun load(): RestoreScene {
-        val name = sp.getString(KEY, null) ?: return RestoreScene()
+        val zaklad = RestoreScene(
+            pokyn = sp.getString(KEY_POKYN, "") ?: "",
+            lora = sp.getString(KEY_LORA, "") ?: "",
+            loraSila = sp.getFloat(KEY_SILA, 1f),
+        )
+        val name = sp.getString(KEY, null) ?: return zaklad
         val f = File(dir(), name)
-        return if (f.exists() && f.length() > 0) RestoreScene(source = f) else RestoreScene()
+        return if (f.exists() && f.length() > 0) zaklad.copy(source = f) else zaklad
     }
 
     fun save(s: RestoreScene) {
-        sp.edit().putString(KEY, s.source?.name).apply()
+        sp.edit()
+            .putString(KEY, s.source?.name)
+            .putString(KEY_POKYN, s.pokyn)
+            .putString(KEY_LORA, s.lora)
+            .putFloat(KEY_SILA, s.loraSila)
+            .apply()
     }
 
-    private companion object { const val KEY = "restoreScene" }
+    private companion object {
+        const val KEY = "restoreScene"
+        const val KEY_POKYN = "restorePokyn"
+        const val KEY_LORA = "restoreLora"
+        const val KEY_SILA = "restoreLoraSila"
+    }
 }

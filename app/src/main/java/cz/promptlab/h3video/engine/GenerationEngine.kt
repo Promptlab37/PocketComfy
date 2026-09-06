@@ -690,6 +690,8 @@ object GenerationEngine {
                     nsfwSila = effective.zimageNsfwSila,
                     model = effective.zimageModel,
                     loraFile = effective.zimageNsfwLora,
+                    loraFile2 = effective.zimageNsfwLora2,
+                    nsfwSila2 = effective.zimageNsfwSila2,
                 )
 
             // Hudba jede na uživatelově ACE-Step 1.5 workflow z APK.
@@ -698,7 +700,12 @@ object GenerationEngine {
 
             // Oprava fotky jede na uživatelově Qwen 2511 workflow z APK.
             restoreScene != null ->
-                RestoreBuilder.build(app, seed, names)
+                RestoreBuilder.build(
+                    app, seed, names,
+                    pokyn = restoreScene.pokyn,
+                    lora = restoreScene.lora,
+                    loraSila = restoreScene.loraSila,
+                )
 
             // Výměna tváře jede na uživatelově ACE++ workflow z APK.
             swapScene != null ->
