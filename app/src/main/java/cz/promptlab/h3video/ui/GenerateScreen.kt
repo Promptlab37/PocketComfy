@@ -853,30 +853,24 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                         // Výběr LoRA — vše se „zimage/zit" v názvu na serveru.
                         // Nová stažená LoRA se tu objeví sama.
                         if (loras.size > 1) {
-                            Text(
-                                t("Která LoRA"),
-                                style = MaterialTheme.typography.labelMedium, color = TextLow
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            loras.forEach { lora ->
-                                val vybrana = params.zimageNsfwLora == lora
-                                Text(
-                                    lora.removeSuffix(".safetensors").removePrefix("zimage_"),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = if (vybrana) Cyan else TextMid,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .background(
-                                            if (vybrana) Cyan.copy(alpha = .12f)
-                                            else Color.Transparent
+                            LoraSeznam(
+                                nadpis = t("Která LoRA"),
+                                seznam = loras,
+                                vybrana = params.zimageNsfwLora,
+                                orez = "zimage_",
+                                onVybrat = { lora ->
+                                    vm.update {
+                                        // Kdyby druhá byla táž, řetěz by ji
+                                        // stejně přeskočil — radši zmizí.
+                                        it.copy(
+                                            zimageNsfwLora = lora,
+                                            zimageNsfwLora2 =
+                                                if (it.zimageNsfwLora2 == lora) ""
+                                                else it.zimageNsfwLora2,
                                         )
-                                        .clickable {
-                                            vm.update { it.copy(zimageNsfwLora = lora) }
-                                        }
-                                        .padding(horizontal = 10.dp, vertical = 7.dp)
-                                )
-                            }
+                                    }
+                                },
+                            )
                             zimageTriggerHint(params.zimageNsfwLora)?.let { hint ->
                                 Spacer(Modifier.height(4.dp))
                                 Text(
@@ -886,29 +880,46 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                             }
                             Spacer(Modifier.height(8.dp))
                         }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                t("Síla"),
-                                style = MaterialTheme.typography.labelMedium, color = TextLow
-                            )
-                            Slider(
-                                value = params.zimageNsfwSila,
-                                onValueChange = { v ->
-                                    vm.update { it.copy(zimageNsfwSila = (v * 20).roundToInt() / 20f) }
-                                },
-                                valueRange = 0.5f..1.2f,
-                                modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                                colors = sliderColors()
-                            )
-                            Text(
-                                "%.2f".format(params.zimageNsfwSila),
-                                style = MaterialTheme.typography.labelMedium, color = TextMid
-                            )
+                        SilaLory(params.zimageNsfwSila) { v ->
+                            vm.update { it.copy(zimageNsfwSila = v) }
                         }
                         Text(
                             t("1.00 = jak byla trénovaná; kolem 0.75 jemnější výsledky."),
                             style = MaterialTheme.typography.bodySmall, color = TextLow
                         )
+
+                        // Druhá LoRA. Jedna umí jednu věc — anatomii, nebo
+                        // kůži, nebo styl. Tohle je způsob, jak spojit dvě.
+                        if (loras.size > 1) {
+                            Spacer(Modifier.height(12.dp))
+                            LoraSeznam(
+                                nadpis = t("Druhá LoRA (nepovinná)"),
+                                seznam = loras.filter { it != params.zimageNsfwLora },
+                                vybrana = params.zimageNsfwLora2,
+                                prazdna = t("Žádná"),
+                                orez = "zimage_",
+                                onVybrat = { lora ->
+                                    vm.update { it.copy(zimageNsfwLora2 = lora) }
+                                },
+                            )
+                            if (params.zimageNsfwLora2.isNotBlank()) {
+                                zimageTriggerHint(params.zimageNsfwLora2)?.let { hint ->
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        hint,
+                                        style = MaterialTheme.typography.bodySmall, color = Amber
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
+                                SilaLory(params.zimageNsfwSila2) { v ->
+                                    vm.update { it.copy(zimageNsfwSila2 = v) }
+                                }
+                                Text(
+                                    t("Dvě LoRA na plné síle se často perou — druhou zkus níž."),
+                                    style = MaterialTheme.typography.bodySmall, color = TextLow
+                                )
+                            }
+                        }
                     }
                 }
             }

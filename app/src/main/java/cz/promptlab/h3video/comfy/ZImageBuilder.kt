@@ -96,6 +96,13 @@ object ZImageBuilder {
 
     /** Odvázaná LoRA: uzel se do grafu vkládá jen se zapnutým přepínačem. */
     const val N_NSFW_LORA = "90"
+
+    /**
+     * Druhá LoRA, nepovinná. Model jimi projde za sebou (90 → 91), takže jde
+     * spojit třeba anatomii s kůží — na to jedna LoRA nestačí a míchat je
+     * v jednom uzlu nejde, `LoraLoaderModelOnly` bere právě jednu.
+     */
+    const val N_NSFW_LORA2 = "91"
     const val NSFW_LORA_FILE = "zimage_nsfw_v1.safetensors"
 
     /**
@@ -175,9 +182,10 @@ object ZImageBuilder {
         ctx: Context, prompt: String, aspect: Aspect, seed: Long,
         nsfwLora: Boolean = false, nsfwSila: Float = 1f, model: String = "",
         loraFile: String = NSFW_LORA_FILE,
+        loraFile2: String = "", nsfwSila2: Float = 1f,
     ): JSONObject = build(
         template(ctx, T2iModel.zId(model)),
-        prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile,
+        prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile, loraFile2, nsfwSila2,
     )
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
@@ -185,12 +193,13 @@ object ZImageBuilder {
         template: String, prompt: String, aspect: Aspect, seed: Long,
         nsfwLora: Boolean = false, nsfwSila: Float = 1f, model: String = "",
         loraFile: String = NSFW_LORA_FILE,
+        loraFile2: String = "", nsfwSila2: Float = 1f,
     ): JSONObject {
         val m = T2iModel.zId(model)
         val wf = JSONObject(template)
         val (w, h) = sizeFor(aspect)
         return if (m.zRodinyZImage) {
-            buildZImage(wf, m, prompt, w, h, seed, nsfwLora, nsfwSila, loraFile)
+            buildZImage(wf, m, prompt, w, h, seed, nsfwLora, nsfwSila, loraFile, loraFile2, nsfwSila2)
         } else {
             buildFlux2(wf, m, prompt, w, h, seed)
         }
@@ -200,6 +209,7 @@ object ZImageBuilder {
     private fun buildZImage(
         wf: JSONObject, m: T2iModel, prompt: String, w: Int, h: Int, seed: Long,
         nsfwLora: Boolean, nsfwSila: Float, loraFile: String,
+        loraFile2: String = "", nsfwSila2: Float = 1f,
     ): JSONObject {
         when (m) {
             // GGUF potřebuje jiný loader — UNETLoader umí jen safetensors.
@@ -231,20 +241,30 @@ object ZImageBuilder {
         // Odvázaný režim: LoraLoaderModelOnly mezi UNETLoader a sigma shift.
         // Se zhasnutým přepínačem se graf šablony nemění ani o bajt.
         if (nsfwLora) {
-            wf.put(
-                N_NSFW_LORA,
-                JSONObject()
-                    .put("class_type", "LoraLoaderModelOnly")
-                    .put(
-                        "inputs",
-                        JSONObject()
-                            .put("model", org.json.JSONArray().put(N_UNET).put(0))
-                            .put("lora_name", loraFile)
-                            .put("strength_model", nsfwSila.toDouble()),
-                    )
-                    .put("_meta", JSONObject().put("title", "Odvázaná LoRA")),
+            fun uzel(id: String, zdroj: String, soubor: String, sila: Float, titulek: String) {
+                wf.put(
+                    id,
+                    JSONObject()
+                        .put("class_type", "LoraLoaderModelOnly")
+                        .put(
+                            "inputs",
+                            JSONObject()
+                                .put("model", org.json.JSONArray().put(zdroj).put(0))
+                                .put("lora_name", soubor)
+                                .put("strength_model", sila.toDouble()),
+                        )
+                        .put("_meta", JSONObject().put("title", titulek)),
+                )
+            }
+            uzel(N_NSFW_LORA, N_UNET, loraFile, nsfwSila, "Odvázaná LoRA")
+            // Druhá LoRA visí za první, ne vedle ní — model prochází řetězem.
+            // Stejná LoRA dvakrát by jen zdvojila sílu, proto se přeskočí.
+            val druha = loraFile2.isNotBlank() && loraFile2 != loraFile
+            if (druha) uzel(N_NSFW_LORA2, N_NSFW_LORA, loraFile2, nsfwSila2, "Druhá LoRA")
+            wf.inputs(N_SHIFT).put(
+                "model",
+                org.json.JSONArray().put(if (druha) N_NSFW_LORA2 else N_NSFW_LORA).put(0),
             )
-            wf.inputs(N_SHIFT).put("model", org.json.JSONArray().put(N_NSFW_LORA).put(0))
         }
         return wf
     }

@@ -229,6 +229,19 @@ object Slovnik {
         "Přimíchá odvázanou LoRA — model pak nic neodmítá" to
             "Mixes in an uncensored LoRA — the model then refuses nothing",
         "Která LoRA" to "Which LoRA",
+        "Druhá LoRA (nepovinná)" to "Second LoRA (optional)",
+        "Dvě LoRA na plné síle se často perou — druhou zkus níž." to
+            "Two LoRAs at full strength often fight each other — try the second one lower.",
+        "Cílená oprava" to "Targeted fix",
+        "Nepovinné. Prázdné = obecná záchrana staré fotky jako dosud" to
+            "Optional. Leave empty for the usual old-photo rescue.",
+        "Co se má opravit — anglicky, model je na ni trénovaný" to
+            "What to fix — in English, that is what the model was trained on",
+        "Vlastní zadání nahradí opravovací zadání předlohy." to
+            "Your own instruction replaces the template's restoration one.",
+        "Cílená LoRA (nepovinná)" to "Targeted LoRA (optional)",
+        "Řadí se za tři LoRA předlohy. Některé chtějí v zadání spouštěcí slovo." to
+            "It chains after the template's three LoRAs. Some need a trigger word in the instruction.",
         "Síla" to "Strength",
         "1.00 = jak byla trénovaná; kolem 0.75 jemnější výsledky." to
             "1.00 = as trained; around 0.75 gives subtler results.",

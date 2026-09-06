@@ -2418,6 +2418,54 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private val _restoreLoras = MutableStateFlow<List<String>>(emptyList())
+    val restoreLoras: StateFlow<List<String>> = _restoreLoras.asStateFlow()
+
+    /**
+     * LoRA použitelné na kartě Oprava. Filtr pouští jen ty pro Qwen Image
+     * **Edit** — obyčejné qwenovské LoRA na text→obrázek na editační váhy
+     * nepasují. Co si předloha načítá sama (Lightning, upscale, realismus),
+     * se ze seznamu vyhazuje, aby nešlo vybrat totéž dvakrát.
+     */
+    fun refreshRestoreLoras() {
+        if (_restoreLoras.value.isNotEmpty()) return
+        viewModelScope.launch {
+            val nalezene = withContext(Dispatchers.IO) {
+                runCatching {
+                    val vlastni = cz.promptlab.h3video.comfy.RestoreBuilder.loraVRetezu(
+                        org.json.JSONObject(
+                            getApplication<android.app.Application>().resources
+                                .openRawResource(cz.promptlab.h3video.R.raw.workflow_qwen_restore)
+                                .bufferedReader().use { it.readText() }
+                        )
+                    )
+                    ComfyClient(settings.serverUrl).loraNames().filter { n ->
+                        n.contains("qwen", ignoreCase = true) &&
+                            (n.contains("edit", ignoreCase = true) ||
+                                n.contains("2511") || n.contains("2512")) &&
+                            n !in vlastni && !jeZrychlovaci(n)
+                    }
+                }.getOrDefault(emptyList())
+            }
+            if (nalezene.isNotEmpty()) _restoreLoras.value = nalezene.sorted()
+        }
+    }
+
+    /**
+     * Zrychlovací LoRA (Lightning, Turbo, „4steps"). Do nabídky nepatří:
+     * předloha už jednu takovou načítá a běží na čtyři kroky, takže druhá
+     * by kvalitu jen srazila. Karta nemá ukazovat volby, které si škodí.
+     */
+    private fun jeZrychlovaci(n: String): Boolean =
+        listOf("lightning", "turbo", "4steps", "8steps", "lightx2v")
+            .any { n.contains(it, ignoreCase = true) }
+
+    /** Změna nastavení karty Oprava (zadání, LoRA, síla). */
+    fun updateRestore(zmena: (RestoreScene) -> RestoreScene) {
+        _restore.value = zmena(_restore.value)
+        restoreStore.save(_restore.value)
+    }
+
     /** Fotka k opravě se kopíruje bajt po bajtu — kvalita je tu všechno. */
     fun pickRestoreImage(uri: Uri?) {
         if (uri == null) return
@@ -2448,14 +2496,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }.getOrNull()
             } ?: return@launch
             val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(vysledek) }
-            _restore.value = RestoreScene(source = vysledek, thumb = thumb)
+            // `copy`, ne nová scéna: zadání a LoRA má výběr fotky nechat být.
+            _restore.value = _restore.value.copy(source = vysledek, thumb = thumb)
             restoreStore.save(_restore.value)
         }
     }
 
     fun clearRestoreImage() {
         runCatching { restoreStore.dir().listFiles()?.forEach { it.delete() } }
-        _restore.value = RestoreScene()
+        _restore.value = _restore.value.copy(source = null, thumb = null)
         restoreStore.save(_restore.value)
     }
 
