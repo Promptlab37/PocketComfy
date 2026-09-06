@@ -3,6 +3,7 @@ package cz.promptlab.h3video.comfy
 import android.content.Context
 import cz.promptlab.h3video.R
 import cz.promptlab.h3video.data.Model3dKvalita
+import cz.promptlab.h3video.data.Model3dMotor
 import cz.promptlab.h3video.data.Model3dScene
 import org.json.JSONArray
 import org.json.JSONObject
@@ -62,6 +63,29 @@ object Trellis2Builder {
     const val N_UKLID_SIT = "500"
     const val N_UKLID_PECENI = "501"
 
+    /**
+     * Úklid před převodem tvaru na síť. Tohle je paměťový vrchol celého běhu
+     * a právě tady padalo rozlišení tvaru 1536 z ukázkové šablony. Po úklidu
+     * jde nabídnout i ono.
+     */
+    const val N_UKLID_TVAR = "502"
+
+    /** Převod tvaru na síť — paměťový vrchol běhu. */
+    const val N_DECODE_SHAPE = "92"
+
+    /** Zadání z fotky a tvarová fáze — přepojují se u větve Pixal3D. */
+    const val N_COND = "299"
+    const val N_SHAPE_STAGE = "91"
+
+    /** Uzly větve Pixal3D. V grafu vzniknou, jen když se ta větev vybere. */
+    const val N_MOGE_MODEL = "600"
+    const val N_MOGE = "601"
+    const val N_FOV = "602"
+    const val N_PIXAL_COND = "603"
+
+    /** Odhad geometrie fotky pro Pixal3D. */
+    const val MOGE_MODEL_FILE = "moge_2_vitl_normal_fp16.safetensors"
+
     /** Třída toho uzlu. Když ji server nezná, graf se staví bez úklidu. */
     const val TRIDA_UKLIDU = "VRAMCleanup"
     const val N_MESHINFO = "202"
@@ -113,6 +137,7 @@ object Trellis2Builder {
         // části na procesoru, takže je to ta část, kterou rychlejší grafika
         // nezkrátí. Předloha ComfyUI má všude hodnoty NAD výchozími hodnotami
         // uzlů — proto si úroveň volí uživatel a nevnucuje se mu ukázková.
+        if (scene.motor == Model3dMotor.PIXAL3D) vlozPixal3d(wf)
         if (uklidVram) vlozUklid(wf)
         wf.inputs(N_REMESH).put("resolution", scene.kvalita.remesh)
         wf.inputs(N_REMESH).put("smooth_iters", scene.kvalita.vyhlazeni)
@@ -134,6 +159,93 @@ object Trellis2Builder {
      * samostatná, dlouhá část — proto nespadá pod „ukládám", ale pod skládání.
      */
     /**
+     * Přepne graf na větev **Pixal3D** téže ukázkové šablony.
+     *
+     * Rozdíl proti TRELLIS.2 není v nastavení, ale v tom, co model o fotce ví.
+     * `Trellis2Conditioning` z ní udělá jediný otisk. `Pixal3DConditioning`
+     * k tomu přidá podrobnosti z celé plochy fotky a **úhel záběru
+     * objektivu**, který se odhadne z fotky samotné (MoGe) — model tak ví,
+     * jak je předmět vůči kameře postavený, ne jen jak vypadá.
+     *
+     * Mění se proto i model a textový enkodér: Pixal3D má vlastní váhy
+     * a chce CLIP vision s NAF modulem, který obyčejný DINOv3 nemá. A ořez
+     * kolem předmětu je 1.1 místo 1.0 — tak to mají nápovědy obou uzlů.
+     *
+     * Úhel se čte z **vodorovné** osy; výchozí je u toho uzlu svislá, takže
+     * se to musí říct výslovně, jinak by model dostal jiné číslo, než čeká.
+     */
+    private fun vlozPixal3d(wf: JSONObject) {
+        wf.inputs(N_UNET).put("unet_name", Model3dMotor.PIXAL3D.unet)
+        wf.inputs(N_CLIP_VISION).put("clip_name", Model3dMotor.PIXAL3D.clipVision)
+        wf.inputs(N_CROP).put("pad_factor", Model3dMotor.PIXAL3D.padFactor)
+
+        val obrazek = org.json.JSONArray().put(N_CROP).put(0)
+
+        wf.put(
+            N_MOGE_MODEL,
+            node("LoadMoGeModel", "Odhad geometrie", JSONObject().put("model_name", MOGE_MODEL_FILE)),
+        )
+        wf.put(
+            N_MOGE,
+            node(
+                "MoGeInference", "Geometrie fotky",
+                JSONObject()
+                    .put("moge_model", org.json.JSONArray().put(N_MOGE_MODEL).put(0))
+                    .put("image", obrazek)
+                    // Hodnoty z předlohy; shodou okolností i výchozí uzlu.
+                    .put("resolution_level", 9)
+                    .put("fov_x_degrees", 0.0)
+                    .put("batch_size", 4)
+                    .put("force_projection", true)
+                    .put("apply_mask", true),
+            ),
+        )
+        wf.put(
+            N_FOV,
+            node(
+                "MoGeGeometryToFOV", "Úhel záběru",
+                JSONObject()
+                    .put("moge_geometry", org.json.JSONArray().put(N_MOGE).put(0))
+                    .put("axis", "horizontal")
+                    .put("unit", "degrees"),
+            ),
+        )
+        wf.put(
+            N_PIXAL_COND,
+            node(
+                "Pixal3DConditioning", "Pixal3D zadání",
+                JSONObject()
+                    .put("clip_vision_model", org.json.JSONArray().put(N_CLIP_VISION).put(0))
+                    .put("image", obrazek)
+                    .put("camera_angle_x", org.json.JSONArray().put(N_FOV).put(0)),
+            ),
+        )
+
+        // Přepojí se KAŽDÝ vstup, který na původní zadání ukazuje, i s číslem
+        // výstupu. Vypisovat je jménem by nestačilo: kromě tvarové fáze si ho
+        // bere i strukturní vzorkovač, což je přesně to, co se dá přehlédnout.
+        wf.keys().asSequence().toList().forEach { id ->
+            if (id == N_PIXAL_COND) return@forEach
+            val vstupy = wf.optJSONObject(id)?.optJSONObject("inputs") ?: return@forEach
+            vstupy.keys().asSequence().toList().forEach { klic ->
+                val v = vstupy.opt(klic)
+                if (v is org.json.JSONArray && v.length() == 2 && v.optString(0) == N_COND) {
+                    vstupy.put(klic, org.json.JSONArray().put(N_PIXAL_COND).put(v.optInt(1)))
+                }
+            }
+        }
+
+        // Původní zadání už nikam nevede — pryč s ním, ať graf nemate.
+        wf.remove(N_COND)
+    }
+
+    private fun node(trida: String, titulek: String, vstupy: JSONObject): JSONObject =
+        JSONObject()
+            .put("class_type", trida)
+            .put("inputs", vstupy)
+            .put("_meta", JSONObject().put("title", titulek))
+
+    /**
      * Vloží dva úklidové uzly do cesty grafu. Nejsou to slepá ramena —
      * data jimi protékají, takže ComfyUI musí úklid provést přesně mezi
      * fázemi, ne kdykoli se mu zachce.
@@ -154,6 +266,10 @@ object Trellis2Builder {
                     .put("_meta", JSONObject().put("title", "Uvolnit paměť grafiky")),
             )
         }
+        // Před převodem tvaru na síť: paměťový vrchol celého běhu.
+        uklid(N_UKLID_TVAR, N_KS_UPSAMPLE)
+        wf.inputs(N_DECODE_SHAPE).put("samples", org.json.JSONArray().put(N_UKLID_TVAR).put(0))
+
         // Před síťové fáze: tady běh padal.
         uklid(N_UKLID_SIT, N_MESHINFO)
         wf.inputs(N_REMESH).put("mesh", org.json.JSONArray().put(N_UKLID_SIT).put(0))
@@ -168,6 +284,8 @@ object Trellis2Builder {
         "UNETLoader", "VAELoader", "CLIPVisionLoader", "LoadBackgroundRemovalModel",
         "ModelSamplingSD3", "RescaleCFG", "CFGOverride" -> Stage.MODELS
         "LoadImage", "RemoveBackground", "ImageCropToMask" -> Stage.REFERENCES
+        // Odhad geometrie a zadání větve Pixal3D běží před vzorkováním.
+        "LoadMoGeModel", "MoGeInference", "MoGeGeometryToFOV", "Pixal3DConditioning",
         "Trellis2Conditioning", "EmptyTrellis2LatentStructure", "Trellis2ShapeStage",
         "Trellis2UpsampleStage", "Trellis2TextureStage", "PrimitiveInt" -> Stage.ENCODING
         "KSampler" -> Stage.SAMPLING

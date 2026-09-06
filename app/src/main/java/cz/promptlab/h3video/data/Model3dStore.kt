@@ -23,6 +23,7 @@ class Model3dStore(private val ctx: Context) {
             JSONObject()
                 .put("hasImage", s.source != null)
                 .put("kvalita", s.kvalita.name)
+                .put("motor", s.motor.name)
                 .put("detail", s.detail)
                 .put("textura", s.textura)
                 .toString()
@@ -40,8 +41,13 @@ class Model3dStore(private val ctx: Context) {
                 thumb = f?.let { ImageUtils.loadFileThumb(it) },
                 kvalita = Model3dKvalita.entries
                     .firstOrNull { it.name == root.optString("kvalita") } ?: Model3dKvalita.PBR,
-                detail = root.optInt("detail", 1536)
-                    .takeIf { it in Model3dScene.DETAILY } ?: 1536,
+                motor = Model3dMotor.entries
+                    .firstOrNull { it.name == root.optString("motor") } ?: Model3dMotor.TRELLIS,
+                // Náhrada za nesrozumitelnou hodnotu musí být ta LEHKÁ.
+                // Dřív tu stálo 1536 — hodnota, která tehdy ani nešla vybrat
+                // a dneska je z těch dvou ta náročná na paměť.
+                detail = root.optInt("detail", 1024)
+                    .takeIf { it in Model3dScene.DETAILY } ?: 1024,
                 textura = root.optInt("textura", 2048)
                     .takeIf { it in Model3dScene.TEXTURY } ?: 2048,
             )

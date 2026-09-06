@@ -82,6 +82,30 @@ class Trellis2UklidTest {
     }
 
     @Test
+    fun `uklid stoji i pred prevodem tvaru na sit`() {
+        // Paměťový vrchol celého běhu. Oba dřívější úklidy byly až ZA ním,
+        // takže tomu pádu na 1536 vůbec nepomáhaly.
+        val wf = graf(uklid = true)
+        assertEquals(
+            Trellis2Builder.N_KS_UPSAMPLE,
+            zdroj(wf, Trellis2Builder.N_UKLID_TVAR, "anything"),
+        )
+        assertEquals(
+            Trellis2Builder.N_UKLID_TVAR,
+            zdroj(wf, Trellis2Builder.N_DECODE_SHAPE, "samples"),
+        )
+    }
+
+    @Test
+    fun `nejvyssi kvalita odpovida ukazkove sablone`() {
+        // Předloha ComfyUI: tvar 1536, textura 4096, remesh 768, 700k ploch.
+        assertTrue(1536 in cz.promptlab.h3video.data.Model3dScene.DETAILY)
+        assertTrue(4096 in cz.promptlab.h3video.data.Model3dScene.TEXTURY)
+        assertEquals(768, cz.promptlab.h3video.data.Model3dKvalita.MAXIMALNI.remesh)
+        assertEquals(700_000, cz.promptlab.h3video.data.Model3dKvalita.MAXIMALNI.plochy)
+    }
+
+    @Test
     fun `uklid neprebiji hodnoty kvality`() {
         val wf = graf(uklid = true)
         assertEquals(

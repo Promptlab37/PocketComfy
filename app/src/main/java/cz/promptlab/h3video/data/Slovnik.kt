@@ -230,6 +230,14 @@ object Slovnik {
             "Mixes in an uncensored LoRA — the model then refuses nothing",
         "Fotka má poměr %s. Ve vybraném ji model roztáhne — klepni sem a srovnej to." to
             "The photo is %s. In the selected one the model will stretch it — tap to fix.",
+        "Čím počítat" to "Engine",
+        "Kromě otisku dostane i podrobnosti z celé plochy fotky a odhadnutý úhel záběru objektivu, takže ví, jak je předmět vůči kameře postavený, ne jen jak vypadá. Náročnější na paměť." to
+            "Besides the fingerprint it also gets detail from the whole photo and an estimated lens field of view, so it knows how the object sits relative to the camera, not just what it looks like. Heavier on memory.",
+        "TRELLIS.2" to "TRELLIS.2",
+        "Fotku shrne do jediného otisku a z něj staví tvar. Rychlejší a osvědčené." to
+            "Boils the photo down to a single fingerprint and builds the shape from it. Faster and proven.",
+        "Hodnota z ukázkové šablony. Je to paměťový vrchol běhu — před ním appka kartu uklidí, ale nech si ji volnou." to
+            "The value from the reference workflow. It is the run's memory peak — the app frees the card first, but keep it free.",
         "Která LoRA" to "Which LoRA",
         "Druhá LoRA (nepovinná)" to "Second LoRA (optional)",
         "Dvě LoRA na plné síle se často perou — druhou zkus níž." to
