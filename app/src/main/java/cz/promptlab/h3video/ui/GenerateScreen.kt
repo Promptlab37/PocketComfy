@@ -473,6 +473,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                         // a ne až na výsledku.
                         val vstupniFotka = if (mode == Mode.ALLINONE) {
                             aioScene.first.thumb
+                                ?: aioScene.keys.firstOrNull { it.thumb != null }?.thumb
                                 ?: aioScene.refs.singleOrNull { it.thumb != null }?.thumb
                         } else null
                         vstupniFotka?.let { fotka ->

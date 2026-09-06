@@ -123,6 +123,29 @@ object ImageUtils {
         } else null
     }.getOrNull()
 
+    /**
+     * Rozměry videa tak, jak se doopravdy zobrazí.
+     *
+     * Telefon točí na výšku tak, že uloží obraz na šířku a přidá k němu
+     * otočení o 90°. Kdo tu značku přehlédne, vezme z portrétového videa
+     * rozměry na šířku — proto se strany při 90 a 270° prohazují.
+     */
+    fun rozmeryVidea(file: File): Pair<Int, Int>? = runCatching {
+        val m = android.media.MediaMetadataRetriever()
+        try {
+            m.setDataSource(file.absolutePath)
+            fun cislo(klic: Int) = m.extractMetadata(klic)?.toIntOrNull() ?: 0
+            val w = cislo(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+            val h = cislo(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+            val otoceni = cislo(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+            if (w <= 0 || h <= 0) null
+            else if (otoceni == 90 || otoceni == 270) h to w
+            else w to h
+        } finally {
+            runCatching { m.release() }
+        }
+    }.getOrNull()
+
     /** Náhled uloženého referenčního souboru – dekóduje se rovnou zmenšený. */
     fun loadFileThumb(file: File): Bitmap? = runCatching {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }

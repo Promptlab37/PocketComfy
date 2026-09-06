@@ -180,6 +180,39 @@ data class AioScene(
     }
 }
 
+/**
+ * Určuje tenhle vstup tvar plátna?
+ *
+ * Plátno videa je vždycky jeden z pevných poměrů. Když se netrefí do vstupu,
+ * který se do videa vkládá doslova, model ho **roztáhne** — na to uživatel
+ * narazil u rozhýbané fotky. Rozlišení má měnit velikost, ne tvar.
+ *
+ * Rozhodují:
+ *  - `first` a `key` — první a klíčové snímky JSOU snímky videa;
+ *  - `source` u prodloužení — navázaný kus musí mít tvar předlohy;
+ *  - `refvideo` — od referenčního videa se tvar výsledku čeká;
+ *  - `ref` jen když je to jediná reference a nic jiného tvar neurčuje.
+ *
+ * Nerozhoduje `last` (poslední snímek se řídí prvním) ani více referencí —
+ * tam by bylo hádání, které z nich má plátno patřit.
+ *
+ * @param druh "first", "last", "key", "ref", "refvideo" nebo "source".
+ */
+fun vstupUrcujePomer(druh: String, scene: AioScene): Boolean {
+    // Kde si plátno určuje šablona sama (zvětšení, přemalování, list postavy),
+    // se nesahá na nic — appka ho tam stejně nedosazuje.
+    if (!ovladaProKartu(Mode.ALLINONE, scene.mode).rozliseni) return false
+    return when (druh) {
+        "first", "key" -> true
+        "refvideo" -> true
+        "source" -> scene.mode == AioMode.EXTEND
+        "ref" -> scene.first.image == null &&
+            scene.refVideo == null &&
+            scene.refs.count { it.image != null } == 1
+        else -> false
+    }
+}
+
 /** Co kartě chybí, než se dá spustit. Hláška pro uživatele, nebo null. */
 fun aioProblem(s: AioScene): String? {
     if (s.mode.needsPrompt && s.prompt.isBlank()) {
