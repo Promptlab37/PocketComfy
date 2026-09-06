@@ -238,6 +238,9 @@ fun TalkSceneSection(vm: MainViewModel) {
                 onValueChange = { vm.setTalkPrompt(it) },
                 placeholder = t("Doplní se, jakmile přidáš fotku a repliku"),
                 minHeight = 170.dp,
+                // Vymazat se smí: složit prompt znovu podle dialogu jde
+                // tlačítkem hned pod polem, takže se o nic nepřijde.
+                onClear = { vm.setTalkPrompt("") },
             )
             if (scene.promptEdited) {
                 Spacer(Modifier.height(8.dp))
@@ -352,6 +355,7 @@ private fun SpeakerRow(
                     placeholder = t("muž v obleku (nepovinné)"),
                     minHeight = 56.dp,
                     singleLine = true,
+                    onClear = { vm.setSpeakerLook(speaker.key, "") },
                 )
                 Spacer(Modifier.height(8.dp))
                 Row(

@@ -41,6 +41,7 @@ fun MusicSection(vm: MainViewModel) {
                     onValueChange = { vm.setMusicStyl(it) },
                     placeholder = t("Žánr, nástroje, nálada, hlas zpěváka…"),
                     minHeight = 90.dp,
+                    onClear = { vm.setMusicStyl("") },
                 )
             }
             Column {
