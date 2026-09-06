@@ -68,6 +68,50 @@ class SablonyProtiServeruTest {
         val chyby = mutableListOf<String>()
         sablony.forEach { soubor ->
             val wf = runCatching { JSONObject(soubor.readText()) }.getOrNull() ?: return@forEach
+            chyby += zkontroluj(wf, soubor.name)
+        }
+
+        assertTrue(
+            "Šablony nesedí se schématy uzlů — ComfyUI by je odmítl hláškou " +
+                "„Prompt outputs failed validation\":\n" + chyby.joinToString("\n"),
+            chyby.isEmpty(),
+        )
+    }
+
+    /**
+     * Grafy, které appka teprve **staví** — ty v `res/raw` nejsou, takže by
+     * je kontrola šablon minula.
+     *
+     * Větev Pixal3D karty 3D model si přidává čtyři uzly navíc a přepojuje
+     * zadání. Kdyby jim něco chybělo, spadne to až uživateli při odeslání.
+     */
+    @Test
+    fun `stavene grafy sedi se schematy uzlu na serveru`() {
+        assumeTrue("ComfyUI neodpovídá — kontrola se přeskočí", stahni("$server/system_stats", 4_000) != null)
+
+        val sablona = File(rawDir, "workflow_trellis2.json").readText()
+        val chyby = mutableListOf<String>()
+        cz.promptlab.h3video.data.Model3dMotor.entries.forEach { motor ->
+            val wf = cz.promptlab.h3video.comfy.Trellis2Builder.build(
+                template = sablona,
+                scene = cz.promptlab.h3video.data.Model3dScene(source = null, motor = motor),
+                seed = 1L,
+                images = listOf("foto.png"),
+                uklidVram = true,
+            )
+            chyby += zkontroluj(wf, "3D model / $motor")
+        }
+
+        assertTrue(
+            "Stavěný graf nesedí se schématy uzlů:\n" + chyby.joinToString("\n"),
+            chyby.isEmpty(),
+        )
+    }
+
+    /** Vrátí seznam nesrovnalostí jednoho grafu proti schématům ze serveru. */
+    private fun zkontroluj(wf: JSONObject, kde: String): List<String> {
+        val chyby = mutableListOf<String>()
+        run {
             wf.keys().forEach { id ->
                 val uzel = wf.optJSONObject(id) ?: return@forEach
                 val cls = uzel.optString("class_type").ifBlank { return@forEach }
@@ -79,7 +123,7 @@ class SablonyProtiServeruTest {
                 vstupy.optJSONObject("required")?.keys()?.forEach { jm ->
                     val ma = ins.has(jm) ||
                         ins.keys().asSequence().any { it.startsWith("$jm.") }
-                    if (!ma) chyby += "${soubor.name} · uzel $id ($cls): chybí povinný vstup „$jm\""
+                    if (!ma) chyby += "$kde · uzel $id ($cls): chybí povinný vstup „$jm\""
                 }
 
                 // 2) hodnoty musí sedět se schématem
@@ -98,29 +142,24 @@ class SablonyProtiServeruTest {
                             // číslo to není — proto se zvlášť vylučuje.
                             val cislo = if (v is Boolean) null else v as? Number
                             if (cislo == null) {
-                                chyby += "${soubor.name} · uzel $id ($cls).$jm: „$v\" není číslo ($typ)"
+                                chyby += "$kde · uzel $id ($cls).$jm: „$v\" není číslo ($typ)"
                             } else {
                                 val d = cislo.toDouble()
                                 if (opts.has("min") && d < opts.getDouble("min")) {
-                                    chyby += "${soubor.name} · uzel $id ($cls).$jm: $d je pod min ${opts.getDouble("min")}"
+                                    chyby += "$kde · uzel $id ($cls).$jm: $d je pod min ${opts.getDouble("min")}"
                                 }
                                 if (opts.has("max") && d > opts.getDouble("max")) {
-                                    chyby += "${soubor.name} · uzel $id ($cls).$jm: $d je nad max ${opts.getDouble("max")}"
+                                    chyby += "$kde · uzel $id ($cls).$jm: $d je nad max ${opts.getDouble("max")}"
                                 }
                             }
                         }
                         "BOOLEAN" -> if (v !is Boolean) {
-                            chyby += "${soubor.name} · uzel $id ($cls).$jm: „$v\" není true/false"
+                            chyby += "$kde · uzel $id ($cls).$jm: „$v\" není true/false"
                         }
                     }
                 }
             }
         }
-
-        assertTrue(
-            "Šablony nesedí se schématy uzlů — ComfyUI by je odmítl hláškou " +
-                "„Prompt outputs failed validation\":\n" + chyby.joinToString("\n"),
-            chyby.isEmpty(),
-        )
+        return chyby
     }
 }

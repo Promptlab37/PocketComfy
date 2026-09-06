@@ -57,11 +57,49 @@ enum class Model3dKvalita(
  * z fotky odstraní BiRefNet, takže se nahrává obyčejná fotka z telefonu —
  * alfa kanál mít nemusí. Výstupem je soubor **.glb**.
  */
+/**
+ * Čím se model počítá. Obojí je z téže ukázkové šablony ComfyUI, která má
+ * dvě větve — appka do 3.27 uměla jen tu jednodušší.
+ */
+enum class Model3dMotor(
+    private val nazevCs: String,
+    private val popisCs: String,
+    val unet: String,
+    val clipVision: String,
+    /** Ořez kolem předmětu: každá větev chce jiný, viz nápověda uzlů. */
+    val padFactor: Double,
+) {
+    TRELLIS(
+        "TRELLIS.2",
+        "Fotku shrne do jediného otisku a z něj staví tvar. Rychlejší a osvědčené.",
+        unet = "trellis_2_int8_convrot.safetensors",
+        clipVision = "dino_v3_vit_l.safetensors",
+        padFactor = 1.0,
+    ),
+    PIXAL3D(
+        "Pixal3D",
+        "Kromě otisku dostane i podrobnosti z celé plochy fotky a odhadnutý " +
+            "úhel záběru objektivu, takže ví, jak je předmět vůči kameře " +
+            "postavený, ne jen jak vypadá. Náročnější na paměť.",
+        unet = "pixal3d_int8_convrot.safetensors",
+        clipVision = "dino_v3_L_naf_fp32.safetensors",
+        padFactor = 1.1,
+    );
+
+    val nazev: String get() = t(nazevCs)
+    val popis: String get() = t(popisCs)
+}
+
 @Immutable
 data class Model3dScene(
     val source: File? = null,
     val thumb: Bitmap? = null,
     val kvalita: Model3dKvalita = Model3dKvalita.PBR,
+    /**
+     * Čím se to počítá. Výchozí zůstává TRELLIS.2 — Pixal3D je novější
+     * a náročnější, takže ať si ho člověk zapne vědomě.
+     */
+    val motor: Model3dMotor = Model3dMotor.TRELLIS,
     /**
      * Rozlišení voxelové mřížky tvaru. Vyšší = víc detailu i VRAM.
      *
@@ -77,15 +115,26 @@ data class Model3dScene(
 
     companion object {
         /**
-         * Uzel bere 1024–2048 po 128, ale nabízí se jen to, co na 16GB kartě
-         * doopravdy projde. 1536 spadlo 3. 9. 2026 přímo na převodu tvaru
-         * na síť (`VaeDecodeShapeTrellis`) — a to je paměťový vrchol běhu,
-         * takže vyšší hodnoty nemá smysl vůbec ukazovat.
+         * Rozlišení tvaru. 1536 má ukázková šablona ComfyUI a je to nejvyšší,
+         * co uzel u tohohle modelu dává smysl.
+         *
+         * 3. 9. 2026 na 16GB kartě spadlo na převodu tvaru na síť
+         * (`VaeDecodeShapeTrellis`) a dočasně se proto nenabízelo. Od 3.22
+         * graf uklízí paměť **mezi fázemi** a od 3.27 i těsně před tímhle
+         * převodem, takže do něj běh vchází s prakticky prázdnou kartou.
+         * Nabízí se tedy zpátky — ale poctivě označené jako náročné.
          */
-        val DETAILY = listOf(1024)
+        val DETAILY = listOf(1024, 1536)
 
-        /** Strany textury, které se na 16GB kartě upečou. */
-        val TEXTURY = listOf(1024, 2048)
+        /**
+         * Strana zapečené textury. 4096 má ukázková šablona; peče se až po
+         * úklidu paměti, takže na 16GB kartě má šanci projít.
+         */
+        val TEXTURY = listOf(1024, 2048, 4096)
+
+        /** Hodnoty, u kterých má karta říct, že jsou náročné na paměť. */
+        val NAROCNE_DETAILY = setOf(1536)
+        val NAROCNE_TEXTURY = setOf(4096)
     }
 }
 

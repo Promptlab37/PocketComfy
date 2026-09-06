@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import cz.promptlab.h3video.data.Model3dMotor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -122,18 +123,40 @@ fun Model3dSection(vm: MainViewModel) {
         subtitle = t("Jemnost sítě a velikost textury")
     ) {
         Column {
-            // Jemnost tvaru se nabízí, jen když je z čeho vybírat. Na 16GB
-            // kartě projde jediná hodnota, takže přepínač s jednou pilulkou
-            // by jen mátl.
+            Text(t("Čím počítat"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+            Spacer(Modifier.height(8.dp))
+            PillRow(
+                items = Model3dMotor.entries.toList(),
+                selected = scene.motor,
+                label = { it.nazev },
+                onSelect = { vm.setModel3dMotor(it) },
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                scene.motor.popis,
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+            )
+            Spacer(Modifier.height(14.dp))
+
+            // Jemnost tvaru se nabízí, jen když je z čeho vybírat.
             if (Model3dScene.DETAILY.size > 1) {
                 Text(t("Jemnost tvaru"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                 Spacer(Modifier.height(8.dp))
                 PillRow(
                     items = Model3dScene.DETAILY,
                     selected = scene.detail,
-                    label = { it.toString() },
+                    // Náročné hodnoty se nezakazují, ale ani nepředstírají, že
+                    // jsou zadarmo — ať je vidět, do čeho člověk jde.
+                    label = { if (it in Model3dScene.NAROCNE_DETAILY) "$it • náročné" else "$it" },
                     onSelect = { vm.setModel3dDetail(it) },
                 )
+                if (scene.detail in Model3dScene.NAROCNE_DETAILY) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        t("Hodnota z ukázkové šablony. Je to paměťový vrchol běhu — před ním appka kartu uklidí, ale nech si ji volnou."),
+                        style = MaterialTheme.typography.bodySmall, color = Amber,
+                    )
+                }
             }
 
             if (scene.kvalita.jePbr) {
@@ -143,7 +166,10 @@ fun Model3dSection(vm: MainViewModel) {
                 PillRow(
                     items = Model3dScene.TEXTURY,
                     selected = scene.textura,
-                    label = { "${it}×$it" },
+                    label = {
+                        if (it in Model3dScene.NAROCNE_TEXTURY) "${it}×$it • náročné"
+                        else "${it}×$it"
+                    },
                     onSelect = { vm.setModel3dTextura(it) },
                 )
             }

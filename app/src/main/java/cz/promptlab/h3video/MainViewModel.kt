@@ -2128,6 +2128,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setModel3dKvalita(k: cz.promptlab.h3video.data.Model3dKvalita) =
         updateModel3d { it.copy(kvalita = k) }
 
+    fun setModel3dMotor(m: cz.promptlab.h3video.data.Model3dMotor) =
+        updateModel3d { it.copy(motor = m) }
+
     fun setModel3dDetail(v: Int) = updateModel3d { it.copy(detail = v) }
 
     fun setModel3dTextura(v: Int) = updateModel3d { it.copy(textura = v) }
