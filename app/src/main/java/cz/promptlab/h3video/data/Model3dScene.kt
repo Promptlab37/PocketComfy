@@ -23,24 +23,43 @@ enum class Model3dKvalita(
     val plochy: Int,
     /** Strana normálové mapy (výchozí uzlu je 1024). */
     val normaly: Int,
+    /**
+     * Kroky vzorkování čtyř fází: struktura, tvar, zjemnění, textura.
+     *
+     * Do 3.28 se nenastavovaly vůbec a jelo se na hodnotách šablony
+     * (12/20/12/12). Autoři TRELLIS.2 ale pro produkční kvalitu doporučují
+     * 16–20 kroků; každý krok navíc stojí **čas, ne paměť grafiky**, takže
+     * je to jediné místo, kde se dá kvalita zvednout bez rizika, že běh
+     * spadne na nedostatek VRAM.
+     */
+    val krokyStruktura: Int,
+    val krokyTvar: Int,
+    val krokyZjemneni: Int,
+    val krokyTextura: Int,
 ) {
     RYCHLA(
         "Rychlá",
         "Barvy zapečené do vrcholů sítě. Žádné rozbalování UV ani pečení map — " +
             "hotové řádově dřív, ale v editoru se s tím nedá pracovat.",
         remesh = 512, vyhlazeni = 0, plochy = 200_000, normaly = 1024,
+        krokyStruktura = 12, krokyTvar = 20, krokyZjemneni = 12, krokyTextura = 12,
     ),
     PBR(
         "Plné textury",
         "Rozbalí UV a upeče base color, kov, drsnost, normály i stínění. " +
             "Hodnoty jsou ty, které mají uzly jako výchozí.",
         remesh = 512, vyhlazeni = 0, plochy = 200_000, normaly = 1024,
+        krokyStruktura = 12, krokyTvar = 20, krokyZjemneni = 12, krokyTextura = 12,
     ),
     MAXIMALNI(
         "Maximální",
         "Jako plné textury, ale s hodnotami z ukázkové šablony ComfyUI: hustší " +
-            "remesh, 700 tisíc ploch, vyhlazení a normály 2048. Nejdelší běh.",
+            "remesh, 700 tisíc ploch, vyhlazení a normály 2048. Navíc 20 kroků " +
+            "vzorkování ve všech fázích místo 12 — kroky stojí čas, ne paměť. " +
+            "Nejdelší běh.",
         remesh = 768, vyhlazeni = 20, plochy = 700_000, normaly = 2048,
+        // Horní hranice doporučeného rozsahu autorů modelu (16–20).
+        krokyStruktura = 20, krokyTvar = 20, krokyZjemneni = 20, krokyTextura = 20,
     );
 
     /** Peče se PBR sada, nebo se jen obarví vrcholy? */
@@ -145,9 +164,21 @@ fun model3dProblem(s: Model3dScene): String? =
 /** Upozornění, která nebrání spuštění. */
 fun model3dHints(s: Model3dScene): List<String> {
     val out = mutableListOf<String>()
+    // Fotka je CELÉ zadání — model žádný text nedostane. Podle autorů modelu
+    // z ní čte hloubku ze stínování a hran, takže na ní záleží víc než na
+    // všech přepínačích dohromady.
     out += t(
         "Nejlíp to funguje na JEDEN předmět na klidném pozadí. Skupinu věcí nebo " +
             "celou scénu model rozumně nerozdělí."
+    )
+    out += t(
+        "Fotka je celé zadání — model k ní nedostane žádný popis. Vyplať se: " +
+            "aspoň 1024 px, jednolité světlé pozadí, měkké rovnoměrné světlo bez " +
+            "ostrých stínů a ostro. Lesklé a průhledné věci jsou pro model nejtěžší."
+    )
+    out += t(
+        "Foť z odstupu se zoomem, ne zblízka — přiblížený mobil předmět " +
+            "perspektivně vytáhne a model tu deformaci zabuduje do tvaru."
     )
     if (s.kvalita.jePbr) {
         out += t(
@@ -158,8 +189,9 @@ fun model3dHints(s: Model3dScene): List<String> {
     }
     if (s.kvalita == Model3dKvalita.MAXIMALNI) {
         out += t(
-            "Maximální kvalita dělá 700 tisíc ploch místo 200 tisíc a normály 2048 " +
-                "místo 1024. Rozdíl na výsledku bývá menší než rozdíl v čase."
+            "Maximální kvalita dělá 700 tisíc ploch místo 200 tisíc, normály 2048 " +
+                "místo 1024 a 20 kroků vzorkování místo 12. Kroky stojí čas, ne " +
+                "paměť — proto se dají zvednout bez rizika, že běh spadne."
         )
     }
     out += t(

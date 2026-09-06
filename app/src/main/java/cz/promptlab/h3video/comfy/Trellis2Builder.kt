@@ -130,6 +130,15 @@ object Trellis2Builder {
         listOf(N_KS_STRUCTURE, N_KS_SHAPE, N_KS_UPSAMPLE, N_KS_TEXTURE)
             .forEachIndexed { i, id -> wf.inputs(id).put("seed", (zaklad + i) and 0xFFFF_FFFFL) }
 
+        // Kroky vzorkování. Sampler, plán ani cfg se nechávají z předlohy:
+        // vodítko autorů modelu mluví o jejich vlastním rozhraní, kdežto tenhle
+        // graf navíc jede přes CFGOverride a RescaleCFG, takže by přepsané cfg
+        // znamenalo něco jiného. Kroky jsou jednoznačné.
+        wf.inputs(N_KS_STRUCTURE).put("steps", scene.kvalita.krokyStruktura)
+        wf.inputs(N_KS_SHAPE).put("steps", scene.kvalita.krokyTvar)
+        wf.inputs(N_KS_UPSAMPLE).put("steps", scene.kvalita.krokyZjemneni)
+        wf.inputs(N_KS_TEXTURE).put("steps", scene.kvalita.krokyTextura)
+
         wf.inputs(N_UPSAMPLE).put("target_resolution", scene.detail)
         wf.inputs(N_TEXTURE_SIZE).put("value", scene.textura)
 

@@ -106,6 +106,58 @@ class Trellis2UklidTest {
     }
 
     @Test
+    fun `maximalni kvalita zvedne kroky vzorkovani na doporucenych 20`() {
+        // Do 3.28 se kroky nenastavovaly vůbec a jelo se na 12/20/12/12
+        // z šablony. Autoři modelu doporučují pro produkční kvalitu 16–20
+        // a krok navíc stojí čas, ne paměť grafiky.
+        val wf = Trellis2Builder.build(
+            template = sablona,
+            scene = Model3dScene(source = null, kvalita = Model3dKvalita.MAXIMALNI),
+            seed = 4L, images = listOf("foto.png"),
+        )
+        listOf(
+            Trellis2Builder.N_KS_STRUCTURE, Trellis2Builder.N_KS_SHAPE,
+            Trellis2Builder.N_KS_UPSAMPLE, Trellis2Builder.N_KS_TEXTURE,
+        ).forEach { assertEquals(20, uzel(wf, it).getInt("steps")) }
+    }
+
+    @Test
+    fun `nizsi kvalita nechava kroky sablony`() {
+        val wf = Trellis2Builder.build(
+            template = sablona,
+            scene = Model3dScene(source = null, kvalita = Model3dKvalita.PBR),
+            seed = 4L, images = listOf("foto.png"),
+        )
+        assertEquals(12, uzel(wf, Trellis2Builder.N_KS_STRUCTURE).getInt("steps"))
+        assertEquals(20, uzel(wf, Trellis2Builder.N_KS_SHAPE).getInt("steps"))
+        assertEquals(12, uzel(wf, Trellis2Builder.N_KS_UPSAMPLE).getInt("steps"))
+        assertEquals(12, uzel(wf, Trellis2Builder.N_KS_TEXTURE).getInt("steps"))
+    }
+
+    @Test
+    fun `cfg a sampler zustavaji z predlohy`() {
+        // Vodítko autorů k síle navádění mluví o jejich vlastním rozhraní;
+        // tenhle graf jede navíc přes CFGOverride a RescaleCFG, takže by
+        // přepsané cfg znamenalo něco jiného. Nesahá se na ně.
+        val puvodni = JSONObject(sablona)
+        val wf = Trellis2Builder.build(
+            template = sablona,
+            scene = Model3dScene(source = null, kvalita = Model3dKvalita.MAXIMALNI),
+            seed = 4L, images = listOf("foto.png"),
+        )
+        listOf(
+            Trellis2Builder.N_KS_STRUCTURE, Trellis2Builder.N_KS_SHAPE,
+            Trellis2Builder.N_KS_UPSAMPLE, Trellis2Builder.N_KS_TEXTURE,
+        ).forEach { id ->
+            assertEquals(uzel(puvodni, id).getDouble("cfg"), uzel(wf, id).getDouble("cfg"), 1e-9)
+            assertEquals(
+                uzel(puvodni, id).getString("sampler_name"),
+                uzel(wf, id).getString("sampler_name"),
+            )
+        }
+    }
+
+    @Test
     fun `uklid neprebiji hodnoty kvality`() {
         val wf = graf(uklid = true)
         assertEquals(
