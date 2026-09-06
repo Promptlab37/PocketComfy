@@ -228,6 +228,8 @@ object Slovnik {
         "Bez cenzury" to "Uncensored",
         "Přimíchá odvázanou LoRA — model pak nic neodmítá" to
             "Mixes in an uncensored LoRA — the model then refuses nothing",
+        "Fotka má poměr %s. Ve vybraném ji model roztáhne — klepni sem a srovnej to." to
+            "The photo is %s. In the selected one the model will stretch it — tap to fix.",
         "Která LoRA" to "Which LoRA",
         "Druhá LoRA (nepovinná)" to "Second LoRA (optional)",
         "Dvě LoRA na plné síle se často perou — druhou zkus níž." to

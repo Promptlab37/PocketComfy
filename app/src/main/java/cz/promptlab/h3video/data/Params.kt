@@ -167,6 +167,29 @@ enum class Aspect(val comfyValue: String, val label: String, val w: Int, val h: 
     LANDSCAPE_3_2("3:2 (Photo)", "3:2", 3, 2),
     PORTRAIT_2_3("2:3 (Portrait Photo)", "2:3", 2, 3),
     ULTRAWIDE_21_9("21:9 (Ultrawide)", "21:9", 21, 9),
+    ;
+
+    /** Poměr jako číslo, ať se dá porovnávat s fotkou. */
+    val pomer: Float get() = w.toFloat() / h
+
+    companion object {
+        /**
+         * Poměr nejbližší vložené fotce.
+         *
+         * Plátno videa je vždycky jeden z těchhle poměrů. Když se netrefí do
+         * fotky, model ji do plátna **roztáhne** — postava vyjde zploštělá
+         * nebo protažená. Uživatel čekal, že rozlišení mění jen velikost, ne
+         * tvar, a měl pravdu: tvar má určovat fotka, ne pilulka.
+         *
+         * Porovnává se poměr logaritmicky, aby „dvakrát širší" vážilo stejně
+         * jako „dvakrát vyšší" — jinak by se všechno na výšku slévalo dohromady.
+         */
+        fun nejblizsi(sirka: Int, vyska: Int): Aspect? {
+            if (sirka <= 0 || vyska <= 0) return null
+            val cil = kotlin.math.ln(sirka.toFloat() / vyska)
+            return entries.minByOrNull { kotlin.math.abs(kotlin.math.ln(it.pomer) - cil) }
+        }
+    }
 }
 
 data class Resolution(val width: Int, val height: Int) {

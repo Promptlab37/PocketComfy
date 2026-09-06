@@ -114,6 +114,15 @@ object ImageUtils {
         return thumb
     }
 
+    /** Rozměry souboru bez dekódování pixelů. Null, když to není obrázek. */
+    fun rozmery(file: File): Pair<Int, Int>? = runCatching {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, bounds)
+        if (bounds.outWidth > 0 && bounds.outHeight > 0) {
+            bounds.outWidth to bounds.outHeight
+        } else null
+    }.getOrNull()
+
     /** Náhled uloženého referenčního souboru – dekóduje se rovnou zmenšený. */
     fun loadFileThumb(file: File): Bitmap? = runCatching {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
