@@ -466,6 +466,30 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                             label = { it.label },
                             onSelect = { v -> vm.update { it.copy(aspect = v) } }
                         )
+
+                        // Plátno se vloženou fotku přizpůsobí samo. Když si ho
+                        // ale člověk pak přepne na jiný poměr, model fotku do
+                        // plátna roztáhne — ať to vidí dřív, než to spustí,
+                        // a ne až na výsledku.
+                        val vstupniFotka = if (mode == Mode.ALLINONE) {
+                            aioScene.first.thumb
+                                ?: aioScene.refs.singleOrNull { it.thumb != null }?.thumb
+                        } else null
+                        vstupniFotka?.let { fotka ->
+                            val sedici = Aspect.nejblizsi(fotka.width, fotka.height)
+                            if (sedici != null && sedici != params.aspect) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    t("Fotka má poměr %s. Ve vybraném ji model roztáhne — klepni sem a srovnej to.")
+                                        .format(sedici.label),
+                                    style = MaterialTheme.typography.bodySmall, color = Amber,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { vm.update { it.copy(aspect = sedici) } }
+                                        .padding(horizontal = 6.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
                     }
                     Column {
                         Text("Velikost", style = MaterialTheme.typography.labelMedium, color = TextLow)
