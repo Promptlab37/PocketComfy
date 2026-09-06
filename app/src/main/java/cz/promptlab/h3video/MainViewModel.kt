@@ -2031,7 +2031,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             // Nová reference = rovnou i její značka v popisu.
             if (druh == "ref") doplnReferencniZnacky()
-            prevezmiPomerZFotky(druh, target)
+            // "keys" chodí jako cokoli jiného než first/last/ref — sjednotit.
+            prevezmiPomerZeVstupu(
+                if (druh in setOf("first", "last", "ref")) druh else "key",
+                target, video = false,
+            )
         }
     }
 
@@ -2042,22 +2046,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * a nechal 16:9, dostal ji roztaženou — model ji do plátna vecpal.
      * Rozlišení má měnit velikost, ne tvar, takže tvar teď diktuje fotka.
      *
-     * Přebírá se jen z fotky, která **je tím obrazem**: z prvního snímku,
-     * a když žádný není, z jediné reference. U více referencí by to bylo
-     * hádání, které z nich má plátno patřit, tak se nesahá na nic.
+     * Přebírá se z toho vstupu, který **je tím obrazem**:
+     *  - první snímek (Z obrázku) a klíčový snímek — ty se do videa vloží
+     *    doslova, takže nesedící plátno je roztáhne;
+     *  - zdrojové video u prodloužení — navázaný kus musí mít tvar předlohy;
+     *  - referenční video a jediná referenční fotka — reference sice není
+     *    snímek videa, ale tvar výsledku se od ní čeká.
+     *
+     * U více referencí se nesahá na nic: tam by bylo hádání, které z nich má
+     * plátno patřit. Nesahá se ani tam, kde si plátno určuje šablona sama
+     * (zvětšení, přemalování, list postavy) — tam by to jen mátlo.
      */
-    private fun prevezmiPomerZFotky(druh: String, soubor: java.io.File) {
-        val scene = _aio.value
-        val rozhoduje = when (druh) {
-            "first" -> true
-            "ref" -> scene.first.image == null && scene.refs.count { it.image != null } == 1
-            else -> false
-        }
-        if (!rozhoduje) return
+    private fun prevezmiPomerZeVstupu(druh: String, soubor: java.io.File, video: Boolean) {
+        if (!cz.promptlab.h3video.data.vstupUrcujePomer(druh, _aio.value)) return
 
         viewModelScope.launch {
-            val (w, h) = withContext(Dispatchers.IO) { ImageUtils.rozmery(soubor) } ?: return@launch
-            val novy = cz.promptlab.h3video.data.Aspect.nejblizsi(w, h) ?: return@launch
+            val rozmery = withContext(Dispatchers.IO) {
+                if (video) ImageUtils.rozmeryVidea(soubor) else ImageUtils.rozmery(soubor)
+            } ?: return@launch
+            val novy = cz.promptlab.h3video.data.Aspect.nejblizsi(rozmery.first, rozmery.second)
+                ?: return@launch
             update { if (it.aspect == novy) it else it.copy(aspect = novy) }
         }
     }
@@ -2086,6 +2094,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             updateAio { s ->
                 if (druh == "refvideo") s.copy(refVideo = file) else s.copy(sourceVideo = file)
             }
+            prevezmiPomerZeVstupu(druh, file, video = true)
         }
     }
 
