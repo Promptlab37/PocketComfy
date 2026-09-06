@@ -751,6 +751,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 onValueChange = { v -> vm.update { it.copy(prompt = v) } },
                 placeholder = t("Popiš, co má na obrázku být — jednoduše a bez záporů"),
                 minHeight = 120.dp,
+                onClear = { vm.update { it.copy(prompt = "") } },
             )
             Column {
                 Text(t("Poměr stran"), style = MaterialTheme.typography.labelMedium, color = TextLow)
