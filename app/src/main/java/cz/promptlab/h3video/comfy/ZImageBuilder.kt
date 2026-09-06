@@ -37,7 +37,9 @@ enum class T2iModel(
     BASE(
         "base", "Z-Image Base",
         "Nedestilovaný základ. Poslouchá zadání líp než Turbo, ale trvá to násobně dýl.",
-        30,
+        // 25 kroků má oficiální předloha ComfyUI pro Base. Dřív tu bylo 30 —
+        // vlastní číslo bez opory, jen pomalejší.
+        25,
     ),
     KLEIN(
         "klein", "FLUX.2 Klein 9B",
@@ -88,6 +90,19 @@ object ZImageBuilder {
     const val N_VAE = "29"
     const val N_TEXT = "27"
     const val N_ZERO = "33"
+
+    /**
+     * Skutečný prázdný negativ pro Base.
+     *
+     * Šablona (Turbo) posílá do negativu `ConditioningZeroOut`, tedy vynulovaný
+     * tenzor. U Turba je to jedno — jede na cfg 1, kde se negativ vůbec
+     * nepoužije. Base ale jede na cfg 4 a tam vzorkovač počítá
+     * `neg + cfg * (pos − neg)`: nula není totéž co „prázdné zadání" a výsledek
+     * je přepálený a míň soudržný. Oficiální předloha ComfyUI pro Base
+     * (`image_z_image.json`) má proto v negativu obyčejný CLIPTextEncode
+     * s prázdným textem — přesně tohle.
+     */
+    const val N_NEG_BASE = "34"
     const val N_LATENT = "13"
     const val N_SHIFT = "11"
     const val N_SAMPLER = "3"
@@ -230,6 +245,20 @@ object ZImageBuilder {
                 wf.inputs(N_UNET).put("unet_name", BASE_MODEL_FILE)
                 wf.inputs(N_SAMPLER).put("steps", m.kroky)
                 wf.inputs(N_SAMPLER).put("cfg", BASE_CFG)
+                // Viz [N_NEG_BASE]: se skutečným cfg musí být negativ skutečný.
+                wf.put(
+                    N_NEG_BASE,
+                    JSONObject()
+                        .put("class_type", "CLIPTextEncode")
+                        .put(
+                            "inputs",
+                            JSONObject()
+                                .put("clip", org.json.JSONArray().put(N_CLIP).put(0))
+                                .put("text", ""),
+                        )
+                        .put("_meta", JSONObject().put("title", "Prázdný negativ")),
+                )
+                wf.inputs(N_SAMPLER).put("negative", org.json.JSONArray().put(N_NEG_BASE).put(0))
             }
             // Turbo: předloha se nemění ani o bajt.
             else -> Unit
