@@ -45,6 +45,28 @@ object Trellis2Builder {
     const val N_TEXTURE_SIZE = "288"
     const val N_DECIMATE = "186"
     const val N_REMESH = "241"
+
+    /**
+     * Úklid paměti grafiky uvnitř grafu (`VRAMCleanup`, uzel z balíku na
+     * serveru — proto se vkládá, jen když ho server zná).
+     *
+     * Proč vůbec: síťové fáze (remesh, decimace, pečení map) si berou paměť
+     * mimo správu ComfyUI, takže o ní ComfyUI neví a difuzní modely drží dál.
+     * Uživateli spadl běh na „max" právě tady — v RemeshMesh bylo obsazeno
+     * 13,4 GB z 16 a volných 0 bajtů. Uzel model odsune do RAM (ne z disku),
+     * takže návrat na další fázi stojí vteřiny, ne minuty.
+     *
+     * Vkládají se dva: před síťové fáze a před pečení map. Mezi nimi totiž
+     * běží texturový vzorkovač, který si modely natáhne zpátky.
+     */
+    const val N_UKLID_SIT = "500"
+    const val N_UKLID_PECENI = "501"
+
+    /** Třída toho uzlu. Když ji server nezná, graf se staví bez úklidu. */
+    const val TRIDA_UKLIDU = "VRAMCleanup"
+    const val N_MESHINFO = "202"
+    const val N_DECODE_TEXTURE = "93"
+    const val N_BAKE = "147"
     const val N_NORMAL = "224"
 
     /** Dva konce sítě: rychlé barvy ve vrcholech a plná PBR sada. */
@@ -61,8 +83,10 @@ object Trellis2Builder {
         .openRawResource(R.raw.workflow_trellis2)
         .bufferedReader().use { it.readText() }.also { cached = it }
 
-    fun build(ctx: Context, scene: Model3dScene, seed: Long, images: List<String>): JSONObject =
-        build(template(ctx), scene, seed, images)
+    fun build(
+        ctx: Context, scene: Model3dScene, seed: Long, images: List<String>,
+        uklidVram: Boolean = false,
+    ): JSONObject = build(template(ctx), scene, seed, images, uklidVram)
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
     fun build(
@@ -70,6 +94,8 @@ object Trellis2Builder {
         scene: Model3dScene,
         seed: Long,
         images: List<String>,
+        /** Vložit do grafu úklid paměti grafiky. Viz [N_UKLID_SIT]. */
+        uklidVram: Boolean = false,
     ): JSONObject {
         val wf = JSONObject(template)
         wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
@@ -87,6 +113,7 @@ object Trellis2Builder {
         // části na procesoru, takže je to ta část, kterou rychlejší grafika
         // nezkrátí. Předloha ComfyUI má všude hodnoty NAD výchozími hodnotami
         // uzlů — proto si úroveň volí uživatel a nevnucuje se mu ukázková.
+        if (uklidVram) vlozUklid(wf)
         wf.inputs(N_REMESH).put("resolution", scene.kvalita.remesh)
         wf.inputs(N_REMESH).put("smooth_iters", scene.kvalita.vyhlazeni)
         wf.inputs(N_DECIMATE).put("target_face_count", scene.kvalita.plochy)
@@ -106,6 +133,37 @@ object Trellis2Builder {
      * Fáze podle třídy uzlu. Pečení map a rozbalování UV je u téhle karty
      * samostatná, dlouhá část — proto nespadá pod „ukládám", ale pod skládání.
      */
+    /**
+     * Vloží dva úklidové uzly do cesty grafu. Nejsou to slepá ramena —
+     * data jimi protékají, takže ComfyUI musí úklid provést přesně mezi
+     * fázemi, ne kdykoli se mu zachce.
+     */
+    private fun vlozUklid(wf: JSONObject) {
+        fun uklid(id: String, zdroj: String) {
+            wf.put(
+                id,
+                JSONObject()
+                    .put("class_type", TRIDA_UKLIDU)
+                    .put(
+                        "inputs",
+                        JSONObject()
+                            .put("anything", org.json.JSONArray().put(zdroj).put(0))
+                            .put("offload_model", true)
+                            .put("offload_cache", true),
+                    )
+                    .put("_meta", JSONObject().put("title", "Uvolnit paměť grafiky")),
+            )
+        }
+        // Před síťové fáze: tady běh padal.
+        uklid(N_UKLID_SIT, N_MESHINFO)
+        wf.inputs(N_REMESH).put("mesh", org.json.JSONArray().put(N_UKLID_SIT).put(0))
+
+        // Před pečení map: mezitím doběhl texturový vzorkovač, který si
+        // modely natáhl zpátky, a pečení jde na 2048.
+        uklid(N_UKLID_PECENI, N_DECODE_TEXTURE)
+        wf.inputs(N_BAKE).put("voxel_colors", org.json.JSONArray().put(N_UKLID_PECENI).put(0))
+    }
+
     fun stageForClass(cls: String?): Stage = when (cls) {
         "UNETLoader", "VAELoader", "CLIPVisionLoader", "LoadBackgroundRemovalModel",
         "ModelSamplingSD3", "RescaleCFG", "CFGOverride" -> Stage.MODELS
@@ -117,7 +175,9 @@ object Trellis2Builder {
         "VaeDecodeTextureTrellis" -> Stage.DECODING
         "GetMeshInfo", "RemeshMesh", "DecimateMesh", "MeshSmoothNormals", "UnwrapMesh",
         "BakeTextureFromVoxel", "BakeNormalMapFromMesh", "BakeAmbientOcclusion",
-        "ApplyTextureToMesh", "PaintMesh", "VoxelToMesh" -> Stage.MUXING
+        "ApplyTextureToMesh", "PaintMesh", "VoxelToMesh",
+        // Úklid stojí mezi fázemi sítě — ať průběh neskáče zpátky.
+        TRIDA_UKLIDU -> Stage.MUXING
         "SaveGLB" -> Stage.FINISHING
         else -> Stage.SAMPLING
     }

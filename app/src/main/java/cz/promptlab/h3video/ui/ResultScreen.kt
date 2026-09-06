@@ -374,10 +374,20 @@ fun radaKChybe(message: String): String? {
         "cuda out of memory" in m
     if (!doslaPamet) return null
     val uTvaru = "vaedecodeshapetrellis" in m || "trellis" in m
+    // Dodělání sítě: remesh, decimace, rozbalení UV, pečení map. Jemnost
+    // tvaru s tím nemá co dělat, radit ji sem by poslalo člověka špatným
+    // směrem — tady rozhoduje Kvalita.
+    val uSite = listOf("remeshmesh", "decimatemesh", "unwrapmesh", "meshsmoothnormals", "bake")
+        .any { it in m }
     return buildString {
         append(t("Grafické kartě došla paměť."))
         append(' ')
-        if (uTvaru) {
+        if (uSite) {
+            append(t("Spadlo to při dodělávání sítě — hustý remesh je druhý paměťový vrchol běhu."))
+            append(' ')
+            append(t("Přepni Kvalitu z Maximální na Plné textury; remesh klesne ze 768 na 512."))
+            append(' ')
+        } else if (uTvaru) {
             append(t("U 3D modelu spadl převod tvaru na síť — to je paměťový vrchol celého běhu."))
             append(' ')
             append(t("Sniž na kartě Jemnost tvaru na 1024."))
