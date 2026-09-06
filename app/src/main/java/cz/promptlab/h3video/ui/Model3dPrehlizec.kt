@@ -10,6 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import android.graphics.Bitmap
+import android.os.Handler
+import android.os.Looper
+import android.view.PixelCopy
+import androidx.compose.ui.platform.LocalContext
+import cz.promptlab.h3video.util.ImageUtils
+import io.github.sceneview.SceneView
+import kotlinx.coroutines.suspendCancellableCoroutine
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -95,6 +103,37 @@ fun natoceniModelu(yaw: Float, pitch: Float): Quaternion = normalize(
  * Pozor na verzi SceneView: 4.x je přeložené Kotlinem 2.4 a projekt jede na
  * 2.0, takže překlad padá na „incompatible version of Kotlin". Držíme 2.2.1.
  */
+/**
+ * Sejme obsah prohlížeče do souboru s náhledem.
+ *
+ * `SceneView` je `SurfaceView`, takže se z něj snímek nedá vzít obyčejným
+ * kreslením do plátna — pixely drží kompozitor systému a `PixelCopy` je
+ * jediná cesta, jak se k nim dostat.
+ */
+private suspend fun sejmiNahled(pohled: SceneView, cil: File) {
+    if (pohled.width <= 0 || pohled.height <= 0) return
+    val snimek = Bitmap.createBitmap(pohled.width, pohled.height, Bitmap.Config.ARGB_8888)
+    val ok = suspendCancellableCoroutine { pokracuj ->
+        runCatching {
+            PixelCopy.request(pohled, snimek, { vysledek ->
+                pokracuj.resume(vysledek == PixelCopy.SUCCESS) {}
+            }, Handler(Looper.getMainLooper()))
+        }.onFailure { pokracuj.resume(false) {} }
+    }
+    if (!ok) {
+        snimek.recycle()
+        return
+    }
+    withContext(Dispatchers.IO) {
+        runCatching {
+            val maly = ImageUtils.scaleTo(snimek, 480)
+            cil.outputStream().use { maly.compress(Bitmap.CompressFormat.JPEG, 88, it) }
+            if (maly != snimek) maly.recycle()
+        }
+    }
+    snimek.recycle()
+}
+
 @Composable
 fun Model3dPrehlizec(soubor: File, modifier: Modifier = Modifier) {
     val engine = rememberEngine()
@@ -153,6 +192,20 @@ fun Model3dPrehlizec(soubor: File, modifier: Modifier = Modifier) {
         }
     }
 
+    // Náhled do galerie: GLB žádný obrázek nenese, tak se sejme přímo odsud.
+    // Pár snímků se počká, aby se stihlo načíst prostředí i textury — jinak by
+    // v galerii přistála černá plocha, což je horší než nic.
+    val ctx = LocalContext.current
+    var pohled by remember(soubor.absolutePath) { mutableStateOf<SceneView?>(null) }
+    LaunchedEffect(uzel, pohled) {
+        val p = pohled ?: return@LaunchedEffect
+        if (uzel == null) return@LaunchedEffect
+        val cil = ImageUtils.nahled3d(ctx, soubor)
+        if (cil.exists() && cil.length() > 0) return@LaunchedEffect
+        repeat(45) { withFrameNanos { } }
+        sejmiNahled(p, cil)
+    }
+
     Box(
         modifier
             .fillMaxWidth()
@@ -165,6 +218,7 @@ fun Model3dPrehlizec(soubor: File, modifier: Modifier = Modifier) {
             engine = engine,
             modelLoader = modelLoader,
             childNodes = uzly,
+            onViewCreated = { pohled = this },
         )
 
         // Vrstva gest NAD scénou: kreslí se později, takže dostane doteky dřív

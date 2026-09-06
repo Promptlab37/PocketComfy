@@ -29,6 +29,7 @@ class ImageEditStore(private val ctx: Context) {
                 .put("groundingPx", s.groundingPx)
                 .put("megapixels", s.megapixels.toDouble())
                 .put("aspect", s.aspect.name)
+                .put("motor", s.motor.name)
                 .toString()
         ).apply()
     }
@@ -66,6 +67,8 @@ class ImageEditStore(private val ctx: Context) {
                 person = osoba,
                 personThumb = osoba?.let { ImageUtils.loadFileThumb(it) },
                 prompt = root.optString("prompt"),
+                motor = EditMotor.entries
+                    .firstOrNull { it.name == root.optString("motor") } ?: EditMotor.KREA2,
                 refBoost = root.optDouble("refBoost", 1.5).toFloat(),
                 groundingPx = root.optInt("groundingPx", 1024),
                 megapixels = root.optDouble("megapixels", 1.0).toFloat(),

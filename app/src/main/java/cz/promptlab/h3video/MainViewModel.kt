@@ -2371,6 +2371,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setEditAspect(a: cz.promptlab.h3video.data.Aspect) = updateEdit { it.copy(aspect = a) }
 
+    fun setEditMotor(m: cz.promptlab.h3video.data.EditMotor) = updateEdit { it.copy(motor = m) }
+
     /** `druh` je "source" (upravovaná fotka) nebo "person" (vkládaná osoba). */
     fun pickEditImage(druh: String, uri: Uri?) {
         if (uri == null) return

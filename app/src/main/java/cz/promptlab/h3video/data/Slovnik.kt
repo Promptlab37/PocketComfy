@@ -231,6 +231,12 @@ object Slovnik {
         "Fotka má poměr %s. Ve vybraném ji model roztáhne — klepni sem a srovnej to." to
             "The photo is %s. In the selected one the model will stretch it — tap to fix.",
         "Čím počítat" to "Engine",
+        "Čím upravit" to "Edit with",
+        "Dva editační modely, každý jinak postavený" to
+            "Two editing models, built differently",
+        "rozměry podle předlohy · 4 kroky" to "size from the source · 4 steps",
+        "Krea 2" to "Krea 2",
+        "FLUX.2 Klein 9B" to "FLUX.2 Klein 9B",
         "Kromě otisku dostane i podrobnosti z celé plochy fotky a odhadnutý úhel záběru objektivu, takže ví, jak je předmět vůči kameře postavený, ne jen jak vypadá. Náročnější na paměť." to
             "Besides the fingerprint it also gets detail from the whole photo and an estimated lens field of view, so it knows how the object sits relative to the camera, not just what it looks like. Heavier on memory.",
         "TRELLIS.2" to "TRELLIS.2",

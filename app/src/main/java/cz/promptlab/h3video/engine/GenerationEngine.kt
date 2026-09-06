@@ -190,6 +190,13 @@ object GenerationEngine {
      */
     @Volatile private var editRun: Boolean = false
 
+    /**
+     * Úprava obrázku má dva motory a každý má jiné uzly, takže i jiné mapování
+     * fází na ukazatel průběhu. Drží se to zvlášť, protože po restartu appky
+     * se běh dohledává podle uložených příznaků, ne podle scény.
+     */
+    @Volatile private var editKlein: Boolean = false
+
     /** Běží zvětšování (SeedVR2 gigapixel)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var upscaleRun: Boolean = false
 
@@ -231,7 +238,9 @@ object GenerationEngine {
         t2iRun -> ZImageBuilder.stageForClass(nodeClasses[node])
         upscaleRun -> DlssBuilder.stageForClass(nodeClasses[node])
             ?: SeedVr2Builder.stageForClass(nodeClasses[node])
-        editRun -> Krea2Builder.stageForClass(nodeClasses[node])
+        editRun -> if (editKlein) cz.promptlab.h3video.comfy.KleinEditBuilder
+            .stageForClass(nodeClasses[node])
+        else Krea2Builder.stageForClass(nodeClasses[node])
         aioRun -> AioBuilder.stageForClass(nodeClasses[node])
         else -> WorkflowBuilder.stageFor(node)
     }
@@ -246,7 +255,9 @@ object GenerationEngine {
         t2iRun -> ZImageBuilder.rangeForClass(nodeClasses[node])
         upscaleRun -> DlssBuilder.rangeForClass(nodeClasses[node])
             ?: SeedVr2Builder.rangeForClass(nodeClasses[node])
-        editRun -> Krea2Builder.rangeForClass(nodeClasses[node])
+        editRun -> if (editKlein) cz.promptlab.h3video.comfy.KleinEditBuilder
+            .rangeForClass(nodeClasses[node])
+        else Krea2Builder.rangeForClass(nodeClasses[node])
         aioRun -> AioBuilder.rangeForClass(nodeClasses[node])
         else -> WorkflowBuilder.rangeFor(node)
     }
@@ -267,7 +278,9 @@ object GenerationEngine {
         t2iRun -> ZImageBuilder.reportsSteps(nodeClasses[node])
         upscaleRun -> DlssBuilder.reportsSteps(nodeClasses[node]) ||
             SeedVr2Builder.reportsSteps(nodeClasses[node])
-        editRun -> Krea2Builder.reportsSteps(nodeClasses[node])
+        editRun -> if (editKlein) cz.promptlab.h3video.comfy.KleinEditBuilder
+            .reportsSteps(nodeClasses[node])
+        else Krea2Builder.reportsSteps(nodeClasses[node])
         aioRun -> AioBuilder.reportsSteps(nodeClasses[node])
         else -> WorkflowBuilder.reportsSteps(node)
     }
@@ -350,6 +363,7 @@ object GenerationEngine {
         job?.cancel()
         resetRun()
         editRun = editScene != null
+        editKlein = editScene?.motor == cz.promptlab.h3video.data.EditMotor.KLEIN
         upscaleRun = upscaleScene != null
         t2iRun = t2i
         musicRun = musicScene != null
@@ -668,7 +682,9 @@ object GenerationEngine {
             // Úprava obrázku jede na Krea 2 z vlastní předlohy v APK; MiniMax
             // H3 se tu vůbec nespouští.
             editScene != null ->
-                Krea2Builder.build(app, editScene, seed, names)
+                if (editScene.motor == cz.promptlab.h3video.data.EditMotor.KLEIN)
+                    cz.promptlab.h3video.comfy.KleinEditBuilder.build(app, editScene, seed, names)
+                else Krea2Builder.build(app, editScene, seed, names)
 
             // Zvětšit má dvě metody: uživatelovo SeedVR2 workflow z APK, nebo
             // rychlé doostření přes NVIDIA DLSS 5 (balík ComfyUI-DLSS5-Enhancer).
@@ -765,7 +781,10 @@ object GenerationEngine {
         else effective.steps
         // Podle tříd uzlů se u šablon balíku poznávají fáze běhu.
         if (jedeNaAio) nodeClasses = AioBuilder.nodeClasses(workflow)
-        if (editScene != null) nodeClasses = Krea2Builder.nodeClasses(workflow)
+        if (editScene != null) nodeClasses =
+            if (editScene.motor == cz.promptlab.h3video.data.EditMotor.KLEIN)
+                cz.promptlab.h3video.comfy.KleinEditBuilder.nodeClasses(workflow)
+            else Krea2Builder.nodeClasses(workflow)
         if (upscaleScene != null) nodeClasses = SeedVr2Builder.nodeClasses(workflow)
         if (t2i) nodeClasses = ZImageBuilder.nodeClasses(workflow)
         if (musicScene != null) nodeClasses = AceMusicBuilder.nodeClasses(workflow)
