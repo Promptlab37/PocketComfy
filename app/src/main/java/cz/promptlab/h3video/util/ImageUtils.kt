@@ -114,6 +114,16 @@ object ImageUtils {
         return thumb
     }
 
+    /**
+     * Kam patří náhled 3D modelu.
+     *
+     * GLB sám o sobě obrázek nemá, takže se náhled sejme z prohlížeče při
+     * prvním zobrazení a uloží sem. Do galerie telefonu nepatří — je to
+     * pomůcka appky, ne výsledek.
+     */
+    fun nahled3d(ctx: Context, model: File): File =
+        File(File(ctx.filesDir, "nahledy3d").apply { mkdirs() }, model.name + ".jpg")
+
     /** Rozměry souboru bez dekódování pixelů. Null, když to není obrázek. */
     fun rozmery(file: File): Pair<Int, Int>? = runCatching {
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }

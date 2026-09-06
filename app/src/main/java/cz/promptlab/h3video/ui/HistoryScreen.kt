@@ -238,8 +238,12 @@ private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit
             // nemá – dlaždici dělá nota.
             when {
                 item.isAudio -> null
-                // GLB nemá z čeho udělat náhled — dlaždici dělá ikona.
-                item.isModel3d -> null
+                // GLB obrázek nenese. Náhled se sejme z prohlížeče při prvním
+                // zobrazení modelu — dokud tam člověk nebyl, dlaždici dělá ikona.
+                item.isModel3d -> cz.promptlab.h3video.util.ImageUtils
+                    .nahled3d(ctx, item.file(ctx))
+                    .takeIf { it.exists() && it.length() > 0 }
+                    ?.let { cz.promptlab.h3video.util.ImageUtils.loadFileThumb(it) }
                 // Zmenšený náhled – plné PNG (klidně gigapixel ze Zvětšit)
                 // by na dlaždici sežralo desítky MB a seznam by cukal.
                 item.isImage -> cz.promptlab.h3video.util.ImageUtils.loadFileThumb(item.file(ctx))
@@ -275,8 +279,8 @@ private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit
             if (item.isAudio) {
                 Icon(Icons.Default.MusicNote, null, Modifier.size(30.dp), TextLow)
             }
-            // 3D model taky ne – a hlavně se nedá přehrát.
-            if (item.isModel3d) {
+            // Ikona jen dokud náhled není — přes hotový náhled by překážela.
+            if (item.isModel3d && thumb == null) {
                 Icon(Icons.Default.ViewInAr, null, Modifier.size(30.dp), TextLow)
             }
             // Obrázek ani model se nepřehrávají – trojúhelník by sliboval video.

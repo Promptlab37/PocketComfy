@@ -18,7 +18,28 @@ import java.io.File
  * **mazání objektů Turbo varianta nezvládá spolehlivě**.
  */
 @Immutable
+/**
+ * Čím se fotka upraví. Obojí je editační model, každý jinak postavený.
+ */
+enum class EditMotor(private val nazevCs: String, private val popisCs: String) {
+    KREA2(
+        "Krea 2",
+        "Má páčku na věrnost podoby a je rychlejší. Druhou předlohu bere " +
+            "jako osobu, kterou má do scény vložit.",
+    ),
+    KLEIN(
+        "FLUX.2 Klein 9B",
+        "Lépe rozumí složitějšímu zadání a na obě předlohy se dá v textu " +
+            "odkázat („Figure 1\", „Figure 2\"). Nemá páčku na věrnost a je pomalejší.",
+    );
+
+    val nazev: String get() = t(nazevCs)
+    val popis: String get() = t(popisCs)
+}
+
 data class ImageEditScene(
+    /** Čím se to počítá. Výchozí zůstává Krea 2, na kterou je karta zvyklá. */
+    val motor: EditMotor = EditMotor.KREA2,
     /** Upravovaná fotka. */
     val source: File? = null,
     val thumb: Bitmap? = null,

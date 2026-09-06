@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import cz.promptlab.h3video.data.EditMotor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -104,12 +105,37 @@ fun ImageEditSection(vm: MainViewModel) {
         }
     }
 
+    SectionCard(
+        title = t("Čím upravit"),
+        subtitle = t("Dva editační modely, každý jinak postavený")
+    ) {
+        Column {
+            PillRow(
+                items = EditMotor.entries.toList(),
+                selected = scene.motor,
+                label = { it.nazev },
+                onSelect = { vm.setEditMotor(it) },
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                scene.motor.popis,
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+            )
+        }
+    }
+
     // Rozlišení a jemné páčky nikdo nemění při každém běhu – jsou sbalené,
     // ať na obrazovce zbyde jen fotka, zadání a tlačítko.
     SkladaciSekce(
         title = t("Nastavení úpravy"),
-        souhrn = scene.resolution.label + " · vidí " + scene.groundingPx + " px" +
-            " · věrnost %.2f".format(scene.refBoost),
+        // Klein páčky na věrnost ani vidění předlohy nemá — vypisovat je
+        // v souhrnu by tvrdilo, že něco dělají.
+        souhrn = if (scene.motor == EditMotor.KLEIN) {
+            t("rozměry podle předlohy · 4 kroky")
+        } else {
+            scene.resolution.label + " · vidí " + scene.groundingPx + " px" +
+                " · věrnost %.2f".format(scene.refBoost)
+        },
         klic = "nastaveni-edit",
     ) {
         SectionCard(
@@ -147,7 +173,9 @@ fun ImageEditSection(vm: MainViewModel) {
             }
         }
 
-        SectionCard(
+        // Vidění předlohy i věrnost jsou páčky Krea 2 (Krea2EditGroundedEncode
+        // a fidelity dial). Klein je nemá — karta je u něj proto neukazuje.
+        if (scene.motor == EditMotor.KREA2) SectionCard(
             title = t("Síla úpravy"),
             subtitle = t("Kompromis mezi poslušností zadání a věrností obličeje")
         ) {
