@@ -713,7 +713,14 @@ object GenerationEngine {
 
             // 3D model: TRELLIS.2 z vlastní předlohy v APK, výsledkem je GLB.
             model3dScene != null ->
-                Trellis2Builder.build(app, model3dScene, seed, names)
+                Trellis2Builder.build(
+                    app, model3dScene, seed, names,
+                    // Bez úklidu uvnitř grafu padá „max" na nedostatku paměti
+                    // grafiky až v remeshi — difuzní modely tou dobou drží
+                    // přes 13 GB. Server, který ten uzel nemá, dostane graf
+                    // jako dřív.
+                    uklidVram = serverUmiUklid(client),
+                )
 
             // Dlouhé video: graf se neskládá z předlohy, staví ho appka podle
             // počtu úseků. Šablona by nešla — počet vzorkovacích řetězů se mění.
@@ -822,6 +829,28 @@ object GenerationEngine {
      *   nestačí uvolňovat až pod 60 %: TRELLIS spadl na nedostatek paměti
      *   uprostřed běhu, protože zbytek karty držel model z předchozí úlohy.
      */
+    /**
+     * Zná server uzel na úklid paměti uvnitř grafu? Zjišťuje se jednou za běh
+     * aplikace — seznam uzlů se za chodu serveru nemění a dotaz na každý běh
+     * by byl zbytečný.
+     *
+     * Když se to zjistit nedá (server neodpovídá), staví se graf bez úklidu:
+     * nejhůř to dopadne jako dosud, kdežto uzel navíc, který server nezná, by
+     * shodil celý běh na kontrole grafu.
+     */
+    @Volatile private var umiUklid: Boolean? = null
+
+    private suspend fun serverUmiUklid(client: ComfyClient): Boolean {
+        umiUklid?.let { return it }
+        val zjisteno = withContext(Dispatchers.IO) {
+            runCatching {
+                client.objectInfo(Trellis2Builder.TRIDA_UKLIDU) != null
+            }.getOrDefault(false)
+        }
+        umiUklid = zjisteno
+        return zjisteno
+    }
+
     private suspend fun uvolniPametKdyzTreba(client: ComfyClient, vzdycky: Boolean = false) {
         val pred = withContext(Dispatchers.IO) { runCatching { client.vram() }.getOrNull() }
             ?: return
