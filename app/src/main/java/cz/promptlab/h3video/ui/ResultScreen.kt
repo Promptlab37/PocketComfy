@@ -44,6 +44,7 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -503,20 +504,34 @@ private fun ZoomovaciObrazek(bmp: android.graphics.Bitmap, onClose: () -> Unit) 
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
+        // Prohlížení obrázku se chová jako v běžné galerii Androidu:
+        //  - jedním prstem se posouvá, jakmile je obrázek zvětšený;
+        //  - štípnutí zvětšuje kolem místa mezi prsty, ne kolem středu;
+        //  - dvojité ťuknutí přiblíží na to místo, kam člověk ťukl;
+        //  - posun je omezený hranicemi OBRÁZKU, ne celé obrazovky.
+        //
+        // Dřív to jelo na `transformable`, které posun bere jen při doteku
+        // dvěma prsty, zvětšovalo kolem středu a meze počítalo z rozměrů
+        // obrazovky. Obrázek se tak dal odtáhnout do černa a přibližovalo se
+        // jinam, než kam člověk mířil.
         var scale by remember { mutableFloatStateOf(1f) }
         var offset by remember { mutableStateOf(Offset.Zero) }
         var box by remember { mutableStateOf(IntSize.Zero) }
 
-        fun srovnej(s: Float, o: Offset): Offset {
-            if (s <= 1f) return Offset.Zero
-            val mx = box.width * (s - 1f) / 2f
-            val my = box.height * (s - 1f) / 2f
-            return Offset(o.x.coerceIn(-mx, mx), o.y.coerceIn(-my, my))
-        }
+        // Vzorce jsou v ProhlizecMatika, ať se dají ověřit testem.
+        fun srovnej(s: Float, o: Offset): Offset = ProhlizecMatika.srovnej(
+            o, box.width, box.height, bmp.width, bmp.height, s,
+        )
 
-        val stav = rememberTransformableState { zoom, pan, _ ->
-            scale = (scale * zoom).coerceIn(1f, 5f)
-            offset = srovnej(scale, offset + pan)
+        /** Přiblížení k bodu [bod] — obraz roste od prstu, ne od středu. */
+        fun priblizNa(bod: Offset, noveMeritko: Float) {
+            val cil = noveMeritko.coerceIn(ProhlizecMatika.MIN, ProhlizecMatika.MAX)
+            val posun = ProhlizecMatika.posunPriZvetseni(
+                bod, Offset(box.width / 2f, box.height / 2f), offset, scale, cil,
+            )
+            offset = srovnej(cil, posun)
+            scale = cil
+            if (cil <= ProhlizecMatika.MIN) offset = Offset.Zero
         }
 
         Box(
@@ -529,12 +544,31 @@ private fun ZoomovaciObrazek(bmp: android.graphics.Bitmap, onClose: () -> Unit) 
                         // Ťuknutí zavírá jen u nezvětšeného obrázku — u zvětšeného
                         // by to zavřelo při každém nechtěném doteku. Od toho je křížek.
                         onTap = { if (scale <= 1f) onClose() },
-                        onDoubleTap = {
+                        // Dvojité ťuknutí míří tam, kam člověk ťukl.
+                        onDoubleTap = { bod ->
                             if (scale > 1f) {
                                 scale = 1f; offset = Offset.Zero
-                            } else scale = 2.5f
+                            } else priblizNa(bod, 2.5f)
                         }
                     )
+                }
+                .pointerInput(Unit) {
+                    detectTransformGestures { stredDoteku, posun, priblizeni, _ ->
+                        if (priblizeni != 1f) {
+                            val cil = (scale * priblizeni)
+                                .coerceIn(ProhlizecMatika.MIN, ProhlizecMatika.MAX)
+                            offset = ProhlizecMatika.posunPriZvetseni(
+                                stredDoteku, Offset(box.width / 2f, box.height / 2f),
+                                offset, scale, cil,
+                            )
+                            scale = cil
+                        }
+                        // Posunout jde jen zvětšený obrázek. V základní velikosti
+                        // by se pod prstem beztak neměl kam hnout.
+                        offset =
+                            if (scale > ProhlizecMatika.MIN) srovnej(scale, offset + posun)
+                            else Offset.Zero
+                    }
                 }
         ) {
             androidx.compose.foundation.Image(
@@ -546,8 +580,7 @@ private fun ZoomovaciObrazek(bmp: android.graphics.Bitmap, onClose: () -> Unit) 
                     .graphicsLayer {
                         scaleX = scale; scaleY = scale
                         translationX = offset.x; translationY = offset.y
-                    }
-                    .transformable(stav),
+                    },
             )
             // Křížek je vždycky vidět a vždycky zavírá — i když je obrázek
             // přiblížený. Dřív byl menší a splýval se světlými fotkami.
