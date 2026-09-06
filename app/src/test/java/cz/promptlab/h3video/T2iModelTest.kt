@@ -122,7 +122,8 @@ class T2iModelTest {
     fun `kroky pro ukazatel prubehu sedi s predlohou`() {
         assertEquals(8, ZImageBuilder.stepsFor(""))
         assertEquals(12, ZImageBuilder.stepsFor(ZImageBuilder.NSFW_MODEL_FILE))
-        assertEquals(30, ZImageBuilder.stepsFor("base"))
+        // 25 = oficiální předloha ComfyUI pro Base (image_z_image.json).
+        assertEquals(25, ZImageBuilder.stepsFor("base"))
         assertEquals(4, ZImageBuilder.stepsFor("klein"))
         assertEquals(9, ZImageBuilder.stepsFor("ernie"))
     }
