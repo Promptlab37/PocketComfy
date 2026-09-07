@@ -110,6 +110,15 @@ fun inpaintHints(s: InpaintScene): List<String> {
         out += t("Popiš celé místo i s okolím („muž v černé bundě na lavičce“), " +
             "ne jen samotnou věc — model píše obraz, ne příkaz.")
     }
+    // Bez tohohle to vypadá, že model „neposlechl". Neposlechl proto, že to
+    // neumí: základní FLUX má nahotu i podrobnou anatomii vytrénovanou pryč
+    // a bez adaptéru ji nenamaluje, ať se zadání napíše jakkoli. Volba LoRA
+    // je ve sbaleném oddílu, takže o ní člověk nemusí vůbec vědět.
+    if (s.lora.isBlank()) {
+        out += t("Základní model neumí nahotu ani podrobnou anatomii — ty z něj " +
+            "byly vytrénované pryč. Rozbal „Model a doladění“ a přimíchej LoRA, " +
+            "jinak to zadání nesplní, ať ho napíšeš jakkoli.")
+    }
     return out
 }
 
