@@ -123,10 +123,22 @@ class GenerationService : Service() {
             .build()
 
     private fun notify(id: Int, n: Notification) {
-        runCatching { NotificationManagerCompat.from(this).notify(id, n) }
+        notifyIfAllowed(this, id, n)
     }
 
     companion object {
+        private fun notifyIfAllowed(ctx: Context, id: Int, notification: Notification) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) !=
+                android.content.pm.PackageManager.PERMISSION_GRANTED
+            ) return
+            try {
+                NotificationManagerCompat.from(ctx).notify(id, notification)
+            } catch (_: SecurityException) {
+                // Uživatel mohl oprávnění odvolat mezi kontrolou a odesláním.
+            }
+        }
+
         private const val CH_PROGRESS = "generation"
         private const val CH_DONE = "generation_done"
         private const val NOTIF_PROGRESS = 1001
@@ -184,7 +196,7 @@ class GenerationService : Service() {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(openApp(ctx))
                 .build()
-            runCatching { NotificationManagerCompat.from(ctx).notify(NOTIF_DONE, n) }
+            notifyIfAllowed(ctx, NOTIF_DONE, n)
         }
 
         fun notifyFailed(ctx: Context, message: String) {
@@ -198,7 +210,7 @@ class GenerationService : Service() {
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(openApp(ctx))
                 .build()
-            runCatching { NotificationManagerCompat.from(ctx).notify(NOTIF_DONE, n) }
+            notifyIfAllowed(ctx, NOTIF_DONE, n)
         }
 
         fun formatEta(seconds: Int): String {

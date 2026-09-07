@@ -109,7 +109,7 @@ fun ImageEditSection(vm: MainViewModel) {
 
     SectionCard(
         title = t("Čím upravit"),
-        subtitle = t("Dva editační modely, každý jinak postavený")
+        subtitle = t("Vyberte model podle požadované úpravy")
     ) {
         Column {
             PillRow(
@@ -125,6 +125,8 @@ fun ImageEditSection(vm: MainViewModel) {
             )
         }
     }
+
+    EditLoraSection(vm, scene)
 
     if (scene.motor == EditMotor.QWEN) SectionCard(
         title = t("Rychlost proti kvalitě"),

@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /** Jeden běh čekající ve frontě. Zadání se zmrazí ve chvíli zařazení. */
@@ -38,6 +39,7 @@ class QueueCore(
     private val bezi: () -> Boolean,
     private val zavriVysledek: () -> Unit,
     private val scope: CoroutineScope,
+    private val onStartFailed: (QueuedRun, Exception) -> Unit,
     /** Kolik se hotový výsledek nechá ukázat, než se rozjede další běh. */
     private val prodlevaPoHotovoMs: Long = 1500,
 ) {
@@ -50,7 +52,7 @@ class QueueCore(
     fun start() {
         if (hlidac?.isActive == true) return
         hlidac = scope.launch {
-            stav.collectLatest { s ->
+            combine(stav, _queue) { state, _ -> state }.collectLatest { s ->
                 when {
                     // Hotovo se chvíli ukáže a samo se odklidí. Po chybě se
                     // čeká, až ji uživatel zavře (Idle) — jinak by ji přebil
@@ -71,7 +73,7 @@ class QueueCore(
 
     fun add(run: QueuedRun) {
         _queue.value = _queue.value + run
-        if (!bezi()) dalsi()
+        if (stav.value is GenState.Idle && !bezi()) dalsi()
     }
 
     fun remove(id: Long) {
@@ -79,12 +81,17 @@ class QueueCore(
     }
 
     private fun dalsi() {
-        if (bezi()) return
+        if (bezi() || stav.value !is GenState.Idle) return
         val next = _queue.value.firstOrNull() ?: return
         _queue.value = _queue.value.drop(1)
-        // Spuštění nesmí shodit hlídač: kdyby zmrazené zadání selhalo
-        // (smazaný podklad), fronta jede dál dalším během.
-        runCatching { next.spust() }
+        try {
+            next.spust()
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            // Chybu ukázat stejně jako selhání běžící úlohy; zbytek fronty čeká.
+            onStartFailed(next, error)
+        }
     }
 }
 
@@ -98,6 +105,7 @@ object RunQueue {
             bezi = { GenerationEngine.isRunning },
             zavriVysledek = { GenerationEngine.dismissResult() },
             scope = scope,
+            onStartFailed = { run, error -> GenerationEngine.reportQueueFailure(run.title, error.message.orEmpty()) },
         ).also { it.start() }
     }
 

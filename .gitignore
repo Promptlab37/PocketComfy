@@ -26,6 +26,10 @@ keystore/
 *.mp3
 *.flac
 *.m4a
+*.ogg
+*.opus
+*.glb
+*.gltf
 
 # Referenční obrázky a jiné podklady ke generování
 *.jpg

@@ -169,7 +169,7 @@
   },
   "343": {
     "class_type": "CLIPTextEncode",
-    "inputs": { "clip": ["341", 0], "text": "Retain face. " },
+    "inputs": { "clip": ["341", 0], "text": "" },
     "_meta": { "title": "Zadání" }
   },
   "345": {

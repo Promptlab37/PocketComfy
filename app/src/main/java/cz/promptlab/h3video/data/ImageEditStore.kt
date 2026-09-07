@@ -28,6 +28,7 @@ class ImageEditStore(private val ctx: Context) {
                 .put("refBoost", s.refBoost.toDouble())
                 .put("loraSila", s.loraSila.toDouble())
                 .put("qwenRychle", s.qwenRychle)
+                .put("modelLoras", EditLoras.encode(s.modelLoras))
                 .put("groundingPx", s.groundingPx)
                 .put("megapixels", s.megapixels.toDouble())
                 .put("aspect", s.aspect.name)
@@ -70,6 +71,7 @@ class ImageEditStore(private val ctx: Context) {
                 personThumb = osoba?.let { ImageUtils.loadFileThumb(it) },
                 prompt = root.optString("prompt"),
                 qwenRychle = root.optBoolean("qwenRychle", true),
+                modelLoras = EditLoras.decode(root.optJSONObject("modelLoras")),
                 motor = EditMotor.entries
                     .firstOrNull { it.name == root.optString("motor") } ?: EditMotor.KREA2,
                 // Výchozí je nově vyvážené nastavení, ne to nejvíc zamčené —

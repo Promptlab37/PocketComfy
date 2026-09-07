@@ -10,6 +10,78 @@ package cz.promptlab.h3video.data
 object Slovnik {
 
     val EN: Map<String, String> = mapOf(
+        // Knihovna obsahu a LoRA pro editační modely.
+        "Knihovna obsahu" to "Content library",
+        "v aplikaci" to "in the app",
+        "Hledat název, zadání nebo seed…" to "Search titles, prompts or seeds…",
+        "Oblíbené" to "Favorites",
+        "Řazení" to "Sort order",
+        "Nejnovější" to "Newest first",
+        "Nejstarší" to "Oldest first",
+        "Podle názvu" to "By name",
+        "Zobrazit seznam" to "Show list",
+        "Zobrazit mřížku" to "Show grid",
+        "Prostor pro vaše nápady" to "A home for your ideas",
+        "Videa, obrázky, hudba i 3D modely na jednom místě. Hotové výstupy tu zůstanou dostupné i bez serveru." to
+            "Videos, images, music and 3D models in one place. Finished creations stay available even when your server is offline.",
+        "Vytvořit první obsah" to "Create your first content",
+        "Vyberte si to nejlepší" to "Keep your best work close",
+        "Žádné odpovídající výstupy" to "No matching creations",
+        "Označte výstupy hvězdičkou a budete je mít vždy po ruce." to "Star your creations to find them quickly here.",
+        "Zkuste jiné hledání nebo zrušte filtry." to "Try another search or clear the filters.",
+        "Zobrazit vše" to "Show all",
+        "Výstup odstraněn" to "Creation removed",
+        "Odstranit výstup?" to "Remove this creation?",
+        "Odstraní se kopie v aplikaci. Soubory uložené do telefonu zůstanou zachované." to
+            "This removes the copy in the app. Files exported to your phone will be kept.",
+        "Odstranit" to "Remove",
+        "Odebrat z oblíbených" to "Remove from favorites",
+        "Přidat do oblíbených" to "Add to favorites",
+        "Akce výstupu" to "Creation actions",
+        "Přejmenovat" to "Rename",
+        "Kopírovat zadání" to "Copy prompt",
+        "Kopírovat seed" to "Copy seed",
+        "Přehrát" to "Play",
+        "Uloženo v telefonu" to "Saved to your phone",
+        "Pojmenovat výstup" to "Name your creation",
+        "Název výstupu" to "Creation title",
+        "Prázdný název použije původní zadání." to "Leave empty to use the original prompt as the title.",
+        "Zadání a parametry" to "Prompt and parameters",
+        "Původní zadání" to "Original prompt",
+        "Bez textového zadání" to "No text prompt",
+        "Ukládám…" to "Saving…",
+        "LoRA pro %s" to "LoRA for %s",
+        "Volba a síla se pamatují pro každý model zvlášť" to "Selection and strength are saved separately for each model",
+        "Obnovit seznam LoRA" to "Refresh LoRA list",
+        "Vybrat LoRA (nepovinné)" to "Choose a LoRA (optional)",
+        "Bez doplňkové LoRA" to "No additional LoRA",
+        "Načítám LoRA a údaje o modelech…" to "Loading LoRAs and model details…",
+        "Seznam LoRA se nepodařilo načíst. Zkontrolujte server a obnovte seznam." to
+            "Could not load LoRAs. Check your server and refresh the list.",
+        "Žádná LoRA s rozpoznaným základním modelem. Ve výběru lze přiřadit neoznačený soubor." to
+            "No LoRAs with a recognized base model. You can assign an unclassified file in the picker.",
+        "Vybraná LoRA na tomto serveru chybí. Obnovte seznam nebo vyberte jinou." to
+            "The selected LoRA is missing from this server. Refresh the list or choose another one.",
+        "LoRA se přidá k editačnímu modelu. Základní LoRA pro identitu a zrychlení se řídí nastavením modelu." to
+            "The LoRA is added to the editing model. Built-in identity and acceleration LoRAs follow the model settings.",
+        "Hledat LoRA…" to "Search LoRAs…",
+        "Neurčené" to "Unclassified",
+        "Pro model" to "For this model",
+        "U těchto souborů chybí označení modelu. Vyberte jen LoRA určenou pro aktuální model." to
+            "These files have no recognized base model. Only choose a LoRA trained for the current model.",
+        "Výběr podle základního modelu v metadatech nebo názvu souboru." to
+            "Filtered by the base model in the metadata or file name.",
+        "Seznam je prázdný. LoRA musí být uložená na serveru ve složce models/loras." to
+            "The list is empty. LoRAs must be stored in models/loras on your server.",
+        "Obnovit" to "Refresh",
+        "Přiřadit LoRA k modelu?" to "Assign this LoRA to the model?",
+        "U souboru %s nelze ověřit základní model. Použijte ho jen pokud je určený pro %s." to
+            "The base model of %s could not be verified. Only use it if it was trained for %s.",
+        "Použít pro tento model" to "Use for this model",
+        "Vyberte model podle požadované úpravy" to "Choose a model for your edit",
+        "Vybraná LoRA nepatří k tomuto editačnímu modelu nebo ji již používá základní workflow." to
+            "The selected LoRA is incompatible with this editing model or is already used by the base workflow.",
+        "Úlohu z fronty se nepodařilo spustit: %s" to "Could not start queued task: %s",
         // ---------------------------------------------------------- karty
         "Dialogy" to "Dialogue",
         "Časová osa" to "Timeline",
@@ -1030,5 +1102,11 @@ object Slovnik {
         "\u010c\u00edm to nahradit (nepovinn\u00e9)" to "What to replace it with (optional)",
         "Bez fotek se p\u0159emaluje jen podle popisu; s fotkou dr\u017e\u00ed podobu" to
             "Without photos it repaints from the description alone; a photo keeps the likeness",
+        "Veřejné aktualizace fungují bez tokenu." to "Public updates work without a token.",
+        "Token je potřeba jen pro soukromá vydání. Zůstane v telefonu." to
+            "A token is only needed for private releases. It stays on your phone.",
+        "Uložit a zkontrolovat" to "Save and check",
+        "Přejít na veřejná vydání" to "Switch to public releases",
+        "Soukromá vydání" to "Private releases",
     )
 }

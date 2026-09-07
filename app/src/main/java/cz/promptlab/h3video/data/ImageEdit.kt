@@ -116,10 +116,16 @@ data class ImageEditScene(
      * (40 kroků). Obojí má oficiální předloha, jen schované za přepínačem.
      */
     val qwenRychle: Boolean = true,
+    /** Každý motor má vlastní volbu: LoRA se nepřenáší mezi nekompatibilními modely. */
+    val modelLoras: Map<EditMotor, EditLora> = emptyMap(),
     /** Delší hrana výstupu; 1 MP je podle autora rozumný strop. */
     val megapixels: Float = 1f,
     val aspect: Aspect = Aspect.SQUARE_1_1,
 ) {
+    val selectedLora: EditLora get() = modelLoras[motor] ?: EditLora()
+
+    fun withLora(lora: EditLora): ImageEditScene = copy(modelLoras = modelLoras + (motor to lora))
+
     val resolution: Resolution get() = Resolution.of(aspect, megapixels)
 
     val hasPerson: Boolean get() = person != null

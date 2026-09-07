@@ -29,7 +29,7 @@ class AppSettings(ctx: Context) {
     /**
      * Prázdná hodnota znamená „server ještě nikdo nenastavil" – veřejné
      * sestavení žádnou výchozí adresu nemá a appka se při prvním spuštění
-     * zeptá. Osobní sestavení si výchozí adresu nese z `local.properties`.
+     * zeptá. Uložená adresa se při aktualizaci zachová.
      */
     var serverUrl: String
         get() = sp.getString("server", "")!!.ifBlank { DEFAULT_SERVER }
@@ -41,21 +41,15 @@ class AppSettings(ctx: Context) {
     /**
      * Token pro čtení vydání z privátního repozitáře na GitHubu.
      *
-     * Od verze 2.20 je zapečený v sestavení (`BuildConfig.GITHUB_TOKEN`, plněný
-     * z `local.properties` mimo repozitář), aby aktualizace chodily rovnou po
-     * instalaci a nebylo co vyplňovat. Token vepsaný v Nastavení má přednost –
-     * kdyby ten zapečený vypršel, dá se přebít bez nového sestavení.
+     * Od 3.35 je token pouze v nastavení telefonu. Bez něj se aktualizace
+     * hledají ve veřejném repozitáři PocketComfy.
      */
     var githubToken: String
         get() = secrets.getString("githubToken", "")!!
-            .ifBlank { cz.promptlab.h3video.BuildConfig.GITHUB_TOKEN }
         set(v) = secrets.edit().putString("githubToken", v.trim()).apply()
 
-    /** Jen ručně vepsaný token – do políčka v Nastavení nepatří ten zapečený. */
+    /** Ručně vepsaný token pro nastavení soukromého kanálu. */
     val githubTokenRaw: String get() = secrets.getString("githubToken", "")!!
-
-    /** Umí appka kontrolovat aktualizace i bez toho, aby uživatel něco vyplnil? */
-    val hasBuiltInToken: Boolean get() = cz.promptlab.h3video.BuildConfig.GITHUB_TOKEN.isNotBlank()
 
     /**
      * Higgs Audio Studio – samostatný server na počítači, ne ComfyUI. Adresa se
@@ -341,9 +335,7 @@ class AppSettings(ctx: Context) {
         private const val MIGRATED_FULL = "migratedFullProfile2"
 
         /**
-         * Výchozí adresa serveru ze sestavení (`local.properties` →
-         * `BuildConfig`). Veřejné sestavení ji nemá – osobní IP adresy do
-         * repozitáře ani do cizích telefonů nepatří.
+         * Prázdná výchozí adresa: osobní IP adresy se do APK nevkládají.
          */
         val DEFAULT_SERVER: String
             get() = cz.promptlab.h3video.BuildConfig.DEFAULT_SERVER

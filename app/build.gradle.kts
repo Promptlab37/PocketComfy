@@ -9,10 +9,9 @@ plugins {
 }
 
 /**
- * Token pro kontrolu aktualizací se do APK zapéká, aby appka fungovala bez
- * nastavování. Čte se z `local.properties`, který je v .gitignore – do
- * repozitáře se tedy nikdy nedostane. Když chybí, appka se zeptá v Nastavení
- * jako dřív, jen se nesestaví s předvyplněným tokenem.
+ * Lokální soubor slouží pouze k podpisu. Tokeny ani adresy serverů se do
+ * žádného APK nevkládají, i když je local.properties ze starších verzí obsahuje.
+ * Aktualizace jsou veřejné; soukromé připojení se nastavuje až v telefonu.
  */
 val localProps: Properties = run {
     val props = Properties()
@@ -20,17 +19,6 @@ val localProps: Properties = run {
     if (f.exists()) f.inputStream().use { props.load(it) }
     props
 }
-val githubToken: String = localProps.getProperty("githubToken", "")
-
-/**
- * Osobní síťové údaje (výchozí adresa serveru, rychlé volby) žijí taky jen
- * v `local.properties`. Veřejné sestavení je nemá – appka se pak při prvním
- * spuštění zeptá na adresu ComfyUI místo toho, aby v sobě nesla cizí IP.
- * Formát rychlých voleb: `url|popisek;url|popisek` (bez diakritiky, soubor
- * .properties se čte v Latin-1).
- */
-val defaultServer: String = localProps.getProperty("defaultServer", "")
-val serverPresets: String = localProps.getProperty("serverPresets", "")
 
 android {
     namespace = "cz.promptlab.h3video"
@@ -47,12 +35,12 @@ android {
         applicationId = "cz.promptlab.h3video"
         minSdk = 26
         targetSdk = 35
-        versionCode = 145
-        versionName = "3.33"
+        versionCode = 147
+        versionName = "3.35"
         vectorDrawables { useSupportLibrary = true }
-        buildConfigField("String", "GITHUB_TOKEN", "\"$githubToken\"")
-        buildConfigField("String", "DEFAULT_SERVER", "\"$defaultServer\"")
-        buildConfigField("String", "SERVER_PRESETS", "\"$serverPresets\"")
+        buildConfigField("String", "GITHUB_TOKEN", "\"\"")
+        buildConfigField("String", "DEFAULT_SERVER", "\"\"")
+        buildConfigField("String", "SERVER_PRESETS", "\"\"")
     }
 
     // Hesla podpisu drží jen local.properties (v .gitignore), do repozitáře
@@ -142,8 +130,6 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
-
-
 
 
 

@@ -123,6 +123,7 @@ object KleinEditBuilder {
             wf.inputs(N_GUIDER).put("positive", link(N_REF_POS2))
             wf.inputs(N_GUIDER).put("negative", link(N_REF_NEG2))
         }
+        EditLoraBuilder.attach(wf, scene, N_GUIDER)
         return wf
     }
 
@@ -138,7 +139,7 @@ object KleinEditBuilder {
         getJSONObject(node).getJSONObject("inputs")
 
     fun stageForClass(cls: String?): Stage = when (cls) {
-        "UNETLoader", "CLIPLoader", "VAELoader" -> Stage.MODELS
+        "UNETLoader", "CLIPLoader", "VAELoader", "LoraLoaderModelOnly" -> Stage.MODELS
         "LoadImage", "ImageScaleToTotalPixels", "GetImageSize", "VAEEncode" -> Stage.REFERENCES
         "CLIPTextEncode", "ConditioningZeroOut", "ReferenceLatent",
         "EmptyFlux2LatentImage", "Flux2Scheduler", "KSamplerSelect", "RandomNoise",
