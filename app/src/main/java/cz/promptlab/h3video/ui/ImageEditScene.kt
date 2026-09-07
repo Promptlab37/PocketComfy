@@ -27,7 +27,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.data.EditMotor
+import cz.promptlab.h3video.data.EditZamer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -124,14 +126,37 @@ fun ImageEditSection(vm: MainViewModel) {
         }
     }
 
+    if (scene.motor == EditMotor.QWEN) SectionCard(
+        title = t("Rychlost proti kvalitě"),
+        subtitle = t("Obojí má oficiální předloha, liší se počtem kroků")
+    ) {
+        Column {
+            PillRow(
+                items = listOf(true, false),
+                selected = scene.qwenRychle,
+                label = { if (it) t("Rychle — 4 kroky") else t("Kvalitně — 40 kroků") },
+                onSelect = { vm.setEditQwenRychle(it) },
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                if (scene.qwenRychle) {
+                    t("Zrychlovací LoRA. Na běžné úpravy stačí a je to řádově rychlejší.")
+                } else {
+                    t("Bez zrychlovací LoRA a se skutečným cfg. Poslouchá zadání nejlíp, ale trvá to.")
+                },
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+            )
+        }
+    }
+
     // Rozlišení a jemné páčky nikdo nemění při každém běhu – jsou sbalené,
     // ať na obrazovce zbyde jen fotka, zadání a tlačítko.
     SkladaciSekce(
         title = t("Nastavení úpravy"),
         // Klein páčky na věrnost ani vidění předlohy nemá — vypisovat je
         // v souhrnu by tvrdilo, že něco dělají.
-        souhrn = if (scene.motor == EditMotor.KLEIN) {
-            t("rozměry podle předlohy · 4 kroky")
+        souhrn = if (scene.motor != EditMotor.KREA2) {
+            t("rozměry podle předlohy")
         } else {
             scene.resolution.label + " · vidí " + scene.groundingPx + " px" +
                 " · věrnost %.2f".format(scene.refBoost)
@@ -180,6 +205,24 @@ fun ImageEditSection(vm: MainViewModel) {
             subtitle = t("Kompromis mezi poslušností zadání a věrností obličeje")
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                // Tři páčky pod tím táhnou stejným směrem, takže se nastavují
+                // najednou. Kdo si je pak dolaďuje ručně, uvidí „Vlastní".
+                PillRow(
+                    items = EditZamer.entries.toList(),
+                    selected = scene.zamer ?: EditZamer.VYVAZENE,
+                    label = { it.nazev },
+                    onSelect = { vm.setEditZamer(it) },
+                )
+                Text(
+                    (scene.zamer ?: EditZamer.VYVAZENE).popis,
+                    style = MaterialTheme.typography.bodySmall, color = TextLow,
+                )
+                if (scene.zamer == null) {
+                    Text(
+                        t("Vlastní nastavení páček."),
+                        style = MaterialTheme.typography.bodySmall, color = Amber,
+                    )
+                }
                 LabeledSlider(
                     label = t("Vidění předlohy"),
                     value = "${scene.groundingPx} px",
@@ -196,6 +239,14 @@ fun ImageEditSection(vm: MainViewModel) {
                     range = 0.5f..3f,
                     onChange = { vm.setEditRefBoost((it * 100).roundToInt() / 100f) },
                     note = t("1,00 je vypnuto. Na věrné obličeje zkus 1,5–2."),
+                )
+                LabeledSlider(
+                    label = t("Zámek totožnosti"),
+                    value = "%.2f".format(scene.loraSila),
+                    position = scene.loraSila,
+                    range = 0f..1f,
+                    onChange = { vm.setEditLoraSila((it * 100).roundToInt() / 100f) },
+                    note = t("Síla LoRA, která drží obličej. Na plné síle model přejde i jasné zadání."),
                 )
             }
         }

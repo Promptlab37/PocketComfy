@@ -339,6 +339,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             TxtImageSection(vm, params)
         }
 
+        // ---------------------------------------------------------- projekt
+        if (mode == Mode.PROJEKT) {
+            ProjektSection(vm)
+        }
+
         // ------------------------------------------------------------ hudba
         if (mode == Mode.MUSIC) {
             MusicSection(vm)
@@ -710,7 +715,10 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
 
         // Tlačítko je připnuté dole a nikdy neodjede z obrazovky – kvůli němu
         // se dřív muselo rolovat na konec celé stránky.
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
+        //
+        // Projekt je rozcestník, ne generátor: nemá co spustit, vyrábí se
+        // z jednotlivých záběrů. Tlačítko se u něj proto vůbec nekreslí.
+        if (mode != Mode.PROJEKT) Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
         // Za běhu tlačítko nezhasíná – další zadání se zařadí do fronty a
         // spustí se samo, jakmile aktuální běh skončí.
         val fronta by vm.queue.collectAsStateWithLifecycle()

@@ -26,7 +26,7 @@
       "image": ["20", 0],
       "upscale_method": "lanczos",
       "megapixels": 1.0,
-      "resolution_steps": 1
+      "resolution_steps": 16
     },
     "_meta": { "title": "Srovnat na 1 MP" }
   },

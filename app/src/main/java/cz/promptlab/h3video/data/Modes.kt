@@ -12,6 +12,17 @@ enum class Mode(
     private val shortCs: String,
     private val detailCs: String,
 ) {
+    /**
+     * Rozcestník na film, ne generátor: drží záběry v pořadí, jejich popisy
+     * a hotové výsledky. Vyrábí se z něj přepnutím do té karty, která záběr
+     * umí — proto je první, člověk tu obvykle začíná.
+     */
+    PROJEKT(
+        titleCs = "Projekt",
+        shortCs = "Projekt",
+        detailCs = "Záběry v pořadí, jejich popisy a hotové výsledky na jednom místě"
+    ),
+
     ALLINONE(
         titleCs = "All in One",
         shortCs = "All in One",
@@ -213,6 +224,8 @@ fun ovladaProKartu(
         AioMode.MASK -> Ovlada(rozliseni = false)
         else -> Ovlada()
     }
+    // Projekt sám nic negeneruje — žádné sdílené nastavení se ho netýká.
+    Mode.PROJEKT -> Ovlada.NIC
     Mode.LONG -> Ovlada(rozliseni = !dlouheNavazuje)
     else -> Ovlada()
 }
