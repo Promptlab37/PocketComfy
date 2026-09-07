@@ -27,10 +27,57 @@ enum class EditMotor(private val nazevCs: String, private val popisCs: String) {
         "Má páčku na věrnost podoby a je rychlejší. Druhou předlohu bere " +
             "jako osobu, kterou má do scény vložit.",
     ),
+    QWEN(
+        "Qwen Image Edit 2511",
+        "Na zadání nejposlušnější z těch tří — mění jen to, co jsi napsal, " +
+            "a zbytek obrázku nechává. Druhou předlohu bere jako „obrázek 2“.",
+    ),
     KLEIN(
         "FLUX.2 Klein 9B",
         "Lépe rozumí složitějšímu zadání a na obě předlohy se dá v textu " +
             "odkázat („Figure 1\", „Figure 2\"). Nemá páčku na věrnost a je pomalejší.",
+    );
+
+    val nazev: String get() = t(nazevCs)
+    val popis: String get() = t(popisCs)
+}
+
+/**
+ * Co má u úpravy vyhrát, když si zadání a předloha odporují.
+ *
+ * Krea 2 drží podobu třemi věcmi najednou: LoRA na totožnost, „ref_boost"
+ * a tím, kolik pixelů předlohy vidí textový enkodér (`grounding_px`).
+ * Všechny tři táhnou stejným směrem, takže když jsou nahoře, model zadání
+ * **přejde** — nechá na postavě původní oblečení i scénu. Uživatel na to
+ * narazil: appka měla výchozí hodnoty v tom nejvíc zamčeném rohu.
+ *
+ * Autor modelu to popisuje doslova: „lower = stronger edit adherence,
+ * higher = stronger identity/likeness."
+ */
+enum class EditZamer(
+    private val nazevCs: String,
+    private val popisCs: String,
+    val grounding: Int,
+    val refBoost: Float,
+    /** Síla LoRA na totožnost. Do 3.31 byla natvrdo 1,0. */
+    val loraSila: Float,
+) {
+    ZADANI(
+        "Poslechnout zadání",
+        "Když chceš převléknout, přebarvit nebo změnit scénu. Podoba se drží " +
+            "volněji, zato se úprava opravdu stane.",
+        grounding = 512, refBoost = 1.0f, loraSila = 0.6f,
+    ),
+    VYVAZENE(
+        "Vyvážené",
+        "Rozumný střed pro většinu úprav.",
+        grounding = 768, refBoost = 1.2f, loraSila = 0.85f,
+    ),
+    PODOBA(
+        "Držet podobu",
+        "Když jde o konkrétního člověka a obličej se nesmí hnout. Pozor: " +
+            "silné zadání model v tomhle nastavení klidně přejde.",
+        grounding = 1024, refBoost = 1.5f, loraSila = 1.0f,
     );
 
     val nazev: String get() = t(nazevCs)
@@ -54,14 +101,21 @@ data class ImageEditScene(
      * Výchozí 1,5: appka dělá skoro vždycky konkrétní lidi a s vypnutou
      * páčkou identita znatelně ujížděla.
      */
-    val refBoost: Float = 1.5f,
+    val refBoost: Float = EditZamer.VYVAZENE.refBoost,
     /**
      * Kolik pixelů delší strany dostane textový enkodér. POZOR na směr:
      * VÍC znamená věrnější podobu, MÍŇ poslušnější úpravu — autor doslova:
      * „lower = stronger edit adherence, higher = stronger identity/likeness.
      * Try 1024 for people, 512 for stubborn scene changes."
      */
-    val groundingPx: Int = 1024,
+    val groundingPx: Int = EditZamer.VYVAZENE.grounding,
+    /** Síla LoRA na totožnost. Nižší = ochotnější změna. */
+    val loraSila: Float = EditZamer.VYVAZENE.loraSila,
+    /**
+     * Qwen: rychlá cesta přes Lightning LoRA (4 kroky), nebo pomalá a lepší
+     * (40 kroků). Obojí má oficiální předloha, jen schované za přepínačem.
+     */
+    val qwenRychle: Boolean = true,
     /** Delší hrana výstupu; 1 MP je podle autora rozumný strop. */
     val megapixels: Float = 1f,
     val aspect: Aspect = Aspect.SQUARE_1_1,
@@ -69,6 +123,17 @@ data class ImageEditScene(
     val resolution: Resolution get() = Resolution.of(aspect, megapixels)
 
     val hasPerson: Boolean get() = person != null
+
+    /** Který záměr odpovídá nastaveným páčkám, nebo null u vlastního mixu. */
+    val zamer: EditZamer?
+        get() = EditZamer.entries.firstOrNull {
+            it.grounding == groundingPx &&
+                kotlin.math.abs(it.refBoost - refBoost) < 0.01f &&
+                kotlin.math.abs(it.loraSila - loraSila) < 0.01f
+        }
+
+    fun sZamerem(z: EditZamer): ImageEditScene =
+        copy(groundingPx = z.grounding, refBoost = z.refBoost, loraSila = z.loraSila)
 
     /** Obrázky v pořadí, v jakém se nahrávají do ComfyUI. */
     val uploadImages: List<File> get() = listOfNotNull(source, person)

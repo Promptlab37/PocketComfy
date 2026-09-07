@@ -124,6 +124,8 @@ data class GenParams(
      */
     val imageSlots: Int
         get() = when (mode) {
+            // Projekt sám žádné obrázky nenahrává.
+            Mode.PROJEKT -> 0
             Mode.TALK -> MAX_SPEAKERS
             Mode.TIMELINE -> TimelineScene.MAX_SEGMENTS
             Mode.ALLINONE -> AioScene.MAX_REFS

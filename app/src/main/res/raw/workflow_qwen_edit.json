@@ -1,0 +1,92 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": { "unet_name": "qwen_image_edit_2511_fp8_e4m3fn.safetensors", "weight_dtype": "default" },
+    "_meta": { "title": "Qwen Image Edit 2511" }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": { "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors", "type": "qwen_image", "device": "default" },
+    "_meta": { "title": "Textovy enkoder" }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": { "vae_name": "qwen_image_vae.safetensors" },
+    "_meta": { "title": "VAE" }
+  },
+
+  "5": {
+    "class_type": "ModelSamplingAuraFlow",
+    "inputs": { "model": ["1", 0], "shift": 3.1 },
+    "_meta": { "title": "Posun sigem" }
+  },
+  "6": {
+    "class_type": "CFGNorm",
+    "inputs": { "model": ["5", 0], "strength": 1.0, "pre_cfg": false },
+    "_meta": { "title": "Srovnani CFG" }
+  },
+
+  "20": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Upravovana fotka" }
+  },
+  "21": {
+    "class_type": "FluxKontextImageScale",
+    "inputs": { "image": ["20", 0] },
+    "_meta": { "title": "Srovnat na podporovany rozmer" }
+  },
+  "23": {
+    "class_type": "VAEEncode",
+    "inputs": { "pixels": ["21", 0], "vae": ["3", 0] },
+    "_meta": { "title": "Platno podle predlohy" }
+  },
+
+  "30": {
+    "class_type": "TextEncodeQwenImageEditPlus",
+    "inputs": { "clip": ["2", 0], "prompt": "", "vae": ["3", 0], "image1": ["21", 0] },
+    "_meta": { "title": "Co zmenit" }
+  },
+  "31": {
+    "class_type": "TextEncodeQwenImageEditPlus",
+    "inputs": { "clip": ["2", 0], "prompt": "", "vae": ["3", 0], "image1": ["21", 0] },
+    "_meta": { "title": "Negativ" }
+  },
+  "32": {
+    "class_type": "FluxKontextMultiReferenceLatentMethod",
+    "inputs": { "conditioning": ["30", 0], "reference_latents_method": "index_timestep_zero" },
+    "_meta": { "title": "Zpusob reference" }
+  },
+  "33": {
+    "class_type": "FluxKontextMultiReferenceLatentMethod",
+    "inputs": { "conditioning": ["31", 0], "reference_latents_method": "index_timestep_zero" },
+    "_meta": { "title": "Zpusob reference (negativ)" }
+  },
+
+  "40": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["6", 0],
+      "positive": ["32", 0],
+      "negative": ["33", 0],
+      "latent_image": ["23", 0],
+      "seed": 0,
+      "steps": 40,
+      "cfg": 4.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    },
+    "_meta": { "title": "Vzorkovani" }
+  },
+  "50": {
+    "class_type": "VAEDecode",
+    "inputs": { "samples": ["40", 0], "vae": ["3", 0] },
+    "_meta": { "title": "Dekodovani" }
+  },
+  "60": {
+    "class_type": "SaveImage",
+    "inputs": { "images": ["50", 0], "filename_prefix": "PocketQwenEdit" },
+    "_meta": { "title": "Ulozit" }
+  }
+}

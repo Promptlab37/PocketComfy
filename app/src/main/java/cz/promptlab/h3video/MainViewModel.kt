@@ -637,6 +637,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return "Profil ${p.profile.title} nejde použít s referencemi – přepni profil."
         }
         return when (p.mode) {
+            // Projekt se nespouští — je to rozcestník, vyrábí se z jeho záběrů
+            // v jiných kartách. Tlačítko se u něj vůbec neukazuje.
+            Mode.PROJEKT -> cz.promptlab.h3video.data.projektProblem(_projekt.value)
             Mode.TALK -> validateScene(_scene.value)
             Mode.TIMELINE -> timelineProblem(_timeline.value)
             Mode.LONG -> longProblem(_long.value)
@@ -687,7 +690,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private val vsechnySceny: List<StateFlow<Any?>> get() = listOf(
         _params, _scene, _timeline, _aio, _edit, _upscale, _music,
-        _restore, _swap, _inpaint, _long, _model3d, _aioAvailable,
+        _restore, _swap, _inpaint, _long, _model3d, _projekt, _aioAvailable,
     )
 
     /**
@@ -799,6 +802,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun makeRunner(p: GenParams): QueuedRun {
         val id = System.nanoTime()
         return when (p.mode) {
+            // Projekt nemá co spouštět; sem se nikdy nedostane, protože ho
+            // neprojde tlačítko. Prázdný běh je bezpečnější než výjimka.
+            Mode.PROJEKT -> QueuedRun(id, p.mode.title, "") { }
             Mode.TALK -> {
                 // Pořadí obrázků a zvuků je závazné – podle něj se v promptu
                 // číslují <Picture N> a <Audio N>, takže se posílá přesně tak,
@@ -1367,6 +1373,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             GenerationEngine.state.collect { st ->
+                // Hotový výsledek se připojí k záběru, který na něj čekal.
+                // Čeká se jen na JEDEN běh: jakmile se připojí, čekání končí,
+                // aby další generování nepřepsalo záběr, o který nešlo.
+                if (st is GenState.Done) pripojKCekajicimuZaberu(st.item.id)
                 if (st is GenState.Done && resetOnlySegmentAfterRun) {
                     resetOnlySegmentAfterRun = false
                     if (_timeline.value.onlySegment > 0) {
@@ -2373,6 +2383,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setEditMotor(m: cz.promptlab.h3video.data.EditMotor) = updateEdit { it.copy(motor = m) }
 
+    fun setEditZamer(z: cz.promptlab.h3video.data.EditZamer) = updateEdit { it.sZamerem(z) }
+
+    fun setEditLoraSila(v: Float) = updateEdit { it.copy(loraSila = v) }
+
+    fun setEditQwenRychle(v: Boolean) = updateEdit { it.copy(qwenRychle = v) }
+
     /** `druh` je "source" (upravovaná fotka) nebo "person" (vkládaná osoba). */
     fun pickEditImage(druh: String, uri: Uri?) {
         if (uri == null) return
@@ -2444,6 +2460,132 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setMusicKeyscale(v: String) = updateMusic { it.copy(keyscale = v) }
 
     // ---------------------------------------------------------- oprava fotky
+
+    // ------------------------------------------------------------- projekt
+
+    private val projektStore = cz.promptlab.h3video.data.ProjektStore(app)
+
+    private val _projekt = MutableStateFlow(cz.promptlab.h3video.data.ProjektScene())
+    val projekt: StateFlow<cz.promptlab.h3video.data.ProjektScene> = _projekt.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val nactene = withContext(Dispatchers.IO) { projektStore.load() }
+            if (nactene.projekty.isNotEmpty()) _projekt.value = nactene
+        }
+    }
+
+    private fun updateProjekt(
+        zmena: (cz.promptlab.h3video.data.ProjektScene) -> cz.promptlab.h3video.data.ProjektScene,
+    ) {
+        _projekt.value = zmena(_projekt.value)
+        projektStore.save(_projekt.value)
+    }
+
+    fun novyProjekt(nazev: String) = updateProjekt { s ->
+        val p = cz.promptlab.h3video.data.Projekt(
+            id = System.currentTimeMillis(),
+            nazev = nazev.ifBlank { t("Nový projekt") },
+        )
+        s.copy(projekty = s.projekty + p, otevreny = p.id)
+    }
+
+    fun otevriProjekt(id: Long?) = updateProjekt { it.copy(otevreny = id) }
+
+    fun prejmenujProjekt(id: Long, nazev: String) = updateProjekt { s ->
+        s.copy(projekty = s.projekty.map { if (it.id == id) it.copy(nazev = nazev) else it })
+    }
+
+    fun smazProjekt(id: Long) = updateProjekt { s ->
+        s.copy(
+            projekty = s.projekty.filterNot { it.id == id },
+            otevreny = if (s.otevreny == id) null else s.otevreny,
+        )
+    }
+
+    private fun upravOtevreny(
+        zmena: (cz.promptlab.h3video.data.Projekt) -> cz.promptlab.h3video.data.Projekt,
+    ) = updateProjekt { s ->
+        val id = s.otevreny ?: return@updateProjekt s
+        s.copy(projekty = s.projekty.map { if (it.id == id) zmena(it) else it })
+    }
+
+    fun pridejZaber() = upravOtevreny { p ->
+        p.copy(
+            zabery = p.zabery + cz.promptlab.h3video.data.Zaber(id = System.nanoTime()),
+        )
+    }
+
+    fun upravZaber(
+        zaberId: Long,
+        zmena: (cz.promptlab.h3video.data.Zaber) -> cz.promptlab.h3video.data.Zaber,
+    ) = upravOtevreny { it.uprav(zaberId, zmena) }
+
+    fun presunZaber(zaberId: Long, kam: Int) = upravOtevreny { it.presun(zaberId, kam) }
+
+    fun smazZaber(zaberId: Long) = upravOtevreny { it.smaz(zaberId) }
+
+    /**
+     * Připraví záběr k výrobě: přepne na jeho kartu, předvyplní zadání a
+     * zapamatuje si, ke kterému záběru výsledek patří.
+     *
+     * Zadání se **nepřepisuje**, když už v kartě něco je a je to něco jiného —
+     * člověk si mohl rozepsat vlastní znění a přijít o něj jedním ťuknutím by
+     * bylo horší než ho vyplnit sám.
+     */
+    fun pripravZaber(zaberId: Long) {
+        val s = _projekt.value
+        val z = s.projekt?.zabery?.firstOrNull { it.id == zaberId } ?: return
+        val karta = z.karta ?: return
+        updateProjekt { it.copy(cekaZaber = zaberId) }
+        update { it.copy(mode = karta) }
+        if (z.popis.isNotBlank()) vlozPopisDoKarty(karta, z.popis)
+    }
+
+    /**
+     * Připojí hotový výsledek k záběru, který na něj čekal.
+     *
+     * Záběr se hledá v projektu, kde byl označený — ne v tom zrovna otevřeném:
+     * uživatel mohl mezitím přepnout jinam a výsledek by skončil u cizího
+     * záběru.
+     */
+    private fun pripojKCekajicimuZaberu(vysledekId: String) {
+        val ceka = _projekt.value.cekaZaber ?: return
+        updateProjekt { s ->
+            s.copy(
+                projekty = s.projekty.map { p ->
+                    if (p.zabery.none { it.id == ceka }) p
+                    else p.uprav(ceka) { it.copy(vysledek = vysledekId) }
+                },
+                cekaZaber = null,
+            )
+        }
+    }
+
+    /** Zruší čekání — výsledek se pak k ničemu nepřipojí. */
+    fun zrusCekaniNaZaber() = updateProjekt { it.copy(cekaZaber = null) }
+
+    /** Ručně připojí hotovou položku galerie k záběru. */
+    fun pripojVysledek(zaberId: Long, vysledekId: String?) =
+        upravZaber(zaberId) { it.copy(vysledek = vysledekId) }
+
+    /**
+     * Zadání záběru do té karty, která ho má vyrobit. Každá karta si drží
+     * vlastní scénu, takže se to musí rozeslat ručně — sdílený prompt má jen
+     * část z nich.
+     */
+    private fun vlozPopisDoKarty(karta: Mode, popis: String) {
+        when (karta) {
+            Mode.ALLINONE -> updateAio { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
+            Mode.EDIT -> updateEdit { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
+            // Dlouhé video nemá jeden prompt — popis patří prvnímu záběru.
+            Mode.LONG -> updateLong {
+                if (it.startPrompt.isBlank()) it.copy(startPrompt = popis) else it
+            }
+            Mode.MODEL3D, Mode.UPSCALE, Mode.RESTORE, Mode.FACESWAP, Mode.PROJEKT -> Unit
+            else -> update { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
+        }
+    }
 
     private val restoreStore = RestoreStore(app)
 

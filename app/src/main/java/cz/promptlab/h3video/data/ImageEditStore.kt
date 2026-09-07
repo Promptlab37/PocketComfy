@@ -26,6 +26,8 @@ class ImageEditStore(private val ctx: Context) {
                 .put("person", s.person?.name ?: "")
                 .put("prompt", s.prompt)
                 .put("refBoost", s.refBoost.toDouble())
+                .put("loraSila", s.loraSila.toDouble())
+                .put("qwenRychle", s.qwenRychle)
                 .put("groundingPx", s.groundingPx)
                 .put("megapixels", s.megapixels.toDouble())
                 .put("aspect", s.aspect.name)
@@ -67,10 +69,16 @@ class ImageEditStore(private val ctx: Context) {
                 person = osoba,
                 personThumb = osoba?.let { ImageUtils.loadFileThumb(it) },
                 prompt = root.optString("prompt"),
+                qwenRychle = root.optBoolean("qwenRychle", true),
                 motor = EditMotor.entries
                     .firstOrNull { it.name == root.optString("motor") } ?: EditMotor.KREA2,
-                refBoost = root.optDouble("refBoost", 1.5).toFloat(),
-                groundingPx = root.optInt("groundingPx", 1024),
+                // Výchozí je nově vyvážené nastavení, ne to nejvíc zamčené —
+                // v něm model zadání přecházel.
+                refBoost = root.optDouble("refBoost", EditZamer.VYVAZENE.refBoost.toDouble())
+                    .toFloat(),
+                loraSila = root.optDouble("loraSila", EditZamer.VYVAZENE.loraSila.toDouble())
+                    .toFloat(),
+                groundingPx = root.optInt("groundingPx", EditZamer.VYVAZENE.grounding),
                 megapixels = root.optDouble("megapixels", 1.0).toFloat(),
                 aspect = runCatching { Aspect.valueOf(root.optString("aspect")) }
                     .getOrDefault(Aspect.SQUARE_1_1),

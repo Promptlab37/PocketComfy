@@ -72,6 +72,10 @@ object Krea2Builder {
             put("grounding_px", scene.groundingPx)
         }
         wf.inputs(N_NEGATIVE).put("grounding_px", scene.groundingPx)
+        // Síla LoRA na totožnost. Do 3.31 zůstávala na 1,0 z předlohy, takže
+        // i při „poslechnout zadání" držela model zpátky ta nejsilnější
+        // z pojistek na podobu.
+        wf.inputs(N_LORA).put("strength_model", scene.loraSila.toDouble())
         wf.inputs(N_PATCH).apply {
             put("ref_boost", scene.refBoost.toDouble())
             put("ref_boost_a", scene.refBoost.toDouble())
