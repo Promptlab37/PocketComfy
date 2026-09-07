@@ -490,19 +490,20 @@ fun OutlineButton(
     modifier: Modifier = Modifier,
     color: Color = TextMid,
     icon: (@Composable () -> Unit)? = null,
+    enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
     Box(
         modifier
             .clip(RoundedCornerShape(16.dp))
             .border(BorderStroke(1.dp, Outline1), RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
+            .clickable(enabled = enabled, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
             .padding(horizontal = 18.dp, vertical = 13.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             icon?.invoke()
-            Text(text, style = MaterialTheme.typography.labelLarge, color = color)
+            Text(text, style = MaterialTheme.typography.labelLarge, color = if (enabled) color else TextLow)
         }
     }
 }

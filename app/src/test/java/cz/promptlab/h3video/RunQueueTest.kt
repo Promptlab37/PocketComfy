@@ -31,6 +31,7 @@ class RunQueueTest {
         bezi = { bezi },
         zavriVysledek = { stav.value = GenState.Idle },
         scope = scope,
+        onStartFailed = { run, error -> stav.value = GenState.Failed("${run.title}: ${error.message}") },
         prodlevaPoHotovoMs = 100,
     ).also { it.start() }
 
@@ -120,6 +121,30 @@ class RunQueueTest {
     fun `selhani jednoho spusteni neshodi hlidac`() {
         val q = jadro()
         q.add(QueuedRun(1, "vadny", "") { throw IllegalStateException("smazaný podklad") })
+        q.add(beh("B"))
+        assertTrue(stav.value is GenState.Failed)
+        assertEquals(1, q.queue.value.size)
+        stav.value = GenState.Idle
+        pockej { spustene == listOf("B") }
+    }
+
+    @Test
+    fun `pridani pri zobrazene chybe nesmi chybu prebit`() {
+        val q = jadro()
+        stav.value = GenState.Failed("selhání")
+        q.add(beh("B"))
+        Thread.sleep(400)
+        assertTrue(spustene.isEmpty())
+        assertTrue(stav.value is GenState.Failed)
+        stav.value = GenState.Idle
+        pockej { spustene == listOf("B") }
+    }
+
+    @Test
+    fun `pridani az po dokonceni spusti dalsi beh`() {
+        val q = jadro()
+        stav.value = hotovo()
+        Thread.sleep(200)
         q.add(beh("B"))
         pockej { spustene == listOf("B") }
     }

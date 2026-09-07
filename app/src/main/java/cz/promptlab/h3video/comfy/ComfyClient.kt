@@ -209,6 +209,15 @@ class ComfyClient(baseUrl: String) {
         }
     }
 
+    /** Volitelná metadata safetensors; starší servery mohou vrátit 404. */
+    fun loraMetadata(name: String): JSONObject? = runCatching {
+        val url = "$base/view_metadata/loras".toHttpUrlOrNull()?.newBuilder()
+            ?.addQueryParameter("filename", name)?.build() ?: return null
+        pingClient.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            if (!response.isSuccessful) null else response.body?.string()?.let { JSONObject(it) }
+        }
+    }.getOrNull()
+
     /** Seznam LoRA, které server skutečně nabízí (čte se z definice uzlu). */
     fun loraNames(): List<String> {
         get("/object_info/LoraLoaderModelOnly").use { r ->

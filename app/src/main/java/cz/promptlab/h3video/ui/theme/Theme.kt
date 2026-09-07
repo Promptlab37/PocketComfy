@@ -23,7 +23,7 @@ val Rose = Color(0xFFFF6B9D)
 val Amber = Color(0xFFFFB86B)
 val TextHi = Color(0xFFECECF5)
 val TextMid = Color(0xFF9E9EB4)
-val TextLow = Color(0xFF6B6B82)
+val TextLow = Color(0xFF8B8BA3)
 val Danger = Color(0xFFFF6B6B)
 val Ok = Color(0xFF4ADE80)
 

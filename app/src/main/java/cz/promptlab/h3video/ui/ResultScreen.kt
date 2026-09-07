@@ -76,7 +76,10 @@ fun ResultScreen(
     item: VideoItem,
     onClose: () -> Unit,
     onAgain: () -> Unit,
-    onSaved: () -> Unit = {},
+    onSave: () -> Unit = {},
+    saving: Boolean = false,
+    onFavorite: (() -> Unit)? = null,
+    onRename: ((String) -> Unit)? = null,
     /** Poslat hotový obrázek rovnou do karty Zvětšit (jen u obrázků). */
     onUpscale: (() -> Unit)? = null,
     /** Totéž, ale rovnou s metodou DLSS 5 — doostření za pár sekund. */
@@ -93,7 +96,14 @@ fun ResultScreen(
     warnings: List<String> = emptyList(),
 ) {
     val ctx = LocalContext.current
-    var saved by remember(item.id) { mutableStateOf(item.inGallery) }
+    val saved = item.inGallery
+    var rename by remember(item.id) { mutableStateOf(false) }
+    val storagePermission = androidx.activity.compose.rememberLauncherForActivityResult(
+        androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+    ) { granted -> if (granted) onSave() }
+    if (rename && onRename != null) RenameResultDialog(item, { rename = false }, {
+        onRename(it); rename = false
+    })
 
     Box(Modifier.fillMaxSize().background(Ink)) {
     Column(
@@ -159,6 +169,15 @@ fun ResultScreen(
         )
 
         Spacer(Modifier.height(18.dp))
+        if (onRename != null || onFavorite != null) Row(
+            Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+        ) {
+            androidx.compose.material3.TextButton(onClick = { rename = true },
+                enabled = onRename != null, modifier = Modifier.weight(1f)) {
+                Text(item.title.ifBlank { t("Pojmenovat výstup") }, color = Cyan)
+            }
+            if (onFavorite != null) FavoriteButton(item, onFavorite)
+        }
         // Karta Úprava obrázku vrací PNG – přehrávač by na něm jen zčernal.
         if (item.isImage) {
             // Dekóduje se na pozadí a se stropem ~4096 px na hranu – gigapixel
@@ -218,6 +237,7 @@ fun ResultScreen(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(
                 when {
+                    saving -> t("Ukládám…")
                     // Model do galerie telefonu nepatří a „uložit do galerie"
                     // by lhalo. Formát patří rovnou na tlačítko.
                     item.isModel3d && saved -> t("Uloženo do Stažených")
@@ -227,6 +247,7 @@ fun ResultScreen(
                     else -> t("Uložit do galerie")
                 },
                 modifier = Modifier.weight(1f),
+                enabled = !saving && !saved,
                 color = if (saved) Ok else TextMid,
                 icon = {
                     Icon(
@@ -235,41 +256,11 @@ fun ResultScreen(
                     )
                 }
             ) {
-                // Obrázek patří do Obrázků a s vlastní příponou – PNG uložené
-                // jako .mp4 do Filmů by nešlo otevřít. Skladba jde do Hudby.
-                val ok = if (item.isAudio) {
-                    val ext = item.fileName.substringAfterLast('.', "mp3")
-                    cz.promptlab.h3video.util.MediaSaver.saveAudioToGallery(
-                        ctx, item.file(ctx), "H3_${item.createdAt}.$ext"
-                    )
-                } else if (item.isImage) {
-                    val ext = item.fileName.substringAfterLast('.', "png")
-                    cz.promptlab.h3video.util.MediaSaver.saveImageToGallery(
-                        ctx, item.file(ctx), "H3_${item.createdAt}.$ext"
-                    )
-                } else if (item.isModel3d) {
-                    val ext = item.fileName.substringAfterLast('.', "glb")
-                    cz.promptlab.h3video.util.MediaSaver.save3dToDownloads(
-                        ctx, item.file(ctx), "H3_${item.createdAt}.$ext"
-                    )
-                } else {
-                    cz.promptlab.h3video.util.MediaSaver.saveToGallery(
-                        ctx, item.file(ctx), "H3_${item.createdAt}.mp4"
-                    )
-                }
-                saved = ok
-                if (ok) onSaved()
-                Toast.makeText(
-                    ctx,
-                    when {
-                        !ok -> t("Uložení se nepovedlo")
-                        item.isAudio -> t("Uloženo do Hudba/H3 Video")
-                        item.isImage -> t("Uloženo do Obrázky/H3 Video")
-                        item.isModel3d -> t("Uloženo do Stažené/H3 Video")
-                        else -> t("Uloženo do Filmy/H3 Video")
-                    },
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (android.os.Build.VERSION.SDK_INT < 29 &&
+                    androidx.core.content.ContextCompat.checkSelfPermission(ctx,
+                        android.Manifest.permission.WRITE_EXTERNAL_STORAGE) != android.content.pm.PackageManager.PERMISSION_GRANTED
+                ) storagePermission.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                else onSave()
             }
             OutlineButton(
                 t("Sdílet"),
@@ -288,6 +279,24 @@ fun ResultScreen(
                         }
                     )
                 )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        SkladaciSekce(t("Zadání a parametry"), "seed ${item.seed}", "result-${item.id}") {
+            SectionCard(title = t("Původní zadání")) {
+                if (item.prompt.isNotBlank()) {
+                    androidx.compose.foundation.text.selection.SelectionContainer {
+                        Text(item.prompt, style = MaterialTheme.typography.bodyMedium, color = TextHi)
+                    }
+                    androidx.compose.material3.TextButton(onClick = { copyResultText(ctx, item.prompt) }) {
+                        Text(t("Kopírovat zadání"), color = Cyan)
+                    }
+                } else Text(t("Bez textového zadání"), color = TextMid)
+                androidx.compose.material3.TextButton(onClick = { copyResultText(ctx, item.seed.toString()) }) {
+                    Text(t("Kopírovat seed") + " · ${item.seed}", color = Cyan)
+                }
+                Text(item.fileName, style = MaterialTheme.typography.bodySmall, color = TextLow)
             }
         }
 

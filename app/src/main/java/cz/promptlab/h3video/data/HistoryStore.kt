@@ -1,8 +1,6 @@
 package cz.promptlab.h3video.data
 
 import android.content.Context
-import org.json.JSONArray
-import org.json.JSONObject
 import java.io.File
 
 data class VideoItem(
@@ -20,7 +18,13 @@ data class VideoItem(
     val mode: String = "",
     /** Jak dlouho se generovalo (vteřiny). 0 = neznáme (staré záznamy, navázání). */
     val tookSeconds: Int = 0,
+    /** Uživatelský název výstupu; původní zadání se nemění. */
+    val title: String = "",
+    val favorite: Boolean = false,
 ) {
+    val displayTitle: String
+        get() = title.ifBlank { prompt.lineSequence().firstOrNull { it.isNotBlank() }?.trim()?.take(96) ?: fileName }
+
     fun file(ctx: Context): File = File(videosDir(ctx), fileName)
 
     /**
@@ -59,35 +63,22 @@ class HistoryStore(private val ctx: Context) {
 
     // Čtení-úprava-zápis nad jedním klíčem v prefs: engine přidává výsledek
     // z IO vlákna, UI zároveň maže/označuje. Bez zámku by se změny přepsaly.
-    private val lock = Any()
+    // Engine i ViewModel mají vlastní instanci, zámek proto patří procesu.
+    companion object { private val lock = Any() }
 
     fun all(): List<VideoItem> = synchronized(lock) { allLocked() }
 
     private fun allLocked(): List<VideoItem> {
         val raw = sp.getString("items", "[]")!!
-        val arr = runCatching { JSONArray(raw) }.getOrDefault(JSONArray())
-        val list = mutableListOf<VideoItem>()
-        var dropped = false
-        for (i in 0 until arr.length()) {
-            val o = arr.getJSONObject(i)
-            val item = VideoItem(
-                id = o.optString("id"),
-                fileName = o.optString("file"),
-                prompt = o.optString("prompt"),
-                createdAt = o.optLong("at"),
-                seconds = o.optDouble("sec", 0.0).toFloat(),
-                resolution = o.optString("res"),
-                seed = o.optLong("seed"),
-                twoImages = o.optBoolean("two"),
-                inGallery = o.optBoolean("gal"),
-                mode = o.optString("mode"),
-                tookSeconds = o.optInt("took"),
-            )
-            if (item.file(ctx).exists()) list.add(item) else dropped = true
+        val decoded = HistoryCodec.decode(raw)
+        // Před opravou uchovat původní data, ať poškozený záznam nezmizí beze stopy.
+        if (decoded.damaged && !sp.contains("items_recovery")) {
+            sp.edit().putString("items_recovery", raw).apply()
         }
+        val list = decoded.items.filter { it.file(ctx).isFile }
         val sorted = list.sortedByDescending { it.createdAt }
         // Záznam bez souboru se rovnou i smaže – jinak by mrtvá metadata rostla donekonečna.
-        if (dropped) persist(sorted)
+        if (list.size != decoded.items.size) persist(sorted)
         return sorted
     }
 
@@ -101,6 +92,14 @@ class HistoryStore(private val ctx: Context) {
     fun markInGallery(id: String) = synchronized(lock) {
         val list = allLocked().map { if (it.id == id) it.copy(inGallery = true) else it }
         persist(list)
+    }
+
+    fun rename(id: String, title: String) = synchronized(lock) {
+        persist(allLocked().map { if (it.id == id) it.copy(title = title.trim().take(120)) else it })
+    }
+
+    fun toggleFavorite(id: String) = synchronized(lock) {
+        persist(allLocked().map { if (it.id == id) it.copy(favorite = !it.favorite) else it })
     }
 
     /** Kolik místa zabírají kopie videí uvnitř aplikace. */
@@ -117,23 +116,6 @@ class HistoryStore(private val ctx: Context) {
     }
 
     private fun persist(list: List<VideoItem>) {
-        val arr = JSONArray()
-        list.forEach {
-            arr.put(
-                JSONObject()
-                    .put("id", it.id)
-                    .put("file", it.fileName)
-                    .put("prompt", it.prompt)
-                    .put("at", it.createdAt)
-                    .put("sec", it.seconds.toDouble())
-                    .put("res", it.resolution)
-                    .put("seed", it.seed)
-                    .put("two", it.twoImages)
-                    .put("gal", it.inGallery)
-                    .put("mode", it.mode)
-                    .put("took", it.tookSeconds)
-            )
-        }
-        sp.edit().putString("items", arr.toString()).apply()
+        sp.edit().putString("items", HistoryCodec.encode(list)).apply()
     }
 }

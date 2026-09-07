@@ -590,38 +590,33 @@ private fun UpdateCard(vm: MainViewModel) {
     val state by vm.update.collectAsStateWithLifecycle()
 
     val token by vm.token.collectAsStateWithLifecycle()
+    var showToken by remember { mutableStateOf(false) }
 
     SectionCard(
         title = t("Aktualizace"),
         subtitle = t("Verze %s (sestavení %d)").format(vm.versionName, vm.versionCode)
     ) {
         Column {
-            // Od 2.20 je token součástí sestavení, takže tu není co vyplňovat.
-            // Políčko se ukáže jen tehdy, když appka token nemá – nebo když si
-            // uživatel sám uložil vlastní, který ten zapečený přebíjí.
-            if (token.isBlank() && vm.hasBuiltInToken) {
+            Text(
+                t("Veřejné aktualizace fungují bez tokenu."),
+                style = MaterialTheme.typography.bodySmall, color = TextMid
+            )
+            Spacer(Modifier.height(12.dp))
+            if (showToken || token.isNotBlank()) {
                 Text(
-                    "Aktualizace jsou nastavené — token je součástí aplikace, " +
-                        "nemusíš nic vyplňovat.",
-                    style = MaterialTheme.typography.bodySmall, color = TextMid
-                )
-                Spacer(Modifier.height(12.dp))
-            } else {
-                Text(
-                    "Vlož GitHub token — ten samý, který máš v PromptLab Relay. " +
-                        "Zůstane jen v telefonu.",
+                    t("Token je potřeba jen pro soukromá vydání. Zůstane v telefonu."),
                     style = MaterialTheme.typography.bodySmall, color = TextMid
                 )
                 Spacer(Modifier.height(10.dp))
                 DarkTextField(
                     value = token,
                     onValueChange = { vm.setToken(it) },
-                    placeholder = "github_pat_… / ghp_…",
+                    placeholder = "GitHub token",
                     minHeight = 58.dp,
                     singleLine = true,
                 )
                 Spacer(Modifier.height(10.dp))
-                GradientButton("Uložit token a zkontrolovat") { vm.saveToken() }
+                GradientButton(t("Uložit a zkontrolovat")) { vm.saveToken(); showToken = false }
                 Spacer(Modifier.height(14.dp))
             }
 
@@ -734,14 +729,19 @@ private fun UpdateCard(vm: MainViewModel) {
             if (token.isNotBlank()) {
                 Spacer(Modifier.height(10.dp))
                 Text(
-                    "Změnit GitHub token",
+                    t("Přejít na veřejná vydání"),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextLow,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .clickable { vm.setToken(""); vm.saveToken(); vm.dismissUpdate() }
+                        .clickable { vm.setToken(""); vm.saveToken(); showToken = false }
                         .padding(6.dp)
                 )
+            } else if (!showToken) {
+                Spacer(Modifier.height(12.dp))
+                OutlineButton(t("Soukromá vydání"), modifier = Modifier.fillMaxWidth()) {
+                    showToken = true
+                }
             }
         }
     }

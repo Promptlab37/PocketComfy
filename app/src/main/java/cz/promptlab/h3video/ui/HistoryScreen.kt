@@ -1,67 +1,36 @@
 package cz.promptlab.h3video.ui
 
-import cz.promptlab.h3video.data.t
-
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
 import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.ViewInAr
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.VideoLibrary
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.automirrored.filled.Sort
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import cz.promptlab.h3video.data.VideoItem
-import cz.promptlab.h3video.ui.theme.Cyan
-import cz.promptlab.h3video.ui.theme.Danger
-import cz.promptlab.h3video.ui.theme.Ok
-import cz.promptlab.h3video.ui.theme.Outline1
-import cz.promptlab.h3video.ui.theme.Surface1
-import cz.promptlab.h3video.ui.theme.Surface2
-import cz.promptlab.h3video.ui.theme.TextHi
-import cz.promptlab.h3video.ui.theme.TextLow
-import cz.promptlab.h3video.ui.theme.TextMid
+import cz.promptlab.h3video.data.*
+import cz.promptlab.h3video.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -71,306 +40,287 @@ import java.util.Locale
 
 @Composable
 fun HistoryScreen(
-    items: List<VideoItem>,
-    totalBytes: Long,
-    onOpen: (VideoItem) -> Unit,
-    onDelete: (VideoItem) -> Unit,
-    smazane: VideoItem? = null,
-    onUndo: () -> Unit = {},
-    modifier: Modifier = Modifier,
+    items: List<VideoItem>, totalBytes: Long,
+    onOpen: (VideoItem) -> Unit, onDelete: (VideoItem) -> Unit,
+    onFavorite: (VideoItem) -> Unit, onRename: (VideoItem, String) -> Unit,
+    onCreate: () -> Unit,
+    smazane: VideoItem? = null, onUndo: () -> Unit = {}, modifier: Modifier = Modifier,
 ) {
-    var filtr by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("vse") }
-    var hledani by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
-    val zobrazene = remember(items, filtr, hledani) {
-        items
-            .filter {
-                when (filtr) {
-                    // 3D model není video — bez téhle výjimky by se dostal
-                    // mezi videa a galerie by ho zkoušela přehrát.
-                    "video" -> !it.isImage && !it.isAudio && !it.isModel3d
-                    "obrazek" -> it.isImage
-                    "hudba" -> it.isAudio
-                    "model3d" -> it.isModel3d
-                    else -> true
-                }
-            }
-            .filter { hledani.isBlank() || it.prompt.contains(hledani.trim(), ignoreCase = true) }
+    var kind by rememberSaveable { mutableStateOf<MediaKind?>(null) }
+    var query by rememberSaveable { mutableStateOf("") }
+    var favoritesOnly by rememberSaveable { mutableStateOf(false) }
+    var order by rememberSaveable { mutableStateOf(HistoryOrder.NEWEST) }
+    var grid by rememberSaveable { mutableStateOf(true) }
+    var sorting by remember { mutableStateOf(false) }
+    var renameId by rememberSaveable { mutableStateOf<String?>(null) }
+    var deleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    val visible = remember(items, kind, query, favoritesOnly, order) {
+        filterHistory(items, query, kind, favoritesOnly, order)
     }
-    // Filtr nabízí jen druhy, které v galerii opravdu jsou — a rovnou s počtem,
-    // ať je vidět, čeho kolik. Prázdné čipy dělaly z galerie nepřehlednou změť.
-    val druhy = remember(items) {
-        listOf(
-            Druh("video", t("Videa"), items.count { !it.isImage && !it.isAudio && !it.isModel3d }),
-            Druh("obrazek", t("Obrázky"), items.count { it.isImage }),
-            Druh("hudba", t("Hudba"), items.count { it.isAudio }),
-            Druh("model3d", t("3D modely"), items.count { it.isModel3d }),
-        ).filter { it.pocet > 0 }
-    }
-    // Když v galerii zbyl jen jeden druh, vybraný filtr by mohl ukazovat prázdno.
-    LaunchedEffect(druhy) {
-        if (filtr != "vse" && druhy.none { it.klic == filtr }) filtr = "vse"
+    val counts = remember(items) { items.groupingBy { it.mediaKind }.eachCount() }
+    val favorites = remember(items) { items.count { it.favorite } }
+    val listState = rememberLazyGridState()
+    var previousFilter by rememberSaveable { mutableStateOf("") }
+    val currentFilter = "$kind|$query|$favoritesOnly|$order|$grid"
+    LaunchedEffect(currentFilter) {
+        if (previousFilter != currentFilter) listState.scrollToItem(0)
+        previousFilter = currentFilter
     }
 
     Box(modifier.fillMaxSize()) {
-        if (items.isEmpty()) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(32.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(Icons.Default.VideoLibrary, null, Modifier.size(44.dp), Outline1)
-                Spacer(Modifier.height(14.dp))
-                Text(t("Zatím tu nic není"), style = MaterialTheme.typography.titleMedium, color = TextMid)
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    t("Vygenerovaná videa se ukládají sem a zůstanou tu,\ni když je počítač vypnutý."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
-                    textAlign = TextAlign.Center
-                )
+        Column(Modifier.fillMaxSize()) {
+            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(t("Knihovna obsahu"), style = MaterialTheme.typography.headlineSmall, color = TextHi)
+                Text("${polozkyCount(items.size)} · ${formatStorage(totalBytes)} ${t("v aplikaci")}",
+                    style = MaterialTheme.typography.bodySmall, color = TextMid)
+                if (items.isNotEmpty()) {
+                    DarkTextField(value = query, onValueChange = { query = it },
+                        placeholder = t("Hledat název, zadání nebo seed…"),
+                        minHeight = 48.dp, singleLine = true, onClear = { query = "" })
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(selected = kind == null, onClick = { kind = null }, label = { Text(t("Vše")) })
+                        MediaKind.entries.filter { (counts[it] ?: 0) > 0 || kind == it }.forEach { media ->
+                            FilterChip(selected = kind == media, onClick = { kind = media },
+                                label = { Text("${media.label()} · ${counts[media] ?: 0}") })
+                        }
+                    }
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        FilterChip(selected = favoritesOnly, onClick = { favoritesOnly = !favoritesOnly },
+                            label = { Text("${t("Oblíbené")} · $favorites") },
+                            leadingIcon = { Icon(Icons.Default.Star, null, Modifier.size(16.dp)) })
+                        Spacer(Modifier.weight(1f))
+                        Box {
+                            IconButton(onClick = { sorting = true }) {
+                                Icon(Icons.AutoMirrored.Filled.Sort, t("Řazení") + ": " + order.label(), tint = TextMid)
+                            }
+                            DropdownMenu(expanded = sorting, onDismissRequest = { sorting = false }) {
+                                HistoryOrder.entries.forEach { value ->
+                                    DropdownMenuItem(text = { Text(value.label()) },
+                                        onClick = { order = value; sorting = false },
+                                        trailingIcon = { if (order == value) Icon(Icons.Default.Check, null, tint = Cyan) })
+                                }
+                            }
+                        }
+                        IconButton(onClick = { grid = !grid }) {
+                            Icon(if (grid) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
+                                if (grid) t("Zobrazit seznam") else t("Zobrazit mřížku"), tint = TextMid)
+                        }
+                    }
+                    Text("${polozkyCount(visible.size)} · ${order.label()}", color = TextLow,
+                        style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(bottom = 8.dp))
+                }
             }
-        } else LazyColumn(
-            Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            if (druhy.size > 1) item(key = "filtr") {
-                // Vodorovné rolování: druhů může být pět a na úzkém telefonu
-                // by se poslední čip jinak nevešel.
-                Row(
-                    Modifier.horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+            if (items.isEmpty()) {
+                LibraryEmpty(Icons.Default.AutoAwesome, t("Prostor pro vaše nápady"),
+                    t("Videa, obrázky, hudba i 3D modely na jednom místě. Hotové výstupy tu zůstanou dostupné i bez serveru."),
+                    t("Vytvořit první obsah"), onCreate, Modifier.weight(1f))
+            } else if (visible.isEmpty()) {
+                LibraryEmpty(
+                    if (favoritesOnly && query.isBlank()) Icons.Default.StarOutline else Icons.Default.SearchOff,
+                    if (favoritesOnly && favorites == 0) t("Vyberte si to nejlepší") else t("Žádné odpovídající výstupy"),
+                    if (favoritesOnly && favorites == 0) t("Označte výstupy hvězdičkou a budete je mít vždy po ruce.")
+                    else t("Zkuste jiné hledání nebo zrušte filtry."),
+                    t("Zobrazit vše"), { query = ""; kind = null; favoritesOnly = false }, Modifier.weight(1f))
+            } else {
+                LazyVerticalGrid(
+                    columns = if (grid) GridCells.Adaptive(160.dp) else GridCells.Fixed(1),
+                    state = listState, modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = if (smazane != null) 88.dp else 20.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    FiltrChip("${t("Vše")} · ${items.size}", filtr == "vse") { filtr = "vse" }
-                    druhy.forEach { d ->
-                        FiltrChip("${d.nazev} · ${d.pocet}", filtr == d.klic) { filtr = d.klic }
+                    items(visible, key = { it.id }, contentType = { "asset" }) { item ->
+                        AssetCard(item, grid, { onOpen(item) }, { onFavorite(item) },
+                            { renameId = item.id }, { deleteId = item.id })
                     }
                 }
             }
-            if (items.size >= 6) item(key = "hledani") {
-                DarkTextField(
-                    value = hledani,
-                    onValueChange = { hledani = it },
-                    placeholder = t("Hledat v popisech…"),
-                    minHeight = 48.dp,
-                    singleLine = true,
-                    onClear = { hledani = "" },
-                )
-            }
-            item(key = "pocet") {
-                // Zelená fajfka u videa znamená, že kopie je i v telefonu; zbytek žije
-                // jen tady v aplikaci, dokud si ho nestáhneš.
-                Text(
-                    "${polozkyCount(zobrazene.size)} · ${"%.1f".format(totalBytes / 1_048_576f)} MB",
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                )
-            }
-            if (zobrazene.isEmpty()) item(key = "nic") {
-                Text(
-                    t("Tomuhle filtru nic neodpovídá."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
-                    modifier = Modifier.padding(vertical = 20.dp)
-                )
-            }
-            items(zobrazene, key = { it.id }) { item ->
-                HistoryRow(item, onOpen = { onOpen(item) }, onDelete = { onDelete(item) })
-            }
-            item { Spacer(Modifier.height(if (smazane != null) 64.dp else 16.dp)) }
         }
-
-        // Lišta Vrátit: pár vteřin po smazání jde položku vytáhnout z koše.
         if (smazane != null) {
-            Row(
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 12.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(Surface2)
-                    .border(1.dp, Outline1, RoundedCornerShape(14.dp))
-                    .padding(horizontal = 16.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(t("Smazáno"), style = MaterialTheme.typography.bodyMedium, color = TextMid)
-                Spacer(Modifier.width(16.dp))
-                Text(
-                    t("Vrátit"),
-                    style = MaterialTheme.typography.bodyMedium, color = Cyan,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable(onClick = onUndo)
-                        .padding(horizontal = 8.dp, vertical = 2.dp)
-                )
-            }
+            Snackbar(modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
+                containerColor = Surface2, contentColor = TextHi,
+                action = { TextButton(onClick = onUndo) { Text(t("Vrátit"), color = Cyan) } },
+            ) { Text(t("Výstup odstraněn")) }
         }
+    }
+    items.firstOrNull { it.id == renameId }?.let { item ->
+        RenameResultDialog(item, { renameId = null }, { onRename(item, it); renameId = null })
+    }
+    items.firstOrNull { it.id == deleteId }?.let { item ->
+        AlertDialog(onDismissRequest = { deleteId = null },
+            icon = { Icon(Icons.Default.DeleteOutline, null, tint = Danger) },
+            title = { Text(t("Odstranit výstup?")) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(item.displayTitle, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    Text(t("Odstraní se kopie v aplikaci. Soubory uložené do telefonu zůstanou zachované."))
+                }
+            },
+            confirmButton = { TextButton(onClick = { onDelete(item); deleteId = null }) { Text(t("Odstranit"), color = Danger) } },
+            dismissButton = { TextButton(onClick = { deleteId = null }) { Text(t("Zrušit")) } })
     }
 }
 
-/** Jeden druh výsledku v galerii — kvůli čipům filtru. */
-private data class Druh(val klic: String, val nazev: String, val pocet: Int)
-
 @Composable
-private fun FiltrChip(text: String, vybrano: Boolean, onClick: () -> Unit) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelLarge,
-        color = if (vybrano) Cyan else TextMid,
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(if (vybrano) Cyan.copy(alpha = .14f) else Surface1)
-            .border(1.dp, if (vybrano) Cyan.copy(alpha = .45f) else Outline1, RoundedCornerShape(50))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 7.dp)
-    )
-}
-
-@Composable
-private fun HistoryRow(item: VideoItem, onOpen: () -> Unit, onDelete: () -> Unit) {
-    val ctx = LocalContext.current
-    var thumb by remember(item.id) { mutableStateOf<Bitmap?>(null) }
-    var confirmDelete by remember(item.id) { mutableStateOf(false) }
-
-    LaunchedEffect(item.id) {
-        thumb = withContext(Dispatchers.IO) {
-            // Obrázkový výsledek se načte přímo; MediaMetadataRetriever by na
-            // PNG vrátil null a dlaždice by zůstala prázdná. Skladba náhled
-            // nemá – dlaždici dělá nota.
-            when {
-                item.isAudio -> null
-                // GLB obrázek nenese. Náhled se sejme z prohlížeče při prvním
-                // zobrazení modelu — dokud tam člověk nebyl, dlaždici dělá ikona.
-                item.isModel3d -> cz.promptlab.h3video.util.ImageUtils
-                    .nahled3d(ctx, item.file(ctx))
-                    .takeIf { it.exists() && it.length() > 0 }
-                    ?.let { cz.promptlab.h3video.util.ImageUtils.loadFileThumb(it) }
-                // Zmenšený náhled – plné PNG (klidně gigapixel ze Zvětšit)
-                // by na dlaždici sežralo desítky MB a seznam by cukal.
-                item.isImage -> cz.promptlab.h3video.util.ImageUtils.loadFileThumb(item.file(ctx))
-                else -> frameOf(item.file(ctx))
-            }
-        }
-    }
-
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(Surface1)
-            .border(1.dp, Outline1, RoundedCornerShape(18.dp))
-            .clickable(onClick = onOpen)
-            .padding(10.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            Modifier
-                .size(width = 108.dp, height = 68.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Surface2),
-            contentAlignment = Alignment.Center
-        ) {
-            thumb?.let {
-                Image(
-                    it.asImageBitmap(), null,
-                    Modifier.fillMaxSize(), contentScale = ContentScale.Crop
-                )
-            }
-            // Skladba nemá náhled – dlaždici dělá nota.
-            if (item.isAudio) {
-                Icon(Icons.Default.MusicNote, null, Modifier.size(30.dp), TextLow)
-            }
-            // Ikona jen dokud náhled není — přes hotový náhled by překážela.
-            if (item.isModel3d && thumb == null) {
-                Icon(Icons.Default.ViewInAr, null, Modifier.size(30.dp), TextLow)
-            }
-            // Obrázek ani model se nepřehrávají – trojúhelník by sliboval video.
-            if (!item.isImage && !item.isAudio && !item.isModel3d) Box(
-                Modifier
-                    .size(30.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(Color.Black.copy(alpha = .5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.PlayArrow, null, Modifier.size(18.dp), Color.White)
-            }
-        }
-
-        Spacer(Modifier.width(12.dp))
-
-        Column(Modifier.weight(1f)) {
-            Text(
-                item.prompt.ifBlank { t("(bez popisu)") },
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextHi,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    // délku neznáme u videa, na které aplikace navázala po restartu
-                    (if (item.seconds > 0f)
-                        "%.1f s · %s · %s".format(item.seconds, item.resolution, dateOf(item.createdAt))
-                    else "%s · %s".format(item.resolution, dateOf(item.createdAt))) +
-                        if (item.tookSeconds > 0)
-                            t(" · za ") + cz.promptlab.h3video.engine.GenerationService
-                                .formatEta(item.tookSeconds)
-                        else "",
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                )
-                if (item.inGallery) {
-                    Spacer(Modifier.width(6.dp))
-                    Icon(Icons.Default.CheckCircle, t("V galerii telefonu"), Modifier.size(13.dp), Ok)
+private fun AssetCard(item: VideoItem, grid: Boolean, onOpen: () -> Unit, onFavorite: () -> Unit,
+    onRename: () -> Unit, onDelete: () -> Unit,
+) {
+    Surface(shape = RoundedCornerShape(18.dp), color = Surface1,
+        border = androidx.compose.foundation.BorderStroke(1.dp, Outline1)) {
+        if (grid) {
+            Column {
+                AssetThumbnail(item, Modifier.fillMaxWidth().aspectRatio(1.5f).clickable(onClick = onOpen))
+                Column(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(start = 12.dp, end = 12.dp, top = 10.dp)) {
+                    Text(item.displayTitle, color = TextHi, style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2, minLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(assetDetails(item), color = TextMid, style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp))
+                }
+                Row(Modifier.fillMaxWidth().padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(dateOf(item.createdAt), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
+                        color = TextLow, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    FavoriteButton(item, onFavorite)
+                    AssetMenu(item, onRename, onDelete)
                 }
             }
-        }
-
-        Box(
-            Modifier
-                .size(38.dp)
-                .clip(RoundedCornerShape(50))
-                .clickable {
-                    if (confirmDelete) onDelete() else confirmDelete = true
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                Icons.Default.DeleteOutline, null, Modifier.size(20.dp),
-                if (confirmDelete) Danger else TextLow
-            )
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AssetThumbnail(item, Modifier.padding(start = 10.dp).size(76.dp).clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen))
+                Column(Modifier.weight(1f).clickable(onClick = onOpen).padding(start = 12.dp, top = 12.dp, bottom = 12.dp)) {
+                    Text(item.displayTitle, color = TextHi, style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(assetDetails(item), color = TextMid, style = MaterialTheme.typography.bodySmall,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(dateOf(item.createdAt), color = TextLow, style = MaterialTheme.typography.labelSmall)
+                }
+                Column { FavoriteButton(item, onFavorite); AssetMenu(item, onRename, onDelete) }
+            }
         }
     }
 }
 
-/**
- * Náhled videa v seznamu. Vytahuje se rovnou zmenšený snímek – getFrameAtTime by
- * vrátil plné rozlišení, takže jeden řádek s HD videem by v paměti držel přes 4 MB.
- */
-private fun frameOf(file: File): Bitmap? = runCatching {
-    // MediaMetadataRetriever je AutoCloseable až od API 29, proto ručně
-    val r = MediaMetadataRetriever()
-    try {
-        r.setDataSource(file.absolutePath)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            r.getScaledFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, 320, 320)
-        } else {
-            r.getFrameAtTime(0)
-        }
-    } finally {
-        r.release()
+@Composable
+internal fun FavoriteButton(item: VideoItem, onClick: () -> Unit) {
+    IconToggleButton(checked = item.favorite, onCheckedChange = { onClick() }) {
+        Icon(if (item.favorite) Icons.Default.Star else Icons.Default.StarOutline,
+            if (item.favorite) t("Odebrat z oblíbených") else t("Přidat do oblíbených"),
+            tint = if (item.favorite) Amber else TextMid, modifier = Modifier.size(22.dp))
     }
+}
+
+@Composable
+private fun AssetMenu(item: VideoItem, onRename: () -> Unit, onDelete: () -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    val ctx = LocalContext.current
+    Box {
+        IconButton(onClick = { expanded = true }) { Icon(Icons.Default.MoreVert, t("Akce výstupu"), tint = TextMid) }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            DropdownMenuItem(text = { Text(t("Přejmenovat")) }, leadingIcon = { Icon(Icons.Default.Edit, null) },
+                onClick = { expanded = false; onRename() })
+            DropdownMenuItem(text = { Text(t("Kopírovat zadání")) }, enabled = item.prompt.isNotBlank(),
+                leadingIcon = { Icon(Icons.Default.ContentCopy, null) },
+                onClick = { expanded = false; copyResultText(ctx, item.prompt) })
+            DropdownMenuItem(text = { Text(t("Kopírovat seed")) }, leadingIcon = { Icon(Icons.Default.Tag, null) },
+                onClick = { expanded = false; copyResultText(ctx, item.seed.toString()) })
+            HorizontalDivider()
+            DropdownMenuItem(text = { Text(t("Odstranit"), color = Danger) },
+                leadingIcon = { Icon(Icons.Default.DeleteOutline, null, tint = Danger) },
+                onClick = { expanded = false; onDelete() })
+        }
+    }
+}
+
+@Composable
+private fun AssetThumbnail(item: VideoItem, modifier: Modifier = Modifier) {
+    val ctx = LocalContext.current
+    var thumb by remember(item.id, item.fileName) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(item.id, item.fileName) {
+        thumb = withContext(Dispatchers.IO) {
+            runCatching {
+                when {
+                    item.isAudio -> null
+                    item.isModel3d -> cz.promptlab.h3video.util.ImageUtils.nahled3d(ctx, item.file(ctx))
+                        .takeIf { it.isFile && it.length() > 0 }?.let { cz.promptlab.h3video.util.ImageUtils.loadFileThumb(it) }
+                    item.isImage -> cz.promptlab.h3video.util.ImageUtils.loadFileThumb(item.file(ctx))
+                    else -> frameOf(item.file(ctx))
+                }
+            }.getOrNull()
+        }
+    }
+    Box(modifier.background(Surface2), contentAlignment = Alignment.Center) {
+        val bitmap = thumb
+        if (bitmap != null) Image(bitmap.asImageBitmap(), item.displayTitle, Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        else Icon(item.mediaKind.icon(), item.mediaKind.label(), Modifier.size(32.dp),
+            when (item.mediaKind) { MediaKind.AUDIO -> Rose; MediaKind.MODEL3D -> Cyan; else -> TextMid })
+        if (item.mediaKind == MediaKind.VIDEO && bitmap != null) {
+            Surface(shape = RoundedCornerShape(50), color = Color.Black.copy(alpha = .55f)) {
+                Icon(Icons.Default.PlayArrow, t("Přehrát"), Modifier.padding(6.dp).size(22.dp), Color.White)
+            }
+        }
+        if (item.inGallery) Icon(Icons.Default.CheckCircle, t("Uloženo v telefonu"),
+            Modifier.align(Alignment.BottomStart).padding(6.dp).background(Ink, RoundedCornerShape(50)).size(18.dp), Ok)
+    }
+}
+
+@Composable
+private fun LibraryEmpty(icon: ImageVector, title: String, detail: String, action: String,
+    onAction: () -> Unit, modifier: Modifier = Modifier,
+) {
+    Column(modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally) {
+        Surface(shape = RoundedCornerShape(24.dp), color = Violet.copy(alpha = .12f)) {
+            Icon(icon, null, Modifier.padding(20.dp).size(36.dp), Cyan)
+        }
+        Spacer(Modifier.height(20.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center, color = TextHi)
+        Spacer(Modifier.height(8.dp))
+        Text(detail, style = MaterialTheme.typography.bodyMedium, textAlign = TextAlign.Center, color = TextMid)
+        Spacer(Modifier.height(20.dp))
+        OutlineButton(action, color = Cyan, onClick = onAction)
+    }
+}
+
+private fun assetDetails(item: VideoItem): String = listOfNotNull(
+    item.fileName.substringAfterLast('.', "").uppercase().ifBlank { null },
+    item.resolution.takeIf { it.isNotBlank() && !item.isAudio && !item.isModel3d },
+    if (item.seconds > 0 && !item.isImage && !item.isModel3d) "%.1f s".format(item.seconds) else null,
+).joinToString(" · ")
+
+private fun MediaKind.label(): String = t(when (this) {
+    MediaKind.VIDEO -> "Videa"; MediaKind.IMAGE -> "Obrázky"; MediaKind.AUDIO -> "Hudba"; MediaKind.MODEL3D -> "3D modely"
+})
+private fun MediaKind.icon(): ImageVector = when (this) {
+    MediaKind.VIDEO -> Icons.Default.Movie; MediaKind.IMAGE -> Icons.Default.Image
+    MediaKind.AUDIO -> Icons.Default.MusicNote; MediaKind.MODEL3D -> Icons.Default.ViewInAr
+}
+private fun HistoryOrder.label(): String = t(when (this) {
+    HistoryOrder.NEWEST -> "Nejnovější"; HistoryOrder.OLDEST -> "Nejstarší"; HistoryOrder.NAME -> "Podle názvu"
+})
+private fun formatStorage(bytes: Long): String = when {
+    bytes >= 1_073_741_824L -> "%.1f GB".format(bytes / 1_073_741_824.0)
+    bytes >= 1_048_576L -> "%.1f MB".format(bytes / 1_048_576.0)
+    else -> "%.1f KB".format(bytes / 1024.0)
+}
+
+private fun frameOf(file: File): Bitmap? = runCatching {
+    val retriever = MediaMetadataRetriever()
+    try {
+        retriever.setDataSource(file.absolutePath)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1)
+            retriever.getScaledFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, 400, 400)
+        else retriever.getFrameAtTime(0)?.let { original ->
+            val scale = minOf(1f, 400f / maxOf(original.width, original.height))
+            Bitmap.createScaledBitmap(original, (original.width * scale).toInt().coerceAtLeast(1),
+                (original.height * scale).toInt().coerceAtLeast(1), true).also { if (it !== original) original.recycle() }
+        }
+    } finally { retriever.release() }
 }.getOrNull()
 
-/**
- * Počet položek. Čeština skloňuje ve třech tvarech (1 položka, 2–4 položky,
- * 5+ položek), angličtina ve dvou — proto vlastní větev, ne slovník.
- */
 private fun polozkyCount(n: Int): String = when {
-    cz.promptlab.h3video.data.Jazyk.anglicky -> if (n == 1) "1 item" else "$n items"
-    n == 1 -> "1 položka"
-    n in 2..4 -> "$n položky"
-    else -> "$n položek"
+    Jazyk.anglicky -> if (n == 1) "1 item" else "$n items"
+    n == 1 -> "1 položka"; n in 2..4 -> "$n položky"; else -> "$n položek"
 }
-
-private fun dateOf(millis: Long): String =
-    SimpleDateFormat(t("d. M. HH:mm"), Locale.getDefault()).format(Date(millis))
+private fun dateOf(millis: Long): String = SimpleDateFormat(
+    if (Jazyk.anglicky) "MMM d, yyyy" else "d. M. yyyy",
+    if (Jazyk.anglicky) Locale.ENGLISH else Locale.forLanguageTag("cs"),
+).format(Date(millis))

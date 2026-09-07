@@ -112,6 +112,7 @@ object QwenEditBuilder {
             wf.inputs(N_TEXT).put("image2", link(N_SCALE2))
             wf.inputs(N_NEG).put("image2", link(N_SCALE2))
         }
+        EditLoraBuilder.attach(wf, scene, N_SAMPLER)
         return wf
     }
 

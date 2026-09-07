@@ -179,6 +179,8 @@ private fun Root(vm: MainViewModel = viewModel()) {
     val state by GenerationEngine.state.collectAsStateWithLifecycle()
     val history by vm.history.collectAsStateWithLifecycle()
     val historyBytes by vm.historyBytes.collectAsStateWithLifecycle()
+    val savingResults by vm.savingResults.collectAsStateWithLifecycle()
+    val galleryState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val updateState by vm.update.collectAsStateWithLifecycle()
     var opened by remember { mutableStateOf<VideoItem?>(null) }
 
@@ -326,13 +328,16 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             }
                     ) { GenerateScreen(vm, busy = running != null) }
 
-                    Tab.GALLERY -> {
+                    Tab.GALLERY -> galleryState.SaveableStateProvider("gallery") {
                         val smazane by vm.smazane.collectAsStateWithLifecycle()
                         HistoryScreen(
                             items = history,
                             totalBytes = historyBytes,
                             onOpen = { opened = it },
                             onDelete = { vm.delete(it) },
+                            onFavorite = { vm.toggleFavorite(it) },
+                            onRename = { item, title -> vm.renameResult(item, title) },
+                            onCreate = { vm.selectTab(Tab.CREATE) },
                             smazane = smazane,
                             onUndo = { vm.undoDelete() },
                         )
@@ -404,14 +409,17 @@ private fun Root(vm: MainViewModel = viewModel()) {
                         .navigationBarsPadding()
                 ) {
                     ResultScreen(
-                        item = s.item,
+                        item = history.firstOrNull { it.id == s.item.id } ?: s.item,
                         warnings = s.warnings,
                         onClose = { GenerationEngine.dismissResult() },
                         onAgain = {
                             GenerationEngine.dismissResult()
                             vm.selectTab(Tab.CREATE)
                         },
-                        onSaved = { vm.markSaved(s.item) },
+                        onSave = { vm.saveResult(s.item) },
+                        saving = s.item.id in savingResults,
+                        onFavorite = { vm.toggleFavorite(s.item) },
+                        onRename = { vm.renameResult(s.item, it) },
                         onUpscale = {
                             GenerationEngine.dismissResult()
                             vm.posliDoZvetseni(s.item)
@@ -457,7 +465,7 @@ private fun Root(vm: MainViewModel = viewModel()) {
             }
         }
 
-        val open = opened
+        val open = opened?.let { selected -> history.firstOrNull { it.id == selected.id } ?: selected }
         if (open != null) {
             Box(
                 Modifier
@@ -470,7 +478,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     item = open,
                     onClose = { opened = null },
                     onAgain = { opened = null; vm.selectTab(Tab.CREATE) },
-                    onSaved = { vm.markSaved(open) },
+                    onSave = { vm.saveResult(open) },
+                    saving = open.id in savingResults,
+                    onFavorite = { vm.toggleFavorite(open) },
+                    onRename = { vm.renameResult(open, it) },
                     onUpscale = {
                         opened = null
                         vm.posliDoZvetseni(open)

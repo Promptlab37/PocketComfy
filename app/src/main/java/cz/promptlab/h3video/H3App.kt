@@ -64,6 +64,7 @@ class H3App : Application() {
      * od Androidu 10 nepotřebuje žádné oprávnění.
      */
     private fun writeToDownloads(text: String) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return
         val values = ContentValues().apply {
             put(MediaStore.Downloads.DISPLAY_NAME, DOWNLOAD_FILE)
             put(MediaStore.Downloads.MIME_TYPE, "text/plain")

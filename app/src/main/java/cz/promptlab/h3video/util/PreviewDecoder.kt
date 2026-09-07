@@ -83,6 +83,7 @@ object PreviewDecoder {
         }
     }
 
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.P)
     private fun animated(raw: ByteArray): Preview.Animated? = try {
         val source = ImageDecoder.createSource(ByteBuffer.wrap(raw))
         when (val drawable = ImageDecoder.decodeDrawable(source)) {

@@ -1,4 +1,5 @@
 package cz.promptlab.h3video.engine
+import cz.promptlab.h3video.data.t
 
 import android.content.Context
 import android.content.Intent
@@ -686,6 +687,14 @@ object GenerationEngine {
         } ?: ""
 
         val jedeNaAio = aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK
+        editScene?.selectedLora?.takeIf { it.name.isNotBlank() && it.strength > 0f }?.let { lora ->
+            val compatibility = cz.promptlab.h3video.data.EditLoras.compatibility(
+                editScene.motor, lora.name, client.loraMetadata(lora.name),
+            )
+            if (compatibility == cz.promptlab.h3video.data.LoraCompatibility.INCOMPATIBLE ||
+                compatibility == cz.promptlab.h3video.data.LoraCompatibility.BUILT_IN
+            ) throw ComfyException(t("Vybraná LoRA nepatří k tomuto editačnímu modelu nebo ji již používá základní workflow."))
+        }
         val workflow = when {
             // Úprava obrázku jede na Krea 2 z vlastní předlohy v APK; MiniMax
             // H3 se tu vůbec nespouští.
@@ -1430,6 +1439,10 @@ object GenerationEngine {
         _state.value = GenState.Done(item, poznamky + warnings)
         GenerationService.notifyDone(app, item)
         GenerationService.stop(app)
+    }
+
+    internal fun reportQueueFailure(title: String, detail: String) {
+        fail(t("Úlohu z fronty se nepodařilo spustit: %s").format(title) + "\n" + detail)
     }
 
     private fun fail(message: String, canRetryDownload: Boolean = false) {

@@ -17,7 +17,7 @@ data class UpdateInfo(
     val znacka: String,
     val versionName: String,
     val notes: String,
-    /** Adresa assetu v GitHub API, ne veřejný odkaz – privátní repo jinak nepustí. */
+    /** Veřejný odkaz, nebo adresa assetu v API pro soukromý repozitář. */
     val assetUrl: String,
     val sizeBytes: Long,
 )
@@ -33,10 +33,35 @@ data class UpdateInfo(
 object UpdateChecker {
 
     const val OWNER = "Promptlab37"
-    const val REPO = "H3Video"
-    private val API_LATEST = "https://api.github.com/repos/$OWNER/$REPO/releases/latest"
+    const val REPO = "PocketComfy"
+    private const val PRIVATE_REPO = "H3Video"
 
-    /** Přesměrování si obsluhujeme sami, viz [downloadAsset]. */
+    private fun repository(token: String): String = if (token.isBlank()) REPO else PRIVATE_REPO
+
+    internal fun latestRequest(token: String): Request = Request.Builder()
+        .url("https://api.github.com/repos/$OWNER/${repository(token)}/releases/latest")
+        .header("Accept", "application/vnd.github+json")
+        .header("User-Agent", "PocketComfy")
+        .apply { if (token.isNotBlank()) header("Authorization", "Bearer $token") }
+        .build()
+
+    internal fun assetDownloadUrl(asset: JSONObject, token: String): String =
+        asset.optString(if (token.isBlank()) "browser_download_url" else "url")
+
+    internal fun assetDownloadRequest(assetUrl: String, token: String): Request {
+        val builder = Request.Builder().url(assetUrl)
+            .header("Accept", "application/octet-stream")
+            .header("User-Agent", "PocketComfy")
+        val url = builder.build().url
+        // Token patří výhradně do API našeho soukromého repozitáře.
+        if (token.isNotBlank() && url.isHttps && url.host == "api.github.com" &&
+            url.encodedPath.startsWith("/repos/$OWNER/$PRIVATE_REPO/releases/assets/")) {
+            builder.header("Authorization", "Bearer $token")
+        }
+        return builder.build()
+    }
+
+    /** Přesměrování si obsluhujeme sami, viz [download]. */
     private val http = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -86,12 +111,7 @@ object UpdateChecker {
 
     /** Vrátí popis novější verze, nebo null když je nainstalovaná ta nejnovější. */
     fun check(ctx: Context, token: String): UpdateInfo? {
-        val req = Request.Builder()
-            .url(API_LATEST)
-            .header("Accept", "application/vnd.github+json")
-            .header("User-Agent", "H3Video")
-            .apply { if (token.isNotBlank()) header("Authorization", "Bearer $token") }
-            .build()
+        val req = latestRequest(token)
 
         http.newCall(req).execute().use { r ->
             if (r.code == 401 || r.code == 403) throw IllegalStateException(
@@ -102,9 +122,9 @@ object UpdateChecker {
             )
             if (r.code == 404) throw IllegalStateException(
                 if (token.isBlank())
-                    "Vydání se nenašlo. Privátní repozitář jde číst jen s tokenem – vlož ho níž."
+                    "Veřejné vydání se zatím nenašlo. Zkus to později."
                 else
-                    "Repozitář $OWNER/$REPO nebo jeho vydání se nenašlo."
+                    "Repozitář $OWNER/${repository(token)} nebo jeho vydání se nenašlo."
             )
             if (!r.isSuccessful) throw IllegalStateException("GitHub odpověděl ${r.code}")
 
@@ -119,7 +139,7 @@ object UpdateChecker {
             for (i in 0 until assets.length()) {
                 val a = assets.getJSONObject(i)
                 if (a.optString("name").endsWith(".apk", ignoreCase = true)) {
-                    url = a.optString("url")          // API adresa, ne browser_download_url
+                    url = assetDownloadUrl(a, token)
                     size = a.optLong("size")
                     break
                 }
@@ -143,12 +163,7 @@ object UpdateChecker {
      * přesměrování obsluhuje ručně a druhý požadavek jde bez tokenu.
      */
     fun download(ctx: Context, info: UpdateInfo, token: String, onProgress: (Float) -> Unit): File {
-        val first = Request.Builder()
-            .url(info.assetUrl)
-            .header("Accept", "application/octet-stream")
-            .header("User-Agent", "H3Video")
-            .apply { if (token.isNotBlank()) header("Authorization", "Bearer $token") }
-            .build()
+        val first = assetDownloadRequest(info.assetUrl, token)
 
         var response = http.newCall(first).execute()
         if (response.code in 300..399) {

@@ -33,6 +33,23 @@ with the GPU.
 
 ---
 
+## Version 3.35
+
+**[Download the signed APK](https://github.com/Promptlab37/PocketComfy/releases/latest)**
+— updates are also available in Settings, without a GitHub token.
+
+- **Edit → LoRA:** choose an adapter and strength separately for Krea 2,
+  Qwen Image Edit 2511 and FLUX.2 Klein 9B. Each model remembers its choice
+  after restarting. Search and refresh the server list, with metadata used
+  to identify model compatibility.
+- **Library:** grid/list, titles, favorites, sorting and accent-insensitive
+  search. Copy the original prompt and seed separately from result details.
+- Background export with correct file types including 3D; history, queue
+  and older Android compatibility fixes.
+- APKs contain no tokens or private server addresses, even if present in
+  `local.properties`. Saved phone settings are retained. An address supplied
+  only by an older APK must be entered once in the app.
+
 ## ⚠️ What you need before you start
 
 PocketComfy is a **client** — it generates nothing on its own:

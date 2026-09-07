@@ -28,6 +28,22 @@ Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné před
 
 ---
 
+## Verze 3.35
+
+**[Stáhnout podepsané APK](https://github.com/Promptlab37/PocketComfy/releases/latest)**
+— aktualizace se kontrolují také přímo v Nastavení, bez GitHub tokenu.
+
+- **Úprava → LoRA:** vlastní výběr a síla pro Krea 2, Qwen Image Edit 2511
+  a FLUX.2 Klein 9B. Volby se pamatují pro každý model zvlášť, i po restartu.
+  Seznam z ComfyUI jde obnovit a prohledávat; kompatibilitu upřesňují metadata.
+- **Knihovna:** mřížka/seznam, názvy, oblíbené, řazení a hledání bez diakritiky.
+  Detail umožňuje kopírovat původní zadání a seed samostatně.
+- Export na pozadí se správnými typy souborů včetně 3D; opravy historie,
+  fronty úloh a kompatibility se staršími Androidy.
+- APK neobsahuje tokeny ani soukromé adresy. Sestavení tyto hodnoty z
+  `local.properties` ignoruje. Uložená nastavení telefonu zůstávají zachována;
+  adresu převzatou pouze ze staršího APK je potřeba jednou zadat znovu.
+
 ## ⚠️ Co potřebuješ, aby to fungovalo
 
 PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
@@ -64,7 +80,7 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 | 🎞️ | **Časová osa** | MiniMax H3 + LSI | dlouhé video poskládané ze segmentů |
 | 🎬 | **Dlouhé video** | MiniMax H3 + H3 Motion Context | až šest navazujících úseků v jednom běhu, každý s vlastním zadáním a LoRA |
 | 🖼️ | **Obrázek** | Z-Image Turbo | nová fotka z textu za pár sekund |
-| ✏️ | **Úprava obrázku** | Krea 2 + Identity Edit | „dej jí červenou bundu" — tvář zůstane |
+| ✏️ | **Úprava obrázku** | Krea 2 / Qwen Image Edit 2511 / FLUX.2 Klein 9B + volitelná LoRA | „dej jí červenou bundu" — tvář zůstane |
 | 🩹 | **Oprava fotky** | Qwen Image Edit 2511 | stará/poškozená fotka jako nová, i barevně |
 | 🎭 | **Výměna tváře** | Flux Fill + ACE++ | začmáráš obličej, vybereš novou tvář, hotovo |
 | 🖌️ | **Domalovat** | Flux Fill / FLUX.2 Klein | začmáráš místo, napíšeš co tam má být, přepíše se jen ono |

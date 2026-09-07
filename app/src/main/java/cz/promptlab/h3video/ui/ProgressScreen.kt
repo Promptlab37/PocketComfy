@@ -531,7 +531,9 @@ private fun LivePreview(preview: Preview, modifier: Modifier = Modifier) {
             },
             update = { view ->
                 view.setImageDrawable(preview.drawable)
-                (preview.drawable as? android.graphics.drawable.AnimatedImageDrawable)?.start()
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    (preview.drawable as? android.graphics.drawable.AnimatedImageDrawable)?.start()
+                }
             },
             modifier = modifier
         )

@@ -105,6 +105,7 @@ object Krea2Builder {
             wf.inputs(N_PATCH).put("source_image_b", link(N_IMAGE_B))
             wf.inputs(N_POSITIVE).put("image_b", link(N_IMAGE_B))
         }
+        EditLoraBuilder.attach(wf, scene, N_PATCH)
         return wf
     }
 

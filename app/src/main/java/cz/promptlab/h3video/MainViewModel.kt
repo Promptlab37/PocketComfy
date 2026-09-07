@@ -85,6 +85,10 @@ import cz.promptlab.h3video.update.UpdateInfo
 import cz.promptlab.h3video.util.ImageUtils
 import cz.promptlab.h3video.util.MediaSaver
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import cz.promptlab.h3video.data.EditLoraFile
+import cz.promptlab.h3video.data.LoraCompatibility
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collectLatest
@@ -417,9 +421,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _token = MutableStateFlow(settings.githubTokenRaw)
     val token: StateFlow<String> = _token.asStateFlow()
-
-    /** Appka má token zapečený v sestavení – uživatel nemusí nic vyplňovat. */
-    val hasBuiltInToken: Boolean get() = settings.hasBuiltInToken
 
     fun setToken(v: String) { _token.value = v }
 
@@ -1307,11 +1308,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Skutečná délka namluveného souboru v sekundách (0 = nepodařilo se změřit). */
     private fun audioSeconds(file: File): Float = runCatching {
         val mmr = android.media.MediaMetadataRetriever()
-        mmr.use {
-            it.setDataSource(file.absolutePath)
-            it.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+        try {
+            mmr.setDataSource(file.absolutePath)
+            mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull()?.let { ms -> ms / 1000f } ?: 0f
-        }
+        } finally { mmr.release() }
     }.getOrDefault(0f)
 
     /**
@@ -1493,6 +1494,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _historyBytes.value = historyStore.totalBytes()
     }
 
+    fun renameResult(item: VideoItem, title: String) {
+        historyStore.rename(item.id, title)
+        refreshHistory()
+    }
+
+    fun toggleFavorite(item: VideoItem) {
+        historyStore.toggleFavorite(item.id)
+        refreshHistory()
+    }
+
+    private val _savingResults = MutableStateFlow<Set<String>>(emptySet())
+    val savingResults: StateFlow<Set<String>> = _savingResults.asStateFlow()
+
+    fun saveResult(item: VideoItem) {
+        if (item.id in _savingResults.value || _history.value.any { it.id == item.id && it.inGallery }) return
+        _savingResults.value += item.id
+        viewModelScope.launch {
+            try {
+                val saved = withContext(Dispatchers.IO) {
+                    MediaSaver.saveItem(getApplication(), item).also { if (it) historyStore.markInGallery(item.id) }
+                }
+                refreshHistory()
+                android.widget.Toast.makeText(getApplication(),
+                    if (saved) t("Uloženo v telefonu") else t("Uložení se nepovedlo"),
+                    android.widget.Toast.LENGTH_SHORT).show()
+            } finally { _savingResults.value -= item.id }
+        }
+    }
+
     // Hned po startu, ať v galerii nesvítí "0,0 MB" u videí, která tam jsou.
     private val _historyBytes = MutableStateFlow(historyStore.totalBytes())
     val historyBytes: StateFlow<Long> = _historyBytes.asStateFlow()
@@ -1553,24 +1583,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             var ok = 0
             withContext(Dispatchers.IO) {
                 missing.forEach { item ->
-                    // Každý druh do své složky a se svou příponou — obrázek
-                    // do Obrázků, skladba do Hudby; MP3 uložené jako .mp4
-                    // do Filmů by hudební přehrávače nenašly.
-                    val ext = item.fileName.substringAfterLast('.', "")
-                    val saved = when {
-                        item.isImage -> MediaSaver.saveImageToGallery(
-                            getApplication(), item.file(getApplication()),
-                            "H3_${item.createdAt}.${ext.ifBlank { "png" }}"
-                        )
-                        item.isAudio -> MediaSaver.saveAudioToGallery(
-                            getApplication(), item.file(getApplication()),
-                            "H3_${item.createdAt}.${ext.ifBlank { "mp3" }}"
-                        )
-                        else -> MediaSaver.saveToGallery(
-                            getApplication(), item.file(getApplication()),
-                            "H3_${item.createdAt}.mp4"
-                        )
-                    }
+                    val saved = MediaSaver.saveItem(getApplication(), item)
                     if (saved) {
                         historyStore.markInGallery(item.id); ok++
                     }
@@ -2361,7 +2374,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch {
             val restored = withContext(Dispatchers.IO) { editStore.load() }
-            if (restored.source != null || restored.prompt.isNotBlank()) _edit.value = restored
+            _edit.value = restored
         }
     }
 
@@ -2388,6 +2401,57 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setEditLoraSila(v: Float) = updateEdit { it.copy(loraSila = v) }
 
     fun setEditQwenRychle(v: Boolean) = updateEdit { it.copy(qwenRychle = v) }
+
+    data class EditLoraCatalog(
+        val files: List<EditLoraFile> = emptyList(), val loading: Boolean = false,
+        val error: Boolean = false, val server: String = "",
+    )
+    private val _editLoras = MutableStateFlow(EditLoraCatalog())
+    val editLoras: StateFlow<EditLoraCatalog> = _editLoras.asStateFlow()
+    private var editLorasJob: kotlinx.coroutines.Job? = null
+
+    fun refreshEditLoras(force: Boolean = false) {
+        val server = settings.serverUrl
+        val current = _editLoras.value
+        if (current.server == server && !force && (current.loading || (current.files.isNotEmpty() && !current.error))) return
+        editLorasJob?.cancel()
+        _editLoras.value = EditLoraCatalog(loading = true, server = server)
+        editLorasJob = viewModelScope.launch {
+            try {
+                val client = ComfyClient(server)
+                val files = withContext(Dispatchers.IO) { client.loraNames().distinct().sorted().map { EditLoraFile(it) } }
+                _editLoras.value = EditLoraCatalog(files, loading = true, server = server)
+                // Nabídka se ukáže ihned; metadata se dočítají po čtyřech, bez blokování UI.
+                for (batch in files.chunked(4)) {
+                    val enriched = withContext(Dispatchers.IO) {
+                        batch.map { file -> async { file.copy(metadata = client.loraMetadata(file.name)) } }.awaitAll()
+                    }.associateBy { it.name }
+                    _editLoras.value = _editLoras.value.copy(files = _editLoras.value.files.map { enriched[it.name] ?: it })
+                }
+                _editLoras.value = _editLoras.value.copy(loading = false)
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                _editLoras.value = _editLoras.value.copy(loading = false, error = true)
+            }
+        }
+    }
+
+    fun setEditUserLora(name: String, confirmedUnknown: Boolean = false) {
+        if (name.isNotBlank()) {
+            val file = _editLoras.value.files.firstOrNull { it.name == name } ?: return
+            when (file.compatibility(_edit.value.motor)) {
+                LoraCompatibility.MATCH -> Unit
+                LoraCompatibility.UNKNOWN -> if (!confirmedUnknown) return
+                else -> return
+            }
+        }
+        updateEdit { it.withLora(it.selectedLora.copy(name = name)) }
+    }
+
+    fun setEditUserLoraStrength(value: Float) {
+        if (value.isFinite()) updateEdit { it.withLora(it.selectedLora.copy(strength = value.coerceIn(0f, 2f))) }
+    }
 
     /** `druh` je "source" (upravovaná fotka) nebo "person" (vkládaná osoba). */
     fun pickEditImage(druh: String, uri: Uri?) {

@@ -7,7 +7,7 @@ import org.json.JSONObject
 /**
  * Stavitel grafu pro kartu **Výměna tváře** — ACE++ (Flux Fill inpaint
  * s portrétní LoRA), `res/raw/workflow_ace_faceswap.json` z uživatelova
- * `FACESWAP_THEBEST_ACE++.json`. Dosazují se JEN dvě fotky a seed.
+ * `FACESWAP_THEBEST_ACE++.json`. Dosazují se fotky, maska, seed a pevná instrukce pro ACE++.
  *
  * Odchylky od exportu: náhledové uzly (PreviewImage, ImageAndMaskPreview)
  * jsou vynechané — v historii by se pletly do výstupů; Flux Fill je fp8
@@ -47,6 +47,8 @@ object FaceSwapBuilder {
      */
     fun build(template: String, seed: Long, images: List<String>): JSONObject {
         val wf = JSONObject(template)
+        // Pevná instrukce modelu; šablona neuchovává uživatelská zadání.
+        wf.inputs("343").put("text", "Retain face. ")
         wf.inputs(N_TARGET).put("image", images.getOrElse(0) { "" })
         wf.inputs(N_FACE).put("image", images.getOrElse(1) { "" })
         wf.inputs(N_MASK).put("image", images.getOrElse(2) { "" })
