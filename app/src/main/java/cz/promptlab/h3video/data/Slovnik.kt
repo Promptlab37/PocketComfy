@@ -233,6 +233,8 @@ object Slovnik {
         "Čím počítat" to "Engine",
         "Čím upravit" to "Edit with",
         "Projekt" to "Project",
+        "Základní model neumí nahotu ani podrobnou anatomii — ty z něj byly vytrénované pryč. Rozbal „Model a doladění“ a přimíchej LoRA, jinak to zadání nesplní, ať ho napíšeš jakkoli." to
+            "The base model cannot do nudity or detailed anatomy — those were trained out of it. Open \"Model and tuning\" and add a LoRA, otherwise it will not follow the instruction no matter how you word it.",
         "Záběry filmu v pořadí, na jednom místě" to "Film shots in order, in one place",
         "Založit projekt" to "Create project",
         "Název nového projektu" to "Name of the new project",
