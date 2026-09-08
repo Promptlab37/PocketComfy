@@ -88,6 +88,8 @@ fun ResultScreen(
     onEdit: (() -> Unit)? = null,
     /** Rozhýbat obrázek — poslat do All in One → Z obrázku (jen u obrázků). */
     onAnimate: (() -> Unit)? = null,
+    /** Zvětšit hotové video — poslat do All in One → Zvětšit (jen u videí). */
+    onUpscaleVideo: (() -> Unit)? = null,
     /**
      * Co k běhu řekly samotné uzly. Jinak to skončí jen v logu na počítači,
      * kam se z telefonu nedostaneš – a přitom jde často o věc, kterou z videa
@@ -298,6 +300,25 @@ fun ResultScreen(
                 }
                 Text(item.fileName, style = MaterialTheme.typography.bodySmall, color = TextLow)
             }
+        }
+
+        // Totéž pro video: zvětšení umí karta All in One → Zvětšit, tohle je
+        // jen zkratka, aby se video nemuselo hledat znovu v galerii telefonu.
+        if (item.isVideoFile && onUpscaleVideo != null) {
+            Spacer(Modifier.height(16.dp))
+            Text(
+                t("Pokračuj s videem"),
+                style = MaterialTheme.typography.labelMedium,
+                color = TextLow,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlineButton(
+                t("Zvětšit video"),
+                modifier = Modifier.fillMaxWidth(),
+                color = Cyan,
+                onClick = onUpscaleVideo,
+            )
         }
 
         // Rozcestník: z hotového obrázku se pokračuje jedním klepnutím —

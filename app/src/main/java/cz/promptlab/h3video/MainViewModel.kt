@@ -2131,6 +2131,36 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Hotové video rovnou do zvětšení. Karta All in One → **Zvětšit** to umí
+     * od začátku (SeedVR2 i RTX Video SR); tohle je jen zkratka od výsledku,
+     * aby se video nemuselo hledat znovu v galerii telefonu.
+     *
+     * Soubor se kopíruje do složky karty — kdyby se odkazovalo na položku
+     * historie a ta se smazala, zvětšení by spadlo na chybějícím souboru.
+     */
+    fun posliVideoDoZvetseni(item: VideoItem) {
+        viewModelScope.launch {
+            val kopie = withContext(Dispatchers.IO) {
+                runCatching {
+                    val zdroj = item.file(getApplication())
+                    val ext = item.fileName.substringAfterLast('.', "mp4")
+                    val target = File(mediaDir(), "aio_source.$ext")
+                    mediaDir().listFiles { f -> f.nameWithoutExtension == "aio_source" }
+                        ?.forEach { it.delete() }
+                    zdroj.copyTo(target, overwrite = true)
+                    target
+                }.getOrNull()
+            } ?: return@launch
+            updateAio { it.copy(mode = AioMode.UPSCALE, sourceVideo = kopie) }
+            // Plátno u zvětšení neurčuje appka (Ovlada.NIC), ale poměr stran
+            // ať v kartě sedí s tím, co do ní přišlo.
+            prevezmiPomerZeVstupu("source", kopie, video = true)
+            setMode(Mode.ALLINONE)
+            selectTab(Tab.CREATE)
+        }
+    }
+
     /** Video do karty: „source" (prodloužit / zvětšit) nebo „refvideo" (reference). */
     fun pickAioVideo(druh: String, uri: Uri?) {
         if (uri == null) return

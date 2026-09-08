@@ -10,6 +10,8 @@ package cz.promptlab.h3video.data
 object Slovnik {
 
     val EN: Map<String, String> = mapOf(
+        "Pokračuj s videem" to "Continue with the video",
+        "Zvětšit video" to "Upscale the video",
         // ---- karta Úhel kamery ----
         "Úhel kamery" to "Camera angle",
         "Úhel" to "Angle",
