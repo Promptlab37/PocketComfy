@@ -7,10 +7,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +22,6 @@ import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,16 +39,14 @@ import cz.promptlab.h3video.ui.theme.Outline1
 import cz.promptlab.h3video.ui.theme.Surface2
 import cz.promptlab.h3video.ui.theme.TextLow
 import cz.promptlab.h3video.ui.theme.TextMid
-import kotlin.math.roundToInt
 
 /**
- * Karta **Úhel kamery**: fotka a tři posuvníky — odkud se kamera dívá,
- * jak vysoko a jak daleko. Žádné psaní: zadání pro model se skládá
- * z těch tří voleb ([AngleBuilder.prompt]).
+ * Karta **Úhel kamery**: fotka a grafický ovladač kamery — půdorys, kde se
+ * kamera táhne kolem objektu, a bokorys na výšku. Žádné psaní ani posuvníky:
+ * zadání pro model se skládá z polohy kamery ([AngleBuilder.prompt]).
  *
- * Posuvníky mají tolik poloh, kolik jich LoRA umí (8 × 4 × 3 = 96 póz).
- * Mezipolohy se nenabízejí schválně — model jiné než natrénované pózy nezná
- * a karta nemá ukazovat volbu, kterou graf zahodí.
+ * Kamera skáče jen na natrénované polohy (8 × 4 × 3 = 96 póz). Plynulý pohyb
+ * by sliboval, co model neumí — mezipolohy by graf stejně zahodil.
  */
 @Composable
 fun AngleSection(vm: MainViewModel) {
@@ -106,28 +101,34 @@ fun AngleSection(vm: MainViewModel) {
 
     SectionCard(
         title = t("Kde má být kamera"),
-        subtitle = t("Osm směrů dokola, čtyři výšky, tři odstupy")
+        subtitle = t("Táhni kamerou kolem objektu — blíž je detail, dál celek")
     ) {
         Column {
-            VolbaPosuvnik(
-                popisek = t("Směr"),
-                volby = AngleBuilder.AZIMUTY.map { t(it.second) },
-                index = scene.azimut,
-            ) { v -> vm.updateAngle { it.copy(azimut = v) } }
+            PudorysKamery(
+                smer = scene.azimut,
+                odstup = scene.odstup,
+            ) { smer, odstup ->
+                vm.updateAngle { it.copy(azimut = smer, odstup = odstup) }
+            }
+
+            Spacer(Modifier.height(4.dp))
+            Text(
+                t("Objekt je čelem dolů, k tobě. Pohled zprava je proto vlevo — je to jeho pravá strana, ne tvoje."),
+                style = MaterialTheme.typography.bodySmall, color = TextLow
+            )
+
+            Spacer(Modifier.height(16.dp))
+            Text(
+                t("Jak vysoko"),
+                style = MaterialTheme.typography.labelMedium, color = TextLow
+            )
+            BokorysKamery(scene.vyska) { v -> vm.updateAngle { it.copy(vyska = v) } }
 
             Spacer(Modifier.height(8.dp))
-            VolbaPosuvnik(
-                popisek = t("Výška"),
-                volby = AngleBuilder.VYSKY.map { t(it.second) },
-                index = scene.vyska,
-            ) { v -> vm.updateAngle { it.copy(vyska = v) } }
-
-            Spacer(Modifier.height(8.dp))
-            VolbaPosuvnik(
-                popisek = t("Odstup"),
-                volby = AngleBuilder.ODSTUPY.map { t(it.second) },
-                index = scene.odstup,
-            ) { v -> vm.updateAngle { it.copy(odstup = v) } }
+            Text(
+                scene.popis,
+                style = MaterialTheme.typography.bodyMedium, color = TextMid
+            )
 
             Spacer(Modifier.height(12.dp))
             SilaLory(scene.sila, t("Síla přesunu")) { v -> vm.updateAngle { it.copy(sila = v) } }
@@ -142,39 +143,5 @@ fun AngleSection(vm: MainViewModel) {
                 style = MaterialTheme.typography.bodySmall, color = TextLow
             )
         }
-    }
-}
-
-/**
- * Posuvník s pevnými polohami. Popisek vpravo ukazuje vybranou volbu slovem,
- * ať je jasné, co která poloha znamená.
- */
-@Composable
-private fun VolbaPosuvnik(
-    popisek: String,
-    volby: List<String>,
-    index: Int,
-    onZmena: (Int) -> Unit,
-) {
-    Column {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(popisek, style = MaterialTheme.typography.labelMedium, color = TextLow)
-            Text(
-                volby.getOrElse(index) { "" },
-                style = MaterialTheme.typography.labelMedium, color = TextMid
-            )
-        }
-        Slider(
-            value = index.toFloat(),
-            onValueChange = { v -> onZmena(v.roundToInt().coerceIn(volby.indices)) },
-            valueRange = 0f..(volby.size - 1).toFloat(),
-            // Zarážky mezi krajními polohami, aby posuvník skákal jen po volbách.
-            steps = (volby.size - 2).coerceAtLeast(0),
-            colors = sliderColors(),
-        )
     }
 }

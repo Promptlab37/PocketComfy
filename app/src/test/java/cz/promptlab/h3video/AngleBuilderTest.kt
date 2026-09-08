@@ -103,6 +103,61 @@ class AngleBuilderTest {
         assertEquals(AngleBuilder.prompt(7, 3, 2), AngleBuilder.prompt(99, 99, 99))
     }
 
+    // ---------------------------------------------------- geometrie ovladače
+
+    @Test
+    fun `smer tam a zpatky sedi`() {
+        AngleBuilder.AZIMUTY.indices.forEach { i ->
+            assertEquals(i, AngleBuilder.smerZUhlu(AngleBuilder.uhelProSmer(i)))
+        }
+    }
+
+    @Test
+    fun `uhel se zaokrouhli na nejblizsi smer a obtoci dokola`() {
+        assertEquals(0, AngleBuilder.smerZUhlu(10f))     // blizko 0
+        assertEquals(1, AngleBuilder.smerZUhlu(40f))     // blizko 45
+        assertEquals(0, AngleBuilder.smerZUhlu(360f))    // cely kruh
+        assertEquals(7, AngleBuilder.smerZUhlu(-45f))    // zaporny uhel
+        assertEquals(6, AngleBuilder.smerZUhlu(-90f))
+    }
+
+    @Test
+    fun `vyska tam a zpatky sedi a mimo rozsah se orizne`() {
+        AngleBuilder.VYSKY.indices.forEach { i ->
+            assertEquals(i, AngleBuilder.vyskaZUhlu(AngleBuilder.uhelProVysku(i)))
+        }
+        assertEquals(0, AngleBuilder.vyskaZUhlu(-90f))   // pod podhledem
+        assertEquals(3, AngleBuilder.vyskaZUhlu(120f))   // nad nadhledem
+        assertEquals(1, AngleBuilder.vyskaZUhlu(5f))     // skoro v urovni oci
+    }
+
+    @Test
+    fun `odstup tam a zpatky sedi, blizko je detail`() {
+        AngleBuilder.ODSTUPY.indices.forEach { i ->
+            assertEquals(i, AngleBuilder.odstupZPomeru(AngleBuilder.pomerProOdstup(i)))
+        }
+        assertEquals(0, AngleBuilder.odstupZPomeru(0f))    // u objektu = detail
+        assertEquals(2, AngleBuilder.odstupZPomeru(1.5f))  // za krajem = celek
+    }
+
+    @Test
+    fun `kazda poloha ovladace vede na natrenovanou pozu`() {
+        // Projít celý půdorys po pěti stupních a všechny poloměry — nikde
+        // nesmí vzniknout kombinace, kterou LoRA nezná.
+        var kolik = 0
+        for (stupne in 0 until 360 step 5) {
+            for (p in 0..20) {
+                val smer = AngleBuilder.smerZUhlu(stupne.toFloat())
+                val odstup = AngleBuilder.odstupZPomeru(p / 10f)
+                assertTrue(smer in AngleBuilder.AZIMUTY.indices)
+                assertTrue(odstup in AngleBuilder.ODSTUPY.indices)
+                assertTrue(AngleBuilder.prompt(smer, 1, odstup).startsWith(AngleBuilder.SPOUSTEC))
+                kolik++
+            }
+        }
+        assertTrue(kolik > 1000)
+    }
+
     // ----------------------------------------------------------------- graf
 
     @Test

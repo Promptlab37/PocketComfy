@@ -10,6 +10,12 @@ package cz.promptlab.h3video.data
 object Slovnik {
 
     val EN: Map<String, String> = mapOf(
+        "Táhni kamerou kolem objektu — blíž je detail, dál celek" to
+            "Drag the camera around the subject — closer is a close-up, further a wide shot",
+        "Objekt je čelem dolů, k tobě. Pohled zprava je proto vlevo — je to jeho pravá strana, ne tvoje." to
+            "The subject faces down, towards you. The right-side view therefore sits on the left — it is the subject's right, not yours.",
+        "Jak vysoko" to
+            "How high",
         "Pokračuj s videem" to "Continue with the video",
         "Zvětšit video" to "Upscale the video",
         // ---- karta Úhel kamery ----
