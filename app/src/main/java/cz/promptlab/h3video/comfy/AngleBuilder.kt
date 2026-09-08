@@ -76,6 +76,50 @@ object AngleBuilder {
     /** Kolik póz LoRA umí — 8 × 4 × 3. Karta nenabízí nic mimo tenhle rozsah. */
     const val POZ = 96
 
+    // --------------------------------------------------- geometrie ovladače
+    //
+    // Karta kameru neukazuje posuvníky, ale půdorysem: objekt uprostřed,
+    // kamera kolem něj. Přepočty sedí tady, aby šly ověřit testem bez UI.
+
+    /**
+     * Stupně na půdorysu pro daný směr. **0° je dole** (kamera před objektem,
+     * tedy tam, kde stojí divák) a roste po směru hodinových ručiček — stejně
+     * jako `horizontal_angle` v uzlu balíčku.
+     *
+     * Že „zprava" vychází na obrazovce vlevo, není chyba: objekt je k divákovi
+     * čelem, takže jeho pravá ruka je na divákově levé straně.
+     */
+    fun uhelProSmer(smer: Int): Float = (smer.coerceIn(AZIMUTY.indices) * 45).toFloat()
+
+    /** Opačný převod: úhel na půdorysu → nejbližší z osmi směrů. */
+    fun smerZUhlu(stupne: Float): Int {
+        val norm = ((stupne % 360f) + 360f) % 360f
+        return (Math.round(norm / 45f) % AZIMUTY.size)
+    }
+
+    /** Výška kamery ve stupních, jak ji čeká uzel (−30°, 0°, 30°, 60°). */
+    val VYSKA_STUPNE = listOf(-30f, 0f, 30f, 60f)
+
+    fun uhelProVysku(vyska: Int): Float = VYSKA_STUPNE[vyska.coerceIn(VYSKY.indices)]
+
+    /** Opačný převod: úhel nad obzorem → nejbližší ze čtyř výšek. */
+    fun vyskaZUhlu(stupne: Float): Int {
+        val omezene = stupne.coerceIn(VYSKA_STUPNE.first(), VYSKA_STUPNE.last())
+        return VYSKA_STUPNE.indices.minByOrNull { kotlin.math.abs(VYSKA_STUPNE[it] - omezene) } ?: 1
+    }
+
+    /**
+     * Odstup jako podíl poloměru půdorysu (0 = u objektu, 1 = na kraji).
+     * Detail je nejblíž, celek nejdál — pořadí odpovídá [ODSTUPY].
+     */
+    val ODSTUP_POMER = listOf(0.42f, 0.66f, 0.92f)
+
+    fun pomerProOdstup(odstup: Int): Float = ODSTUP_POMER[odstup.coerceIn(ODSTUPY.indices)]
+
+    /** Opačný převod: vzdálenost od středu (podíl poloměru) → nejbližší odstup. */
+    fun odstupZPomeru(pomer: Float): Int =
+        ODSTUP_POMER.indices.minByOrNull { kotlin.math.abs(ODSTUP_POMER[it] - pomer) } ?: 1
+
     /**
      * Složí zadání ve tvaru, na kterém je LoRA natrénovaná:
      * `<sks> {azimut} {výška} {odstup}`. Pořadí slov je závazné.
