@@ -13,7 +13,7 @@ import cz.promptlab.h3video.comfy.Stage
  * o videu. Tady je KOMPLETNÍ matice — každý druh běhu × každá fáze — a
  * obrazovka i služba ji jen čtou.
  */
-enum class RunKind { VIDEO, LONG, EDIT, T2I, RESTORE, SWAP, INPAINT, UPSCALE, DLSS, MUSIC, MODEL3D }
+enum class RunKind { VIDEO, LONG, EDIT, T2I, RESTORE, ANGLE, SWAP, INPAINT, UPSCALE, DLSS, MUSIC, MODEL3D }
 
 val GenState.Running.kind: RunKind
     get() = when {
@@ -25,6 +25,7 @@ val GenState.Running.kind: RunKind
         isDlss -> RunKind.DLSS
         isUpscale -> RunKind.UPSCALE
         isRestore -> RunKind.RESTORE
+        isAngle -> RunKind.ANGLE
         isSwap -> RunKind.SWAP
         isInpaint -> RunKind.INPAINT
         isT2i -> RunKind.T2I
@@ -37,7 +38,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
     Stage.STARTING -> t("Probouzím ComfyUI")
     Stage.UPLOADING -> when (kind) {
         RunKind.VIDEO, RunKind.LONG -> t("Odesílám podklady")
-        RunKind.EDIT, RunKind.RESTORE, RunKind.UPSCALE, RunKind.DLSS,
+        RunKind.EDIT, RunKind.RESTORE, RunKind.ANGLE, RunKind.UPSCALE, RunKind.DLSS,
         RunKind.MODEL3D -> t("Odesílám fotku")
         RunKind.SWAP, RunKind.INPAINT -> t("Odesílám fotky")
         RunKind.T2I, RunKind.MUSIC -> t("Připravuji zadání")
@@ -49,6 +50,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.EDIT -> t("Načítám Krea 2")
         RunKind.T2I -> t("Načítám Z-Image")
         RunKind.RESTORE -> t("Načítám Qwen Edit")
+        RunKind.ANGLE -> t("Načítám Qwen Edit")
         RunKind.SWAP -> t("Načítám Flux Fill")
         RunKind.INPAINT -> t("Načítám model na domalování")
         RunKind.UPSCALE -> t("Načítám SeedVR2")
@@ -59,7 +61,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
     Stage.REFERENCES -> when (kind) {
         RunKind.VIDEO -> t("Připravuji podklady")
         RunKind.LONG -> t("Připravuji navázání")
-        RunKind.EDIT, RunKind.RESTORE -> t("Načítám fotku")
+        RunKind.EDIT, RunKind.RESTORE, RunKind.ANGLE -> t("Načítám fotku")
         RunKind.SWAP -> t("Připravuji výřez tváře")
         RunKind.INPAINT -> t("Vyřezávám okolí masky")
         RunKind.UPSCALE -> t("Dělím na dlaždice")
@@ -80,6 +82,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.EDIT -> t("Upravuji obrázek")
         RunKind.T2I -> t("Generuji obrázek")
         RunKind.RESTORE -> t("Opravuji fotku")
+        RunKind.ANGLE -> t("Otáčím pohled")
         RunKind.SWAP -> t("Měním tvář")
         RunKind.INPAINT -> t("Domalovávám do masky")
         RunKind.UPSCALE -> t("Zvětšuji obrázek")
@@ -119,6 +122,7 @@ fun stageDetailText(stage: Stage, kind: RunKind): String = when {
         RunKind.EDIT -> t("Krea 2 + textový enkodér")
         RunKind.T2I -> t("Z-Image Turbo + textový enkodér")
         RunKind.RESTORE -> t("Qwen Image Edit 2511 + LoRA")
+        RunKind.ANGLE -> t("Qwen Image Edit 2511 + LoRA na úhly")
         RunKind.SWAP -> t("Flux Fill + portrétní LoRA")
         RunKind.INPAINT -> t("Model na domalování + textový enkodér")
         RunKind.UPSCALE -> "SeedVR2 + VAE"
@@ -160,6 +164,7 @@ fun mainPhaseTitle(kind: RunKind): String = when (kind) {
     RunKind.EDIT -> t("Úprava obrázku")
     RunKind.T2I -> t("Nový obrázek")
     RunKind.RESTORE -> t("Oprava fotky")
+    RunKind.ANGLE -> t("Nový úhel kamery")
     RunKind.SWAP -> t("Výměna tváře")
     RunKind.INPAINT -> t("Domalování do masky")
     RunKind.UPSCALE -> t("Zvětšování")

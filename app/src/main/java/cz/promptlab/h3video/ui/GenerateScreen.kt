@@ -354,6 +354,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             RestoreSection(vm)
         }
 
+        // ------------------------------------------------------ úhel kamery
+        if (mode == Mode.ANGLE) {
+            AngleSection(vm)
+        }
+
         // ---------------------------------------------------- výměna tváře
         if (mode == Mode.FACESWAP) {
             FaceSwapSection(vm)
@@ -734,6 +739,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 mode == Mode.IMAGE -> t("Vygenerovat obrázek")
                 mode == Mode.MUSIC -> t("Vygenerovat skladbu")
                 mode == Mode.RESTORE -> t("Opravit fotku")
+                mode == Mode.ANGLE -> t("Otočit pohled")
                 mode == Mode.FACESWAP -> t("Vyměnit tvář")
                 mode == Mode.INPAINT -> t("Domalovat do masky")
                 // 3D model není video — tlačítko to nesmí slibovat.

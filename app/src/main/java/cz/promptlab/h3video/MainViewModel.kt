@@ -46,6 +46,9 @@ import cz.promptlab.h3video.data.MusicScene
 import cz.promptlab.h3video.data.MusicStore
 import cz.promptlab.h3video.data.musicHints
 import cz.promptlab.h3video.data.musicProblem
+import cz.promptlab.h3video.data.AngleScene
+import cz.promptlab.h3video.data.AngleStore
+import cz.promptlab.h3video.data.angleProblem
 import cz.promptlab.h3video.data.RestoreScene
 import cz.promptlab.h3video.data.RestoreStore
 import cz.promptlab.h3video.data.restoreProblem
@@ -652,6 +655,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 if (p.prompt.isBlank()) t("Napiš, co má na obrázku být.") else null
             Mode.MUSIC -> musicProblem(_music.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
+            Mode.ANGLE -> angleProblem(_angle.value)
             Mode.FACESWAP -> faceSwapProblem(_swap.value)
             Mode.INPAINT -> inpaintProblem(_inpaint.value)
         }
@@ -691,7 +695,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private val vsechnySceny: List<StateFlow<Any?>> get() = listOf(
         _params, _scene, _timeline, _aio, _edit, _upscale, _music,
-        _restore, _swap, _inpaint, _long, _model3d, _projekt, _aioAvailable,
+        _restore, _angle, _swap, _inpaint, _long, _model3d, _projekt, _aioAvailable,
     )
 
     /**
@@ -726,6 +730,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (p.mode == Mode.IMAGE) return emptyList()
         if (p.mode == Mode.MUSIC) return musicHints(_music.value)
         if (p.mode == Mode.RESTORE) return emptyList()
+        // Úhel kamery jede na vlastní předloze; upozornění k videu se ho netýkají.
+        if (p.mode == Mode.ANGLE) return emptyList()
         if (p.mode == Mode.FACESWAP) return faceSwapHints(_swap.value)
         if (p.mode == Mode.INPAINT) return inpaintHints(_inpaint.value)
         // Dialogy jedou referenční cestou (ref2va). Turbo LoRA je trénovaná
@@ -929,6 +935,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         ),
                         s.uploadImages,
                         restoreScene = s,
+                    )
+                }
+            }
+
+            // Popis do fronty i historie je lidský („zprava, nadhled, detail"),
+            // ne ten spouštěcí řetězec, co jde do modelu.
+            Mode.ANGLE -> {
+                val s = _angle.value
+                QueuedRun(id, p.mode.title, s.popis) {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = s.popis,
+                            steps = cz.promptlab.h3video.comfy.AngleBuilder.STEPS,
+                        ),
+                        s.uploadImages,
+                        angleScene = s,
                     )
                 }
             }
@@ -2646,7 +2668,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.LONG -> updateLong {
                 if (it.startPrompt.isBlank()) it.copy(startPrompt = popis) else it
             }
-            Mode.MODEL3D, Mode.UPSCALE, Mode.RESTORE, Mode.FACESWAP, Mode.PROJEKT -> Unit
+            // Úhel kamery zadání nepíše — skládá se z posuvníků.
+            Mode.MODEL3D, Mode.UPSCALE, Mode.RESTORE, Mode.ANGLE,
+            Mode.FACESWAP, Mode.PROJEKT -> Unit
             else -> update { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
         }
     }
@@ -2754,6 +2778,71 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         runCatching { restoreStore.dir().listFiles()?.forEach { it.delete() } }
         _restore.value = _restore.value.copy(source = null, thumb = null)
         restoreStore.save(_restore.value)
+    }
+
+    // ------------------------------------------------------------ úhel kamery
+
+    private val angleStore = AngleStore(app)
+
+    private val _angle = MutableStateFlow(AngleScene())
+    val angle: StateFlow<AngleScene> = _angle.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val restored = withContext(Dispatchers.IO) {
+                val s = angleStore.load()
+                s.source?.let { s.copy(thumb = ImageUtils.loadFileThumb(it)) } ?: s
+            }
+            // Posuvníky se obnovují vždycky, fotka jen když soubor pořád je.
+            _angle.value = restored
+        }
+    }
+
+    fun updateAngle(zmena: (AngleScene) -> AngleScene) {
+        _angle.value = zmena(_angle.value)
+        angleStore.save(_angle.value)
+    }
+
+    /** Fotka se kopíruje bajt po bajtu — stejně jako u karty Oprava fotky. */
+    fun pickAngleImage(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val resolver = getApplication<android.app.Application>().contentResolver
+                    val ext = (android.webkit.MimeTypeMap.getSingleton()
+                        .getExtensionFromMimeType(resolver.getType(uri)) ?: "png").lowercase()
+                    angleStore.dir().listFiles()?.forEach { it.delete() }
+                    if (ext in setOf("png", "jpg", "jpeg", "webp")) {
+                        val target = File(angleStore.dir(), "zdroj.$ext")
+                        resolver.openInputStream(uri)?.use { input ->
+                            target.outputStream().use { input.copyTo(it) }
+                        } ?: return@runCatching null
+                        target.takeIf { it.length() > 0 }
+                    } else {
+                        // HEIC ze Samsungu server nepřečte – překóduje se na
+                        // JPEG včetně EXIF otočení.
+                        val bmp = ImageUtils.loadUpright(getApplication(), uri, 4096)
+                            ?: return@runCatching null
+                        val target = File(angleStore.dir(), "zdroj.jpg")
+                        target.outputStream().use {
+                            bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it)
+                        }
+                        target
+                    }
+                }.getOrNull()
+            } ?: return@launch
+            val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(vysledek) }
+            // `copy`, ne nová scéna: nastavené úhly má výběr fotky nechat být.
+            _angle.value = _angle.value.copy(source = vysledek, thumb = thumb)
+            angleStore.save(_angle.value)
+        }
+    }
+
+    fun clearAngleImage() {
+        runCatching { angleStore.dir().listFiles()?.forEach { it.delete() } }
+        _angle.value = _angle.value.copy(source = null, thumb = null)
+        angleStore.save(_angle.value)
     }
 
     // --------------------------------------------------------- výměna tváře

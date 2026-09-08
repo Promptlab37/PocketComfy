@@ -138,6 +138,8 @@ data class GenParams(
             Mode.IMAGE -> 0
             Mode.MUSIC -> 0
             Mode.RESTORE -> 1
+            // Úhel kamery: jedna fotka, ze které se objekt otočí.
+            Mode.ANGLE -> 1
             // 3D model: jedna fotka předmětu.
             Mode.MODEL3D -> 1
             // Výměna tváře: cílová fotka, nová tvář a od 2.89 i samostatná
