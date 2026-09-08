@@ -922,8 +922,16 @@ object GenerationEngine {
     }
 
     private suspend fun uvolniPametKdyzTreba(client: ComfyClient, vzdycky: Boolean = false) {
-        val pred = withContext(Dispatchers.IO) { runCatching { client.vram() }.getOrNull() }
+        val stats = withContext(Dispatchers.IO) { runCatching { client.systemStats() }.getOrNull() }
             ?: return
+        // S comfy-aimdo se na paměť nesahá — viz ComfyClient.dynamickaVram().
+        // Uvolnění by modely jen vyhodilo ze zamčené RAM a další běh by ji
+        // zamykal znovu, což zastavuje celý počítač (8. 9. 2026).
+        if (ComfyClient.maAimdo(stats)) {
+            Log.i(TAG, "server jede s comfy-aimdo, /free se nevola")
+            return
+        }
+        val pred = ComfyClient.vramZe(stats) ?: return
         val (volnoPred, celkem) = pred
         if (!vzdycky && volnoPred.toDouble() / celkem >= 0.60) return
 

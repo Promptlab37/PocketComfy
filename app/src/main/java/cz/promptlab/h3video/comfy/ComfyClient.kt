@@ -49,12 +49,21 @@ class ComfyClient(baseUrl: String) {
     }
 
     /** Volná a celková paměť grafiky v bajtech, jak ji vidí ComfyUI. */
-    fun vram(): Pair<Long, Long>? = runCatching {
-        val d = systemStats().optJSONArray("devices")?.optJSONObject(0) ?: return null
-        val volno = d.optLong("vram_free", 0L)
-        val celkem = d.optLong("vram_total", 0L)
-        if (celkem <= 0L) null else volno to celkem
-    }.getOrNull()
+    fun vram(): Pair<Long, Long>? = runCatching { vramZe(systemStats()) }.getOrNull()
+
+    /**
+     * Jede server s **comfy-aimdo** (dynamická VRAM, ComfyUI ≥ 0.34)?
+     *
+     * Ten si paměť grafiky řídí sám: modely „staguje" do zamčené (pinned)
+     * RAM — na tomhle stroji 39 GB — a nechává je tam mezi běhy. Vyhodit mu
+     * je přes `/free` nic neušetří, jen ho donutí při dalším běhu desítky GB
+     * zamknout znovu; zamykání stránek je operace jádra, která na tu dobu
+     * zastaví celý počítač. Přesně to uživatel viděl 8. 9. 2026 jako „všechno
+     * zamrzne, paměť prázdná, grafika stojí" — a jen z appky, protože
+     * ComfyUI UI `/free` nikdy nevolá.
+     */
+    fun dynamickaVram(): Boolean = runCatching { maAimdo(systemStats()) }.getOrDefault(false)
+
 
     /**
      * Řekne ComfyUI, ať pustí modely z paměti grafiky.
@@ -490,6 +499,23 @@ class ComfyClient(baseUrl: String) {
         http.newCall(Request.Builder().url("$base$path").build()).execute()
 
     companion object {
+        /** Volná a celková VRAM první grafiky z odpovědi `/system_stats`. */
+        fun vramZe(stats: JSONObject): Pair<Long, Long>? {
+            val d = stats.optJSONArray("devices")?.optJSONObject(0) ?: return null
+            val volno = d.optLong("vram_free", 0L)
+            val celkem = d.optLong("vram_total", 0L)
+            return if (celkem <= 0L) null else volno to celkem
+        }
+
+        /** Je mezi balíčky serveru `comfy-aimdo`? Čistá funkce, ať jde testovat. */
+        fun maAimdo(stats: JSONObject): Boolean {
+            val bal = stats.optJSONObject("system")?.optJSONArray("comfy_package_versions")
+                ?: return false
+            return (0 until bal.length()).any {
+                bal.optJSONObject(it)?.optString("name") == "comfy-aimdo"
+            }
+        }
+
         /** Port spouštěče na počítači (viz comfyui_launcher_v1.py). */
         const val LAUNCHER_PORT = 8190
         const val UPLOAD_SUBFOLDER = "h3app"
