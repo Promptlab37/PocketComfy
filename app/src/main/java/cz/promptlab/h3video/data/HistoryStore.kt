@@ -36,6 +36,12 @@ data class VideoItem(
         get() = fileName.substringAfterLast('.', "").lowercase() in
             listOf("png", "jpg", "jpeg", "webp")
 
+    /**
+     * Je výsledek video? Tedy nic z toho ostatního — obrázek, skladba ani
+     * model. Odsud se pozná, že jde nabídnout zvětšení hotového videa.
+     */
+    val isVideoFile: Boolean get() = !isImage && !isAudio && !isModel3d
+
     /** Je výsledek skladba (karta Hudba)? Poznává se stejně — z přípony. */
     val isAudio: Boolean
         get() = fileName.substringAfterLast('.', "").lowercase() in

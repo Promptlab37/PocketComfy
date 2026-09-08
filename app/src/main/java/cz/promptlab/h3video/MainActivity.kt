@@ -438,6 +438,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             GenerationEngine.dismissResult()
                             vm.posliDoRozhybani(s.item)
                         },
+                        onUpscaleVideo = {
+                            GenerationEngine.dismissResult()
+                            vm.posliVideoDoZvetseni(s.item)
+                        },
                     )
                 }
             }
@@ -497,6 +501,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onAnimate = {
                         opened = null
                         vm.posliDoRozhybani(open)
+                    },
+                    onUpscaleVideo = {
+                        opened = null
+                        vm.posliVideoDoZvetseni(open)
                     },
                 )
             }
