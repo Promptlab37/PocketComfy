@@ -12,6 +12,7 @@ import cz.promptlab.h3video.comfy.DlssBuilder
 import cz.promptlab.h3video.comfy.FaceSwapBuilder
 import cz.promptlab.h3video.comfy.InpaintBuilder
 import cz.promptlab.h3video.comfy.LongVideoBuilder
+import cz.promptlab.h3video.comfy.AngleBuilder
 import cz.promptlab.h3video.comfy.RestoreBuilder
 import cz.promptlab.h3video.comfy.SeedVr2Builder
 import cz.promptlab.h3video.comfy.Trellis2Builder
@@ -96,6 +97,8 @@ sealed interface GenState {
         val isMusic: Boolean = false,
         /** Beh opravuje starou fotku (Qwen 2511) - texty "Opravuji". */
         val isRestore: Boolean = false,
+        /** Beh otaci objekt do jineho uhlu (Qwen 2511 + LoRA) - texty "Otacim". */
+        val isAngle: Boolean = false,
         /** Beh meni tvar (ACE++) - texty "Menim tvar". */
         val isSwap: Boolean = false,
         /** Beh domalovava do masky (inpaint) - texty "Domalovavam". */
@@ -212,6 +215,7 @@ object GenerationEngine {
     @Volatile private var restoreRun: Boolean = false
 
     /** Běží výměna tváře (ACE++)? Vlastní workflow z APK, výsledek PNG. */
+    @Volatile private var angleRun: Boolean = false
     @Volatile private var swapRun: Boolean = false
 
     /** Běží domalování do masky (Klein / Flux Fill)? Vlastní workflow z APK, výsledek PNG. */
@@ -232,6 +236,7 @@ object GenerationEngine {
 
     private fun stageOf(node: String?): Stage = when {
         restoreRun -> RestoreBuilder.stageForClass(nodeClasses[node])
+        angleRun -> AngleBuilder.stageForClass(nodeClasses[node])
         swapRun -> FaceSwapBuilder.stageForClass(nodeClasses[node])
         inpaintRun -> InpaintBuilder.stageForClass(nodeClasses[node])
         longRun -> LongVideoBuilder.stageForClass(nodeClasses[node])
@@ -251,6 +256,7 @@ object GenerationEngine {
 
     private fun rangeOf(node: String?): Pair<Float, Float> = when {
         restoreRun -> RestoreBuilder.rangeForClass(nodeClasses[node])
+        angleRun -> AngleBuilder.rangeForClass(nodeClasses[node])
         swapRun -> FaceSwapBuilder.rangeForClass(nodeClasses[node])
         inpaintRun -> InpaintBuilder.rangeForClass(nodeClasses[node])
         longRun -> LongVideoBuilder.rangeForClass(nodeClasses[node])
@@ -276,6 +282,7 @@ object GenerationEngine {
      */
     private fun reportsSteps(node: String?): Boolean = when {
         restoreRun -> RestoreBuilder.reportsSteps(nodeClasses[node])
+        angleRun -> AngleBuilder.reportsSteps(nodeClasses[node])
         swapRun -> FaceSwapBuilder.reportsSteps(nodeClasses[node])
         inpaintRun -> InpaintBuilder.reportsSteps(nodeClasses[node])
         longRun -> LongVideoBuilder.reportsSteps(nodeClasses[node])
@@ -358,6 +365,8 @@ object GenerationEngine {
         musicScene: cz.promptlab.h3video.data.MusicScene? = null,
         /** Oprava fotky: Qwen 2511, vlastní workflow z APK, výsledkem je PNG. */
         restoreScene: cz.promptlab.h3video.data.RestoreScene? = null,
+        /** Úhel kamery: Qwen 2511 + LoRA, vlastní workflow z APK, výsledkem je PNG. */
+        angleScene: cz.promptlab.h3video.data.AngleScene? = null,
         /** Výměna tváře: ACE++, vlastní workflow z APK, výsledkem je PNG. */
         swapScene: cz.promptlab.h3video.data.FaceSwapScene? = null,
         /** Domalovat: Klein / Flux Fill, vlastní workflow z APK, výsledkem je PNG. */
@@ -377,11 +386,12 @@ object GenerationEngine {
         t2iRun = t2i
         musicRun = musicScene != null
         restoreRun = restoreScene != null
+        angleRun = angleScene != null
         swapRun = swapScene != null
         inpaintRun = inpaintScene != null
         longRun = longScene != null
         model3dRun = model3dScene != null
-        aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !swapRun &&
+        aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun && !swapRun &&
             !inpaintRun && !longRun && !model3dRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
@@ -390,6 +400,7 @@ object GenerationEngine {
         settings.activeT2i = t2iRun
         settings.activeMusic = musicRun
         settings.activeRestore = restoreRun
+        settings.activeAngle = angleRun
         settings.activeSwap = swapRun
         settings.activeInpaint = inpaintRun
         settings.activeLong = longRun
@@ -423,7 +434,8 @@ object GenerationEngine {
             runCatching {
                 runGeneration(
                     params, images, talkAudios, timelineScene, aioScene, editScene,
-                    upscaleScene, t2i, musicScene, restoreScene, swapScene, inpaintScene,
+                    upscaleScene, t2i, musicScene, restoreScene, angleScene, swapScene,
+                    inpaintScene,
                     longScene, model3dScene,
                 )
             }
@@ -475,20 +487,22 @@ object GenerationEngine {
             t2iRun = settings.activeT2i
             musicRun = settings.activeMusic
             restoreRun = settings.activeRestore
+            angleRun = settings.activeAngle
             swapRun = settings.activeSwap
             inpaintRun = settings.activeInpaint
             longRun = settings.activeLong
             model3dRun = settings.activeModel3d
-            aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun &&
+            aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun &&
                 !swapRun && !inpaintRun && !longRun && !model3dRun && settings.activeAio
             nodeClasses = if (aioRun || editRun || upscaleRun || t2iRun || musicRun ||
-                restoreRun || swapRun || inpaintRun || longRun || model3dRun
+                restoreRun || angleRun || swapRun || inpaintRun || longRun || model3dRun
             ) {
                 withContext(Dispatchers.IO) {
                     runCatching {
                         client.queuedGraph(pid)?.let {
                             when {
                                 restoreRun -> RestoreBuilder.nodeClasses(it)
+                                angleRun -> AngleBuilder.nodeClasses(it)
                                 swapRun -> FaceSwapBuilder.nodeClasses(it)
                                 inpaintRun -> InpaintBuilder.nodeClasses(it)
                                 musicRun -> AceMusicBuilder.nodeClasses(it)
@@ -557,11 +571,12 @@ object GenerationEngine {
         t2iRun = settings.activeT2i
         musicRun = settings.activeMusic
         restoreRun = settings.activeRestore
+        angleRun = settings.activeAngle
         swapRun = settings.activeSwap
         inpaintRun = settings.activeInpaint
         longRun = settings.activeLong
         model3dRun = settings.activeModel3d
-        aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun &&
+        aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun &&
             !swapRun && !inpaintRun && !longRun && !model3dRun && settings.activeAio
         label = settings.activeLabel
         startedAt = System.currentTimeMillis()
@@ -598,6 +613,7 @@ object GenerationEngine {
         t2i: Boolean = false,
         musicScene: cz.promptlab.h3video.data.MusicScene? = null,
         restoreScene: cz.promptlab.h3video.data.RestoreScene? = null,
+        angleScene: cz.promptlab.h3video.data.AngleScene? = null,
         swapScene: cz.promptlab.h3video.data.FaceSwapScene? = null,
         inpaintScene: cz.promptlab.h3video.data.InpaintScene? = null,
         longScene: cz.promptlab.h3video.data.LongScene? = null,
@@ -735,6 +751,16 @@ object GenerationEngine {
             musicScene != null ->
                 AceMusicBuilder.build(app, musicScene, seed)
 
+            // Úhel kamery: tentýž Qwen 2511, ale s LoRA na pózy kamery.
+            angleScene != null ->
+                AngleBuilder.build(
+                    app, seed, names,
+                    azimut = angleScene.azimut,
+                    vyska = angleScene.vyska,
+                    odstup = angleScene.odstup,
+                    sila = angleScene.sila,
+                )
+
             // Oprava fotky jede na uživatelově Qwen 2511 workflow z APK.
             restoreScene != null ->
                 RestoreBuilder.build(
@@ -813,6 +839,7 @@ object GenerationEngine {
         if (t2i) nodeClasses = ZImageBuilder.nodeClasses(workflow)
         if (musicScene != null) nodeClasses = AceMusicBuilder.nodeClasses(workflow)
         if (restoreScene != null) nodeClasses = RestoreBuilder.nodeClasses(workflow)
+        if (angleScene != null) nodeClasses = AngleBuilder.nodeClasses(workflow)
         if (swapScene != null) nodeClasses = FaceSwapBuilder.nodeClasses(workflow)
         if (inpaintScene != null) nodeClasses = InpaintBuilder.nodeClasses(workflow)
         if (longScene != null) nodeClasses = LongVideoBuilder.nodeClasses(workflow)
@@ -1721,7 +1748,7 @@ object GenerationEngine {
             note = note,
             offline = offline,
             label = label,
-            isImage = editRun || upscaleRun || t2iRun || restoreRun || swapRun,
+            isImage = editRun || upscaleRun || t2iRun || restoreRun || angleRun || swapRun,
             isUpscale = upscaleRun,
             // Pozná se z tříd odeslaného grafu, takže to přežije i znovupřipojení
             // po ukončení appky (nodeClasses se obnovují z uloženého workflow).
@@ -1731,6 +1758,7 @@ object GenerationEngine {
             isT2i = t2iRun,
             isMusic = musicRun,
             isRestore = restoreRun,
+            isAngle = angleRun,
             isSwap = swapRun,
             isInpaint = inpaintRun,
         )

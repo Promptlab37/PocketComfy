@@ -1,0 +1,251 @@
+{
+ "41": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": "",
+   "upload": "image"
+  },
+  "_meta": {
+   "title": "Fotka"
+  }
+ },
+ "93": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  },
+  "_meta": {
+   "title": "Textovy enkoder"
+  }
+ },
+ "95": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "qwen_image_vae.safetensors"
+  },
+  "_meta": {
+   "title": "VAE"
+  }
+ },
+ "108": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "qwen_image_edit_2511_fp8_e4m3fn.safetensors",
+   "weight_dtype": "default"
+  },
+  "_meta": {
+   "title": "Qwen Image Edit 2511"
+  }
+ },
+ "107": {
+  "class_type": "LoraLoaderModelOnly",
+  "inputs": {
+   "model": [
+    "108",
+    0
+   ],
+   "lora_name": "Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors",
+   "strength_model": 1.0
+  },
+  "_meta": {
+   "title": "Lightning 8 kroku"
+  }
+ },
+ "110": {
+  "class_type": "LoraLoaderModelOnly",
+  "inputs": {
+   "model": [
+    "107",
+    0
+   ],
+   "lora_name": "qwen-image-edit-2511-multiple-angles-lora.safetensors",
+   "strength_model": 1.0
+  },
+  "_meta": {
+   "title": "LoRA uhly kamery"
+  }
+ },
+ "94": {
+  "class_type": "ModelSamplingAuraFlow",
+  "inputs": {
+   "model": [
+    "110",
+    0
+   ],
+   "shift": 3.1
+  },
+  "_meta": {
+   "title": "Sampling shift"
+  }
+ },
+ "98": {
+  "class_type": "CFGNorm",
+  "inputs": {
+   "model": [
+    "94",
+    0
+   ],
+   "strength": 1.0
+  },
+  "_meta": {
+   "title": "CFG norm"
+  }
+ },
+ "106": {
+  "class_type": "FluxKontextImageScale",
+  "inputs": {
+   "image": [
+    "41",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Srovnani platna"
+  }
+ },
+ "103": {
+  "class_type": "TextEncodeQwenImageEditPlus",
+  "inputs": {
+   "clip": [
+    "93",
+    0
+   ],
+   "prompt": "",
+   "vae": [
+    "95",
+    0
+   ],
+   "image1": [
+    "106",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Zadani"
+  }
+ },
+ "100": {
+  "class_type": "TextEncodeQwenImageEditPlus",
+  "inputs": {
+   "clip": [
+    "93",
+    0
+   ],
+   "prompt": "",
+   "vae": [
+    "95",
+    0
+   ],
+   "image1": [
+    "106",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Zaporne zadani"
+  }
+ },
+ "97": {
+  "class_type": "FluxKontextMultiReferenceLatentMethod",
+  "inputs": {
+   "conditioning": [
+    "103",
+    0
+   ],
+   "reference_latents_method": "index_timestep_zero"
+  },
+  "_meta": {
+   "title": "Reference kladne"
+  }
+ },
+ "96": {
+  "class_type": "FluxKontextMultiReferenceLatentMethod",
+  "inputs": {
+   "conditioning": [
+    "100",
+    0
+   ],
+   "reference_latents_method": "index_timestep_zero"
+  },
+  "_meta": {
+   "title": "Reference zaporne"
+  }
+ },
+ "104": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "106",
+    0
+   ],
+   "vae": [
+    "95",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Do latentu"
+  }
+ },
+ "105": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "98",
+    0
+   ],
+   "seed": 0,
+   "steps": 8,
+   "cfg": 1.0,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "positive": [
+    "97",
+    0
+   ],
+   "negative": [
+    "96",
+    0
+   ],
+   "latent_image": [
+    "104",
+    0
+   ],
+   "denoise": 1.0
+  },
+  "_meta": {
+   "title": "Vzorkovac"
+  }
+ },
+ "102": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "105",
+    0
+   ],
+   "vae": [
+    "95",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Z latentu"
+  }
+ },
+ "9": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "102",
+    0
+   ],
+   "filename_prefix": "H3App/uhel"
+  },
+  "_meta": {
+   "title": "Ulozeni"
+  }
+ }
+}
