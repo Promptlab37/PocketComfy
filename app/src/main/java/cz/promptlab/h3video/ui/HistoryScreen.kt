@@ -6,6 +6,8 @@ import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
@@ -38,13 +40,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun HistoryScreen(
     items: List<VideoItem>, totalBytes: Long,
     onOpen: (VideoItem) -> Unit, onDelete: (VideoItem) -> Unit,
+    onDeleteMany: (List<VideoItem>) -> Unit,
     onFavorite: (VideoItem) -> Unit, onRename: (VideoItem, String) -> Unit,
     onCreate: () -> Unit,
-    smazane: VideoItem? = null, onUndo: () -> Unit = {}, modifier: Modifier = Modifier,
+    smazane: List<VideoItem> = emptyList(), onUndo: () -> Unit = {}, modifier: Modifier = Modifier,
 ) {
     var kind by rememberSaveable { mutableStateOf<MediaKind?>(null) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -54,10 +58,22 @@ fun HistoryScreen(
     var sorting by remember { mutableStateOf(false) }
     var renameId by rememberSaveable { mutableStateOf<String?>(null) }
     var deleteId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selecting by rememberSaveable { mutableStateOf(false) }
+    var selectedIds by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
+    var deleteIds by rememberSaveable { mutableStateOf(arrayListOf<String>()) }
     val visible = remember(items, kind, query, favoritesOnly, order) {
         filterHistory(items, query, kind, favoritesOnly, order)
     }
     val counts = remember(items) { items.groupingBy { it.mediaKind }.eachCount() }
+    val selected = visible.filter { it.id in selectedIds }
+    fun toggle(item: VideoItem) {
+        selectedIds = ArrayList(if (item.id in selectedIds) selectedIds - item.id else selectedIds + item.id)
+    }
+    BackHandler(selecting) { selecting = false; selectedIds = arrayListOf() }
+    LaunchedEffect(visible.map { it.id }) {
+        val ids = visible.map { it.id }.toSet()
+        selectedIds = ArrayList(selectedIds.filter { it in ids })
+    }
     val favorites = remember(items) { items.count { it.favorite } }
     val listState = rememberLazyGridState()
     var previousFilter by rememberSaveable { mutableStateOf("") }
@@ -107,8 +123,27 @@ fun HistoryScreen(
                                 if (grid) t("Zobrazit seznam") else t("Zobrazit mřížku"), tint = TextMid)
                         }
                     }
-                    Text("${polozkyCount(visible.size)} · ${order.label()}", color = TextLow,
-                        style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(bottom = 8.dp))
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(if (selecting) t("Vybráno: %d").format(selected.size)
+                            else "${polozkyCount(visible.size)} · ${order.label()}", color = TextLow,
+                            style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
+                        TextButton(onClick = { selecting = !selecting; selectedIds = arrayListOf() }) {
+                            Text(t(if (selecting) "Zrušit výběr" else "Vybrat"))
+                        }
+                    }
+                    if (selecting) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        val allSelected = visible.isNotEmpty() && selected.size == visible.size
+                        TextButton(enabled = visible.isNotEmpty(), onClick = {
+                            selectedIds = if (allSelected) arrayListOf() else ArrayList(visible.map { it.id })
+                        }) { Text(t(if (allSelected) "Odznačit vše" else "Vybrat vše zobrazené")) }
+                        Spacer(Modifier.weight(1f))
+                        TextButton(enabled = selected.isNotEmpty(), onClick = {
+                            deleteIds = ArrayList(selected.map { it.id })
+                        }) {
+                            Icon(Icons.Default.DeleteOutline, null)
+                            Text(t("Smazat (%d)").format(selected.size))
+                        }
+                    }
                 }
             }
             if (items.isEmpty()) {
@@ -126,22 +161,33 @@ fun HistoryScreen(
                 LazyVerticalGrid(
                     columns = if (grid) GridCells.Adaptive(160.dp) else GridCells.Fixed(1),
                     state = listState, modifier = Modifier.weight(1f),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = if (smazane != null) 88.dp else 20.dp),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = if (smazane.isNotEmpty()) 88.dp else 20.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(visible, key = { it.id }, contentType = { "asset" }) { item ->
-                        AssetCard(item, grid, { onOpen(item) }, { onFavorite(item) },
-                            { renameId = item.id }, { deleteId = item.id })
+                        AssetCard(item, grid, { if (selecting) toggle(item) else onOpen(item) }, { onFavorite(item) },
+                            { renameId = item.id }, { deleteId = item.id }, selecting, item.id in selectedIds,
+                            { selecting = true; toggle(item) })
                     }
                 }
             }
         }
-        if (smazane != null) {
+        if (smazane.isNotEmpty()) {
             Snackbar(modifier = Modifier.align(Alignment.BottomCenter).padding(12.dp),
                 containerColor = Surface2, contentColor = TextHi,
                 action = { TextButton(onClick = onUndo) { Text(t("Vrátit"), color = Cyan) } },
-            ) { Text(t("Výstup odstraněn")) }
+            ) { Text(t("Odstraněno: %d").format(smazane.size)) }
         }
+    }
+    if (deleteIds.isNotEmpty()) {
+        AlertDialog(onDismissRequest = { deleteIds = arrayListOf() },
+            title = { Text(t("Smazat vybrané položky?")) },
+            text = { Text(t("Počet položek: %d. Odstraní se kopie v aplikaci. Soubory uložené do telefonu zůstanou zachované.").format(deleteIds.size)) },
+            confirmButton = { TextButton(onClick = {
+                onDeleteMany(items.filter { it.id in deleteIds })
+                deleteIds = arrayListOf(); selectedIds = arrayListOf(); selecting = false
+            }) { Text(t("Smazat (%d)").format(deleteIds.size), color = Danger) } },
+            dismissButton = { TextButton(onClick = { deleteIds = arrayListOf() }) { Text(t("Zrušit")) } })
     }
     items.firstOrNull { it.id == renameId }?.let { item ->
         RenameResultDialog(item, { renameId = null }, { onRename(item, it); renameId = null })
@@ -161,15 +207,20 @@ fun HistoryScreen(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 private fun AssetCard(item: VideoItem, grid: Boolean, onOpen: () -> Unit, onFavorite: () -> Unit,
     onRename: () -> Unit, onDelete: () -> Unit,
+    selecting: Boolean, selected: Boolean, onLongClick: () -> Unit,
 ) {
     Surface(shape = RoundedCornerShape(18.dp), color = Surface1,
-        border = androidx.compose.foundation.BorderStroke(1.dp, Outline1)) {
+        border = androidx.compose.foundation.BorderStroke(if (selected) 2.dp else 1.dp, if (selected) Cyan else Outline1)) {
         if (grid) {
             Column {
-                AssetThumbnail(item, Modifier.fillMaxWidth().aspectRatio(1.5f).clickable(onClick = onOpen))
+                Box {
+                    AssetThumbnail(item, Modifier.fillMaxWidth().aspectRatio(1.5f).combinedClickable(onClick = onOpen, onLongClick = onLongClick))
+                    if (selecting) Checkbox(selected, { onOpen() }, Modifier.align(Alignment.TopEnd).background(Surface1, RoundedCornerShape(12.dp)))
+                }
                 Column(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(start = 12.dp, end = 12.dp, top = 10.dp)) {
                     Text(item.displayTitle, color = TextHi, style = MaterialTheme.typography.bodyMedium,
                         maxLines = 2, minLines = 2, overflow = TextOverflow.Ellipsis)
@@ -179,13 +230,15 @@ private fun AssetCard(item: VideoItem, grid: Boolean, onOpen: () -> Unit, onFavo
                 Row(Modifier.fillMaxWidth().padding(start = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(dateOf(item.createdAt), Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
                         color = TextLow, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    FavoriteButton(item, onFavorite)
-                    AssetMenu(item, onRename, onDelete)
+                    if (!selecting) {
+                        FavoriteButton(item, onFavorite)
+                        AssetMenu(item, onRename, onDelete)
+                    }
                 }
             }
         } else {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AssetThumbnail(item, Modifier.padding(start = 10.dp).size(76.dp).clip(RoundedCornerShape(10.dp)).clickable(onClick = onOpen))
+                AssetThumbnail(item, Modifier.padding(start = 10.dp).size(76.dp).clip(RoundedCornerShape(10.dp)).combinedClickable(onClick = onOpen, onLongClick = onLongClick))
                 Column(Modifier.weight(1f).clickable(onClick = onOpen).padding(start = 12.dp, top = 12.dp, bottom = 12.dp)) {
                     Text(item.displayTitle, color = TextHi, style = MaterialTheme.typography.bodyMedium,
                         maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -193,7 +246,8 @@ private fun AssetCard(item: VideoItem, grid: Boolean, onOpen: () -> Unit, onFavo
                         maxLines = 2, overflow = TextOverflow.Ellipsis)
                     Text(dateOf(item.createdAt), color = TextLow, style = MaterialTheme.typography.labelSmall)
                 }
-                Column { FavoriteButton(item, onFavorite); AssetMenu(item, onRename, onDelete) }
+                if (selecting) Checkbox(selected, { onOpen() })
+                else Column { FavoriteButton(item, onFavorite); AssetMenu(item, onRename, onDelete) }
             }
         }
     }

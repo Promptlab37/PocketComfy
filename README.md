@@ -28,11 +28,17 @@ Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné před
 
 ---
 
-## Verze 3.35
+## Verze 3.42
 
 **[Stáhnout podepsané APK](https://github.com/Promptlab37/PocketComfy/releases/latest)**
 — aktualizace se kontrolují také přímo v Nastavení, bez GitHub tokenu.
 
+- **Obrázek → LoRA:** dva volitelné sloty pro každý model včetně FLUX.2 Klein 9B,
+  samostatná síla, výběr se pamatuje pro každý model zvlášť.
+- **Galerie:** hromadný výběr (tlačítko Vybrat nebo podržení náhledu), smazání
+  celé dávky na jedno potvrzení a Vrátit šest sekund pro celou dávku.
+- **Úhel kamery:** nová karta — tentýž objekt z jiného místa, 96 póz bez psaní.
+- **Aktualizace:** kontrola na pozadí nepřepíše ruční kontrolu ani stahování.
 - **Úprava → LoRA:** vlastní výběr a síla pro Krea 2, Qwen Image Edit 2511
   a FLUX.2 Klein 9B. Volby se pamatují pro každý model zvlášť, i po restartu.
   Seznam z ComfyUI jde obnovit a prohledávat; kompatibilitu upřesňují metadata.
@@ -71,7 +77,7 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 - 📋 **Fronta úloh.** Zatímco se generuje, připravíš další zadání a přidáš ho do fronty — běhy jedou samy jeden po druhém a každý hotový se ohlásí notifikací.
 - 🗂️ **Galerie s filtrem a hledáním.** Videa / obrázky / hudba / 3D modely zvlášť, hledání v popisech, smazání jde vzít zpět. U každého výsledku vidíš, jak dlouho se počítal.
 
-## 🃏 Dvanáct karet
+## 🃏 Třináct karet
 
 | | Karta | Model | Co umí |
 |---|---|---|---|
@@ -82,6 +88,7 @@ PocketComfy je **klient** — samo nic negeneruje. Než začneš, potřebuješ:
 | 🖼️ | **Obrázek** | Z-Image Turbo | nová fotka z textu za pár sekund |
 | ✏️ | **Úprava obrázku** | Krea 2 / Qwen Image Edit 2511 / FLUX.2 Klein 9B + volitelná LoRA | „dej jí červenou bundu" — tvář zůstane |
 | 🩹 | **Oprava fotky** | Qwen Image Edit 2511 | stará/poškozená fotka jako nová, i barevně |
+| 📐 | **Úhel kamery** | Qwen Image Edit 2511 + Multiple Angles LoRA | tentýž objekt z jiného místa: 8 směrů × 4 výšky × 3 odstupy, bez psaní |
 | 🎭 | **Výměna tváře** | Flux Fill + ACE++ | začmáráš obličej, vybereš novou tvář, hotovo |
 | 🖌️ | **Domalovat** | Flux Fill / FLUX.2 Klein | začmáráš místo, napíšeš co tam má být, přepíše se jen ono |
 | 🔎 | **Zvětšit** | SeedVR2 | gigapixel upscale po dlaždicích (2×2 až 4×4) |
@@ -132,7 +139,7 @@ flowchart LR
 - `comfy/*Builder.kt` — dosazování hodnot do šablon (testy hlídají, že se nemění nic jiného)
 - `engine/GenerationEngine.kt` — upload → fronta → sledování → stažení; výpadek sítě běh nikdy neshodí
 - `comfy/ServerAudit.kt` — porovnání šablon s `/object_info` („co serveru chybí")
-- `engine/RunTexts.kt` — texty průběhu, jedna matice pro všech 12 karet
+- `engine/RunTexts.kt` — texty průběhu, jedna matice pro všech 13 karet
 
 ## ⚖️ Licence a upozornění
 

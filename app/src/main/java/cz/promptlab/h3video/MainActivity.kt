@@ -335,6 +335,7 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             totalBytes = historyBytes,
                             onOpen = { opened = it },
                             onDelete = { vm.delete(it) },
+                            onDeleteMany = { vm.deleteMany(it) },
                             onFavorite = { vm.toggleFavorite(it) },
                             onRename = { item, title -> vm.renameResult(item, title) },
                             onCreate = { vm.selectTab(Tab.CREATE) },

@@ -734,17 +734,8 @@ object GenerationEngine {
             t2i ->
                 ZImageBuilder.build(
                     app, effective.prompt, effective.aspect, seed,
-                    // LoRA je trénovaná na základní Turbo. Photoreal je odvázaný
-                    // sám o sobě, Klein a ERNIE jsou jiná architektura – u nich
-                    // by uzel LoraLoaderModelOnly graf jen shodil.
-                    nsfwLora = effective.zimageNsfw &&
-                        cz.promptlab.h3video.comfy.T2iModel.zId(effective.zimageModel) ==
-                        cz.promptlab.h3video.comfy.T2iModel.TURBO,
-                    nsfwSila = effective.zimageNsfwSila,
                     model = effective.zimageModel,
-                    loraFile = effective.zimageNsfwLora,
-                    loraFile2 = effective.zimageNsfwLora2,
-                    nsfwSila2 = effective.zimageNsfwSila2,
+                    userLoras = cz.promptlab.h3video.data.ImageLoras.selected(effective),
                 )
 
             // Hudba jede na uživatelově ACE-Step 1.5 workflow z APK.

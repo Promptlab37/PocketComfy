@@ -10,6 +10,18 @@ package cz.promptlab.h3video.data
 object Slovnik {
 
     val EN: Map<String, String> = mapOf(
+        "Vybrat" to "Select",
+        "Vybráno: %d" to "Selected: %d",
+        "Zrušit výběr" to "Cancel selection",
+        "Vybrat vše zobrazené" to "Select all shown",
+        "Odznačit vše" to "Deselect all",
+        "Smazat (%d)" to "Delete (%d)",
+        "Odstraněno: %d" to "Deleted: %d",
+        "Smazat vybrané položky?" to "Delete selected items?",
+        "Počet položek: %d. Odstraní se kopie v aplikaci. Soubory uložené do telefonu zůstanou zachované." to
+            "Items: %d. Copies in the app will be deleted. Files saved to your phone will be kept.",
+        "Některé položky se nepodařilo odstranit." to "Some items could not be deleted.",
+        "Některé položky se nepodařilo obnovit. Zkuste Vrátit znovu." to "Some items could not be restored. Try Undo again.",
         "Táhni kamerou kolem objektu — blíž je detail, dál celek" to
             "Drag the camera around the subject — closer is a close-up, further a wide shot",
         "Objekt je čelem dolů, k tobě. Pohled zprava je proto vlevo — je to jeho pravá strana, ne tvoje." to
@@ -104,8 +116,8 @@ object Slovnik {
             "No LoRAs with a recognized base model. You can assign an unclassified file in the picker.",
         "Vybraná LoRA na tomto serveru chybí. Obnovte seznam nebo vyberte jinou." to
             "The selected LoRA is missing from this server. Refresh the list or choose another one.",
-        "LoRA se přidá k editačnímu modelu. Základní LoRA pro identitu a zrychlení se řídí nastavením modelu." to
-            "The LoRA is added to the editing model. Built-in identity and acceleration LoRAs follow the model settings.",
+        "LoRA se přidá k vybranému modelu. Síla 0 ji vypne. Nabídka zahrnuje i necenzurované LoRA pro tento model." to
+            "The LoRA is added to the selected model. Strength 0 turns it off. The list also includes uncensored LoRAs for this model.",
         "Hledat LoRA…" to "Search LoRAs…",
         "Neurčené" to "Unclassified",
         "Pro model" to "For this model",
