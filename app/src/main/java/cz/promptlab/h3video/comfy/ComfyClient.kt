@@ -516,6 +516,20 @@ class ComfyClient(baseUrl: String) {
             }
         }
 
+        /**
+         * Běží server bez připnuté paměti (`--disable-pinned-memory`)? Čte se
+         * z `argv` v `/system_stats`. S aimdo a připnutou pamětí je `/free`
+         * operace jádra nad desítkami GB a zastavuje počítač; bez připnutí
+         * trvá 0,07 s a vrátí grafiku ploše (změřeno 9. 9. 2026: 10,5 → 1,7 GB).
+         */
+        fun bezPinnedMemory(stats: JSONObject): Boolean {
+            val argv = stats.optJSONObject("system")?.optJSONArray("argv") ?: return false
+            return (0 until argv.length()).any { argv.optString(it) == "--disable-pinned-memory" }
+        }
+
+        /** Smí appka volat `/free`? Bez aimdo vždy; s aimdo jen bez připnuté paměti. */
+        fun smiUvolnit(stats: JSONObject): Boolean = !maAimdo(stats) || bezPinnedMemory(stats)
+
         /** Port spouštěče na počítači (viz comfyui_launcher_v1.py). */
         const val LAUNCHER_PORT = 8190
         const val UPLOAD_SUBFOLDER = "h3app"

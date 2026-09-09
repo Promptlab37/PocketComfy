@@ -68,4 +68,37 @@ class AimdoNeuvolnovatTest {
         assertTrue("kontrola aimdo v uvolniPametKdyzTreba chybí", kontrola >= 0)
         assertTrue("freeMemory se volá dřív než kontrola aimdo", kontrola < uvolneni)
     }
+
+    /** Skutečné `argv` uživatelova serveru po úpravě hlídače 9. 9. 2026. */
+    private val sBezPinned = JSONObject(
+        """{"system":{"os":"win32","comfyui_version":"0.34.1",
+            "argv":["main.py","--listen","0.0.0.0","--port","8188","--vram-headroom","3","--disable-pinned-memory"],
+            "comfy_package_versions":[{"name":"comfy-aimdo","installed":"0.4.15"}]},
+           "devices":[{"name":"cuda:0","vram_total":17175347200,"vram_free":5000000000}]}"""
+    )
+
+    @Test
+    fun `bez pinned memory se pozna z argv a free se smi`() {
+        assertTrue(ComfyClient.bezPinnedMemory(sBezPinned))
+        assertFalse(ComfyClient.bezPinnedMemory(sAimdo))
+        assertFalse(ComfyClient.bezPinnedMemory(JSONObject("{}")))
+        assertTrue(ComfyClient.smiUvolnit(sBezPinned))
+        assertFalse(ComfyClient.smiUvolnit(sAimdo))
+        assertTrue(ComfyClient.smiUvolnit(sStary))
+    }
+
+    /**
+     * Po každém běhu se grafika vrací ploše: hák je na dokončení jobu (start
+     * i navázání po restartu) a uvnitř se před /free kontroluje smiUvolnit.
+     */
+    @Test
+    fun `engine uvolnuje grafiku po kazdem behu`() {
+        val zdroj = java.io.File(
+            "src/main/java/cz/promptlab/h3video/engine/GenerationEngine.kt"
+        ).readText()
+        assertEquals(2, Regex("""invokeOnCompletion \{[^}]*uvolniGrafikuPoBehu\(\)""").findAll(zdroj).count())
+        val telo = zdroj.substringAfter("private fun uvolniGrafikuPoBehu")
+            .substringBefore("private suspend fun uvolniPametKdyzTreba")
+        assertTrue(telo.indexOf("smiUvolnit(") in 0 until telo.indexOf("freeMemory()"))
+    }
 }

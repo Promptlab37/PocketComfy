@@ -33,11 +33,14 @@ with the GPU.
 
 ---
 
-## Version 3.42
+## Version 3.43
 
 **[Download the signed APK](https://github.com/Promptlab37/PocketComfy/releases/latest)**
 — updates are also available in Settings, without a GitHub token.
 
+- **GPU freed after each run:** on finish, error or cancel the app unloads
+  models from VRAM so the PC does not stay frozen after generating (server
+  without pinned memory, `--disable-pinned-memory`).
 - **Image → LoRA:** two optional slots per model, including FLUX.2 Klein 9B,
   each with its own strength; the choice is remembered per model.
 - **Gallery:** multi-select (Select button or long-press a thumbnail), delete

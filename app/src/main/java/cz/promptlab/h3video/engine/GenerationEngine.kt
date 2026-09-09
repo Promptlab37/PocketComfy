@@ -448,7 +448,7 @@ object GenerationEngine {
         // Ať job skončí jakkoli (hotovo, chyba, zrušení uprostřed blokujícího
         // volání), socket nesmí zůstat viset — jinak by jeho guard zablokoval
         // připojení příštího běhu a starý listener by mu sahal do stavu.
-        job?.invokeOnCompletion { closeSocket() }
+        job?.invokeOnCompletion { closeSocket(); uvolniGrafikuPoBehu() }
         // Až PO vzniku jobu – publish() zahazuje stavy bez aktivního jobu
         // (ochrana proti vzkříšení po Zrušit) a před launch by úvodní stav
         // nepustil. Stav Running tak naskočí okamžitě, ne až s prvním hlášením
@@ -534,6 +534,7 @@ object GenerationEngine {
                 fail((e as? ComfyException)?.userMessage ?: e.message ?: "Nepodařilo se navázat na generování")
             }
         }
+        job?.invokeOnCompletion { uvolniGrafikuPoBehu() }
     }
 
     fun cancel() {
@@ -912,14 +913,37 @@ object GenerationEngine {
         return zjisteno
     }
 
+    /**
+     * Po KAŽDÉM běhu (hotovo, chyba i zrušení) vrátí grafiku ploše Windows.
+     *
+     * Aimdo si po dokončení nechává modely „nastagované" ve VRAM (na uživatelově
+     * RTX 4060 Ti 13,9 z 16 GB) a plocha, prohlížeč i terminál pak nemají kde
+     * kreslit — „kliknu a nic se nestane" trvá i po skončení generování
+     * (9. 9. 2026). Bez připnuté paměti trvá `/free` 0,07 s a VRAM klesne
+     * na ~1,7 GB; s připnutou pamětí se nesahá (viz uvolniPametKdyzTreba).
+     * Běží mimo job, ať zrušení běhu uvolnění nepřeruší.
+     */
+    private fun uvolniGrafikuPoBehu() {
+        scope.launch {
+            runCatching {
+                val client = ComfyClient(settings.serverUrl)
+                val stats = client.systemStats()
+                if (!ComfyClient.smiUvolnit(stats)) return@launch
+                client.freeMemory()
+                Log.i(TAG, "po behu uvolnena pamet grafiky")
+            }.onFailure { Log.w(TAG, "uvolneni grafiky po behu se nepodarilo", it) }
+        }
+    }
+
     private suspend fun uvolniPametKdyzTreba(client: ComfyClient, vzdycky: Boolean = false) {
         val stats = withContext(Dispatchers.IO) { runCatching { client.systemStats() }.getOrNull() }
             ?: return
-        // S comfy-aimdo se na paměť nesahá — viz ComfyClient.dynamickaVram().
-        // Uvolnění by modely jen vyhodilo ze zamčené RAM a další běh by ji
-        // zamykal znovu, což zastavuje celý počítač (8. 9. 2026).
-        if (ComfyClient.maAimdo(stats)) {
-            Log.i(TAG, "server jede s comfy-aimdo, /free se nevola")
+        // S comfy-aimdo a připnutou pamětí se na paměť nesahá: uvolnění by
+        // modely vyhodilo ze zamčené RAM a další běh by ji zamykal znovu, což
+        // zastavuje celý počítač (8. 9. 2026). Bez připnuté paměti
+        // (--disable-pinned-memory) je /free levné a smí se (9. 9. 2026).
+        if (ComfyClient.maAimdo(stats) && !ComfyClient.bezPinnedMemory(stats)) {
+            Log.i(TAG, "server jede s comfy-aimdo a pinned memory, /free se nevola")
             return
         }
         val pred = ComfyClient.vramZe(stats) ?: return
