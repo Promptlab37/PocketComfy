@@ -28,11 +28,14 @@ Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné před
 
 ---
 
-## Verze 3.42
+## Verze 3.43
 
 **[Stáhnout podepsané APK](https://github.com/Promptlab37/PocketComfy/releases/latest)**
 — aktualizace se kontrolují také přímo v Nastavení, bez GitHub tokenu.
 
+- **Po běhu volná grafika:** po dokončení, chybě i zrušení appka uvolní modely
+  z VRAM, takže počítač nezůstane po generování zaseknutý (server bez připnuté
+  paměti, `--disable-pinned-memory`).
 - **Obrázek → LoRA:** dva volitelné sloty pro každý model včetně FLUX.2 Klein 9B,
   samostatná síla, výběr se pamatuje pro každý model zvlášť.
 - **Galerie:** hromadný výběr (tlačítko Vybrat nebo podržení náhledu), smazání
