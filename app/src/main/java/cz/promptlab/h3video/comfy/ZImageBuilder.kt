@@ -3,6 +3,7 @@ package cz.promptlab.h3video.comfy
 import android.content.Context
 import cz.promptlab.h3video.R
 import cz.promptlab.h3video.data.Aspect
+import cz.promptlab.h3video.data.EditLora
 import org.json.JSONObject
 
 /**
@@ -198,9 +199,10 @@ object ZImageBuilder {
         nsfwLora: Boolean = false, nsfwSila: Float = 1f, model: String = "",
         loraFile: String = NSFW_LORA_FILE,
         loraFile2: String = "", nsfwSila2: Float = 1f,
+        userLoras: List<EditLora> = emptyList(),
     ): JSONObject = build(
         template(ctx, T2iModel.zId(model)),
-        prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile, loraFile2, nsfwSila2,
+        prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile, loraFile2, nsfwSila2, userLoras,
     )
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
@@ -209,14 +211,43 @@ object ZImageBuilder {
         nsfwLora: Boolean = false, nsfwSila: Float = 1f, model: String = "",
         loraFile: String = NSFW_LORA_FILE,
         loraFile2: String = "", nsfwSila2: Float = 1f,
+        userLoras: List<EditLora> = emptyList(),
     ): JSONObject {
         val m = T2iModel.zId(model)
         val wf = JSONObject(template)
         val (w, h) = sizeFor(aspect)
-        return if (m.zRodinyZImage) {
+        if (m.zRodinyZImage) {
             buildZImage(wf, m, prompt, w, h, seed, nsfwLora, nsfwSila, loraFile, loraFile2, nsfwSila2)
         } else {
             buildFlux2(wf, m, prompt, w, h, seed)
+        }
+        addUserLoras(wf, userLoras)
+        return wf
+    }
+
+    private fun addUserLoras(wf: JSONObject, loras: List<EditLora>) {
+        val active = loras.filter { it.name.isNotBlank() && it.strength.isFinite() && it.strength > 0f }
+            .distinctBy { it.name }.take(2)
+        if (active.isEmpty()) return
+        val originalNodes = wf.keys().asSequence().toList()
+        val loader = originalNodes.single { wf.getJSONObject(it).optString("class_type") in
+            listOf("UNETLoader", "UnetLoaderGGUF") }
+        var upstream = loader
+        var next = 800
+        for (lora in active) {
+            while (wf.has(next.toString())) next++
+            val id = (next++).toString()
+            wf.put(id, JSONObject().put("class_type", "LoraLoaderModelOnly").put("inputs", JSONObject()
+                .put("model", org.json.JSONArray().put(upstream).put(0))
+                .put("lora_name", lora.name).put("strength_model", lora.strength.coerceIn(0f, 2f).toDouble())))
+            upstream = id
+        }
+        // Route every original consumer through the chain; never change CLIP or VAE links.
+        for (id in originalNodes) {
+            val inputs = wf.getJSONObject(id).optJSONObject("inputs") ?: continue
+            val link = inputs.optJSONArray("model") ?: continue
+            if (link.optString(0) == loader && link.optInt(1) == 0)
+                inputs.put("model", org.json.JSONArray().put(upstream).put(0))
         }
     }
 

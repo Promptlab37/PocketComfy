@@ -13,6 +13,7 @@ class UpdateChannelTest {
             val request = UpdateChecker.latestRequest(token)
             assertEquals("https://api.github.com/repos/Promptlab37/PocketComfy/releases/latest", request.url.toString())
             assertNull(request.header("Authorization"))
+            assertEquals("no-cache", request.header("Cache-Control"))
             assertEquals(publicAsset, UpdateChecker.assetDownloadUrl(asset, token))
             assertNull(UpdateChecker.assetDownloadRequest(publicAsset, token).header("Authorization"))
         }

@@ -64,6 +64,8 @@ data class GenParams(
     val zimageNsfwLora2: String = "",
     /** Síla druhé LoRA. */
     val zimageNsfwSila2: Float = 1f,
+    /** Two optional image-generation LoRAs, remembered independently for each model. */
+    val imageLoras: Map<String, List<EditLora>> = emptyMap(),
     /**
      * Smí vylepšovač promptu přidat podkresovou hudbu? Ve svém formátu ji
      * vyplňuje vždycky, i bez vyzvání — proto se ve výchozím stavu vyhazuje.

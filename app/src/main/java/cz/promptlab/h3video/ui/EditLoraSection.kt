@@ -27,18 +27,48 @@ fun EditLoraSection(vm: MainViewModel, scene: ImageEditScene) {
     val catalog by vm.editLoras.collectAsStateWithLifecycle()
     val server by vm.server.collectAsStateWithLifecycle()
     LaunchedEffect(server) { vm.refreshEditLoras() }
+    ModelLoraSection(scene.motor.nazev, scene.selectedLora, catalog,
+        compatibility = { it.compatibility(scene.motor) },
+        refresh = { vm.refreshEditLoras(force = true) },
+        select = { name, confirmed -> vm.setEditUserLora(name, confirmed) },
+        strength = { vm.setEditUserLoraStrength(it) })
+}
+
+@Composable
+fun ImageLoraSection(vm: MainViewModel, params: GenParams) {
+    val catalog by vm.editLoras.collectAsStateWithLifecycle()
+    val server by vm.server.collectAsStateWithLifecycle()
+    LaunchedEffect(server) { vm.refreshEditLoras() }
+    val model = cz.promptlab.h3video.comfy.T2iModel.zId(params.zimageModel)
+    val selected = ImageLoras.selected(params)
+    for (slot in 0..1) key(model.id, slot) {
+        ModelLoraSection(model.stitek, selected.getOrElse(slot) { EditLora() }, catalog,
+            compatibility = { ImageLoras.compatibility(model, it) },
+            refresh = { vm.refreshEditLoras(force = true) },
+            select = { name, confirmed -> vm.setImageLora(slot, name, confirmed) },
+            strength = { vm.setImageLoraStrength(slot, it) },
+            title = if (slot == 0) t("LoRA pro %s").format(model.stitek) else t("Druhá LoRA (nepovinná)"))
+    }
+}
+
+@Composable
+private fun ModelLoraSection(
+    modelName: String, selected: EditLora, catalog: MainViewModel.EditLoraCatalog,
+    compatibility: (EditLoraFile) -> LoraCompatibility, refresh: () -> Unit,
+    select: (String, Boolean) -> Unit, strength: (Float) -> Unit,
+    title: String = t("LoRA pro %s").format(modelName),
+) {
     var picker by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
-    var unknown by rememberSaveable(scene.motor) { mutableStateOf(false) }
-    var confirm by remember(scene.motor) { mutableStateOf<String?>(null) }
-    val selected = scene.selectedLora
-    val matching = catalog.files.filter { it.compatibility(scene.motor) == LoraCompatibility.MATCH }
-    val unclassified = catalog.files.filter { it.compatibility(scene.motor) == LoraCompatibility.UNKNOWN }
+    var unknown by rememberSaveable(modelName) { mutableStateOf(false) }
+    var confirm by remember(modelName) { mutableStateOf<String?>(null) }
+    val matching = catalog.files.filter { compatibility(it) == LoraCompatibility.MATCH }
+    val unclassified = catalog.files.filter { compatibility(it) == LoraCompatibility.UNKNOWN }
 
-    SectionCard(title = t("LoRA pro %s").format(scene.motor.nazev),
+    SectionCard(title = title,
         subtitle = t("Volba a síla se pamatují pro každý model zvlášť"),
         trailing = {
-            IconButton(onClick = { vm.refreshEditLoras(force = true) }, enabled = !catalog.loading) {
+            IconButton(onClick = refresh, enabled = !catalog.loading) {
                 Icon(Icons.Default.Refresh, t("Obnovit seznam LoRA"), tint = Cyan)
             }
         },
@@ -49,8 +79,8 @@ fun EditLoraSection(vm: MainViewModel, scene: ImageEditScene) {
             onClick = { picker = true })
         if (selected.name.isNotBlank()) {
             LabeledSlider(t("Síla LoRA"), "%.2f".format(selected.strength), selected.strength,
-                0f..2f, onChange = { vm.setEditUserLoraStrength(it) })
-            TextButton(onClick = { vm.setEditUserLora("") }) { Text(t("Bez doplňkové LoRA"), color = TextMid) }
+                0f..2f, onChange = strength)
+            TextButton(onClick = { select("", false) }) { Text(t("Bez doplňkové LoRA"), color = TextMid) }
         }
         if (catalog.loading) {
             LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp), color = Cyan)
@@ -67,14 +97,14 @@ fun EditLoraSection(vm: MainViewModel, scene: ImageEditScene) {
                 color = Amber, style = MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.height(6.dp))
-        Text(t("LoRA se přidá k editačnímu modelu. Základní LoRA pro identitu a zrychlení se řídí nastavením modelu."),
+        Text(t("LoRA se přidá k vybranému modelu. Síla 0 ji vypne. Nabídka zahrnuje i necenzurované LoRA pro tento model."),
             color = TextLow, style = MaterialTheme.typography.bodySmall)
     }
 
     if (picker) Dialog(onDismissRequest = { picker = false }) {
         Surface(shape = RoundedCornerShape(24.dp), color = Surface1) {
             Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(t("LoRA pro %s").format(scene.motor.nazev), style = MaterialTheme.typography.titleMedium)
+                Text(title, style = MaterialTheme.typography.titleMedium)
                 DarkTextField(query, { query = it }, placeholder = t("Hledat LoRA…"), minHeight = 48.dp, singleLine = true, onClear = { query = "" })
                 PillRow(listOf(false, true), unknown,
                     label = { if (it) t("Neurčené") + " (${unclassified.size})" else t("Pro model") + " (${matching.size})" },
@@ -86,14 +116,14 @@ fun EditLoraSection(vm: MainViewModel, scene: ImageEditScene) {
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
                     item {
                         ListItem(headlineContent = { Text(t("Bez doplňkové LoRA")) },
-                            modifier = Modifier.clickable { vm.setEditUserLora(""); picker = false })
+                            modifier = Modifier.clickable { select("", false); picker = false })
                     }
                     items(files, key = { it.name }) { file ->
                         ListItem(headlineContent = { Text(file.name, style = MaterialTheme.typography.bodyMedium) },
                             trailingContent = { if (selected.name == file.name) Icon(Icons.Default.Check, null, tint = Cyan) },
                             modifier = Modifier.clickable {
                                 if (unknown) confirm = file.name
-                                else { vm.setEditUserLora(file.name); picker = false }
+                                else { select(file.name, false); picker = false }
                             })
                     }
                     if (files.isEmpty()) item {
@@ -103,7 +133,7 @@ fun EditLoraSection(vm: MainViewModel, scene: ImageEditScene) {
                     }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = { vm.refreshEditLoras(force = true) }, enabled = !catalog.loading) { Text(t("Obnovit")) }
+                    TextButton(onClick = refresh, enabled = !catalog.loading) { Text(t("Obnovit")) }
                     TextButton(onClick = { picker = false }) { Text(t("Zavřít")) }
                 }
             }
@@ -112,9 +142,9 @@ fun EditLoraSection(vm: MainViewModel, scene: ImageEditScene) {
     confirm?.let { name ->
         AlertDialog(onDismissRequest = { confirm = null }, title = { Text(t("Přiřadit LoRA k modelu?")) },
             text = { Text(t("U souboru %s nelze ověřit základní model. Použijte ho jen pokud je určený pro %s.")
-                .format(name, scene.motor.nazev)) },
+                .format(name, modelName)) },
             confirmButton = { TextButton(onClick = {
-                vm.setEditUserLora(name, confirmedUnknown = true); confirm = null; picker = false
+                select(name, true); confirm = null; picker = false
             }) { Text(t("Použít pro tento model")) } },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text(t("Zrušit")) } })
     }

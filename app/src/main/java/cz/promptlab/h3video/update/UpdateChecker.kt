@@ -42,6 +42,7 @@ object UpdateChecker {
         .url("https://api.github.com/repos/$OWNER/${repository(token)}/releases/latest")
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", "PocketComfy")
+        .header("Cache-Control", "no-cache")
         .apply { if (token.isNotBlank()) header("Authorization", "Bearer $token") }
         .build()
 
@@ -68,6 +69,8 @@ object UpdateChecker {
         .followRedirects(false)
         .followSslRedirects(false)
         .build()
+
+    private val checkHttp = http.newBuilder().callTimeout(25, TimeUnit.SECONDS).build()
 
     fun currentVersionCode(ctx: Context): Int = runCatching {
         val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
@@ -113,7 +116,7 @@ object UpdateChecker {
     fun check(ctx: Context, token: String): UpdateInfo? {
         val req = latestRequest(token)
 
-        http.newCall(req).execute().use { r ->
+        checkHttp.newCall(req).execute().use { r ->
             if (r.code == 401 || r.code == 403) throw IllegalStateException(
                 if (token.isBlank())
                     "GitHub odmítl anonymní dotaz (${r.code}). Zkus to za chvíli znovu."

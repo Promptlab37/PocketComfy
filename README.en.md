@@ -33,11 +33,17 @@ with the GPU.
 
 ---
 
-## Version 3.35
+## Version 3.42
 
 **[Download the signed APK](https://github.com/Promptlab37/PocketComfy/releases/latest)**
 — updates are also available in Settings, without a GitHub token.
 
+- **Image → LoRA:** two optional slots per model, including FLUX.2 Klein 9B,
+  each with its own strength; the choice is remembered per model.
+- **Gallery:** multi-select (Select button or long-press a thumbnail), delete
+  the whole batch with one confirmation, and undo the batch for six seconds.
+- **Camera angle:** new card — the same subject from another spot, 96 poses, no typing.
+- **Updates:** the background check no longer overrides a manual check or a download.
 - **Edit → LoRA:** choose an adapter and strength separately for Krea 2,
   Qwen Image Edit 2511 and FLUX.2 Klein 9B. Each model remembers its choice
   after restarting. Search and refresh the server list, with metadata used
@@ -77,7 +83,7 @@ PocketComfy is a **client** — it generates nothing on its own:
 - 📋 **Job queue.** While one run is going, prepare the next and add it to the queue — runs start automatically one after another, each finished one arrives as a notification.
 - 🗂️ **Gallery with filter and search.** Videos / images / music separately, search in prompts, undo delete. Each result shows how long it took.
 
-## 🃏 Twelve cards
+## 🃏 Thirteen cards
 
 | | Card | Model | What it does |
 |---|---|---|---|
@@ -88,6 +94,7 @@ PocketComfy is a **client** — it generates nothing on its own:
 | 🖼️ | **Image** | Z-Image Turbo | a new picture from text in seconds |
 | ✏️ | **Image edit** | Krea 2 + Identity Edit | "give her a red jacket" — the face stays |
 | 🩹 | **Photo restore** | Qwen Image Edit 2511 | an old or damaged photo as new, including colorization |
+| 📐 | **Camera angle** | Qwen Image Edit 2511 + Multiple Angles LoRA | the same subject from another spot: 8 directions × 4 heights × 3 distances, no typing |
 | 🎭 | **Face swap** | Flux Fill + ACE++ | scribble over the face, pick a new one, done |
 | 🖌️ | **Inpaint** | Flux Fill / FLUX.2 Klein | scribble over a spot, type what belongs there, only that changes |
 | 🔎 | **Upscale** | SeedVR2 | gigapixel upscale in tiles (2×2 up to 4×4) |
@@ -139,7 +146,7 @@ flowchart LR
 - `comfy/*Builder.kt` — value substitution into templates (tests assert nothing else changes)
 - `engine/GenerationEngine.kt` — upload → queue → watch → download; a network drop never kills a run
 - `comfy/ServerAudit.kt` — templates compared against `/object_info` ("what's missing on the server")
-- `engine/RunTexts.kt` — progress wording, one matrix for all ten cards
+- `engine/RunTexts.kt` — progress wording, one matrix for all 13 cards
 
 Source comments are in Czech; identifiers and structure are self-explanatory,
 and this document plus [INSTALL.en.md](INSTALL.en.md) cover everything you need

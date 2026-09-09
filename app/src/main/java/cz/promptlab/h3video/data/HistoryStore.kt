@@ -121,6 +121,15 @@ class HistoryStore(private val ctx: Context) {
         persist(allLocked().filterNot { it.id == item.id })
     }
 
+    fun removeEntries(ids: Set<String>) = synchronized(lock) {
+        persist(allLocked().filterNot { it.id in ids })
+    }
+
+    fun restoreEntries(items: List<VideoItem>) = synchronized(lock) {
+        val ids = items.map { it.id }.toSet()
+        persist((allLocked().filterNot { it.id in ids } + items).sortedByDescending { it.createdAt })
+    }
+
     private fun persist(list: List<VideoItem>) {
         sp.edit().putString("items", HistoryCodec.encode(list)).apply()
     }

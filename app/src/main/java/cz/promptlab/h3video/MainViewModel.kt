@@ -1,5 +1,8 @@
 package cz.promptlab.h3video
 
+import cz.promptlab.h3video.data.EditLora
+import cz.promptlab.h3video.data.ImageLoras
+
 import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
@@ -365,10 +368,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // ------------------------------------------------------------- aktualizace
 
     /** [silent] = tichá kontrola po startu; neukáže „jsi aktuální" ani chybu sítě. */
+    private var updateCheckJob: kotlinx.coroutines.Job? = null
+
     fun checkUpdate(silent: Boolean = false) {
-        if (_update.value is UpdateState.Downloading) return
+        if (_update.value is UpdateState.Downloading || _update.value is UpdateState.Ready) return
+        if (silent && (updateCheckJob?.isActive == true || _update.value is UpdateState.Available)) return
+        updateCheckJob?.cancel()
         if (!silent) _update.value = UpdateState.Checking
-        viewModelScope.launch {
+        updateCheckJob = viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching { UpdateChecker.check(getApplication(), settings.githubToken) }
             }
@@ -394,6 +401,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun downloadUpdate(info: UpdateInfo) {
+        updateCheckJob?.cancel()
         _update.value = UpdateState.Downloading(info, 0f)
         viewModelScope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -1551,50 +1559,70 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // Mazání s možností Vrátit: soubor se jen odsune do koše v cache a záznam
     // se schová. Definitivně zmizí až po pár vteřinách, nebo dalším mazáním.
-    private val _smazane = MutableStateFlow<VideoItem?>(null)
-    val smazane: StateFlow<VideoItem?> = _smazane.asStateFlow()
+    private val _smazane = MutableStateFlow<List<VideoItem>>(emptyList())
+    val smazane: StateFlow<List<VideoItem>> = _smazane.asStateFlow()
     private var smazaniJob: kotlinx.coroutines.Job? = null
+    private var deletingHistory = false
 
     private fun kosFile(item: VideoItem) =
         File(getApplication<android.app.Application>().cacheDir, "kos_${item.fileName}")
 
-    fun delete(item: VideoItem) {
+    fun delete(item: VideoItem) = deleteMany(listOf(item))
+
+    fun deleteMany(items: List<VideoItem>) {
+        if (deletingHistory || items.isEmpty()) return
+        deletingHistory = true
         smazaniJob?.cancel()
-        val predchozi = _smazane.value
+        val previous = _smazane.value
+        _smazane.value = emptyList()
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                predchozi?.let { runCatching { kosFile(it).delete() } }
-                val src = item.file(getApplication())
-                val kos = kosFile(item)
-                runCatching {
-                    if (!src.renameTo(kos)) { src.copyTo(kos, overwrite = true); src.delete() }
+            try {
+                val removed = withContext(Dispatchers.IO) {
+                    previous.forEach { runCatching { kosFile(it).delete() } }
+                    val ids = items.map { it.id }.toSet()
+                    val candidates = historyStore.all().filter { it.id in ids }
+                    val moved = candidates.filter {
+                        cz.promptlab.h3video.data.HistoryTrash.move(it.file(getApplication()), kosFile(it))
+                    }
+                    historyStore.removeEntries(moved.map { it.id }.toSet())
+                    moved
                 }
-                historyStore.removeEntry(item)
-            }
-            _smazane.value = item
-            refreshHistory()
-            smazaniJob = viewModelScope.launch {
-                delay(6000)
-                _smazane.value = null
-                withContext(Dispatchers.IO) { runCatching { kosFile(item).delete() } }
-            }
+                _smazane.value = removed
+                refreshHistory()
+                if (removed.size < items.distinctBy { it.id }.size) {
+                    android.widget.Toast.makeText(getApplication(), t("Některé položky se nepodařilo odstranit."),
+                        android.widget.Toast.LENGTH_LONG).show()
+                }
+                smazaniJob = viewModelScope.launch {
+                    delay(6000)
+                    _smazane.value = emptyList()
+                    withContext(Dispatchers.IO) { removed.forEach { runCatching { kosFile(it).delete() } } }
+                }
+            } finally { deletingHistory = false }
         }
     }
 
     fun undoDelete() {
-        val item = _smazane.value ?: return
+        if (deletingHistory) return
+        val items = _smazane.value.takeIf { it.isNotEmpty() } ?: return
+        deletingHistory = true
         smazaniJob?.cancel()
-        _smazane.value = null
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                val kos = kosFile(item)
-                val cil = item.file(getApplication())
-                runCatching {
-                    if (!kos.renameTo(cil)) { kos.copyTo(cil, overwrite = true); kos.delete() }
+            try {
+                val restored = withContext(Dispatchers.IO) {
+                    val moved = items.filter {
+                        cz.promptlab.h3video.data.HistoryTrash.move(kosFile(it), it.file(getApplication()))
+                    }
+                    historyStore.restoreEntries(moved)
+                    moved
                 }
-                historyStore.add(item)
-            }
-            refreshHistory()
+                _smazane.value = items.filterNot { item -> restored.any { it.id == item.id } }
+                refreshHistory()
+                if (_smazane.value.isNotEmpty()) {
+                    android.widget.Toast.makeText(getApplication(), t("Některé položky se nepodařilo obnovit. Zkuste Vrátit znovu."),
+                        android.widget.Toast.LENGTH_LONG).show()
+                }
+            } finally { deletingHistory = false }
         }
     }
 
@@ -2503,6 +2531,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setEditUserLoraStrength(value: Float) {
         if (value.isFinite()) updateEdit { it.withLora(it.selectedLora.copy(strength = value.coerceIn(0f, 2f))) }
+    }
+
+    fun setImageLora(slot: Int, name: String, confirmedUnknown: Boolean = false) {
+        if (slot !in 0..1) return
+        update { p ->
+            val model = cz.promptlab.h3video.comfy.T2iModel.zId(p.zimageModel)
+            if (name.isNotBlank()) {
+                val file = _editLoras.value.files.firstOrNull { it.name == name } ?: return@update p
+                val compatibility = ImageLoras.compatibility(model, file)
+                if (compatibility != LoraCompatibility.MATCH &&
+                    !(compatibility == LoraCompatibility.UNKNOWN && confirmedUnknown)) return@update p
+            }
+            val selected = ImageLoras.selected(p)
+            val choices = MutableList(2) { selected.getOrElse(it) { EditLora() } }
+            choices[slot] = choices[slot].copy(name = name)
+            if (name.isNotBlank() && choices[1 - slot].name == name) choices[1 - slot] = EditLora()
+            p.copy(imageLoras = p.imageLoras + (model.id to choices))
+        }
+    }
+
+    fun setImageLoraStrength(slot: Int, value: Float) {
+        if (slot !in 0..1 || !value.isFinite()) return
+        update { p ->
+            val selected = ImageLoras.selected(p)
+            val choices = MutableList(2) { selected.getOrElse(it) { EditLora() } }
+            choices[slot] = choices[slot].copy(strength = value.coerceIn(0f, 2f))
+            p.copy(imageLoras = p.imageLoras + (cz.promptlab.h3video.comfy.T2iModel.zId(p.zimageModel).id to choices))
+        }
     }
 
     /** `druh` je "source" (upravovaná fotka) nebo "person" (vkládaná osoba). */
