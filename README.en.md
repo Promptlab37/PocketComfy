@@ -33,11 +33,13 @@ with the GPU.
 
 ---
 
-## Version 3.43
+## Version 3.44
 
 **[Download the signed APK](https://github.com/Promptlab37/PocketComfy/releases/latest)**
 — updates are also available in Settings, without a GitHub token.
 
+- **Same models as in ComfyUI:** every MiniMax H3 profile uses the `nvfp4_awq`
+  text encoder (11 GB less RAM than `int8_convrot`).
 - **GPU freed after each run:** on finish, error or cancel the app unloads
   models from VRAM so the PC does not stay frozen after generating (server
   without pinned memory, `--disable-pinned-memory`).

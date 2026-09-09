@@ -389,9 +389,12 @@ enum class Profile(
     val spectrum: Boolean,
     val useLora: Boolean,
     /**
-     * Textový enkodér. Verze 1 jede na `nvfp4_awq`, jak ji má vyladěné uživatelovo
-     * ULTRA. V2 přešlo na `int8_convrot` — nvfp4 je formát s nativní podporou až
-     * na Blackwellu (RTX 50xx), na Ada kartě (4060 Ti) se musí rozbalovat.
+     * Textový enkodér. Všechny profily jedou na `nvfp4_awq` — stejně jako všech
+     * 157 uživatelových workflow v ComfyUI (9. 9. 2026 ověřeno: int8 nepoužívá
+     * ani jedno). `int8_convrot` (profily V2, 2.–9. 9.) drží v RAM o 11 GB víc
+     * (25,9 GB) a byl jediný rozdíl v modelech mezi appkou a jeho UI, kde se
+     * počítač nikdy nezasekával. Domněnka „nvfp4 na Ada nejede" vznikla v den
+     * mrtvého ovladače grafiky a neplatí (viz mluvící avatar 19. 8. na nvfp4).
      */
     val clip: String = CLIP_NVFP4,
     /** LoRA, kterou profil zapíná. Prázdné = žádná. */
@@ -450,7 +453,7 @@ enum class Profile(
         detail = "Nová Turbo LoRA v4, 8 kroků – rychlé",
         steps = 8, sampler = "euler", scheduler = "beta",
         shiftVideo = 12f, spectrum = false, useLora = true,
-        clip = CLIP_INT8,
+        clip = CLIP_NVFP4,
         lora = TURBO_V4,
         schedulerRef = "simple",
     ),
@@ -466,7 +469,7 @@ enum class Profile(
         detail = "Nová lightx2v LoRA, 8 kroků – lepší zvuk",
         steps = 8, sampler = "euler", scheduler = "simple",
         shiftVideo = 6f, spectrum = false, useLora = true,
-        clip = CLIP_INT8,
+        clip = CLIP_NVFP4,
         lora = TURBO8_LORA,
         bezReferenci = true,
     ),
@@ -484,7 +487,7 @@ enum class Profile(
         detail = "Bez LoRA, res_multistep, 10 kroků – nejvěrnější",
         steps = 10, sampler = "res_multistep", scheduler = "simple",
         shiftVideo = 12f, spectrum = false, useLora = false,
-        clip = CLIP_INT8,
+        clip = CLIP_NVFP4,
     ),
 
     /**
@@ -504,7 +507,7 @@ enum class Profile(
         detail = "FastH3, 4 kroky – nejrychlejší, ale bez referencí",
         steps = 4, sampler = "euler", scheduler = "simple",
         shiftVideo = 12f, spectrum = false, useLora = true,
-        clip = CLIP_INT8,
+        clip = CLIP_NVFP4,
         lora = FASTH3_LORA,
         bezReferenci = true,
     );
