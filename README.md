@@ -28,11 +28,13 @@ Nativní Android klient pro tvůj ComfyUI server. Žádný cloud, žádné před
 
 ---
 
-## Verze 3.43
+## Verze 3.44
 
 **[Stáhnout podepsané APK](https://github.com/Promptlab37/PocketComfy/releases/latest)**
 — aktualizace se kontrolují také přímo v Nastavení, bez GitHub tokenu.
 
+- **Stejné modely jako v ComfyUI:** všechny profily MiniMax H3 používají enkodér
+  `nvfp4_awq` (o 11 GB méně RAM než `int8_convrot`).
 - **Po běhu volná grafika:** po dokončení, chybě i zrušení appka uvolní modely
   z VRAM, takže počítač nezůstane po generování zaseknutý (server bez připnuté
   paměti, `--disable-pinned-memory`).
