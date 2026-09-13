@@ -157,6 +157,14 @@ flowchart LR
   vylučuje užití v EU (včetně výstupů); **Krea 2** vyžaduje content filtering
   a platí do 1M USD ročních příjmů; SeedVR2 je Apache-2.0; **Higgs Audio** má
   vlastní licenci s povinnou atribucí.
+- **Používáním této aplikace s MiniMax H3 se zavazuješ dodržovat**
+  [MiniMax H3 Community License Agreement](https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/main/LICENSE)
+  a její Acceptable Use Policy (Exhibit A) — viz [NOTICE](NOTICE). Konkrétně:
+  v EU, Spojeném království, Korejské republice a USA potřebuješ vlastní
+  autorizaci od MiniMaxu; u komerčního produktu musíš v rozhraní viditelně
+  uvádět „MiniMax H3"; zveřejňovaný obsah je potřeba jasně označit jako
+  strojově vytvořený; a když nástroj poskytneš dál, musíš stejně zavázat
+  i příjemce. **Podezření na porušení nahlaš přes Issues v tomto repozitáři.**
 - Workflow šablony jsou funkční grafy (zapojení uzlů a parametry) vycházející
   z oficiálních šablon ComfyUI a komunitních workflow; výměna tváře staví na
   ACE++ inpaint workflow od [Sebastiana Kamphe](https://www.patreon.com/sebastiankamph).

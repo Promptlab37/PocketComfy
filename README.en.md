@@ -168,6 +168,15 @@ to run and modify the app.
   community license excludes use in the EU (including outputs); **Krea 2**
   requires content filtering and applies below 1M USD annual revenue; SeedVR2
   is Apache-2.0; **Higgs Audio** has its own license with mandatory attribution.
+- **By using this app with MiniMax H3 you agree to comply with** the
+  [MiniMax H3 Community License Agreement](https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/main/LICENSE)
+  and its Acceptable Use Policy (Exhibit A) — see [NOTICE](NOTICE). Specifically:
+  in the EU, the UK, the Republic of Korea and the USA you need your own
+  authorization from MiniMax; a commercial product must prominently display
+  "MiniMax H3" in its user interface; published content must be clearly
+  disclosed as machine-generated; and if you pass the tool on, you must bind
+  the recipient to the same terms. **Report suspected violations through this
+  repository's Issues.**
 - The workflow templates are functional graphs (node wiring and parameters)
   derived from official ComfyUI templates and community workflows; face swap
   builds on the ACE++ inpaint workflow by

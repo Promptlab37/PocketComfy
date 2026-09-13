@@ -1,0 +1,13 @@
+MiniMax H3 is licensed under the MiniMax H3 Community License Agreement,
+Copyright (c) 2026 MiniMax. All Rights Reserved.
+
+The source code in this repository is licensed under the MIT License
+(see LICENSE). The MIT License applies to this code only. It does NOT
+apply to the MiniMax H3 model, to its weights, or to works produced with
+it -- those remain governed by the MiniMax H3 Community License Agreement
+and its Acceptable Use Policy (Exhibit A).
+
+This application contains and distributes no models or weights. It is a
+client for a ComfyUI server that you install and operate yourself.
+
+Full text: https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/main/LICENSE
