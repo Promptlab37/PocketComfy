@@ -153,6 +153,9 @@ object Katalog {
         "ImpactGaussianBlurMask" to IMPACT,
         "MiniMaxH3TeaCache" to TEACACHE,
         "YuE2GenerateABC" to COMFY035,
+        // Přepisovač nahrávky do not — také přímo v jádře od 0.36.0.
+        "SheetSage2AudioToABC" to COMFY035,
+        "AudioEncoderLoader" to COMFY035,
         "YuE2GenerateMusic" to COMFY035,
         "EmptyYuE2LatentAudio" to COMFY035,
         "UnetLoaderGGUF" to GGUF,
@@ -285,6 +288,12 @@ object Katalog {
             "$HF/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors"
         ),
         // Přemalování ve videu a dlouhé video (3.03).
+        // Karta Hudba, YuE2 → Předělat nahrávku. Jiný model než YuE2 a jiná
+        // složka — bez něj se melodie z nahrávky nemá čím přepsat.
+        "sheetsage2_bf16.safetensors" to Soubor(
+            "models/audio_encoders", "Hudba — Předělat nahrávku (1,3 GB)",
+            "$HF/Comfy-Org/YuE2/resolve/main/audio_encoders/sheetsage2_bf16.safetensors"
+        ),
         "sam3.1_multiplex_fp16.safetensors" to Soubor(
             "models/checkpoints", "All in One \u2192 P\u0159emalovat ve videu",
             "$HF/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors"
@@ -386,6 +395,7 @@ object Katalog {
         "vae_name" -> "models/vae"
         "lora_name" -> "models/loras"
         "model_name" -> "models/upscale_models"
+        "audio_encoder_name" -> "models/audio_encoders"
         else -> null
     }
 }

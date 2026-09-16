@@ -99,6 +99,8 @@ sealed interface GenState {
         val isMusic: Boolean = false,
         /** Hudba jede na YuE2, ne na ACE-Step — jiné fáze i jiné hlášky. */
         val isMusicYue2: Boolean = false,
+        /** Předělání nahrávky (YuE2 + SheetSage2) — jiné fáze než nová skladba. */
+        val isMusicCover: Boolean = false,
         /** Beh opravuje starou fotku (Qwen 2511) - texty "Opravuji". */
         val isRestore: Boolean = false,
         /** Beh otaci objekt do jineho uhlu (Qwen 2511 + LoRA) - texty "Otacim". */
@@ -220,6 +222,12 @@ object GenerationEngine {
      * ukazatel průběhu i hlášky se podle toho přepínají.
      */
     @Volatile private var musicYue2: Boolean = false
+
+    /**
+     * Předělává se nahrávka (YuE2 + SheetSage2)? Proti nové skladbě se liší
+     * dvěma fázemi: něco se odesílá a noty se přepisují, ne píšou.
+     */
+    @Volatile private var musicCover: Boolean = false
 
     /** Běží oprava fotky (Qwen 2511)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var restoreRun: Boolean = false
@@ -399,6 +407,7 @@ object GenerationEngine {
         t2iRun = t2i
         musicRun = musicScene != null
         musicYue2 = musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2
+        musicCover = musicScene?.predelava == true
         restoreRun = restoreScene != null
         angleRun = angleScene != null
         swapRun = swapScene != null
@@ -414,6 +423,7 @@ object GenerationEngine {
         settings.activeT2i = t2iRun
         settings.activeMusic = musicRun
         settings.activeMusicYue2 = musicYue2
+        settings.activeMusicCover = musicCover
         settings.activeRestore = restoreRun
         settings.activeAngle = angleRun
         settings.activeSwap = swapRun
@@ -502,6 +512,7 @@ object GenerationEngine {
             t2iRun = settings.activeT2i
             musicRun = settings.activeMusic
             musicYue2 = settings.activeMusicYue2
+            musicCover = settings.activeMusicCover
             restoreRun = settings.activeRestore
             angleRun = settings.activeAngle
             swapRun = settings.activeSwap
@@ -588,6 +599,7 @@ object GenerationEngine {
         t2iRun = settings.activeT2i
         musicRun = settings.activeMusic
         musicYue2 = settings.activeMusicYue2
+        musicCover = settings.activeMusicCover
         restoreRun = settings.activeRestore
         angleRun = settings.activeAngle
         swapRun = settings.activeSwap
@@ -709,6 +721,10 @@ object GenerationEngine {
         // složky – VHS_LoadVideo i LoadAudio čtou právě odtud.
         val videoName = (aioScene?.uploadVideo ?: longScene?.uploadVideo)
             ?.let { uploadMediaWithRetry(client, it, 0.05f) }
+        // Předloha pro předělání skladby (YuE2 + SheetSage2). Do kořene input
+        // složky, odtud ji uzel LoadAudio nabízí.
+        val hudbaPredloha = musicScene?.takeIf { it.predelava }?.predloha
+            ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
         // Namluvené repliky (dialogy). Pořadí je závazné – podle něj se
         // v promptu číslují značky <Audio N>.
         val talkNames = talkAudios.mapIndexed { i, f ->
@@ -776,7 +792,7 @@ object GenerationEngine {
             // předloha YuE2 — obojí z APK, obojí končí u MP3.
             musicScene != null ->
                 if (musicScene.motor == cz.promptlab.h3video.data.MusicMotor.YUE2)
-                    Yue2MusicBuilder.build(app, musicScene, seed)
+                    Yue2MusicBuilder.build(app, musicScene, seed, hudbaPredloha)
                 else AceMusicBuilder.build(app, musicScene, seed)
 
             // Úhel kamery: tentýž Qwen 2511, ale s LoRA na pózy kamery.
@@ -1821,6 +1837,7 @@ object GenerationEngine {
             isT2i = t2iRun,
             isMusic = musicRun,
             isMusicYue2 = musicRun && musicYue2,
+            isMusicCover = musicRun && musicCover,
             isRestore = restoreRun,
             isAngle = angleRun,
             isSwap = swapRun,

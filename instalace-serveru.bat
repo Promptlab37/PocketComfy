@@ -8,7 +8,7 @@ REM  2) volitelne stahne verejne dostupne modely (po kartach)
 REM  Po dokonceni RESTARTUJ ComfyUI a v aplikaci spust
 REM  Nastaveni -^> Co serveru chybi -^> Zkontrolovat server.
 REM
-REM  Seznam odpovida appce 3.55 a souboru POZADAVKY.md.
+REM  Seznam odpovida appce 3.57 a souboru POZADAVKY.md.
 REM  Vsechny odkazy nize byly overene 16. 9. 2026.
 REM ============================================================
 
@@ -150,6 +150,13 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/YuE2/resolve/main/checkpoints/yue2_3b_int8_convrot.safetensors" "models\checkpoints\yue2_3b_int8_convrot.safetensors"
   echo   Pozn.: uzly YuE2 jsou primo v jadru ComfyUI od verze 0.36.0.
   echo          Na starsi verzi se nic neinstaluje - ComfyUI se aktualizuje.
+)
+
+set /p ODP="Karta Hudba - Predelat nahravku - SheetSage2, cca 1,3 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  REM Prepisovac melodie do not. Jiny model nez YuE2 a jina slozka.
+  call :stahni "https://huggingface.co/Comfy-Org/YuE2/resolve/main/audio_encoders/sheetsage2_bf16.safetensors" "models\audio_encoders\sheetsage2_bf16.safetensors"
+  echo   Pozn.: k tomu je potreba i samotny YuE2 z nabidky vyse.
 )
 
 set /p ODP="Karta Oprava fotky - Qwen Image Edit 2511, cca 31 GB. Stahnout? [a/n] "

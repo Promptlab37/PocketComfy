@@ -1107,6 +1107,49 @@ object Slovnik {
             "Baidu ERNIE on the FLUX.2 architecture. A different handwriting than Z-Image.",
         "%d kroků" to "%d steps",
 
+        // ------------------- Hudba: předělání nahrávky, YuE2 + SheetSage2 (3.57)
+        "Odkud vzít melodii" to "Where the melody comes from",
+        "Buď si ji model vymyslí, nebo ji vezme z nahrávky, kterou mu dáš" to
+            "Either the model invents one, or it takes one from a recording you give it",
+        "Nová skladba" to "New song",
+        "Model si napíše noty i zpěv sám podle stylu a textu" to
+            "The model writes both the score and the vocals itself, from style and lyrics",
+        "Předělat nahrávku" to "Rework a recording",
+        "Přepíše melodii z tvé nahrávky do not a zahraje ji v jiném stylu" to
+            "Transcribes the melody from your recording into a score and plays it in another style",
+        "Nahrávka" to "Recording",
+        "Zatím žádná — vyber skladbu z telefonu" to "None yet — pick a track from your phone",
+        "Vybrat nahrávku" to "Pick a recording",
+        "Vybrat jinou" to "Pick a different one",
+        "Odebrat nahrávku" to "Remove the recording",
+        "Nahrávku se nepodařilo načíst. Zkus jinou." to
+            "The recording could not be read. Try another one.",
+        "Z nahrávky se vezme jen melodie. Zpěv i doprovod vzniknou znovu " to
+            "Only the melody is taken from the recording. Vocals and backing are created anew ",
+        "podle stylu a textu výš — z původního zvuku nezůstane nic." to
+            "from the style and lyrics above — none of the original audio remains.",
+        "Převzít i akordy" to "Take the chords too",
+        "Drží i harmonii předlohy. Nový styl se pak prosadí míň." to
+            "Keeps the source harmony as well. The new style then comes through less.",
+        "Vyber nahrávku, ze které se má vzít melodie." to
+            "Pick the recording the melody should come from.",
+        "Z nahrávky se bere jen melodie — žádný zvuk z ní ve výsledku nezůstane." to
+            "Only the melody is taken from the recording — none of its audio ends up in the result.",
+        "Styl piš tak, jak má znít nová verze, ne jak zní původní nahrávka." to
+            "Write the style for how the new version should sound, not how the original does.",
+        "Text se lépe zpívá, když má podobný počet slabik jako původní." to
+            "Lyrics sing better when the syllable count is close to the original.",
+        "Odesílám nahrávku" to "Uploading the recording",
+        "Načítám YuE2 a přepisovač" to "Loading YuE2 and the transcriber",
+        "Přepisuji nahrávku do not" to "Transcribing the recording into a score",
+        "Hraji ji v novém stylu" to "Playing it in the new style",
+        "Zpívá podle melodie přepisané z nahrávky" to
+            "Sings to the melody transcribed from the recording",
+        "Předělání nahrávky" to "Reworking a recording",
+        "Spojení a odeslání nahrávky" to "Connecting and uploading the recording",
+        "Nahrávka musí být na serveru, než se z ní vezme melodie" to
+            "The recording has to reach the server before its melody can be taken",
+
         // ------------------------ Obrázek: vlastní model ze serveru (3.56)
         "Vlastní model" to "Custom model",
         "Jiný Z-Image model ze serveru. Vybereš soubor a řekneš kroky a cfg." to

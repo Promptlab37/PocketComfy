@@ -6,21 +6,88 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.promptlab.h3video.MainViewModel
 import cz.promptlab.h3video.data.MusicMotor
 import cz.promptlab.h3video.data.MusicPlan
+import cz.promptlab.h3video.data.MusicRezim
 import cz.promptlab.h3video.data.MusicScene
+import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.ui.theme.Cyan
 import cz.promptlab.h3video.ui.theme.TextLow
+
+/**
+ * Výběr nahrávky, ze které se vezme melodie.
+ *
+ * Z původní nahrávky se **nepřebírá zvuk**, jen noty — a to je přesně ta
+ * věc, kterou nikdo nečeká, takže to karta říká nahlas. Bez toho by člověk
+ * čekal předabovanou píseň a dostal novou nahrávku té melodie.
+ */
+@Composable
+private fun PredlohaSekce(vm: MainViewModel, scene: MusicScene) {
+    val chyba by vm.musicPredlohaChyba.collectAsStateWithLifecycle()
+    val vyber = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {
+        vm.pickMusicPredloha(it)
+    }
+    SectionCard(
+        title = t("Nahrávka"),
+        subtitle = scene.predloha?.name ?: t("Zatím žádná — vyber skladbu z telefonu")
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            OutlineButton(
+                text = if (scene.predloha == null) t("Vybrat nahrávku")
+                else t("Vybrat jinou"),
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { vyber.launch("audio/*") },
+            )
+            if (scene.predloha != null) {
+                OutlineButton(
+                    text = t("Odebrat nahrávku"),
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { vm.clearMusicPredloha() },
+                )
+            }
+            chyba?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = Amber)
+            }
+            Text(
+                t("Z nahrávky se vezme jen melodie. Zpěv i doprovod vzniknou znovu ") +
+                    t("podle stylu a textu výš — z původního zvuku nezůstane nic."),
+                style = MaterialTheme.typography.bodySmall, color = TextLow
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        t("Převzít i akordy"),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Text(
+                        t("Drží i harmonii předlohy. Nový styl se pak prosadí míň."),
+                        style = MaterialTheme.typography.bodySmall, color = TextLow
+                    )
+                }
+                Switch(
+                    checked = scene.predlohaAkordy,
+                    onCheckedChange = { vm.setMusicPredlohaAkordy(it) },
+                    colors = switchColors(),
+                )
+            }
+        }
+    }
+}
 
 /**
  * Karta Hudba: model, styl, text písně a délka.
@@ -51,6 +118,27 @@ fun MusicSection(vm: MainViewModel) {
                 style = MaterialTheme.typography.bodySmall, color = TextLow
             )
         }
+    }
+
+    if (yue2) {
+        SectionCard(
+            title = t("Odkud vzít melodii"),
+            subtitle = t("Buď si ji model vymyslí, nebo ji vezme z nahrávky, kterou mu dáš")
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PillRow(
+                    items = MusicRezim.entries.toList(),
+                    selected = scene.rezim,
+                    label = { it.title },
+                    onSelect = { vm.setMusicRezim(it) },
+                )
+                Text(
+                    scene.rezim.detail,
+                    style = MaterialTheme.typography.bodySmall, color = TextLow
+                )
+            }
+        }
+        if (scene.predelava) PredlohaSekce(vm, scene)
     }
 
     SectionCard(
@@ -116,7 +204,9 @@ fun MusicSection(vm: MainViewModel) {
             }
         }
 
-        SkladaciSekce(
+        // Při předělávání noty přicházejí z nahrávky a uzel `YuE2GenerateABC`
+        // v grafu vůbec není — plán by byl knoflík, který graf zahodí.
+        if (!scene.predelava) SkladaciSekce(
             title = t("Plán skladby"),
             souhrn = scene.plan.title,
             klic = "plan-yue2",

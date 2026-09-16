@@ -2696,6 +2696,69 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
     fun setMusicPlan(v: cz.promptlab.h3video.data.MusicPlan) = updateMusic { it.copy(plan = v) }
 
+    /** Proč se vybraná nahrávka nedala použít. Prázdné = všechno v pořádku. */
+    private val _predlohaChyba = MutableStateFlow<String?>(null)
+    val musicPredlohaChyba: StateFlow<String?> = _predlohaChyba.asStateFlow()
+
+    fun setMusicRezim(v: cz.promptlab.h3video.data.MusicRezim) = updateMusic { it.copy(rezim = v) }
+
+    fun setMusicPredlohaAkordy(v: Boolean) = updateMusic { it.copy(predlohaAkordy = v) }
+
+    /**
+     * Nahrávka, ze které se vezme melodie.
+     *
+     * Kopíruje se k sobě: odkaz z galerie platí jen do zavření obrazovky,
+     * ale úloha může čekat ve frontě klidně půl hodiny. Jméno se odvozuje
+     * z původního, aby šlo na kartě poznat, co je vybrané; přípona rozhoduje,
+     * jestli ji ComfyUI přijme, takže se zachovává.
+     */
+    fun pickMusicPredloha(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val soubor = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<Application>()
+                    val jmeno = nazevSouboru(uri) ?: "predloha.mp3"
+                    val cil = java.io.File(app.filesDir, "hudba_predloha_" + bezpecnyNazev(jmeno))
+                    app.filesDir.listFiles()
+                        ?.filter { it.name.startsWith("hudba_predloha_") && it != cil }
+                        ?.forEach { it.delete() }
+                    app.contentResolver.openInputStream(uri)!!
+                        .use { vstup -> cil.outputStream().use { vstup.copyTo(it) } }
+                    cil.takeIf { it.length() > 0 }
+                }.getOrNull()
+            } ?: run {
+                _predlohaChyba.value = t("Nahrávku se nepodařilo načíst. Zkus jinou.")
+                return@launch
+            }
+            _predlohaChyba.value = null
+            updateMusic { it.copy(predloha = soubor) }
+        }
+    }
+
+    fun clearMusicPredloha() {
+        _predlohaChyba.value = null
+        updateMusic { it.copy(predloha = null) }
+    }
+
+    /** Původní jméno vybraného souboru, když ho poskyťovatel hlásí. */
+    private fun nazevSouboru(uri: Uri): String? = runCatching {
+        getApplication<Application>().contentResolver.query(uri, null, null, null, null)
+            ?.use { c ->
+                val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (i >= 0 && c.moveToFirst()) c.getString(i) else null
+            }
+    }.getOrNull()
+
+    /** Jméno do souborového systému i do ComfyUI — bez diakritiky a mezer. */
+    private fun bezpecnyNazev(jmeno: String): String =
+        java.text.Normalizer.normalize(jmeno, java.text.Normalizer.Form.NFD)
+            .replace(Regex("\\p{M}+"), "")
+            .replace(Regex("[^A-Za-z0-9._-]+"), "_")
+            .trim('_')
+            .ifBlank { "predloha.mp3" }
+            .take(80)
+
     // ---------------------------------------------------------- oprava fotky
 
     // ------------------------------------------------------------- projekt

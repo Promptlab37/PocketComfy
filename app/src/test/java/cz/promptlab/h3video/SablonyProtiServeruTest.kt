@@ -109,6 +109,39 @@ class SablonyProtiServeruTest {
     }
 
     /**
+     * Karta Hudba, volba **Předělat nahrávku**. Graf přidává tři uzly proti
+     * nové skladbě (načtení nahrávky, přepisovač a jeho model) a mění `mode`
+     * na dvou místech naráz.
+     */
+    @Test
+    fun `predelani nahravky sedi se schematy uzlu`() {
+        assumeTrue("ComfyUI neodpovídá — kontrola se přeskočí", stahni("$server/system_stats", 4_000) != null)
+
+        val sablona = File(rawDir, "workflow_yue2_cover.json").readText()
+        val chyby = mutableListOf<String>()
+        listOf(false, true).forEach { akordy ->
+            val wf = cz.promptlab.h3video.comfy.Yue2MusicBuilder.buildCover(
+                sablona,
+                cz.promptlab.h3video.data.MusicScene(
+                    motor = cz.promptlab.h3video.data.MusicMotor.YUE2,
+                    rezim = cz.promptlab.h3video.data.MusicRezim.PREDELAT,
+                    styl = "jazz",
+                    maxSeconds = cz.promptlab.h3video.data.MusicScene.YUE2_MAX_SECONDS,
+                    predlohaAkordy = akordy,
+                ),
+                seed = 1L,
+                predloha = "predloha.mp3",
+            )
+            chyby += zkontroluj(wf, "Hudba / předělat nahrávku / akordy=$akordy")
+        }
+
+        assertTrue(
+            "Graf předělání nahrávky nesedí se schématy uzlů:\n" + chyby.joinToString("\n"),
+            chyby.isEmpty(),
+        )
+    }
+
+    /**
      * Karta Obrázek, volba **Vlastní model**. Graf se od předlohy liší třemi
      * věcmi a každou umí rozbít jinak: GGUF vyměňuje celou třídu loaderu,
      * cfg nad jedničkou přidává uzel negativu a kroky s cfg jdou z posuvníků,

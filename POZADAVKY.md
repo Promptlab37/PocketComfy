@@ -68,6 +68,13 @@ po kartách, ať nestahuješ, co nepoužiješ.
 - `sam3.1_multiplex_fp16.safetensors` (All in One → Přemalovat ve videu, 1,7 GB),
   z [Comfy-Org/sam3.1](https://huggingface.co/Comfy-Org/sam3.1)
 
+**audio_encoders/**
+- `sheetsage2_bf16.safetensors` (karta Hudba — **Předělat nahrávku**, 1,3 GB),
+  z [Comfy-Org/YuE2](https://huggingface.co/Comfy-Org/YuE2). Přepisuje melodii
+  z nahrávky do not; bez něj jede YuE2 dál, jen bez téhle volby. Uzly
+  `SheetSage2AudioToABC` a `AudioEncoderLoader` jsou v jádře ComfyUI
+  **od 0.36.0**, stejně jako YuE2.
+
 **diffusion_models/**
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video z textu/obrázků)
 - `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (reference → video, Dialogy)

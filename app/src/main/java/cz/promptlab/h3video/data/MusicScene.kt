@@ -72,6 +72,30 @@ enum class MusicPlan(
 }
 
 /**
+ * Co se YuE2 zadává: jestli si skladbu vymyslí, nebo ji převezme z nahrávky.
+ *
+ * Předloha se **nepoužívá jako zvuk**. Uzel `SheetSage2AudioToABC` z ní
+ * přepíše melodii do not (ABC) a teprve ty jdou do YuE2 místo not, které by si
+ * napsal sám. Proto z původní nahrávky nezbývá žádný zvuk — jen melodie.
+ */
+enum class MusicRezim(
+    private val titleCs: String,
+    private val detailCs: String,
+) {
+    NOVA(
+        titleCs = "Nová skladba",
+        detailCs = "Model si napíše noty i zpěv sám podle stylu a textu",
+    ),
+    PREDELAT(
+        titleCs = "Předělat nahrávku",
+        detailCs = "Přepíše melodii z tvé nahrávky do not a zahraje ji v jiném stylu",
+    );
+
+    val title: String get() = t(titleCs)
+    val detail: String get() = t(detailCs)
+}
+
+/**
  * Karta **Hudba** — celá skladba z textu, výsledkem je MP3.
  *
  * Dva motory, každý s jinou logikou zadání:
@@ -108,9 +132,32 @@ data class MusicScene(
     val maxSeconds: Int = 240,
     /** YuE2: co si model naplánuje, než začne zpívat. */
     val plan: MusicPlan = MusicPlan.FULL,
+    /** YuE2: nová skladba, nebo předělaná nahrávka. */
+    val rezim: MusicRezim = MusicRezim.NOVA,
+    /**
+     * YuE2, režim [MusicRezim.PREDELAT]: nahrávka, ze které se bere melodie.
+     * Kopie u sebe — odkaz do galerie telefonu může vypršet dřív, než se úloha
+     * dostane z fronty na řadu.
+     */
+    val predloha: java.io.File? = null,
+    /**
+     * Přepisovat z nahrávky i akordy, ne jen melodii. Oficiální předloha
+     * doporučuje na předělávání **jen melodii**: akordy z původní nahrávky
+     * drží i její aranž, takže nový styl se prosadí míně.
+     */
+    val predlohaAkordy: Boolean = false,
 ) {
     /** Délka, kterou má smysl ukázat u karty a v historii. */
     val delka: Int get() = if (motor == MusicMotor.YUE2) maxSeconds else seconds
+
+    /** Jede teď předělávání nahrávky? Jen YuE2 to umí. */
+    val predelava: Boolean get() = motor == MusicMotor.YUE2 && rezim == MusicRezim.PREDELAT
+
+    /**
+     * Hodnota `mode` pro přepisovací i generující uzel. Oba ji musí mít
+     * **stejnou** — uzel sám v nápovědě říká „use the matching mode".
+     */
+    val predlohaMode: String get() = if (predlohaAkordy) "full" else "melody"
 
     companion object {
         const val MIN_SECONDS = 30
@@ -136,8 +183,12 @@ data class MusicScene(
 }
 
 /** Co kartě chybí, než se dá spustit. */
-fun musicProblem(s: MusicScene): String? =
-    if (s.styl.isBlank()) t("Popiš styl skladby — žánr, nástroje, náladu.") else null
+fun musicProblem(s: MusicScene): String? = when {
+    s.styl.isBlank() -> t("Popiš styl skladby — žánr, nástroje, náladu.")
+    s.predelava && s.predloha?.exists() != true ->
+        t("Vyber nahrávku, ze které se má vzít melodie.")
+    else -> null
+}
 
 /** Upozornění, která nebrání spuštění. */
 fun musicHints(s: MusicScene): List<String> {
@@ -145,6 +196,14 @@ fun musicHints(s: MusicScene): List<String> {
     if (s.text.isBlank()) {
         out += t("Bez textu písně vyjde instrumentálka. Text piš po slokách, ") +
             (if (s.motor == MusicMotor.YUE2) t("anglicky.") else t("klidně česky."))
+    }
+    if (s.predelava) {
+        out += t("Z nahrávky se bere jen melodie — žádný zvuk z ní ve výsledku nezůstane.")
+        out += t("Styl piš tak, jak má znít nová verze, ne jak zní původní nahrávka.")
+        if (s.text.isNotBlank()) {
+            out += t("Text se lépe zpívá, když má podobný počet slabik jako původní.")
+        }
+        return out
     }
     if (s.motor == MusicMotor.YUE2) {
         if (s.plan.piseNoty) {
@@ -177,6 +236,13 @@ class MusicStore(ctx: Context) {
                 .coerceIn(MusicScene.YUE2_MIN_SECONDS, MusicScene.YUE2_MAX_SECONDS),
             plan = runCatching { MusicPlan.valueOf(j.optString("plan")) }
                 .getOrDefault(MusicPlan.FULL),
+            rezim = runCatching { MusicRezim.valueOf(j.optString("rezim")) }
+                .getOrDefault(MusicRezim.NOVA),
+            // Soubor mohl mezitím zmizet (úklid cache, přeinstalace) — pak
+            // je to, jako by žádná předloha vybraná nebyla.
+            predloha = j.optString("predloha").takeIf { it.isNotBlank() }
+                ?.let { java.io.File(it) }?.takeIf { it.exists() },
+            predlohaAkordy = j.optBoolean("predlohaAkordy", false),
         )
     }.getOrDefault(MusicScene())
 
@@ -193,6 +259,9 @@ class MusicStore(ctx: Context) {
                 .put("keyscale", s.keyscale)
                 .put("maxSeconds", s.maxSeconds)
                 .put("plan", s.plan.name)
+                .put("rezim", s.rezim.name)
+                .put("predloha", s.predloha?.absolutePath ?: "")
+                .put("predlohaAkordy", s.predlohaAkordy)
                 .toString()
         ).apply()
     }

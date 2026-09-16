@@ -68,6 +68,13 @@ by card, so you only download what you actually use.
 - `sam3.1_multiplex_fp16.safetensors` (All in One → Repaint in video, 1.7 GB),
   from [Comfy-Org/sam3.1](https://huggingface.co/Comfy-Org/sam3.1)
 
+**audio_encoders/**
+- `sheetsage2_bf16.safetensors` (Music card — **Rework a recording**, 1.3 GB),
+  from [Comfy-Org/YuE2](https://huggingface.co/Comfy-Org/YuE2). It transcribes
+  the melody of a recording into a score; without it YuE2 still runs, just
+  without that option. The `SheetSage2AudioToABC` and `AudioEncoderLoader`
+  nodes ship in ComfyUI core **from 0.36.0 on**, same as YuE2.
+
 **diffusion_models/**
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video from text/images)
 - `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (references → video, Dialogue)
