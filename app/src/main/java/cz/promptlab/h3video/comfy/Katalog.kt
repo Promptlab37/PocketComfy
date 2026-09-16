@@ -22,6 +22,15 @@ object Katalog {
 
     private const val HF = "https://huggingface.co"
 
+    /**
+     * Modely v GGUF. `models/unet` a `models/diffusion_models` jsou pro ComfyUI
+     * **jedna a táž složka** (`folder_paths`: `diffusion_models` má obojí
+     * v seznamu, `unet` je jen starší název), ale člověk, který stahuje svůj
+     * první model, to neví — a když hláška řekne jen jednu z nich, začne
+     * soubor, který už má, zbytečně stěhovat. Proto se řeknou obě.
+     */
+    private const val UNET = "models/unet nebo models/diffusion_models (ComfyUI je má jako jednu složku)"
+
     private val ESSENTIALS = Balik(
         "ComfyUI_essentials", "https://github.com/cubiq/ComfyUI_essentials", "Výměna tváře"
     )
@@ -73,7 +82,7 @@ object Katalog {
         "tlačítko Vylepšit prompt na kartě Obrázek (volitelné)"
     )
     private val PRAVEEN = Balik(
-        "praveen-tools", "https://github.com/praveensahu/praveen-tools", "Zvětšit"
+        "praveen-tools", "https://github.com/Praveenhalder/praveen-tools", "Zvětšit"
     )
     private val MULTIREF = Balik(
         "ComfyUI-H3-Motion-Context-MultiRef",
@@ -167,7 +176,7 @@ object Katalog {
         "MiniMaxH3MemoryEfficientSageAttentionPatch" to KREA,
     )
 
-    /** Název souboru → kam patří a odkud ho vzít (odkazy ověřené 1. 9. 2026). */
+    /** Název souboru → kam patří a odkud ho vzít (odkazy ověřené 16. 9. 2026). */
     private val SOUBORY: Map<String, Soubor> = mapOf(
         "ace_step_1.5_turbo_aio.safetensors" to Soubor(
             "models/checkpoints", "Hudba",
@@ -214,15 +223,15 @@ object Katalog {
         // Hugging Face nejdřív odklepnout (jinak stahování vrací 401). Appka
         // čeká soubor pod tímhle jménem, tak ho tak ulož.
         "flux-2-klein-9b.safetensors" to Soubor(
-            "models/diffusion_models", "Domalovat (volba FLUX.2 Klein)",
+            "models/diffusion_models", "Domalovat a Obrázek (volba FLUX.2 Klein)",
             "$HF/black-forest-labs/FLUX.2-klein-9b-fp8"
         ),
         "qwen_3_8b_fp8mixed.safetensors" to Soubor(
-            "models/text_encoders", "Domalovat (volba FLUX.2 Klein)",
+            "models/text_encoders", "Domalovat a Obrázek (volba FLUX.2 Klein)",
             "$HF/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors"
         ),
         "flux2-vae.safetensors" to Soubor(
-            "models/vae", "Domalovat (volba FLUX.2 Klein)",
+            "models/vae", "Domalovat a Obrázek (FLUX.2 Klein, ERNIE)",
             "$HF/Comfy-Org/vae-text-encorder-for-flux-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors"
         ),
         "clip_l.safetensors" to Soubor(
@@ -253,26 +262,27 @@ object Katalog {
             "models/diffusion_models", "Úprava obrázku"
         ),
         "krea2_identity_edit_v1_2.safetensors" to Soubor("models/loras", "Úprava obrázku"),
+        "qwen3vl_32b_minimax_h3_int8_convrot.safetensors" to Soubor(
+            "models/text_encoders", "3 kroky (předloha má enkodér napevno)",
+            "$HF/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_int8_convrot.safetensors"
+        ),
+        // Karta 3 kroky stojí na téhle LoRA; předloha ji hledá v podsložce h3.
+        "TaoMate-H3-3step-ComfyUI.safetensors" to Soubor(
+            "models/loras/h3", "3 kroky",
+            "$HF/TaoLiveAIGC/TaoMate-H3"
+        ),
         "minimax_h3_video_vae_fp16.safetensors" to Soubor("models/vae", "video karty"),
         "minimax_h3_audio_vae_fp32.safetensors" to Soubor("models/vae", "video karty"),
         "qwen3vl_4b_fp8_scaled.safetensors" to Soubor("models/text_encoders", "Úprava obrázku"),
         "taeh3.safetensors" to Soubor("models/vae_approx", "živý náhled u videa"),
         // Karta Obrázek, modely přidané ve 3.02. Váhy Kleina má Black Forest
-        // Labs za souhlasem s licencí, encodér a VAE přebalil Comfy-Org.
+        // Labs za souhlasem s licencí, encodér a VAE přebalil Comfy-Org —
+        // jejich zápisy jsou výš, u karty Domalovat. Klíč se v mapě nesmí
+        // opakovat: `mapOf` nechá platit poslední zápis, takže duplicita
+        // umí odkaz potichu přepsat.
         "z_image_bf16.safetensors" to Soubor(
-            "models/diffusion_models", "Obrázek — Z-Image Base"
-        ),
-        "flux-2-klein-9b.safetensors" to Soubor(
-            "models/diffusion_models", "Obrázek — FLUX.2 Klein a Domalovat",
-            "$HF/black-forest-labs/FLUX.2-klein-9B"
-        ),
-        "qwen_3_8b_fp8mixed.safetensors" to Soubor(
-            "models/text_encoders", "Obrázek — FLUX.2 Klein a Domalovat",
-            "$HF/Comfy-Org/flux2-klein-9b/resolve/main/split_files/text_encoders/qwen_3_8b_fp8mixed.safetensors"
-        ),
-        "flux2-vae.safetensors" to Soubor(
-            "models/vae", "Obrázek — FLUX.2 Klein a ERNIE, Domalovat",
-            "$HF/Comfy-Org/flux2-klein-9b/resolve/main/split_files/vae/flux2-vae.safetensors"
+            "models/diffusion_models", "Obrázek — Z-Image Base",
+            "$HF/Comfy-Org/z_image/resolve/main/split_files/diffusion_models/z_image_bf16.safetensors"
         ),
         // Přemalování ve videu a dlouhé video (3.03).
         "sam3.1_multiplex_fp16.safetensors" to Soubor(
@@ -306,10 +316,57 @@ object Katalog {
             "$HF/Comfy-Org/BiRefNet/resolve/main/background_removal/birefnet.safetensors"
         ),
         "ernie-image-turbo-Q8_0.gguf" to Soubor(
-            "models/unet", "Obrázek — ERNIE Image Turbo"
+            UNET, "Obrázek — ERNIE Image Turbo",
+            "$HF/unsloth/ERNIE-Image-Turbo-GGUF/resolve/main/ernie-image-turbo-Q8_0.gguf"
+        ),
+        // Karta Obrázek, volba Photoreal a přepínač Bez cenzury. Soubory
+        // vydává CivitAI, odkaz se u nich váže na vydaní a účet, takže jen složka
+        // a karta — stahuje si je každý sám.
+        "zimage_nsfw_photoreal_v61_Q8.gguf" to Soubor(
+            UNET, "Obrázek — volba Photoreal (z CivitAI)"
+        ),
+        "zimage_nsfw_v1.safetensors" to Soubor(
+            "models/loras", "Obrázek — přepínač Bez cenzury (z CivitAI)"
         ),
         "ministral-3-3b.safetensors" to Soubor(
-            "models/text_encoders", "Obrázek — ERNIE Image Turbo"
+            "models/text_encoders", "Obrázek — ERNIE Image Turbo",
+            "$HF/Comfy-Org/ERNIE-Image/resolve/main/text_encoders/ministral-3-3b.safetensors"
+        ),
+        // Karta 3D model, druhý motor Pixal3D. Sdílí s TRELLIS.2 obě VAE.
+        "pixal3d_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "3D model — motor Pixal3D",
+            "$HF/Comfy-Org/Pixal3D/resolve/main/diffusion_models/pixal3d_int8_convrot.safetensors"
+        ),
+        "dino_v3_L_naf_fp32.safetensors" to Soubor(
+            "models/clip_vision", "3D model — motor Pixal3D",
+            "$HF/Comfy-Org/Pixal3D/resolve/main/clip_vision/dino_v3_L_naf_fp32.safetensors"
+        ),
+        "moge_2_vitl_normal_fp16.safetensors" to Soubor(
+            "models/geometry_estimation", "3D model — Pixal3D odhaduje úhel objektivu",
+            "$HF/Comfy-Org/MoGe/resolve/main/geometry_estimation/moge_2_vitl_normal_fp16.safetensors"
+        ),
+        // Karta Úhel kamery.
+        "qwen-image-edit-2511-multiple-angles-lora.safetensors" to Soubor(
+            "models/loras", "Úhel kamery",
+            "$HF/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA/resolve/main/qwen-image-edit-2511-multiple-angles-lora.safetensors"
+        ),
+        "Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors" to Soubor(
+            "models/loras", "Úhel kamery",
+            "$HF/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors"
+        ),
+        // Oprava fotky: zbylé dvě LoRA, dřív bez odkazu.
+        "qwen_image_edit_2511_upscale.safetensors" to Soubor(
+            "models/loras", "Oprava fotky",
+            "$HF/starsfriday/Qwen-Image-Edit-2511-Upscale2K/resolve/main/qwen_image_edit_2511_upscale.safetensors"
+        ),
+        "flymy_realism.safetensors" to Soubor(
+            "models/loras", "Oprava fotky",
+            "$HF/flymy-ai/qwen-image-realism-lora/resolve/main/flymy_realism.safetensors"
+        ),
+        // Úprava obrázku přes Klein předlohu kóduje, takže chce plný enkodér.
+        "full_encoder_small_decoder.safetensors" to Soubor(
+            "models/vae", "Domalovat — úprava přes FLUX.2 Klein",
+            "$HF/black-forest-labs/FLUX.2-small-decoder/resolve/main/full_encoder_small_decoder.safetensors"
         ),
     )
 
@@ -323,7 +380,7 @@ object Katalog {
      * ze vstupu uzlu, který ho žádá (`unet_name` → diffusion_models…).
      */
     fun slozkaPodleVstupu(vstup: String): String? = when (vstup) {
-        "unet_name" -> "models/diffusion_models"
+        "unet_name" -> UNET
         "ckpt_name" -> "models/checkpoints"
         "clip_name", "clip_name1", "clip_name2" -> "models/text_encoders"
         "vae_name" -> "models/vae"

@@ -962,9 +962,18 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     t(model.popis),
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
+                if (model == T2iModel.VLASTNI) {
+                    Spacer(Modifier.height(8.dp))
+                    VlastniModelPicker(vm, params)
+                }
                 Spacer(Modifier.height(2.dp))
                 Text(
-                    t("%d kroků").format(model.kroky),
+                    t("%d kroků").format(
+                        cz.promptlab.h3video.comfy.ZImageBuilder.stepsFor(
+                            params.zimageModel,
+                            cz.promptlab.h3video.comfy.ZImageBuilder.vlastniZ(params),
+                        )
+                    ),
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
             }
@@ -1522,6 +1531,94 @@ fun DarkTextField(
                 cursorColor = Cyan,
             )
         )
+    }
+}
+
+/**
+ * Karta Obrázek, volba **Vlastní model**: výběr souboru ze serveru a k němu
+ * kroky a cfg.
+ *
+ * Nabídka se čte z ComfyUI (`UNETLoader` i `UnetLoaderGGUF`), takže se
+ * nenabízí nic, co na serveru není. Nahoře jsou soubory, které mají v názvu
+ * `zimage`/`z_image`/`zit` — na téhle kartě jede šablona Z-Image a cizí
+ * architektura v ní nepoběží. Zbytek disku se ukáže na vyžádání: pojmenování
+ * je jen zvyk, ne záruka, a vlastní trénink se může jmenovat jakkoli.
+ */
+@Composable
+private fun VlastniModelPicker(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
+    val modely by vm.imageModels.collectAsStateWithLifecycle()
+    val chyba by vm.imageModelError.collectAsStateWithLifecycle()
+    var otevreno by remember { mutableStateOf(false) }
+    var vsechny by remember { mutableStateOf(false) }
+
+    fun zRodiny(jmeno: String): Boolean {
+        val n = jmeno.lowercase().substringAfterLast('/').substringAfterLast('\\')
+        return "zimage" in n || "z_image" in n || n.startsWith("zit")
+    }
+
+    val nase = modely.filter(::zRodiny)
+    val ostatni = modely - nase.toSet()
+    val nabidka = if (vsechny) nase + ostatni else nase
+
+    LaunchedEffect(Unit) { vm.loadImageModels() }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlineButton(
+            text = params.zimageVlastniModel.ifBlank { t("Vybrat model ze serveru") },
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { otevreno = !otevreno; if (otevreno) vm.loadImageModels() }
+        )
+        if (otevreno) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                nabidka.forEach { jmeno ->
+                    PickRow(jmeno, params.zimageVlastniModel == jmeno) {
+                        vm.setImageModelFile(jmeno); otevreno = false
+                    }
+                }
+                when {
+                    chyba != null -> Text(
+                        t(chyba!!), style = MaterialTheme.typography.bodySmall, color = Amber
+                    )
+                    modely.isEmpty() -> Text(
+                        t("Seznam se načítá ze serveru…"),
+                        style = MaterialTheme.typography.bodySmall, color = TextLow
+                    )
+                    !vsechny && ostatni.isNotEmpty() -> OutlineButton(
+                        t("Zobrazit i ostatní modely") + " (${ostatni.size})",
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { vsechny = true }
+                    )
+                }
+            }
+        }
+        if (params.zimageVlastniModel.isBlank()) {
+            Text(
+                t("Dokud model nevybereš, generuje se na Z-Image Turbo z předlohy."),
+                style = MaterialTheme.typography.bodySmall, color = Amber
+            )
+            return@Column
+        }
+        LabeledSlider(
+            label = t("Počet kroků"), value = "${params.zimageVlastniKroky}",
+            position = params.zimageVlastniKroky.toFloat(),
+            range = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MIN.toFloat()..
+                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MAX.toFloat(),
+            onChange = { v -> vm.setImageModelKroky(v.toInt()) },
+            note = t("Turbo a jeho finetuny jedou na 8–12 krocích, nedestilovaný základ na 25 a víc.")
+        )
+        LabeledSlider(
+            label = "Cfg", value = "%.1f".format(params.zimageVlastniCfg),
+            position = params.zimageVlastniCfg,
+            range = 1f..cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG_MAX,
+            onChange = { v -> vm.setImageModelCfg(v) },
+            note = t("Destilovaný model chce 1. Vyšší hodnota má smysl jen u nedestilovaného, kolem 4.")
+        )
+        if (cz.promptlab.h3video.comfy.ZImageBuilder.jeGguf(params.zimageVlastniModel)) {
+            Text(
+                t("Model v GGUF načte uzel z balíku ComfyUI-GGUF — bez něj běh skončí chybou."),
+                style = MaterialTheme.typography.bodySmall, color = TextLow
+            )
+        }
     }
 }
 

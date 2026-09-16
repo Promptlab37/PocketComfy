@@ -243,6 +243,23 @@ class ComfyClient(baseUrl: String) {
         }
     }
 
+    /**
+     * Seznam modelů ve formátu GGUF. Jde o **jiný seznam než [unetNames]**:
+     * `UNETLoader` nabízí jen přípony, které umí jádro ComfyUI, a `.gguf`
+     * mezi nimi není — ty drží uzel z balíku ComfyUI-GGUF pod vlastní složkou
+     * `unet_gguf`. Bez tohohle volání by ve výběru chyběly zrovna komunitní
+     * finetuny, které se v GGUF šíří nejčastěji.
+     *
+     * Když balík na serveru není, vrací prázdný seznam — to není chyba,
+     * jen na tom serveru žádné GGUF modely nejsou k mání.
+     */
+    fun unetGgufNames(): List<String> = runCatching {
+        val spec = objectInfo("UnetLoaderGGUF") ?: return emptyList()
+        val arr = spec.getJSONObject("input").getJSONObject("required")
+            .getJSONArray("unet_name").getJSONArray(0)
+        (0 until arr.length()).map { arr.getString(it) }
+    }.getOrDefault(emptyList())
+
     // ------------------------------------------------------------- All in One
 
     /**

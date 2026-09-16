@@ -287,6 +287,9 @@ class AppSettings(ctx: Context) {
             zimageNsfw = sp.getBoolean("zimageNsfw", defaults.zimageNsfw),
             zimageNsfwSila = sp.getFloat("zimageNsfwSila", defaults.zimageNsfwSila),
             zimageModel = sp.getString("zimageModel", defaults.zimageModel)!!,
+            zimageVlastniModel = sp.getString("zimageVlastniModel", defaults.zimageVlastniModel)!!,
+            zimageVlastniKroky = sp.getInt("zimageVlastniKroky", defaults.zimageVlastniKroky),
+            zimageVlastniCfg = sp.getFloat("zimageVlastniCfg", defaults.zimageVlastniCfg),
             zimageNsfwLora = sp.getString("zimageNsfwLora", defaults.zimageNsfwLora)!!,
             zimageNsfwLora2 = sp.getString("zimageNsfwLora2", defaults.zimageNsfwLora2)!!,
             zimageNsfwSila2 = sp.getFloat("zimageNsfwSila2", defaults.zimageNsfwSila2),
@@ -328,6 +331,9 @@ class AppSettings(ctx: Context) {
             putBoolean("zimageNsfw", p.zimageNsfw)
             putFloat("zimageNsfwSila", p.zimageNsfwSila)
             putString("zimageModel", p.zimageModel)
+            putString("zimageVlastniModel", p.zimageVlastniModel)
+            putInt("zimageVlastniKroky", p.zimageVlastniKroky)
+            putFloat("zimageVlastniCfg", p.zimageVlastniCfg)
             putString("zimageNsfwLora", p.zimageNsfwLora)
             putString("zimageNsfwLora2", p.zimageNsfwLora2)
             putFloat("zimageNsfwSila2", p.zimageNsfwSila2)

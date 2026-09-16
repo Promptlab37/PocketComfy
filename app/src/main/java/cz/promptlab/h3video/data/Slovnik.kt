@@ -1107,6 +1107,23 @@ object Slovnik {
             "Baidu ERNIE on the FLUX.2 architecture. A different handwriting than Z-Image.",
         "%d kroků" to "%d steps",
 
+        // ------------------------ Obrázek: vlastní model ze serveru (3.56)
+        "Vlastní model" to "Custom model",
+        "Jiný Z-Image model ze serveru. Vybereš soubor a řekneš kroky a cfg." to
+            "Another Z-Image model from your server. You pick the file and set steps and cfg.",
+        "Vybrat model ze serveru" to "Pick a model from the server",
+        "Zobrazit i ostatní modely" to "Show the other models too",
+        "Dokud model nevybereš, generuje se na Z-Image Turbo z předlohy." to
+            "Until you pick a model, it generates on the Z-Image Turbo from the template.",
+        "Turbo a jeho finetuny jedou na 8–12 krocích, nedestilovaný základ na 25 a víc." to
+            "Turbo and its finetunes run on 8–12 steps, the undistilled base on 25 and up.",
+        "Destilovaný model chce 1. Vyšší hodnota má smysl jen u nedestilovaného, kolem 4." to
+            "A distilled model wants 1. A higher value only makes sense on an undistilled one, around 4.",
+        "Model v GGUF načte uzel z balíku ComfyUI-GGUF — bez něj běh skončí chybou." to
+            "A GGUF model is loaded by a node from the ComfyUI-GGUF pack — without it the run fails.",
+        "Seznam modelů se nepodařilo načíst — server neodpovídá." to
+            "The model list could not be loaded — the server is not responding.",
+
         // ------------------------------- Dlouhé video a přemalování (3.03)
         "Dlouhé video" to "Long video",
         "Dlouhé" to "Long",

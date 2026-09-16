@@ -78,6 +78,17 @@ data class GenParams(
      */
     val zimageModel: String = "",
     /**
+     * Volba „Vlastní model": který soubor z `models/diffusion_models` (nebo
+     * `models/unet`) se má použít. Nabídka se čte ze serveru, takže appka
+     * nenabízí nic, co tam doopravdy není. Prázdno = uživatel ještě nevybral
+     * a graf zůstává na modelu z předlohy.
+     */
+    val zimageVlastniModel: String = "",
+    /** Kroky vlastního modelu — z názvu souboru se nepoznají, musí je říct člověk. */
+    val zimageVlastniKroky: Int = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY,
+    /** Cfg vlastního modelu. Destilované Turbo jede na 1, nedestilovaný základ na ~4. */
+    val zimageVlastniCfg: Float = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG,
+    /**
      * Časová osa: jméno projektu v cache uzlu. Hotové segmenty se pod ním drží
      * mezi běhy, takže úprava jednoho záběru neznamená počítat celé video znovu.
      */

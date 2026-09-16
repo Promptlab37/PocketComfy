@@ -51,10 +51,25 @@ enum class T2iModel(
         "ernie", "ERNIE Image Turbo",
         "Baidu ERNIE na architektuře FLUX.2. Jiný rukopis než Z-Image.",
         9,
+    ),
+
+    /**
+     * Cokoli dalšího z rodiny Z-Image, co je na serveru — finetune z CivitAI,
+     * vlastní trénink, jiná kvantizace. Soubor, kroky i cfg si volí uživatel,
+     * zbytek grafu zůstává z předlohy Turba.
+     *
+     * Kroky tady nic neznamenají: [ZImageBuilder.stepsFor] si je u téhle volby
+     * bere z nastavení. Osmička je jen výchozí stav nového výběru.
+     */
+    VLASTNI(
+        "vlastni", "Vlastní model",
+        "Jiný Z-Image model ze serveru. Vybereš soubor a řekneš kroky a cfg.",
+        8,
     );
 
     /** Jede na šabloně Z-Image (a smí se k němu tedy přimíchat zimage LoRA)? */
-    val zRodinyZImage: Boolean get() = this == TURBO || this == PHOTOREAL || this == BASE
+    val zRodinyZImage: Boolean
+        get() = this == TURBO || this == PHOTOREAL || this == BASE || this == VLASTNI
 
     companion object {
         /**
@@ -136,6 +151,38 @@ object ZImageBuilder {
     const val BASE_MODEL_FILE = "z_image_bf16.safetensors"
 
     /**
+     * Vlastní model: co uživatel vybral ze serveru a s jakým vzorkováním.
+     *
+     * Kroky a cfg se ptát musíme — z názvu souboru se nepoznají. Destilované
+     * finetuny Turba jedou na cfg 1 a 8–12 krocích, nedestilované potřebují
+     * cfg kolem čtyř a kroků násobně víc; špatná dvojice nedá chybu, jen
+     * ošklivý obrázek.
+     */
+    data class Vlastni(val soubor: String, val kroky: Int = VLASTNI_KROKY, val cfg: Float = 1f)
+
+    const val VLASTNI_KROKY = 8
+    const val VLASTNI_CFG = 1f
+
+    /** Meze posuvníků u vlastního modelu — širší už nedává smysl ani u Base. */
+    const val VLASTNI_KROKY_MIN = 1
+    const val VLASTNI_KROKY_MAX = 50
+    const val VLASTNI_CFG_MAX = 10f
+
+    /** GGUF umí načíst jen uzel z balíku ComfyUI-GGUF, UNETLoader ne. */
+    fun jeGguf(soubor: String): Boolean = soubor.endsWith(".gguf", ignoreCase = true)
+
+    /**
+     * Vlastní model z nastavení — jedno místo pro stavitele grafu i pro
+     * ukazatel průběhu, ať se nerozejdou v tom, kolik kroků běh má.
+     * Null znamená „tahle volba se teď nepoužívá", včetně stavu, kdy je
+     * vybraná, ale soubor ještě žádný.
+     */
+    fun vlastniZ(p: cz.promptlab.h3video.data.GenParams): Vlastni? =
+        if (T2iModel.zId(p.zimageModel) == T2iModel.VLASTNI && p.zimageVlastniModel.isNotBlank())
+            Vlastni(p.zimageVlastniModel, p.zimageVlastniKroky, p.zimageVlastniCfg)
+        else null
+
+    /**
      * Base není destilovaný, takže cfg 1 (co má Turbo) nevede vůbec. Autoři
      * i komunitní měření se drží 3–5; 4 je střed, který nepřepaluje kontrast.
      */
@@ -162,8 +209,14 @@ object ZImageBuilder {
     const val N_F2_SAMPLER = "44"
     const val N_F2_SAVE = "60"
 
-    /** Kroky podle zvoleného modelu (ukazatel průběhu s nimi musí souhlasit). */
-    fun stepsFor(model: String): Int = T2iModel.zId(model).kroky
+    /**
+     * Kroky podle zvoleného modelu (ukazatel průběhu s nimi musí souhlasit).
+     * U vlastního modelu je z výčtu vzít nejde — řekl je uživatel.
+     */
+    fun stepsFor(model: String, vlastni: Vlastni? = null): Int {
+        val m = T2iModel.zId(model)
+        return if (m == T2iModel.VLASTNI && vlastni != null) vlastni.kroky else m.kroky
+    }
 
     private val cached = HashMap<T2iModel, String>()
 
@@ -200,9 +253,11 @@ object ZImageBuilder {
         loraFile: String = NSFW_LORA_FILE,
         loraFile2: String = "", nsfwSila2: Float = 1f,
         userLoras: List<EditLora> = emptyList(),
+        vlastni: Vlastni? = null,
     ): JSONObject = build(
         template(ctx, T2iModel.zId(model)),
-        prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile, loraFile2, nsfwSila2, userLoras,
+        prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile, loraFile2, nsfwSila2,
+        userLoras, vlastni,
     )
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
@@ -212,12 +267,16 @@ object ZImageBuilder {
         loraFile: String = NSFW_LORA_FILE,
         loraFile2: String = "", nsfwSila2: Float = 1f,
         userLoras: List<EditLora> = emptyList(),
+        vlastni: Vlastni? = null,
     ): JSONObject {
         val m = T2iModel.zId(model)
         val wf = JSONObject(template)
         val (w, h) = sizeFor(aspect)
         if (m.zRodinyZImage) {
-            buildZImage(wf, m, prompt, w, h, seed, nsfwLora, nsfwSila, loraFile, loraFile2, nsfwSila2)
+            buildZImage(
+                wf, m, prompt, w, h, seed, nsfwLora, nsfwSila, loraFile, loraFile2, nsfwSila2,
+                vlastni,
+            )
         } else {
             buildFlux2(wf, m, prompt, w, h, seed)
         }
@@ -251,11 +310,32 @@ object ZImageBuilder {
         }
     }
 
-    /** Šablona Z-Image: Turbo 1:1, Photoreal a Base jen s výměnou modelu a vzorkování. */
+    /**
+     * Skutečný prázdný negativ místo vynulovaného tenzoru — viz [N_NEG_BASE].
+     * Potřebuje ho každý běh se cfg nad jedničkou, ne jen Base.
+     */
+    private fun skutecnyNegativ(wf: JSONObject) {
+        wf.put(
+            N_NEG_BASE,
+            JSONObject()
+                .put("class_type", "CLIPTextEncode")
+                .put(
+                    "inputs",
+                    JSONObject()
+                        .put("clip", org.json.JSONArray().put(N_CLIP).put(0))
+                        .put("text", ""),
+                )
+                .put("_meta", JSONObject().put("title", "Prázdný negativ")),
+        )
+        wf.inputs(N_SAMPLER).put("negative", org.json.JSONArray().put(N_NEG_BASE).put(0))
+    }
+
+    /** Šablona Z-Image: Turbo 1:1, Photoreal, Base a vlastní model jen s výměnou modelu a vzorkování. */
     private fun buildZImage(
         wf: JSONObject, m: T2iModel, prompt: String, w: Int, h: Int, seed: Long,
         nsfwLora: Boolean, nsfwSila: Float, loraFile: String,
         loraFile2: String = "", nsfwSila2: Float = 1f,
+        vlastni: Vlastni? = null,
     ): JSONObject {
         when (m) {
             // GGUF potřebuje jiný loader — UNETLoader umí jen safetensors.
@@ -276,20 +356,28 @@ object ZImageBuilder {
                 wf.inputs(N_UNET).put("unet_name", BASE_MODEL_FILE)
                 wf.inputs(N_SAMPLER).put("steps", m.kroky)
                 wf.inputs(N_SAMPLER).put("cfg", BASE_CFG)
-                // Viz [N_NEG_BASE]: se skutečným cfg musí být negativ skutečný.
-                wf.put(
-                    N_NEG_BASE,
-                    JSONObject()
-                        .put("class_type", "CLIPTextEncode")
-                        .put(
-                            "inputs",
-                            JSONObject()
-                                .put("clip", org.json.JSONArray().put(N_CLIP).put(0))
-                                .put("text", ""),
-                        )
-                        .put("_meta", JSONObject().put("title", "Prázdný negativ")),
-                )
-                wf.inputs(N_SAMPLER).put("negative", org.json.JSONArray().put(N_NEG_BASE).put(0))
+                skutecnyNegativ(wf)
+            }
+            // Vlastní model ze serveru: mění se jen loader, soubor a vzorkování.
+            // Když uživatel nic nevybral, zůstane předloha Turba — prázdné jméno
+            // by ComfyUI odmítlo a spadlo by to až na serveru.
+            T2iModel.VLASTNI -> if (vlastni != null && vlastni.soubor.isNotBlank()) {
+                if (jeGguf(vlastni.soubor)) {
+                    wf.put(
+                        N_UNET,
+                        JSONObject()
+                            .put("class_type", "UnetLoaderGGUF")
+                            .put("inputs", JSONObject().put("unet_name", vlastni.soubor))
+                            .put("_meta", JSONObject().put("title", "Vlastní model (GGUF)")),
+                    )
+                } else {
+                    wf.inputs(N_UNET).put("unet_name", vlastni.soubor)
+                }
+                wf.inputs(N_SAMPLER).put("steps", vlastni.kroky)
+                wf.inputs(N_SAMPLER).put("cfg", vlastni.cfg.toDouble())
+                // Nad cfg 1 vzorkovač negativ opravdu počítá, takže vynulovaný
+                // tenzor nestačí — stejný důvod jako u Base, viz [N_NEG_BASE].
+                if (vlastni.cfg > 1f) skutecnyNegativ(wf)
             }
             // Turbo: předloha se nemění ani o bajt.
             else -> Unit

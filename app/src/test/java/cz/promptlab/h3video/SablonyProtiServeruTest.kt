@@ -108,6 +108,51 @@ class SablonyProtiServeruTest {
         )
     }
 
+    /**
+     * Karta Obrázek, volba **Vlastní model**. Graf se od předlohy liší třemi
+     * věcmi a každou umí rozbít jinak: GGUF vyměňuje celou třídu loaderu,
+     * cfg nad jedničkou přidává uzel negativu a kroky s cfg jdou z posuvníků,
+     * takže můžou vylézt z mezí, které uzel dovoluje.
+     */
+    @Test
+    fun `vlastni model na karte Obrazek sedi se schematy uzlu`() {
+        assumeTrue("ComfyUI neodpovídá — kontrola se přeskočí", stahni("$server/system_stats", 4_000) != null)
+
+        val sablona = File(rawDir, "workflow_zimage_t2i.json").readText()
+        val varianty = listOf(
+            "safetensors, cfg 1" to cz.promptlab.h3video.comfy.ZImageBuilder.Vlastni(
+                "z_image_turbo_bf16.safetensors", 8, 1f
+            ),
+            "GGUF" to cz.promptlab.h3video.comfy.ZImageBuilder.Vlastni(
+                "zimage_nsfw_photoreal_v61_Q8.gguf", 12, 1f
+            ),
+            // Kraje posuvníků: co appka dovolí nastavit, musí uzel přijmout.
+            "nedestilovaný, cfg 4" to cz.promptlab.h3video.comfy.ZImageBuilder.Vlastni(
+                "z_image_bf16.safetensors",
+                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MAX,
+                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG_MAX,
+            ),
+            "nejméně kroků" to cz.promptlab.h3video.comfy.ZImageBuilder.Vlastni(
+                "z_image_turbo_bf16.safetensors",
+                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MIN, 1f
+            ),
+        )
+
+        val chyby = mutableListOf<String>()
+        varianty.forEach { (popis, vlastni) ->
+            val wf = cz.promptlab.h3video.comfy.ZImageBuilder.build(
+                sablona, "kocka", cz.promptlab.h3video.data.Aspect.SQUARE_1_1, 1L,
+                model = "vlastni", vlastni = vlastni,
+            )
+            chyby += zkontroluj(wf, "Obrázek / vlastní model / $popis")
+        }
+
+        assertTrue(
+            "Graf vlastního modelu nesedí se schématy uzlů:\n" + chyby.joinToString("\n"),
+            chyby.isEmpty(),
+        )
+    }
+
     /** Vrátí seznam nesrovnalostí jednoho grafu proti schématům ze serveru. */
     private fun zkontroluj(wf: JSONObject, kde: String): List<String> {
         val chyby = mutableListOf<String>()

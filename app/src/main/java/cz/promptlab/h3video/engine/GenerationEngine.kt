@@ -758,6 +758,7 @@ object GenerationEngine {
                     app, effective.prompt, effective.aspect, seed,
                     model = effective.zimageModel,
                     userLoras = cz.promptlab.h3video.data.ImageLoras.selected(effective),
+                    vlastni = ZImageBuilder.vlastniZ(effective),
                 )
 
             // 3 kroky: rychlé video z textu, dva průchody se zvětšením
