@@ -80,6 +80,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.promptlab.h3video.comfy.T2iModel
@@ -1452,6 +1455,8 @@ fun DarkTextField(
     singleLine: Boolean = false,
     /** Když je předané, ukáže se vpravo křížek na vymazání – ale jen když je co mazat. */
     onClear: (() -> Unit)? = null,
+    /** Tajnost (token, přístupový kód): znaky se ukazují jako tečky. */
+    secret: Boolean = false,
 ) {
     val focus = LocalFocusManager.current
     // Poloha pole pro hlídač klávesnice (viz ZaostrenePole v Components.kt).
@@ -1493,10 +1498,14 @@ fun DarkTextField(
                 }
             } else null,
             singleLine = singleLine,
+            visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
             // Jednořádkové pole (adresa serveru, token, název LoRA) se potvrzuje
             // klávesou „hotovo"; víceřádkový prompt si Enter nechává na nový řádek.
             keyboardOptions = if (singleLine) {
-                KeyboardOptions(imeAction = ImeAction.Done)
+                KeyboardOptions(
+                    imeAction = ImeAction.Done,
+                    keyboardType = if (secret) KeyboardType.Password else KeyboardType.Text,
+                )
             } else {
                 KeyboardOptions.Default
             },

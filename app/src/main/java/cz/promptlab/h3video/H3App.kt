@@ -53,11 +53,20 @@ class H3App : Application() {
             // A ještě jednou do Stažených souborů. Když appka padá hned při startu,
             // do jejího Nastavení se nikdo nedostane a soukromá složka je bez
             // počítače nečitelná – tohle je jediná kopie, na kterou uživatel dosáhne.
-            runCatching { writeToDownloads(text) }
+            runCatching { writeToDownloads(bezAdres(text)) }
 
             previous?.uncaughtException(thread, error)
         }
     }
+
+    /**
+     * Kopie pro veřejnou složku bez adres serverů. Hlášky výjimek nesou
+     * „Adresa serveru: http://…" – Tailscale a domácí adresa jsou soukromé
+     * a do složky, kterou čtou i jiné aplikace, nepatří. Interní kopie
+     * v filesDir zůstává plná (audit 16. 9. 2026, L-3).
+     */
+    private fun bezAdres(text: String): String =
+        text.replace(Regex("""https?://[^\s"'<>]+"""), "<server>")
 
     /**
      * Kopie výpisu do veřejné složky Stažené soubory. Přes MediaStore, takže to

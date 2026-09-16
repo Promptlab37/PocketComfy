@@ -21,25 +21,13 @@ class ComfyClient(baseUrl: String) {
 
     val base: String = baseUrl.trimEnd('/')
 
-    private val http = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(120, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
-        .build()
-
-    /** Krátké čekání jen pro dotaz „žiješ?" – viz [isAlive]. */
-    private val pingClient = http.newBuilder()
-        .connectTimeout(4, TimeUnit.SECONDS)
-        .readTimeout(6, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(false)
-        .build()
-
-    private val socketClient = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(0, TimeUnit.MILLISECONDS)
-        .pingInterval(20, TimeUnit.SECONDS)
-        .build()
+    // Klienty OkHttp jsou sdílené všemi instancemi (viz companion). Každý
+    // klient má vlastní fond spojení a vláken a ComfyClient se zakládá při
+    // každém dotazu (ping každých 5 s) – nový klient pokaždé znamenal nový
+    // fond. Na adrese serveru nezávisí, ta je až v požadavku.
+    private val http: OkHttpClient get() = SDILENY_HTTP
+    private val pingClient: OkHttpClient get() = SDILENY_PING
+    private val socketClient: OkHttpClient get() = SDILENY_SOCKET
 
     // ---------------------------------------------------------------- základní
 
@@ -499,6 +487,32 @@ class ComfyClient(baseUrl: String) {
         http.newCall(Request.Builder().url("$base$path").build()).execute()
 
     companion object {
+        private val SDILENY_HTTP: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(120, TimeUnit.SECONDS)
+                .writeTimeout(120, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
+                .build()
+        }
+
+        /** Krátké čekání jen pro dotaz „žiješ?" – viz [isAlive]. */
+        private val SDILENY_PING: OkHttpClient by lazy {
+            SDILENY_HTTP.newBuilder()
+                .connectTimeout(4, TimeUnit.SECONDS)
+                .readTimeout(6, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(false)
+                .build()
+        }
+
+        private val SDILENY_SOCKET: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(0, TimeUnit.MILLISECONDS)
+                .pingInterval(20, TimeUnit.SECONDS)
+                .build()
+        }
+
         /** Volná a celková VRAM první grafiky z odpovědi `/system_stats`. */
         fun vramZe(stats: JSONObject): Pair<Long, Long>? {
             val d = stats.optJSONArray("devices")?.optJSONObject(0) ?: return null

@@ -1,4 +1,5 @@
 package cz.promptlab.h3video.engine
+import cz.promptlab.h3video.util.Soubory
 import cz.promptlab.h3video.data.t
 
 import android.content.Context
@@ -1408,16 +1409,21 @@ object GenerationEngine {
         // Přípona podle skutečného obsahu: obrázek a zvuk si nesou svou,
         // MP3 uložené jako .mp4 by hudební přehrávače nepřehrály.
         val pripona = when {
-            jenObrazek -> filename.substringAfterLast('.', "png").lowercase()
-            isSound(filename) -> filename.substringAfterLast('.', "mp3").lowercase()
+            jenObrazek -> Soubory.bezpecnaPripona(filename, "png")
+            isSound(filename) -> Soubory.bezpecnaPripona(filename, "mp3")
             // Model si musí svou příponu nést — pod .mp4 by ho neotevřelo nic
             // a galerie by ho považovala za video.
-            isModel(filename) -> filename.substringAfterLast('.', "glb").lowercase()
+            isModel(filename) -> Soubory.bezpecnaPripona(filename, "glb")
             // I video si nese svou skutečnou příponu – webm přejmenované
             // na .mp4 by některé přehrávače odmítly.
-            else -> filename.substringAfterLast('.', "mp4").lowercase()
+            else -> Soubory.bezpecnaPripona(filename, "mp4")
         }
         val target = File(VideoItem.videosDir(app), "$promptId.$pripona")
+        // Pojistka navíc: cíl musí zůstat ve složce výstupů, i kdyby se
+        // někdy změnilo, z čeho se název skládá.
+        if (!Soubory.uvnitr(target, VideoItem.videosDir(app))) throw ComfyException(
+            "unsafe target $filename", "Server vrátil podezřelý název souboru."
+        )
         val url = client.viewUrl(filename, subfolder, type)
 
         var dl = 0
@@ -1456,7 +1462,7 @@ object GenerationEngine {
         var savedPictures = 0
         pictures.forEachIndexed { i, pic ->
             val ok = runCatching {
-                val ext = pic.filename.substringAfterLast('.', "png")
+                val ext = Soubory.bezpecnaPripona(pic.filename, "png")
                 val tmp = File(app.cacheDir, "out_${promptId}_$i.$ext")
                 client.download(client.viewUrl(pic.filename, pic.subfolder, pic.type), tmp) { _, _ -> }
                 val saved = MediaSaver.saveImageToGallery(app, tmp, "H3_list_${createdAt}_${i + 1}.$ext")

@@ -271,6 +271,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                     placeholder = t("Přístupový kód (jen když si ho Higgs vyžádá)"),
                     minHeight = 58.dp,
                     singleLine = true,
+                    secret = true,
                 )
                 Spacer(Modifier.height(12.dp))
                 GradientButton(t("Uložit"), onClick = { vm.saveHiggs() })
@@ -614,6 +615,7 @@ private fun UpdateCard(vm: MainViewModel) {
                     placeholder = "GitHub token",
                     minHeight = 58.dp,
                     singleLine = true,
+                    secret = true,
                 )
                 Spacer(Modifier.height(10.dp))
                 GradientButton(t("Uložit a zkontrolovat")) { vm.saveToken(); showToken = false }

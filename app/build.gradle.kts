@@ -35,8 +35,8 @@ android {
         applicationId = "cz.promptlab.h3video"
         minSdk = 26
         targetSdk = 35
-        versionCode = 166
-        versionName = "3.54"
+        versionCode = 167
+        versionName = "3.55"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "GITHUB_TOKEN", "\"\"")
         buildConfigField("String", "DEFAULT_SERVER", "\"\"")
@@ -51,7 +51,9 @@ android {
     signingConfigs {
         if (storePwd != null && keyPwd != null) {
             create("release") {
-                storeFile = file("../keystore/h3video.jks")
+                // Cesta ke klíči je v local.properties (storeFile) – klíč leží mimo
+                // složku projektu (audit 16. 9. 2026, M-1). Bez klíče platí stará cesta.
+                storeFile = file(localProps.getProperty("storeFile") ?: "../keystore/h3video.jks")
                 storePassword = storePwd
                 keyAlias = localProps.getProperty("keyAlias") ?: "h3video"
                 keyPassword = keyPwd

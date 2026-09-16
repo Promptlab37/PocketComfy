@@ -20,6 +20,8 @@ data class UpdateInfo(
     /** Veřejný odkaz, nebo adresa assetu v API pro soukromý repozitář. */
     val assetUrl: String,
     val sizeBytes: Long,
+    /** SHA-256 APK z poznámek vydání (řádek `SHA-256: …`), null = vydání ho neuvádí. */
+    val sha256: String? = null,
 )
 
 /**
@@ -156,6 +158,7 @@ object UpdateChecker {
                 notes = j.optString("body").trim(),
                 assetUrl = url,
                 sizeBytes = size,
+                sha256 = sha256ZPoznamek(j.optString("body")),
             )
         }
     }
@@ -173,6 +176,10 @@ object UpdateChecker {
             val location = response.header("Location")
             response.close()
             if (location.isNullOrBlank()) throw IllegalStateException("GitHub nevrátil adresu souboru")
+            // Přesměrování musí zůstat na HTTPS – přes holé http by šlo APK podstrčit.
+            if (!location.startsWith("https://")) throw IllegalStateException(
+                "Přesměrování nevede na zabezpečenou adresu – stažení zrušeno."
+            )
             response = http.newCall(
                 Request.Builder().url(location).header("User-Agent", "H3Video").build()
             ).execute()
@@ -196,6 +203,18 @@ object UpdateChecker {
                     }
                 }
             }
+            // Když vydání uvádí kontrolní součet, soubor se s ním porovná.
+            // Integritu jinak hlídá jen Android (stejný podpis) – tohle
+            // odchytí poškozený nebo zaměněný soubor dřív než instalátor.
+            info.sha256?.let { ocekavany ->
+                val skutecny = sha256Souboru(tmp)
+                if (!skutecny.equals(ocekavany, ignoreCase = true)) {
+                    tmp.delete()
+                    throw IllegalStateException(
+                        "Stažený soubor neodpovídá kontrolnímu součtu z vydání – instalace zrušena."
+                    )
+                }
+            }
             if (target.exists()) target.delete()
             if (!tmp.renameTo(target)) {
                 tmp.copyTo(target, overwrite = true)
@@ -203,6 +222,21 @@ object UpdateChecker {
             }
             return target
         }
+    }
+
+    /** SHA-256 z poznámek vydání: `SHA-256: <64 hex>`, `sha256=…` i v backticku. */
+    internal fun sha256ZPoznamek(notes: String): String? =
+        Regex("""(?i)sha-?256[^0-9a-f]{0,8}([0-9a-f]{64})""")
+            .find(notes)?.groupValues?.get(1)?.lowercase()
+
+    internal fun sha256Souboru(f: File): String {
+        val md = java.security.MessageDigest.getInstance("SHA-256")
+        f.inputStream().use { input ->
+            val buf = ByteArray(64 * 1024)
+            var read: Int
+            while (input.read(buf).also { read = it } != -1) md.update(buf, 0, read)
+        }
+        return md.digest().joinToString("") { "%02x".format(it) }
     }
 
     /** Smí aplikace vůbec spustit instalaci? Od Androidu 8 je to zvlášť povolení. */

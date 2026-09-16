@@ -50,18 +50,10 @@ class HiggsClient(baseUrl: String, private val token: String = "") {
 
     val base: String = baseUrl.trimEnd('/')
 
-    private val http = OkHttpClient.Builder()
-        .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(120, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(true)
-        .build()
-
-    private val pingClient = http.newBuilder()
-        .connectTimeout(4, TimeUnit.SECONDS)
-        .readTimeout(6, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(false)
-        .build()
+    // Sdílené klienty OkHttp – stejný důvod jako u ComfyClient: instance se
+    // zakládá při každém volání a každý klient nese vlastní fond vláken.
+    private val http: OkHttpClient get() = SDILENY_HTTP
+    private val pingClient: OkHttpClient get() = SDILENY_PING
 
     // ---------------------------------------------------------------- stav
 
@@ -226,6 +218,32 @@ class HiggsClient(baseUrl: String, private val token: String = "") {
     companion object {
         private val JSON = "application/json; charset=utf-8".toMediaType()
 
+        private val SDILENY_HTTP: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(15, TimeUnit.SECONDS)
+                .readTimeout(120, TimeUnit.SECONDS)
+                .writeTimeout(120, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(true)
+                .build()
+        }
+
+        private val SDILENY_PING: OkHttpClient by lazy {
+            SDILENY_HTTP.newBuilder()
+                .connectTimeout(4, TimeUnit.SECONDS)
+                .readTimeout(6, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(false)
+                .build()
+        }
+
+        /** Klient pro spouštěč (viz [HiggsLauncher]) – krátké čekání na spojení. */
+        internal val SDILENY_LAUNCHER: OkHttpClient by lazy {
+            OkHttpClient.Builder()
+                .connectTimeout(5, TimeUnit.SECONDS)
+                .readTimeout(40, TimeUnit.SECONDS)
+                .retryOnConnectionFailure(false)
+                .build()
+        }
+
         /** Port spouštěče Higgse na počítači (viz higgs_launcher_v1.py). */
         const val LAUNCHER_PORT = 8191
     }
@@ -244,11 +262,7 @@ class HiggsLauncher(higgsUrl: String) {
     private val host = higgsUrl.trimEnd('/').substringAfter("://").substringBefore(':')
     private val base = "http://$host:${HiggsClient.LAUNCHER_PORT}"
 
-    private val http = OkHttpClient.Builder()
-        .connectTimeout(5, TimeUnit.SECONDS)
-        .readTimeout(40, TimeUnit.SECONDS)
-        .retryOnConnectionFailure(false)
-        .build()
+    private val http: OkHttpClient get() = HiggsClient.SDILENY_LAUNCHER
 
     /** "running" (model načtený), "starting", "stopped", nebo null když spouštěč neodpovídá. */
     fun state(): String? = runCatching {
