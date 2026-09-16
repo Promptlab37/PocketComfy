@@ -448,6 +448,10 @@ object Slovnik {
         "Živý náhled" to "Live preview",
         "Rozpracované snímky během generování; vypnutí šetří grafiku" to
             "Frames in progress while generating; turning it off saves GPU",
+        "Jen zrychlovací z workflow" to "Only the speed-up LoRA from the workflow",
+        "Zrychlovací z workflow + %d další" to "Workflow speed-up LoRA + %d more",
+        "Rychlejší pozornost; vypnuto = čistá PyTorch pozornost" to
+            "Faster attention; off = plain PyTorch attention",
         "Rychlejší pozornost, ve workflow zapnutá" to
             "Faster attention, enabled in the workflow",
         "Přeskočí podobné kroky — až 3× rychlejší, drobně méně věrné" to

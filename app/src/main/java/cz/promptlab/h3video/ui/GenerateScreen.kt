@@ -658,8 +658,15 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                 "Spectrum", t("Totéž co vypínač nahoře – přibližné zrychlení"),
                                 params.spectrum
                             ) { v -> vm.update { it.copy(spectrum = v) } }
+                            // Karta 3 kroky nemá uzel od KJ, ale nativní
+                            // ModelAttentionBackend — vypnutí u ní znamená
+                            // čistou PyTorch pozornost, a přebije i sage
+                            // zapnuté na příkazové řádce serveru.
                             ToggleRow(
-                                "Sage Attention", t("Rychlejší pozornost, ve workflow zapnutá"),
+                                "Sage Attention",
+                                if (mode == Mode.THREESTEP)
+                                    t("Rychlejší pozornost; vypnuto = čistá PyTorch pozornost")
+                                else t("Rychlejší pozornost, ve workflow zapnutá"),
                                 params.sageAttention
                             ) { v -> vm.update { it.copy(sageAttention = v) } }
                             ToggleRow(
@@ -951,9 +958,16 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
     var swapping by remember { mutableStateOf(false) }
 
     val active = params.extraLoras.count { it.enabled }
+    // Karta 3 kroky má vlastní zrychlovací LoRA napevno v předloze — na ní ten
+    // třífázový postup stojí, vyměnit ani vypnout se nedá. Turbo řádek by tam
+    // byl knoflík, který graf zahodí, takže se u ní neukazuje; uživatelovy
+    // LoRA se řetězí za tu z předlohy a fungují normálně.
+    val turbo = params.mode != Mode.THREESTEP
     SectionCard(
         title = "LoRA",
         subtitle = when {
+            !turbo && active == 0 -> t("Jen zrychlovací z workflow")
+            !turbo -> t("Zrychlovací z workflow + %d další").format(active)
             !params.turboLoraOn && active == 0 -> t("Žádná – model jede na plno")
             !params.turboLoraOn -> "$active bez Turba"
             active == 0 -> "Turbo"
@@ -962,7 +976,7 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
     ) {
         Column {
             // Turbo – vypínatelná i vyměnitelná
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            if (turbo) Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Turbo LoRA", style = MaterialTheme.typography.bodyMedium)
                     Text(
@@ -981,7 +995,7 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
                     colors = switchColors()
                 )
             }
-            AnimatedVisibility(params.turboLoraOn) {
+            AnimatedVisibility(turbo && params.turboLoraOn) {
                 Column {
                     Slider(
                         value = params.turboLoraStrength,

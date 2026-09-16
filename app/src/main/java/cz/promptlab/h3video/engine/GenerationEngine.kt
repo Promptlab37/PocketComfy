@@ -766,6 +766,8 @@ object GenerationEngine {
                 cz.promptlab.h3video.comfy.ThreeStepBuilder.build(
                     app, effective.prompt, effective.seconds.toDouble(),
                     effective.aspect, seed,
+                    rychlaPozornost = effective.sageAttention,
+                    lory = effective.extraLoras,
                 )
 
             // Hudba: buď uživatelovo ACE-Step 1.5 workflow, nebo oficiální
