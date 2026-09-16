@@ -1155,6 +1155,9 @@ object Slovnik {
         "Jiný Z-Image model ze serveru. Vybereš soubor a řekneš kroky a cfg." to
             "Another Z-Image model from your server. You pick the file and set steps and cfg.",
         "Vybrat model ze serveru" to "Pick a model from the server",
+        "Soubor modelu" to "Model file",
+        "Vyber jiný soubor a karta přepne na „Vlastní model“." to
+            "Pick a different file and the card switches to “Custom model”.",
         "Zobrazit i ostatní modely" to "Show the other models too",
         "Dokud model nevybereš, generuje se na Z-Image Turbo z předlohy." to
             "Until you pick a model, it generates on the Z-Image Turbo from the template.",

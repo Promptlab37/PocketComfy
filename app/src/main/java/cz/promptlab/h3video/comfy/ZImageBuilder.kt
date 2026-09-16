@@ -24,16 +24,24 @@ enum class T2iModel(
     val popis: String,
     /** Kroky vzorkování z předlohy — ukazatel průběhu s nimi musí souhlasit. */
     val kroky: Int,
+    /**
+     * Soubor, který se pro tuhle volbu dosadí do grafu. Karta ho ukazuje,
+     * aby bylo vidět, na čem se doopravdy generuje — a aby si člověk všiml,
+     * že se dá vyměnit. U [VLASTNI] žádný není, ten si vybírá uživatel.
+     */
+    val soubor: String = "",
 ) {
     TURBO(
         "turbo", "Z-Image Turbo",
         "Nejrychlejší. Fotorealismus za pár sekund, na text v obraze slabší.",
         8,
+        "z_image_turbo_bf16.safetensors",
     ),
     PHOTOREAL(
         "photoreal", "Photoreal (odvázaný)",
         "NSFW Photorealistic v6.1 — nic neodmítá. LoRA s ním není potřeba.",
         12,
+        ZImageBuilder.NSFW_MODEL_FILE,
     ),
     BASE(
         "base", "Z-Image Base",
@@ -41,16 +49,19 @@ enum class T2iModel(
         // 25 kroků má oficiální předloha ComfyUI pro Base. Dřív tu bylo 30 —
         // vlastní číslo bez opory, jen pomalejší.
         25,
+        ZImageBuilder.BASE_MODEL_FILE,
     ),
     KLEIN(
         "klein", "FLUX.2 Klein 9B",
         "Nejlíp drží složité zadání a text v obraze. Velký model, načítá se dýl.",
         4,
+        "flux-2-klein-9b.safetensors",
     ),
     ERNIE(
         "ernie", "ERNIE Image Turbo",
         "Baidu ERNIE na architektuře FLUX.2. Jiný rukopis než Z-Image.",
         9,
+        "ernie-image-turbo-Q8_0.gguf",
     ),
 
     /**

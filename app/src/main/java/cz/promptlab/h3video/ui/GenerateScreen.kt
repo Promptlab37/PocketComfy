@@ -962,10 +962,8 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     t(model.popis),
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
-                if (model == T2iModel.VLASTNI) {
-                    Spacer(Modifier.height(8.dp))
-                    VlastniModelPicker(vm, params)
-                }
+                Spacer(Modifier.height(8.dp))
+                VlastniModelPicker(vm, params, model)
                 Spacer(Modifier.height(2.dp))
                 Text(
                     t("%d kroků").format(
@@ -1545,11 +1543,16 @@ fun DarkTextField(
  * je jen zvyk, ne záruka, a vlastní trénink se může jmenovat jakkoli.
  */
 @Composable
-private fun VlastniModelPicker(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
+private fun VlastniModelPicker(
+    vm: MainViewModel,
+    params: cz.promptlab.h3video.data.GenParams,
+    model: T2iModel,
+) {
     val modely by vm.imageModels.collectAsStateWithLifecycle()
     val chyba by vm.imageModelError.collectAsStateWithLifecycle()
     var otevreno by remember { mutableStateOf(false) }
     var vsechny by remember { mutableStateOf(false) }
+    val vlastni = model == T2iModel.VLASTNI
 
     fun zRodiny(jmeno: String): Boolean {
         val n = jmeno.lowercase().substringAfterLast('/').substringAfterLast('\\')
@@ -1562,17 +1565,31 @@ private fun VlastniModelPicker(vm: MainViewModel, params: cz.promptlab.h3video.d
 
     LaunchedEffect(Unit) { vm.loadImageModels() }
 
+    // Soubor, na kterém se teď generuje. U připravených voleb je daný, u vlastní
+    // ho vybral uživatel — a dokud si žádný nevybral, jede se dál na Turbu.
+    val soubor = if (vlastni) params.zimageVlastniModel else model.soubor
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            t("Soubor modelu"),
+            style = MaterialTheme.typography.labelMedium, color = TextLow
+        )
+        // Tlačítko je vidět vždycky, ne až po vybrání poslední pilulky: řádek
+        // voleb se na telefonu posouvá do strany, takže schovaný výběr modelu
+        // nikdo nenašel. Kliknutí na kterýkoli soubor přepne kartu na volbu
+        // „Vlastní model" samo.
         OutlineButton(
-            text = params.zimageVlastniModel.ifBlank { t("Vybrat model ze serveru") },
+            text = soubor.ifBlank { t("Vybrat model ze serveru") },
             modifier = Modifier.fillMaxWidth(),
             onClick = { otevreno = !otevreno; if (otevreno) vm.loadImageModels() }
         )
         if (otevreno) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 nabidka.forEach { jmeno ->
-                    PickRow(jmeno, params.zimageVlastniModel == jmeno) {
-                        vm.setImageModelFile(jmeno); otevreno = false
+                    PickRow(jmeno, soubor == jmeno) {
+                        vm.setImageModelFile(jmeno)
+                        vm.update { it.copy(zimageModel = T2iModel.VLASTNI.id) }
+                        otevreno = false
                     }
                 }
                 when {
@@ -1590,6 +1607,13 @@ private fun VlastniModelPicker(vm: MainViewModel, params: cz.promptlab.h3video.d
                     )
                 }
             }
+        }
+        if (!vlastni) {
+            Text(
+                t("Vyber jiný soubor a karta přepne na „Vlastní model“."),
+                style = MaterialTheme.typography.bodySmall, color = TextLow
+            )
+            return@Column
         }
         if (params.zimageVlastniModel.isBlank()) {
             Text(
