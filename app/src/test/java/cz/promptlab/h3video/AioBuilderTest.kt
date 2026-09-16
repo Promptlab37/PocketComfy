@@ -32,8 +32,10 @@ import java.io.File
  */
 class AioBuilderTest {
 
+    /** Balik ALL-in-ONE na disku; cesta ke ComfyUI jde z TestCesty (mimo git). */
     private val packDir = File(
-        "D:/COMFYUI_SAGE_DVOJKA_TEST/custom_nodes/ComfyUI-ALLinONE-MinimaxH3/workflows"
+        TestCesty.customNodes("ComfyUI-ALLinONE-MinimaxH3") ?: File("nikde"),
+        "workflows"
     )
 
     // ------------------------------------------------------------- kopie šablon

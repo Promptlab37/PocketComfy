@@ -38,7 +38,7 @@ data class VoiceJob(
 
 /**
  * Klient k Higgs Audio Studiu — samostatnému serveru na počítači
- * (`C:\HIGGS_AUDIO\app\server.py`, port 7860), ne k ComfyUI.
+ * (`server.py` Higgs Audio Studia, port 7860), ne k ComfyUI.
  *
  * Namlouvání běží jako úloha: požadavek vrátí `job_id`, průběh se čte
  * z `/api/jobs/{id}` a hotové WAV se stáhne z `/api/jobs/{id}/audio`.

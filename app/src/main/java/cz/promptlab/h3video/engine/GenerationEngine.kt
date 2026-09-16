@@ -1098,8 +1098,7 @@ object GenerationEngine {
             if (waited > SERVER_WAIT_SECONDS) throw ComfyException(
                 "server offline",
                 "ComfyUI se nerozjelo ani po ${SERVER_WAIT_SECONDS / 60} minutách.\n\n" +
-                    "Na počítači se podívej do\n" +
-                    "D:\\COMFYUI_SAGE_DVOJKA_TEST\\logs_launcher\\\n\n" +
+                    "Na počítači se podívej do složky s logy spouštěče ComfyUI.\n\n" +
                     "Adresa serveru: ${settings.serverUrl}"
             )
             publish(
