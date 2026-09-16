@@ -38,7 +38,7 @@ The **Image** (Z-Image) and **Music** cards run on ComfyUI's built-in nodes
 only — no custom pack required (ComfyUI-GGUF is needed only for the optional
 alternative model). One exception on the Music card: the **YuE2** option uses
 `YuE2GenerateABC`, `YuE2GenerateMusic` and `EmptyYuE2LatentAudio`, which ship
-in ComfyUI core **from 0.35 on** — on an older build there is nothing to
+in ComfyUI core **from 0.36.0 on** — on an older build there is nothing to
 install, you update ComfyUI.
 
 Note: the LSI-Minimax-Segment-Timeline pack and the Krea2Edit/H3 helper nodes
@@ -55,7 +55,7 @@ check verifies classes.
 **checkpoints/**
 - `ace_step_1.5_turbo_aio.safetensors` (Music — ACE-Step option)
 - `yue2_3b_int8_convrot.safetensors` (Music — YuE2 option, 3.9 GB;
-  ComfyUI 0.35+)
+  ComfyUI 0.36.0+)
 
 **diffusion_models/**
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video from text/images)

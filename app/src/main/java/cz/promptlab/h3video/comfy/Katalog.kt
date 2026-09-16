@@ -95,12 +95,12 @@ object Katalog {
         "Zvětšit — metoda DLSS 5 (po instalaci ještě install_runtime.py)"
     )
     /**
-     * YuE2 není balík z ComfyUI-Manageru — uzly jsou přímo v jádru od 0.35.
+     * YuE2 není balík z ComfyUI-Manageru — uzly jsou přímo v jádru od 0.36.0.
      * Když chybí, řešením je aktualizovat ComfyUI, ne něco doinstalovat,
      * a hláška to musí říct rovnou (jinak se hledá balík, který neexistuje).
      */
     private val COMFY035 = Balik(
-        "Aktualizace ComfyUI na 0.35 nebo novější — YuE2 je přímo v jádru, "
+        "Aktualizace ComfyUI na 0.36.0 nebo novější — YuE2 je přímo v jádru, "
             + "žádný balík se neinstaluje",
         "https://docs.comfy.org/tutorials/audio/yue2/yue2",
         "Hudba — volba YuE2"

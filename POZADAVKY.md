@@ -39,7 +39,7 @@ Karty **Obrázek** (Z-Image) a **Hudba** jedou jen na vestavěných uzlech
 ComfyUI — žádný custom balík nepotřebují (ComfyUI-GGUF je potřeba až pro
 volitelný alternativní model). U karty Hudba platí jedna výjimka: volba
 **YuE2** používá uzly `YuE2GenerateABC`, `YuE2GenerateMusic` a
-`EmptyYuE2LatentAudio`, které jsou v jádru ComfyUI **až od 0.35** — na starší
+`EmptyYuE2LatentAudio`, které jsou v jádru ComfyUI **až od 0.36.0** — na starší
 verzi se nic neinstaluje, ComfyUI se aktualizuje.
 
 Pozn.: balíky LSI-Minimax-Segment-Timeline a balík s uzly Krea2Edit/H3
@@ -55,7 +55,7 @@ Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy
 **checkpoints/**
 - `ace_step_1.5_turbo_aio.safetensors` (karta Hudba — volba ACE-Step)
 - `yue2_3b_int8_convrot.safetensors` (karta Hudba — volba YuE2, 3,9 GB;
-  ComfyUI 0.35+)
+  ComfyUI 0.36.0+)
 
 **diffusion_models/**
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video z textu/obrázků)

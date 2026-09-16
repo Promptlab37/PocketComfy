@@ -23,7 +23,7 @@ enum class MusicMotor(
     ),
 
     /**
-     * YuE2 3B od m-a-p, od ComfyUI 0.35 nativně. Nejdřív si napíše noty
+     * YuE2 3B od m-a-p, od ComfyUI 0.36.0 nativně. Nejdřív si napíše noty
      * (melodii, případně i akordy) a teprve podle nich zpívá — proto zní
      * muzikálněji, ale běh je řádově delší a zpěv umí jen anglicky a čínsky.
      * Délku si model řídí sám, appka zadává jen strop.
