@@ -34,9 +34,12 @@ machine, including target folders and download links).
 | ComfyUI-GGUF | UnetLoaderGGUF | Image — only for the optional GGUF model |
 | [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | MiniMaxH3PromptWriter8B | the **AI prompt enhancer** button (optional, see below) |
 
-The **Image** (Z-Image) and **Music** (ACE-Step 1.5) cards run on ComfyUI's
-built-in nodes only — no custom pack required (ComfyUI-GGUF is needed only for
-the optional alternative model).
+The **Image** (Z-Image) and **Music** cards run on ComfyUI's built-in nodes
+only — no custom pack required (ComfyUI-GGUF is needed only for the optional
+alternative model). One exception on the Music card: the **YuE2** option uses
+`YuE2GenerateABC`, `YuE2GenerateMusic` and `EmptyYuE2LatentAudio`, which ship
+in ComfyUI core **from 0.35 on** — on an older build there is nothing to
+install, you update ComfyUI.
 
 Note: the LSI-Minimax-Segment-Timeline pack and the Krea2Edit/H3 helper nodes
 are **not publicly available** — without them the Timeline and Image edit cards
@@ -50,7 +53,9 @@ check verifies classes.
 ## Models (the `models/` folder)
 
 **checkpoints/**
-- `ace_step_1.5_turbo_aio.safetensors` (Music)
+- `ace_step_1.5_turbo_aio.safetensors` (Music — ACE-Step option)
+- `yue2_3b_int8_convrot.safetensors` (Music — YuE2 option, 3.9 GB;
+  ComfyUI 0.35+)
 
 **diffusion_models/**
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video from text/images)

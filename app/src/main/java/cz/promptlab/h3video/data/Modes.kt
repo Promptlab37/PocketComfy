@@ -68,6 +68,17 @@ enum class Mode(
      * Předloha 1:1; dosazuje se jen zadání, rozměry a seed. Otevírá řetěz
      * Obrázek → Úprava → Zvětšit, celý bez opuštění appky.
      */
+    /**
+     * Rychlé video z textu na tří- a dvoukrokovém průchodu (LoRA TaoMate
+     * 3-step). První průchod jede na 0,2 MPx, pak se latent zvětší učeným
+     * modelem a dva kroky ho dotáhnou. Řádově rychlejší než dvacet kroků.
+     */
+    THREESTEP(
+        titleCs = "3 kroky",
+        shortCs = "3 kroky",
+        detailCs = "Rychlé video z textu — tři kroky, zvětšení v latentu, dva kroky navrch"
+    ),
+
     IMAGE(
         titleCs = "Obrázek",
         shortCs = "Obrázek",
@@ -157,13 +168,14 @@ enum class Mode(
     ),
 
     /**
-     * Uživatelovo ACE-Step 1.5 Turbo workflow — celá skladba z textu za
-     * 8 kroků, výsledkem je MP3. Jediná karta, která nevyrábí obraz.
+     * Celá skladba z textu, výsledkem je MP3 — na výběr uživatelovo
+     * ACE-Step 1.5 Turbo workflow (rychlé, zpívá i česky) nebo YuE2 3B
+     * (muzikálnější, zpívá anglicky). Jediná karta, která nevyrábí obraz.
      */
     MUSIC(
         titleCs = "Hudba",
         shortCs = "Hudba",
-        detailCs = "ACE-Step 1.5 — celá píseň z textu, i česky"
+        detailCs = "ACE-Step nebo YuE2 — celá píseň z textu"
     );
 
     /** Název karty v jazyce rozhraní (překlad až při čtení). */

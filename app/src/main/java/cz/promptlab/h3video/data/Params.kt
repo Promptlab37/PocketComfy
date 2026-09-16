@@ -136,8 +136,9 @@ data class GenParams(
             // Úprava obrázku: upravovaná fotka a nepovinná vkládaná osoba.
             Mode.EDIT -> 2
             Mode.UPSCALE -> 1
-            // Obrázek z textu ani hudba žádnou fotku neberou.
+            // Obrázek z textu, hudba ani 3 kroky žádnou fotku neberou.
             Mode.IMAGE -> 0
+            Mode.THREESTEP -> 0
             Mode.MUSIC -> 0
             Mode.RESTORE -> 1
             // Úhel kamery: jedna fotka, ze které se objekt otočí.

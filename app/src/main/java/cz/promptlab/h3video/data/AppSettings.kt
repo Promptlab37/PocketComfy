@@ -153,6 +153,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeMusic", false)
         set(v) = sp.edit().putBoolean("activeMusic", v).apply()
 
+    /** Jede běžící hudba na YuE2? Rozlišuje fáze i texty po restartu appky. */
+    var activeMusicYue2: Boolean
+        get() = sp.getBoolean("activeMusicYue2", false)
+        set(v) = sp.edit().putBoolean("activeMusicYue2", v).apply()
+
     /** Běží rozdělaná oprava fotky (Qwen 2511)? Kvůli textům a fázím po restartu. */
     var activeRestore: Boolean
         get() = sp.getBoolean("activeRestore", false)

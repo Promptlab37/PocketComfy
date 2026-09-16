@@ -163,6 +163,8 @@ object Slovnik {
             "Scribble over the face, pick a new one, done",
         "SeedVR2 gigapixel — fotka ve velkém rozlišení" to
             "SeedVR2 gigapixel — a picture at huge resolution",
+        "ACE-Step nebo YuE2 — celá píseň z textu" to
+            "ACE-Step or YuE2 — a whole song from text",
         "ACE-Step 1.5 — celá píseň z textu, i česky" to
             "ACE-Step 1.5 — a whole song from text, vocals included",
 
@@ -803,6 +805,50 @@ object Slovnik {
         "Jazyk zpěvu" to "Singing language",
         "Hudební detaily" to "Musical details",
         "Tónina" to "Key",
+        // volba modelu na kartě Hudba (3.48)
+        "Čím skládat" to "What to compose with",
+        "Dva různé modely — každý skládá jinak a bere jiné zadání" to
+            "Two different models — each composes differently and takes different input",
+        "Rychlý (8 kroků) a zpívá i česky — délku, tempo i tóninu určíš ty" to
+            "Fast (8 steps) and sings Czech too — you set length, tempo and key",
+        "Muzikálnější — nejdřív si napíše noty. Zpívá anglicky a čínsky, běh je delší" to
+            "More musical — it writes a score first. Sings English and Chinese, and takes longer",
+        "YuE2 3B — nejdřív noty, pak zpěv" to "YuE2 3B — score first, then singing",
+        "Sloky a refrén anglicky; prázdné = instrumentálka" to
+            "Verses and chorus in English; empty = instrumental",
+        "anglicky." to "in English.",
+        "Nejvýše" to "At most",
+        "Strop délky. Kratší text = kratší píseň, model skončí sám." to
+            "A length cap. Shorter lyrics = shorter song, the model stops on its own.",
+        "Délka je jen strop — model skončí tam, kde má píseň konec." to
+            "The length is only a cap — the model stops where the song ends.",
+        "YuE2 zpívá anglicky a čínsky — český text zazpívá zkomoleně. " to
+            "YuE2 sings English and Chinese — Czech lyrics come out garbled. ",
+        "Na češtinu přepni na ACE-Step." to "For Czech, switch to ACE-Step.",
+        "Než se rozezní první tón, model si napíše noty. " to
+            "Before the first note sounds, the model writes the score. ",
+        "Chvíli se nic neděje, to je v pořádku." to
+            "Nothing happens for a while — that's normal.",
+        "Plán skladby" to "Song plan",
+        "Co si model napíše, než začne zpívat" to
+            "What the model writes before it starts singing",
+        "Noty drží melodii pohromadě — bez nich se píseň rozvolní" to
+            "A score holds the melody together — without it the song drifts",
+        "Bez plánu" to "No plan",
+        "Rovnou zpívá — nejrychlejší, ale melodie bývá rozvolněná" to
+            "Sings straight away — fastest, but the melody tends to drift",
+        "Melodie" to "Melody",
+        "Nejdřív si napíše melodii, pak podle ní zpívá" to
+            "Writes the melody first, then sings along to it",
+        "Melodie a akordy" to "Melody and chords",
+        "Napíše si melodii i doprovod — nejmuzikálnější, ale nejdelší běh" to
+            "Writes melody and backing — most musical, but the longest run",
+        "Načítám YuE2" to "Loading YuE2",
+        "Rozeznívám skladbu" to "Turning the score into sound",
+        "Zpěv podle not" to "Singing from the score",
+        "Píšu noty skladby" to "Writing the score",
+        "Zpívá podle not, které si sám napsal" to
+            "Singing from the score it wrote itself",
 
         // ------------------------------------------------ úprava obrázku
         "Fotka k úpravě" to "Photo to edit",

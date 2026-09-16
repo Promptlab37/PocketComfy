@@ -13,11 +13,18 @@ import cz.promptlab.h3video.comfy.Stage
  * o videu. Tady je KOMPLETNÍ matice — každý druh běhu × každá fáze — a
  * obrazovka i služba ji jen čtou.
  */
-enum class RunKind { VIDEO, LONG, EDIT, T2I, RESTORE, ANGLE, SWAP, INPAINT, UPSCALE, DLSS, MUSIC, MODEL3D }
+enum class RunKind {
+    VIDEO, LONG, EDIT, T2I, RESTORE, ANGLE, SWAP, INPAINT, UPSCALE, DLSS,
+    /** Hudba na ACE-Step 1.5 Turbo. */
+    MUSIC,
+    /** Hudba na YuE2 — navíc si píše noty, takže má i jiné fáze. */
+    MUSIC_YUE2,
+    MODEL3D,
+}
 
 val GenState.Running.kind: RunKind
     get() = when {
-        isMusic -> RunKind.MUSIC
+        isMusic -> if (isMusicYue2) RunKind.MUSIC_YUE2 else RunKind.MUSIC
         isModel3d -> RunKind.MODEL3D
         isLong -> RunKind.LONG
         // DLSS je taky karta Zvětšit, ale nedělí na dlaždice ani nenačítá
@@ -41,7 +48,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.EDIT, RunKind.RESTORE, RunKind.ANGLE, RunKind.UPSCALE, RunKind.DLSS,
         RunKind.MODEL3D -> t("Odesílám fotku")
         RunKind.SWAP, RunKind.INPAINT -> t("Odesílám fotky")
-        RunKind.T2I, RunKind.MUSIC -> t("Připravuji zadání")
+        RunKind.T2I, RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Připravuji zadání")
     }
     Stage.QUEUED -> t("Ve frontě")
     Stage.MODELS -> when (kind) {
@@ -56,6 +63,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.UPSCALE -> t("Načítám SeedVR2")
         RunKind.DLSS -> t("Spouštím DLSS 5")
         RunKind.MUSIC -> t("Načítám ACE-Step")
+        RunKind.MUSIC_YUE2 -> t("Načítám YuE2")
         RunKind.MODEL3D -> t("Načítám TRELLIS.2")
     }
     Stage.REFERENCES -> when (kind) {
@@ -69,10 +77,11 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.T2I -> t("Připravuji plátno")
         RunKind.MODEL3D -> t("Odstraňuji pozadí")
         RunKind.MUSIC -> t("Připravuji zadání")
+        RunKind.MUSIC_YUE2 -> t("Píšu noty skladby")
     }
     Stage.ENCODING -> when (kind) {
         RunKind.VIDEO -> t("Zpracovávám prompt")
-        RunKind.MUSIC -> t("Čtu zadání skladby")
+        RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Čtu zadání skladby")
         RunKind.SWAP -> t("Připravuji vlepení")
         else -> t("Čtu zadání")
     }
@@ -88,17 +97,18 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.UPSCALE -> t("Zvětšuji obrázek")
         RunKind.DLSS -> t("Doostřuji fotku")
         RunKind.MUSIC -> t("Skládám hudbu")
+        RunKind.MUSIC_YUE2 -> t("Rozeznívám skladbu")
         RunKind.MODEL3D -> t("Stavím tvar modelu")
     }
     Stage.DECODING -> when (kind) {
         RunKind.VIDEO -> t("Dekóduji obraz a zvuk")
-        RunKind.MUSIC -> t("Dekóduji zvuk")
+        RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Dekóduji zvuk")
         else -> t("Dekóduji obraz")
     }
     Stage.MUXING -> when (kind) {
         RunKind.VIDEO -> t("Skládám video")
         RunKind.LONG -> t("Slepuji úseky do videa")
-        RunKind.MUSIC -> t("Ukládám skladbu")
+        RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Ukládám skladbu")
         RunKind.SWAP -> t("Vlepuji tvář zpět")
         RunKind.INPAINT -> t("Vlepuji domalovaný kus zpět")
         RunKind.UPSCALE -> t("Slepuji dlaždice")
@@ -108,7 +118,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
     Stage.DOWNLOADING -> when (kind) {
         RunKind.VIDEO, RunKind.LONG -> t("Přebírám video")
         RunKind.MODEL3D -> t("Přebírám model")
-        RunKind.MUSIC -> t("Přebírám skladbu")
+        RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Přebírám skladbu")
         else -> t("Přebírám obrázek")
     }
     Stage.FINISHING -> t("Dokončuji")
@@ -128,29 +138,32 @@ fun stageDetailText(stage: Stage, kind: RunKind): String = when {
         RunKind.UPSCALE -> "SeedVR2 + VAE"
         RunKind.DLSS -> t("NVIDIA Neural Rendering, žádný difuzní model")
         RunKind.MUSIC -> "ACE-Step 1.5 Turbo"
+        RunKind.MUSIC_YUE2 -> "YuE2 3B"
         RunKind.MODEL3D -> t("TRELLIS.2 + DINOv3")
     }
     stage == Stage.SAMPLING -> when (kind) {
         RunKind.VIDEO -> t("Nejdelší část – obraz i zvuk najednou")
         RunKind.LONG -> t("Každý úsek je vlastní vzorkování, jede se popořadě")
         RunKind.MUSIC -> t("Celá skladba vzniká najednou")
+        RunKind.MUSIC_YUE2 -> t("Zpívá podle not, které si sám napsal")
         RunKind.UPSCALE -> t("Dlaždice po dlaždici na 3200 px")
         RunKind.DLSS -> t("Rekonstrukce na grafické kartě, jde to rychle")
         RunKind.MODEL3D -> t("Čtyři průchody: struktura, tvar, zjemnění, textura")
         else -> t("Nejdelší část běhu")
     }
     stage == Stage.DOWNLOADING -> when (kind) {
-        RunKind.MUSIC -> t("Přenáším ji z počítače do Galerie aplikace")
+        RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Přenáším ji z počítače do Galerie aplikace")
         else -> t("Přenáším ho z počítače do Galerie aplikace")
     }
-    stage == Stage.UPLOADING && (kind == RunKind.T2I || kind == RunKind.MUSIC) ->
+    stage == Stage.UPLOADING &&
+        (kind == RunKind.T2I || kind == RunKind.MUSIC || kind == RunKind.MUSIC_YUE2) ->
         t("Sestavuji graf pro ComfyUI")
     stage == Stage.DECODING && kind != RunKind.VIDEO -> when (kind) {
-        RunKind.MUSIC -> t("Převádím latentní data na zvuk")
+        RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Převádím latentní data na zvuk")
         else -> t("Převádím latentní data na obraz")
     }
     stage == Stage.MUXING && kind != RunKind.VIDEO -> when (kind) {
-        RunKind.MUSIC -> t("Zapisuji MP3")
+        RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Zapisuji MP3")
         RunKind.UPSCALE -> t("Prolnutí dlaždic do jedné fotky")
         else -> t("Zapisuji hotový obrázek")
     }
@@ -170,13 +183,14 @@ fun mainPhaseTitle(kind: RunKind): String = when (kind) {
     RunKind.UPSCALE -> t("Zvětšování")
     RunKind.DLSS -> t("Doostření DLSS 5")
     RunKind.MUSIC -> t("Skládání hudby")
+    RunKind.MUSIC_YUE2 -> t("Zpěv podle not")
     RunKind.MODEL3D -> t("Stavba 3D modelu")
 }
 
 /** Popisek 1. fáze — u karet bez vstupních fotek se nic neodesílá. */
 fun firstPhaseTitle(kind: RunKind): String = when (kind) {
     RunKind.VIDEO, RunKind.LONG -> t("Spojení a odeslání referencí")
-    RunKind.T2I, RunKind.MUSIC -> t("Spojení se serverem")
+    RunKind.T2I, RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Spojení se serverem")
     else -> t("Spojení a odeslání fotky")
 }
 

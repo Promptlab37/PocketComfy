@@ -94,6 +94,17 @@ object Katalog {
         "https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer",
         "Zvětšit — metoda DLSS 5 (po instalaci ještě install_runtime.py)"
     )
+    /**
+     * YuE2 není balík z ComfyUI-Manageru — uzly jsou přímo v jádru od 0.35.
+     * Když chybí, řešením je aktualizovat ComfyUI, ne něco doinstalovat,
+     * a hláška to musí říct rovnou (jinak se hledá balík, který neexistuje).
+     */
+    private val COMFY035 = Balik(
+        "Aktualizace ComfyUI na 0.35 nebo novější — YuE2 je přímo v jádru, "
+            + "žádný balík se neinstaluje",
+        "https://docs.comfy.org/tutorials/audio/yue2/yue2",
+        "Hudba — volba YuE2"
+    )
     private val LSI = Balik(
         "LSI-Minimax-Segment-Timeline", "", "Časová osa (balík není veřejný)"
     )
@@ -132,6 +143,9 @@ object Katalog {
         "ImageResize+" to ESSENTIALS,
         "ImpactGaussianBlurMask" to IMPACT,
         "MiniMaxH3TeaCache" to TEACACHE,
+        "YuE2GenerateABC" to COMFY035,
+        "YuE2GenerateMusic" to COMFY035,
+        "EmptyYuE2LatentAudio" to COMFY035,
         "UnetLoaderGGUF" to GGUF,
         "MiniMaxH3PromptWriter8B" to REWRITER,
         "llama_cpp_model_loader" to LLAMACPP,
@@ -158,6 +172,10 @@ object Katalog {
         "ace_step_1.5_turbo_aio.safetensors" to Soubor(
             "models/checkpoints", "Hudba",
             "$HF/Comfy-Org/ace_step_1.5_ComfyUI_files/resolve/main/checkpoints/ace_step_1.5_turbo_aio.safetensors"
+        ),
+        "yue2_3b_int8_convrot.safetensors" to Soubor(
+            "models/checkpoints", "Hudba — volba YuE2 (3,9 GB)",
+            "$HF/Comfy-Org/YuE2/resolve/main/checkpoints/yue2_3b_int8_convrot.safetensors"
         ),
         "z_image_turbo_bf16.safetensors" to Soubor(
             "models/diffusion_models", "Obrázek",

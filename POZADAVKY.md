@@ -35,9 +35,12 @@ chybí u tebe).
 | ComfyUI-GGUF | UnetLoaderGGUF | Obrázek — jen volitelný alternativní model ve formátu GGUF |
 | [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | MiniMaxH3PromptWriter8B | tlačítko **✨ Vylepšit prompt** (volitelné, viz níž) |
 
-Karty **Obrázek** (Z-Image) a **Hudba** (ACE-Step 1.5) jedou jen na
-vestavěných uzlech ComfyUI — žádný custom balík nepotřebují
-(ComfyUI-GGUF je potřeba až pro volitelný alternativní model).
+Karty **Obrázek** (Z-Image) a **Hudba** jedou jen na vestavěných uzlech
+ComfyUI — žádný custom balík nepotřebují (ComfyUI-GGUF je potřeba až pro
+volitelný alternativní model). U karty Hudba platí jedna výjimka: volba
+**YuE2** používá uzly `YuE2GenerateABC`, `YuE2GenerateMusic` a
+`EmptyYuE2LatentAudio`, které jsou v jádru ComfyUI **až od 0.35** — na starší
+verzi se nic neinstaluje, ComfyUI se aktualizuje.
 
 Pozn.: balíky LSI-Minimax-Segment-Timeline a balík s uzly Krea2Edit/H3
 nejsou veřejně dostupné — bez nich nepojedou karty Časová osa a Úprava
@@ -50,7 +53,9 @@ Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy
 ## Modely (složka `models/`)
 
 **checkpoints/**
-- `ace_step_1.5_turbo_aio.safetensors` (karta Hudba)
+- `ace_step_1.5_turbo_aio.safetensors` (karta Hudba — volba ACE-Step)
+- `yue2_3b_int8_convrot.safetensors` (karta Hudba — volba YuE2, 3,9 GB;
+  ComfyUI 0.35+)
 
 **diffusion_models/**
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video z textu/obrázků)

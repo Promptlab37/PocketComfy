@@ -334,6 +334,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             UpscaleSection(vm)
         }
 
+        // ---------------------------------------------------------- 3 kroky
+        if (mode == Mode.THREESTEP) {
+            ThreeStepSection(vm, params)
+        }
+
         // ---------------------------------------------------------- obrázek
         if (mode == Mode.IMAGE) {
             TxtImageSection(vm, params)
@@ -737,6 +742,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 mode == Mode.EDIT -> t("Upravit obrázek")
                 mode == Mode.UPSCALE -> t("Zvětšit obrázek")
                 mode == Mode.IMAGE -> t("Vygenerovat obrázek")
+                mode == Mode.THREESTEP -> t("Vygenerovat video")
                 mode == Mode.MUSIC -> t("Vygenerovat skladbu")
                 mode == Mode.RESTORE -> t("Opravit fotku")
                 mode == Mode.ANGLE -> t("Otočit pohled")
@@ -778,6 +784,58 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
  * z předlohy 1:1 (8 kroků, cfg 1), takže tu není co ladit — o to je karta
  * předvídatelnější. Hotový obrázek jde z výsledku rovnou do Úpravy či Zvětšit.
  */
+@Composable
+private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
+    SectionCard(
+        title = t("Rychlé video"),
+        subtitle = t("Tři kroky na malém rozlišení, zvětšení v latentu, dva kroky navrch")
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            DarkTextField(
+                value = params.prompt,
+                onValueChange = { v -> vm.update { it.copy(prompt = v) } },
+                placeholder = t("Popiš, co se má ve videu dít — jednoduše a bez záporů"),
+                minHeight = 120.dp,
+                onClear = { vm.update { it.copy(prompt = "") } },
+            )
+
+            Column {
+                Text(t("Délka"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                Spacer(Modifier.height(8.dp))
+                // Model drží hlas spolehlivě zhruba do patnácti vteřin; delší
+                // záběr se skládá z víc běhů, na to je karta Dlouhé video.
+                PillRow(
+                    items = listOf(3, 5, 7, 9, 12, 15),
+                    selected = params.seconds,
+                    label = { "$it s" },
+                    onSelect = { v -> vm.update { it.copy(seconds = v) } }
+                )
+            }
+
+            Column {
+                Text(t("Poměr stran"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                Spacer(Modifier.height(8.dp))
+                PillRow(
+                    items = Aspect.entries.toList(),
+                    selected = params.aspect,
+                    label = { it.label },
+                    onSelect = { v -> vm.update { it.copy(aspect = v) } }
+                )
+            }
+
+            // Vysvětlení, proč tu nejsou kroky ani posun: řídí je předloha
+            // a jiné hodnoty dávají měkký, mléčný obraz.
+            Text(
+                t("Kroky, posun ani rozlišení prvního průchodu se nenastavují — " +
+                    "jsou odladěné v předloze. První průchod jede na 0,2 MPx, " +
+                    "pak se obraz zvětší na 0,5 MPx a dva kroky ho dotáhnou."),
+                style = MaterialTheme.typography.bodySmall,
+                color = TextLow,
+            )
+        }
+    }
+}
+
 @Composable
 private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
     SectionCard(

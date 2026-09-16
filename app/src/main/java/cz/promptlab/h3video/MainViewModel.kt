@@ -661,6 +661,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.MODEL3D -> model3dProblem(_model3d.value)
             Mode.IMAGE ->
                 if (p.prompt.isBlank()) t("Napiš, co má na obrázku být.") else null
+            Mode.THREESTEP ->
+                if (p.prompt.isBlank()) t("Napiš, co se má ve videu dít.") else null
             Mode.MUSIC -> musicProblem(_music.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
             Mode.ANGLE -> angleProblem(_angle.value)
@@ -916,16 +918,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 )
             }
 
+            // 3 kroky: běh řídí předloha, proto se nedosazují kroky ani shift.
+            // Rozlišení prvního průchodu je v ní pevně 0,2 MPx; appka posílá
+            // jen zadání, délku, poměr stran a seed.
+            Mode.THREESTEP -> QueuedRun(id, p.mode.title, p.prompt) {
+                GenerationEngine.start(p, emptyList())
+            }
+
             // Délka jde do parametrů kvůli popisku v galerii; prompt je styl,
             // aby položka historie ukazovala, o jakou skladbu šlo.
             Mode.MUSIC -> {
                 val s = _music.value
+                val yue2 = s.motor == cz.promptlab.h3video.data.MusicMotor.YUE2
                 QueuedRun(id, p.mode.title, s.styl) {
                     GenerationEngine.start(
                         p.copy(
                             prompt = s.styl,
-                            seconds = s.seconds,
-                            steps = cz.promptlab.h3video.comfy.AceMusicBuilder.STEPS,
+                            // U YuE2 je to strop, ne přesná délka — do popisku
+                            // v galerii jde stejně jako u ACE-Step ta zadaná.
+                            seconds = s.delka,
+                            steps = if (yue2) cz.promptlab.h3video.comfy.Yue2MusicBuilder.STEPS
+                            else cz.promptlab.h3video.comfy.AceMusicBuilder.STEPS,
                         ),
                         emptyList(),
                         musicScene = s,
@@ -2415,11 +2428,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         R.raw.workflow_krea2_edit,
                         R.raw.workflow_seedvr2_upscale,
                         R.raw.workflow_zimage_t2i,
+                        R.raw.workflow_h3_3step,
                         R.raw.workflow_flux2_klein_t2i,
                         R.raw.workflow_ernie_t2i,
                         R.raw.workflow_dlss_enhance,
                         R.raw.workflow_trellis2,
                         R.raw.workflow_ace_music,
+                        R.raw.workflow_yue2_music,
                         R.raw.workflow_qwen_restore,
                         R.raw.workflow_ace_faceswap,
                         R.raw.workflow_inpaint_klein,
@@ -2622,6 +2637,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         musicStore.save(next)
     }
 
+    fun setMusicMotor(v: cz.promptlab.h3video.data.MusicMotor) = updateMusic { it.copy(motor = v) }
     fun setMusicStyl(v: String) = updateMusic { it.copy(styl = v) }
     fun setMusicText(v: String) = updateMusic { it.copy(text = v) }
     fun setMusicSeconds(v: Int) = updateMusic {
@@ -2630,6 +2646,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setMusicLanguage(v: String) = updateMusic { it.copy(language = v) }
     fun setMusicBpm(v: Int) = updateMusic { it.copy(bpm = v.coerceIn(10, 300)) }
     fun setMusicKeyscale(v: String) = updateMusic { it.copy(keyscale = v) }
+    fun setMusicMaxSeconds(v: Int) = updateMusic {
+        it.copy(
+            maxSeconds = v.coerceIn(MusicScene.YUE2_MIN_SECONDS, MusicScene.YUE2_MAX_SECONDS)
+        )
+    }
+    fun setMusicPlan(v: cz.promptlab.h3video.data.MusicPlan) = updateMusic { it.copy(plan = v) }
 
     // ---------------------------------------------------------- oprava fotky
 

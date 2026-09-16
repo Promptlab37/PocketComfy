@@ -44,12 +44,18 @@ class RunTextsTest {
 
     @Test
     fun `hudba nikdy nemluvi o obrazcich ani fotkach`() {
-        vsechnyFaze.forEach { faze ->
-            val t = stageText(faze, RunKind.MUSIC).lowercase()
-            assertFalse("MUSIC/$faze: '$t'", "obráz" in t || "fotk" in t)
-            val d = stageDetailText(faze, RunKind.MUSIC).lowercase()
-            assertFalse("MUSIC/$faze detail: '$d'", "obraz" in d || "snímk" in d || "fotk" in d)
+        listOf(RunKind.MUSIC, RunKind.MUSIC_YUE2).forEach { druh ->
+            vsechnyFaze.forEach { faze ->
+                val t = stageText(faze, druh).lowercase()
+                assertFalse("$druh/$faze: '$t'", "obráz" in t || "fotk" in t)
+                val d = stageDetailText(faze, druh).lowercase()
+                assertFalse("$druh/$faze detail: '$d'", "obraz" in d || "snímk" in d || "fotk" in d)
+            }
         }
+        // YuE2 se nesmí hlásit jako ACE-Step — je to jiný model i jiný běh.
+        assertFalse("ACE" in stageText(Stage.MODELS, RunKind.MUSIC_YUE2))
+        assertFalse("ACE" in stageDetailText(Stage.MODELS, RunKind.MUSIC_YUE2))
+        assertTrue("YuE2" in stageDetailText(Stage.MODELS, RunKind.MUSIC_YUE2))
         // přesně ta nahlášená chyba: odesílání u hudby
         assertEquals("Připravuji zadání", stageText(Stage.UPLOADING, RunKind.MUSIC))
         assertEquals("Skládám hudbu", notificationTitle(RunKind.MUSIC))

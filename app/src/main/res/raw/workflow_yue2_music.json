@@ -1,0 +1,81 @@
+{
+  "15": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": { "ckpt_name": "yue2_3b_int8_convrot.safetensors" },
+    "_meta": { "title": "YuE2 3B" }
+  },
+  "24": {
+    "class_type": "YuE2GenerateABC",
+    "inputs": {
+      "clip": ["15", 1],
+      "style": "",
+      "lyrics": "",
+      "seed": 0,
+      "mode": "full",
+      "max_abc_tokens": 8192,
+      "temperature": 0.7,
+      "top_p": 0.9,
+      "top_k": 30,
+      "repetition_penalty": 1.005,
+      "penalty_window": 100
+    },
+    "_meta": { "title": "Noty skladby (ABC)" }
+  },
+  "25": {
+    "class_type": "YuE2GenerateMusic",
+    "inputs": {
+      "clip": ["15", 1],
+      "style": "",
+      "lyrics": "",
+      "abc": ["24", 0],
+      "seed": 0,
+      "mode": "full",
+      "max_duration": 240.0,
+      "temperature": 1.0,
+      "top_p": 0.95,
+      "top_k": 100,
+      "repetition_penalty": 1.2
+    },
+    "_meta": { "title": "Zadání skladby" }
+  },
+  "5": {
+    "class_type": "EmptyYuE2LatentAudio",
+    "inputs": { "seconds": ["25", 1], "batch_size": 1 },
+    "_meta": { "title": "Prázdný zvuk" }
+  },
+  "18": {
+    "class_type": "ConditioningZeroOut",
+    "inputs": { "conditioning": ["25", 0] },
+    "_meta": { "title": "Prázdný negativ" }
+  },
+  "8": {
+    "class_type": "KSampler",
+    "inputs": {
+      "model": ["15", 0],
+      "positive": ["25", 0],
+      "negative": ["18", 0],
+      "latent_image": ["5", 0],
+      "seed": 0,
+      "steps": 32,
+      "cfg": 1.0,
+      "sampler_name": "dpm_2",
+      "scheduler": "sgm_uniform",
+      "denoise": 1.0
+    },
+    "_meta": { "title": "Vzorkování" }
+  },
+  "9": {
+    "class_type": "VAEDecodeAudio",
+    "inputs": { "samples": ["8", 0], "vae": ["15", 2] },
+    "_meta": { "title": "Dekódování zvuku" }
+  },
+  "10": {
+    "class_type": "SaveAudioMP3",
+    "inputs": {
+      "audio": ["9", 0],
+      "filename_prefix": "audio/H3Video",
+      "quality": "V0"
+    },
+    "_meta": { "title": "Uložení MP3" }
+  }
+}

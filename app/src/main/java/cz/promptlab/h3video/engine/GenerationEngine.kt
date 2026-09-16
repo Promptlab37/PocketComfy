@@ -8,6 +8,7 @@ import android.util.Log
 import cz.promptlab.h3video.comfy.AioBuilder
 import cz.promptlab.h3video.comfy.Krea2Builder
 import cz.promptlab.h3video.comfy.AceMusicBuilder
+import cz.promptlab.h3video.comfy.Yue2MusicBuilder
 import cz.promptlab.h3video.comfy.DlssBuilder
 import cz.promptlab.h3video.comfy.FaceSwapBuilder
 import cz.promptlab.h3video.comfy.InpaintBuilder
@@ -93,8 +94,10 @@ sealed interface GenState {
         val isModel3d: Boolean = false,
         /** Beh je novy obrazek z textu (Z-Image) - "Generuji", ne "Upravuji". */
         val isT2i: Boolean = false,
-        /** Beh sklada hudbu (ACE-Step) - vysledkem je MP3, texty "Skladam". */
+        /** Beh sklada hudbu - vysledkem je MP3, texty "Skladam". */
         val isMusic: Boolean = false,
+        /** Hudba jede na YuE2, ne na ACE-Step — jiné fáze i jiné hlášky. */
+        val isMusicYue2: Boolean = false,
         /** Beh opravuje starou fotku (Qwen 2511) - texty "Opravuji". */
         val isRestore: Boolean = false,
         /** Beh otaci objekt do jineho uhlu (Qwen 2511 + LoRA) - texty "Otacim". */
@@ -208,8 +211,14 @@ object GenerationEngine {
     /** Běží nový obrázek z textu (Z-Image Turbo)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var t2iRun: Boolean = false
 
-    /** Běží hudba (ACE-Step 1.5)? Vlastní workflow z APK, výsledek MP3. */
+    /** Běží hudba? Vlastní workflow z APK, výsledek MP3. */
     @Volatile private var musicRun: Boolean = false
+
+    /**
+     * Jede hudba na YuE2 místo na ACE-Step? Jiná šablona, jiné fáze i texty —
+     * ukazatel průběhu i hlášky se podle toho přepínají.
+     */
+    @Volatile private var musicYue2: Boolean = false
 
     /** Běží oprava fotky (Qwen 2511)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var restoreRun: Boolean = false
@@ -241,7 +250,8 @@ object GenerationEngine {
         inpaintRun -> InpaintBuilder.stageForClass(nodeClasses[node])
         longRun -> LongVideoBuilder.stageForClass(nodeClasses[node])
         model3dRun -> Trellis2Builder.stageForClass(nodeClasses[node])
-        musicRun -> AceMusicBuilder.stageForClass(nodeClasses[node])
+        musicRun -> if (musicYue2) Yue2MusicBuilder.stageForClass(nodeClasses[node])
+            else AceMusicBuilder.stageForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.stageForClass(nodeClasses[node])
         upscaleRun -> DlssBuilder.stageForClass(nodeClasses[node])
             ?: SeedVr2Builder.stageForClass(nodeClasses[node])
@@ -261,7 +271,8 @@ object GenerationEngine {
         inpaintRun -> InpaintBuilder.rangeForClass(nodeClasses[node])
         longRun -> LongVideoBuilder.rangeForClass(nodeClasses[node])
         model3dRun -> Trellis2Builder.rangeForClass(nodeClasses[node])
-        musicRun -> AceMusicBuilder.rangeForClass(nodeClasses[node])
+        musicRun -> if (musicYue2) Yue2MusicBuilder.rangeForClass(nodeClasses[node])
+            else AceMusicBuilder.rangeForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.rangeForClass(nodeClasses[node])
         upscaleRun -> DlssBuilder.rangeForClass(nodeClasses[node])
             ?: SeedVr2Builder.rangeForClass(nodeClasses[node])
@@ -287,7 +298,8 @@ object GenerationEngine {
         inpaintRun -> InpaintBuilder.reportsSteps(nodeClasses[node])
         longRun -> LongVideoBuilder.reportsSteps(nodeClasses[node])
         model3dRun -> Trellis2Builder.reportsSteps(nodeClasses[node])
-        musicRun -> AceMusicBuilder.reportsSteps(nodeClasses[node])
+        musicRun -> if (musicYue2) Yue2MusicBuilder.reportsSteps(nodeClasses[node])
+            else AceMusicBuilder.reportsSteps(nodeClasses[node])
         t2iRun -> ZImageBuilder.reportsSteps(nodeClasses[node])
         upscaleRun -> DlssBuilder.reportsSteps(nodeClasses[node]) ||
             SeedVr2Builder.reportsSteps(nodeClasses[node])
@@ -385,6 +397,7 @@ object GenerationEngine {
         upscaleRun = upscaleScene != null
         t2iRun = t2i
         musicRun = musicScene != null
+        musicYue2 = musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2
         restoreRun = restoreScene != null
         angleRun = angleScene != null
         swapRun = swapScene != null
@@ -399,6 +412,7 @@ object GenerationEngine {
         settings.activeUpscale = upscaleRun
         settings.activeT2i = t2iRun
         settings.activeMusic = musicRun
+        settings.activeMusicYue2 = musicYue2
         settings.activeRestore = restoreRun
         settings.activeAngle = angleRun
         settings.activeSwap = swapRun
@@ -413,7 +427,7 @@ object GenerationEngine {
         } else if (inpaintScene != null) {
             "Domalovat · " + inpaintScene.model.title
         } else if (musicScene != null) {
-            "Hudba · " + musicScene.seconds + " s"
+            "Hudba · " + musicScene.motor.title + " · " + musicScene.delka + " s"
         } else if (t2i) {
             "Obrázek · " + params.aspect.label
         } else if (upscaleScene != null) {
@@ -486,6 +500,7 @@ object GenerationEngine {
             upscaleRun = settings.activeUpscale
             t2iRun = settings.activeT2i
             musicRun = settings.activeMusic
+            musicYue2 = settings.activeMusicYue2
             restoreRun = settings.activeRestore
             angleRun = settings.activeAngle
             swapRun = settings.activeSwap
@@ -505,7 +520,7 @@ object GenerationEngine {
                                 angleRun -> AngleBuilder.nodeClasses(it)
                                 swapRun -> FaceSwapBuilder.nodeClasses(it)
                                 inpaintRun -> InpaintBuilder.nodeClasses(it)
-                                musicRun -> AceMusicBuilder.nodeClasses(it)
+                                musicRun -> AceMusicBuilder.nodeClasses(it)   // mapa je stejná pro obě hudební šablony
                                 t2iRun -> ZImageBuilder.nodeClasses(it)
                                 upscaleRun -> SeedVr2Builder.nodeClasses(it)
                                 editRun -> Krea2Builder.nodeClasses(it)
@@ -571,6 +586,7 @@ object GenerationEngine {
         upscaleRun = settings.activeUpscale
         t2iRun = settings.activeT2i
         musicRun = settings.activeMusic
+        musicYue2 = settings.activeMusicYue2
         restoreRun = settings.activeRestore
         angleRun = settings.activeAngle
         swapRun = settings.activeSwap
@@ -642,7 +658,11 @@ object GenerationEngine {
         // po částech z RAM a běh se natáhne i několikanásobně.
         // 3D model a dlouhé video si berou skoro celou kartu — u nich se
         // paměť uvolňuje vždycky, ne až když je jí málo.
-        uvolniPametKdyzTreba(client, vzdycky = model3dScene != null || longScene != null)
+        uvolniPametKdyzTreba(
+            client,
+            vzdycky = model3dScene != null || longScene != null ||
+                musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2,
+        )
 
         // --- 0c. šablona balíku (jen All in One a Dialogy). Stahuje se DŘÍV,
         // než se nahraje jediný obrázek: když balík na serveru chybí, spadne to
@@ -739,9 +759,21 @@ object GenerationEngine {
                     userLoras = cz.promptlab.h3video.data.ImageLoras.selected(effective),
                 )
 
-            // Hudba jede na uživatelově ACE-Step 1.5 workflow z APK.
+            // 3 kroky: rychlé video z textu, dva průchody se zvětšením
+            // latentu mezi nimi. Sigmy ani posun se nedosazují – jsou
+            // odladěné v předloze a jiné hodnoty dávají měkký obraz.
+            effective.mode == cz.promptlab.h3video.data.Mode.THREESTEP ->
+                cz.promptlab.h3video.comfy.ThreeStepBuilder.build(
+                    app, effective.prompt, effective.seconds.toDouble(),
+                    effective.aspect, seed,
+                )
+
+            // Hudba: buď uživatelovo ACE-Step 1.5 workflow, nebo oficiální
+            // předloha YuE2 — obojí z APK, obojí končí u MP3.
             musicScene != null ->
-                AceMusicBuilder.build(app, musicScene, seed)
+                if (musicScene.motor == cz.promptlab.h3video.data.MusicMotor.YUE2)
+                    Yue2MusicBuilder.build(app, musicScene, seed)
+                else AceMusicBuilder.build(app, musicScene, seed)
 
             // Úhel kamery: tentýž Qwen 2511, ale s LoRA na pózy kamery.
             angleScene != null ->
@@ -1780,6 +1812,7 @@ object GenerationEngine {
             isModel3d = model3dRun,
             isT2i = t2iRun,
             isMusic = musicRun,
+            isMusicYue2 = musicRun && musicYue2,
             isRestore = restoreRun,
             isAngle = angleRun,
             isSwap = swapRun,
