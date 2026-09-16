@@ -168,20 +168,17 @@ class Yue2MusicBuilderTest {
         assertEquals(90, yue.copy(motor = MusicMotor.ACE).delka)
     }
 
+    /**
+     * Karta Hudba nesmí uživateli radit, ať přepne motor kvůli češtině —
+     * uživatel si to nepřeje. Kdyby se to do upozornění vrátilo, spadne to tady.
+     */
     @Test
-    fun `cesky text u YuE2 vyvola upozorneni`() {
+    fun `karta neradi prepnout na ACE-Step kvuli cestine`() {
         val cesky = MusicScene(
             motor = MusicMotor.YUE2, styl = "folk", text = "Příliš žluťoučký kůň",
         )
-        assertTrue(cesky.textVypadaCesky)
-        assertTrue(
-            cz.promptlab.h3video.data.musicHints(cesky).any { "YuE2" in it }
-        )
-        // Na ACE-Step je čeština v pořádku, takže se nevaruje.
-        assertFalse(
-            cz.promptlab.h3video.data.musicHints(cesky.copy(motor = MusicMotor.ACE))
-                .any { "YuE2" in it }
-        )
-        assertFalse(MusicScene(motor = MusicMotor.YUE2, text = "Morning light").textVypadaCesky)
+        val hlasky = cz.promptlab.h3video.data.musicHints(cesky)
+        assertFalse(hlasky.any { "ACE-Step" in it })
+        assertFalse(hlasky.any { "zkomolen" in it })
     }
 }

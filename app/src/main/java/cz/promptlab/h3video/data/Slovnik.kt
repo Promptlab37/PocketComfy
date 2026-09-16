@@ -826,9 +826,6 @@ object Slovnik {
             "A length cap. Shorter lyrics = shorter song, the model stops on its own.",
         "Délka je jen strop — model skončí tam, kde má píseň konec." to
             "The length is only a cap — the model stops where the song ends.",
-        "YuE2 zpívá anglicky a čínsky — český text zazpívá zkomoleně. " to
-            "YuE2 sings English and Chinese — Czech lyrics come out garbled. ",
-        "Na češtinu přepni na ACE-Step." to "For Czech, switch to ACE-Step.",
         "Než se rozezní první tón, model si napíše noty. " to
             "Before the first note sounds, the model writes the score. ",
         "Chvíli se nic neděje, to je v pořádku." to

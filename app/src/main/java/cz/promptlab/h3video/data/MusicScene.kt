@@ -132,14 +132,7 @@ data class MusicScene(
             "E minor", "F minor", "F# minor", "Gb minor", "G minor", "G# minor",
             "Ab minor", "A minor", "A# minor", "Bb minor", "B minor",
         )
-
-        /** Písmena, která v textu prozradí češtinu nebo slovenštinu. */
-        private const val DIAKRITIKA = "áčďéěíňóřšťúůýžäôĺľŕ"
     }
-
-    /** Vypadá text písně česky? YuE2 takový text zazpívá zkomoleně. */
-    val textVypadaCesky: Boolean
-        get() = text.any { it.lowercaseChar() in DIAKRITIKA }
 }
 
 /** Co kartě chybí, než se dá spustit. */
@@ -154,10 +147,6 @@ fun musicHints(s: MusicScene): List<String> {
             (if (s.motor == MusicMotor.YUE2) t("anglicky.") else t("klidně česky."))
     }
     if (s.motor == MusicMotor.YUE2) {
-        if (s.textVypadaCesky) {
-            out += t("YuE2 zpívá anglicky a čínsky — český text zazpívá zkomoleně. ") +
-                t("Na češtinu přepni na ACE-Step.")
-        }
         if (s.plan.piseNoty) {
             out += t("Než se rozezní první tón, model si napíše noty. ") +
                 t("Chvíli se nic neděje, to je v pořádku.")
