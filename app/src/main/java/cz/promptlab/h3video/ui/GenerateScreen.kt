@@ -841,6 +841,31 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
             )
         }
     }
+
+    // Sdílený panel Nastavení se u téhle karty neukazuje — kroky, shift,
+    // rozlišení ani TeaCache tahle předloha nepoužívá a byly by to knoflíky,
+    // které graf zahodí. Zůstávají jen dvě věci, které opravdu něco dělají:
+    // vlastní LoRA (řetězí se za zrychlovací LoRA z workflow) a volba
+    // pozornosti (přebíjí i sage attention nastavené na serveru).
+    val aktivniLory = params.extraLoras.count { it.enabled }
+    SkladaciSekce(
+        title = t("Modely a doladění"),
+        souhrn = listOf(
+            if (aktivniLory == 0) t("Jen zrychlovací z workflow")
+            else t("Zrychlovací z workflow + %d další").format(aktivniLory),
+            if (params.sageAttention) "Sage" else "PyTorch",
+        ).joinToString(" · "),
+        klic = "3kroky-modely",
+    ) {
+        LoraCard(vm, params)
+        SectionCard(title = t("Pozornost")) {
+            ToggleRow(
+                "Sage Attention",
+                t("Rychlejší pozornost; vypnuto = čistá PyTorch pozornost"),
+                params.sageAttention
+            ) { v -> vm.update { it.copy(sageAttention = v) } }
+        }
+    }
 }
 
 @Composable
