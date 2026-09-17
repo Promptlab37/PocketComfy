@@ -955,7 +955,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     items = T2iModel.entries.toList(),
                     selected = model,
                     label = { t(it.stitek) },
-                    onSelect = { m -> vm.update { it.copy(zimageModel = m.id) } },
+                    onSelect = { m -> vm.setImageModel(m.id) },
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
@@ -965,13 +965,10 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 Spacer(Modifier.height(8.dp))
                 VlastniModelPicker(vm, params, model)
                 Spacer(Modifier.height(2.dp))
+                val (ucinneKroky, ucinneCfg) =
+                    cz.promptlab.h3video.comfy.ZImageBuilder.vzorkovani(params)
                 Text(
-                    t("%d kroků").format(
-                        cz.promptlab.h3video.comfy.ZImageBuilder.stepsFor(
-                            params.zimageModel,
-                            cz.promptlab.h3video.comfy.ZImageBuilder.vlastniZ(params),
-                        )
-                    ),
+                    t("%d kroků").format(ucinneKroky) + " · cfg " + "%.1f".format(ucinneCfg),
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
             }
@@ -1613,34 +1610,41 @@ private fun VlastniModelPicker(
                 t("Vyber jiný soubor a karta přepne na „Vlastní model“."),
                 style = MaterialTheme.typography.bodySmall, color = TextLow
             )
-            return@Column
-        }
-        if (params.zimageVlastniModel.isBlank()) {
+        } else if (params.zimageVlastniModel.isBlank()) {
             Text(
                 t("Dokud model nevybereš, generuje se na Z-Image Turbo z předlohy."),
                 style = MaterialTheme.typography.bodySmall, color = Amber
             )
-            return@Column
-        }
-        LabeledSlider(
-            label = t("Počet kroků"), value = "${params.zimageVlastniKroky}",
-            position = params.zimageVlastniKroky.toFloat(),
-            range = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MIN.toFloat()..
-                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MAX.toFloat(),
-            onChange = { v -> vm.setImageModelKroky(v.toInt()) },
-            note = t("Turbo a jeho finetuny jedou na 8–12 krocích, nedestilovaný základ na 25 a víc.")
-        )
-        LabeledSlider(
-            label = "Cfg", value = "%.1f".format(params.zimageVlastniCfg),
-            position = params.zimageVlastniCfg,
-            range = 1f..cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG_MAX,
-            onChange = { v -> vm.setImageModelCfg(v) },
-            note = t("Destilovaný model chce 1. Vyšší hodnota má smysl jen u nedestilovaného, kolem 4.")
-        )
-        if (cz.promptlab.h3video.comfy.ZImageBuilder.jeGguf(params.zimageVlastniModel)) {
+        } else if (cz.promptlab.h3video.comfy.ZImageBuilder.jeGguf(params.zimageVlastniModel)) {
             Text(
                 t("Model v GGUF načte uzel z balíku ComfyUI-GGUF — bez něj běh skončí chybou."),
                 style = MaterialTheme.typography.bodySmall, color = TextLow
+            )
+        }
+
+        // Kroky a cfg platí pro celou rodinu Z-Image, ne jen pro vlastní model:
+        // právě cfg je páčka na „model neposlouchá zadání".
+        val (ucinneKroky, ucinneCfg) = cz.promptlab.h3video.comfy.ZImageBuilder.vzorkovani(params)
+        LabeledSlider(
+            label = t("Počet kroků"), value = "$ucinneKroky",
+            position = ucinneKroky.toFloat(),
+            range = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MIN.toFloat()..
+                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MAX.toFloat(),
+            onChange = { v -> vm.setImageModelKroky(v.toInt()) },
+            note = t("Víc kroků = víc detailu a času. Turbo si vystačí s 8, s vyšším cfg dej 20 a víc.")
+        )
+        LabeledSlider(
+            label = t("Vedení promptem (cfg)"), value = "%.1f".format(ucinneCfg),
+            position = ucinneCfg,
+            range = 1f..cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG_MAX,
+            onChange = { v -> vm.setImageModelCfg(v) },
+            note = t("Na 1 si model zadání vykládá po svém. Kolem 2 začne poslouchat pózu a kompozici.")
+        )
+        if (ucinneCfg <= 1f) {
+            Text(
+                t("Na cfg 1 nemá prompt žádnou váhu — destilované Turbo jede bez vedení. ") +
+                    t("Když model neposlouchá pózu, zvedni cfg na 2."),
+                style = MaterialTheme.typography.bodySmall, color = Amber
             )
         }
     }

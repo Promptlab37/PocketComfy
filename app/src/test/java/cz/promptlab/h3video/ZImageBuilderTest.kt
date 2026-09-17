@@ -1,6 +1,7 @@
 package cz.promptlab.h3video
 
 import cz.promptlab.h3video.comfy.Stage
+import cz.promptlab.h3video.comfy.T2iModel
 import cz.promptlab.h3video.comfy.ZImageBuilder
 import cz.promptlab.h3video.data.Aspect
 import org.json.JSONArray
@@ -119,15 +120,22 @@ class ZImageBuilderTest {
         assertEquals(ZImageBuilder.NSFW_MODEL_FILE,
             unet.getJSONObject("inputs").getString("unet_name"))
         assertFalse(unet.getJSONObject("inputs").has("weight_dtype"))
-        assertEquals(ZImageBuilder.NSFW_MODEL_STEPS,
+        // Nezrychlená konfigurace: na cfg 1 model prompt nevede vůbec, proto
+        // Photoreal jede na 20 krocích a cfg 2 (viz T2iModel.PHOTOREAL).
+        assertEquals(T2iModel.PHOTOREAL.kroky,
             wf.inputs(ZImageBuilder.N_SAMPLER).getInt("steps"))
         assertEquals(ZImageBuilder.NSFW_MODEL_SAMPLER,
             wf.inputs(ZImageBuilder.N_SAMPLER).getString("sampler_name"))
-        // cfg, scheduler a shift zůstávají ze šablony.
-        assertEquals(1.0, wf.inputs(ZImageBuilder.N_SAMPLER).getDouble("cfg"), 0.001)
+        assertEquals(2.0, wf.inputs(ZImageBuilder.N_SAMPLER).getDouble("cfg"), 0.001)
+        // Nad cfg 1 se negativ opravdu počítá, takže musí být skutečný, ne
+        // vynulovaný tenzor — jinak je obraz přepálený.
+        val neg = wf.inputs(ZImageBuilder.N_SAMPLER).getJSONArray("negative").getString(0)
+        assertEquals(ZImageBuilder.N_NEG_BASE, neg)
+        assertEquals("CLIPTextEncode", wf.getJSONObject(neg).getString("class_type"))
+        // scheduler a shift zůstávají ze šablony.
         assertEquals("simple", wf.inputs(ZImageBuilder.N_SAMPLER).getString("scheduler"))
         assertEquals(ZImageBuilder.stepsFor(""), 8)
-        assertEquals(ZImageBuilder.stepsFor(ZImageBuilder.NSFW_MODEL_FILE), 12)
+        assertEquals(20, ZImageBuilder.stepsFor(ZImageBuilder.NSFW_MODEL_FILE))
         // Sigma shift dál bere model z uzlu 28 — zapojení se nemění.
         assertEquals(ZImageBuilder.N_UNET,
             wf.inputs(ZImageBuilder.N_SHIFT).getJSONArray("model").getString(0))

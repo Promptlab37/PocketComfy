@@ -195,10 +195,23 @@ class T2iModelTest {
         }
     }
 
+    /**
+     * Vedení promptem. Turbo je destilované a jede bez něj (cfg 1); Photoreal
+     * a Base musí mít cfg nad jedničkou, jinak si model zadání vykládá po svém
+     * a nedrží pózu ani kompozici.
+     */
+    @Test
+    fun `cfg podle modelu`() {
+        assertEquals(1f, T2iModel.TURBO.cfg, 0.001f)
+        assertEquals(2f, T2iModel.PHOTOREAL.cfg, 0.001f)
+        assertEquals(4f, T2iModel.BASE.cfg, 0.001f)
+        assertTrue(T2iModel.PHOTOREAL.cfg > 1f)
+    }
+
     @Test
     fun `kroky pro ukazatel prubehu sedi s predlohou`() {
         assertEquals(8, ZImageBuilder.stepsFor(""))
-        assertEquals(12, ZImageBuilder.stepsFor(ZImageBuilder.NSFW_MODEL_FILE))
+        assertEquals(20, ZImageBuilder.stepsFor(ZImageBuilder.NSFW_MODEL_FILE))
         // 25 = oficiální předloha ComfyUI pro Base (image_z_image.json).
         assertEquals(25, ZImageBuilder.stepsFor("base"))
         assertEquals(4, ZImageBuilder.stepsFor("klein"))

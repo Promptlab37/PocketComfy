@@ -527,15 +527,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setImageModelFile(name: String) = update { it.copy(zimageVlastniModel = name) }
 
     fun setImageModelKroky(kroky: Int) = update {
-        it.copy(
-            zimageVlastniKroky = kroky.coerceIn(
-                ZImageBuilder.VLASTNI_KROKY_MIN, ZImageBuilder.VLASTNI_KROKY_MAX
-            )
-        )
+        val v = kroky.coerceIn(ZImageBuilder.VLASTNI_KROKY_MIN, ZImageBuilder.VLASTNI_KROKY_MAX)
+        it.copy(zimageKroky = v, zimageVlastniKroky = v)
     }
 
     fun setImageModelCfg(cfg: Float) = update {
-        it.copy(zimageVlastniCfg = cfg.coerceIn(1f, ZImageBuilder.VLASTNI_CFG_MAX))
+        val v = cfg.coerceIn(1f, ZImageBuilder.VLASTNI_CFG_MAX)
+        it.copy(zimageCfg = v, zimageVlastniCfg = v)
+    }
+
+    /**
+     * Přepnutí modelu na kartě Obrázek.
+     *
+     * Kroky a cfg se přitom vynulují, tedy vrátí na výchozí hodnoty nové volby.
+     * Kdyby zůstala čísla po předchozím modelu, vzalo by si např. Turbo cfg 4
+     * od Base a obraz by se přepálil.
+     */
+    fun setImageModel(id: String) = update {
+        it.copy(zimageModel = id, zimageKroky = 0, zimageCfg = 0f)
     }
 
     fun addLora(name: String) = update { p ->

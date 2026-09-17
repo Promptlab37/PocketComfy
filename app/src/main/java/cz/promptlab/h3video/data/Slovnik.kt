@@ -1156,6 +1156,15 @@ object Slovnik {
             "Another Z-Image model from your server. You pick the file and set steps and cfg.",
         "Vybrat model ze serveru" to "Pick a model from the server",
         "Soubor modelu" to "Model file",
+        "Vedení promptem (cfg)" to "Prompt guidance (cfg)",
+        "Víc kroků = víc detailu a času. Turbo si vystačí s 8, s vyšším cfg dej 20 a víc." to
+            "More steps = more detail and more time. Turbo is fine on 8; with higher cfg use 20 or more.",
+        "Na 1 si model zadání vykládá po svém. Kolem 2 začne poslouchat pózu a kompozici." to
+            "At 1 the model reads the brief its own way. Around 2 it starts following pose and composition.",
+        "Na cfg 1 nemá prompt žádnou váhu — destilované Turbo jede bez vedení. " to
+            "At cfg 1 the prompt carries no weight — distilled Turbo runs without guidance. ",
+        "Když model neposlouchá pózu, zvedni cfg na 2." to
+            "When the model ignores the pose, raise cfg to 2.",
         "Vyber jiný soubor a karta přepne na „Vlastní model“." to
             "Pick a different file and the card switches to “Custom model”.",
         "Zobrazit i ostatní modely" to "Show the other models too",

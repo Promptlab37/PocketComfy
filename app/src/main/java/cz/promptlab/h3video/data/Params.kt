@@ -89,6 +89,19 @@ data class GenParams(
     /** Cfg vlastního modelu. Destilované Turbo jede na 1, nedestilovaný základ na ~4. */
     val zimageVlastniCfg: Float = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG,
     /**
+     * Karta Obrázek: kroky vzorkování, které nastavil uživatel. **Nula znamená
+     * „nech výchozí podle modelu"** — při přepnutí modelu se vrací na nulu,
+     * aby si každá volba vzala svoje číslo a nezdědila cizí.
+     */
+    val zimageKroky: Int = 0,
+    /**
+     * Karta Obrázek: vedení promptem (cfg). Nula = výchozí podle modelu.
+     *
+     * Tohle je páčka na „model neposlouchá zadání": na cfg 1 nemá prompt
+     * žádnou váhu, teprve nad jedničkou se začne uplatňovat (a s ním i negativ).
+     */
+    val zimageCfg: Float = 0f,
+    /**
      * Časová osa: jméno projektu v cache uzlu. Hotové segmenty se pod ním drží
      * mezi běhy, takže úprava jednoho záběru neznamená počítat celé video znovu.
      */

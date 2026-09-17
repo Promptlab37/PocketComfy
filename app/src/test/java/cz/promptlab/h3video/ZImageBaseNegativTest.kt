@@ -64,9 +64,29 @@ class ZImageBaseNegativTest {
         assertFalse("Turbo žádný uzel navíc nepotřebuje", wf.has(ZImageBuilder.N_NEG_BASE))
     }
 
+    /**
+     * Photoreal uz nejede na cfg 1.
+     *
+     * Na cfg 1 nema prompt zadne vedeni a model si zadani vyklada po svem —
+     * poza ani kompozice nedrzi. Od 3.60 jede nezrychlena konfigurace
+     * (cfg 2), a s ni musi prijit i skutecny prazdny negativ misto
+     * vynulovaneho tenzoru.
+     */
     @Test
-    fun `photoreal jede na cfg 1, takze vynulovany negativ staci`() {
+    fun `photoreal jede na cfg 2 se skutecnym negativem`() {
         val wf = graf(T2iModel.PHOTOREAL)
+        assertEquals(ZImageBuilder.N_NEG_BASE, negativ(wf))
+        assertEquals(
+            2.0,
+            wf.getJSONObject(ZImageBuilder.N_SAMPLER).getJSONObject("inputs").getDouble("cfg"),
+            1e-6,
+        )
+    }
+
+    /** Turbo z predlohy zustava bez vedeni — tam je cfg 1 spravne. */
+    @Test
+    fun `turbo jede na cfg 1, takze vynulovany negativ staci`() {
+        val wf = graf(T2iModel.TURBO)
         assertEquals(ZImageBuilder.N_ZERO, negativ(wf))
         assertEquals(
             1.0,
