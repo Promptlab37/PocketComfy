@@ -24,6 +24,16 @@ class AppSettings(ctx: Context) {
             }
             sp.edit().remove("githubToken").apply()
         }
+        // Změna výchozího stavu na skryvatNavigaci=false by sama nestačila: kdo
+        // appku už spustil, má v nastavení uložené staré true. Jednorázově se
+        // proto přepne — a příznak zajistí, že když si to člověk poté zapne
+        // zpátky, už mu to nikdo nepřepíše.
+        if (!sp.getBoolean("navigaceOdkryta_3_59", false)) {
+            sp.edit()
+                .putBoolean("skryvatNavigaci", false)
+                .putBoolean("navigaceOdkryta_3_59", true)
+                .apply()
+        }
     }
 
     /**
@@ -180,12 +190,15 @@ class AppSettings(ctx: Context) {
 
     /**
      * Schovávat spodní navigační tlačítka, dokud je appka vepředu? Vytáhnou se
-     * přejetím od spodního okraje. Zapnuté ve výchozím stavu — na telefonu
-     * s tlačítkovou lištou ukusovala kus obrazovky přímo pod tlačítkem
-     * Generovat.
+     * přejetím od spodního okraje.
+     *
+     * **Vypnuté ve výchozím stavu** (od 3.59). Dřív se schovávala, aby lišta
+     * neukusovala místo pod tlačítkem Generovat, jenže mizející Zpět je pro
+     * ovládání horší než pár ztracených pixelů — vlastní spodní lišta se místo
+     * toho posunula nad ni (`navigationBarsPadding` + mezera v `BottomBar`).
      */
     var skryvatNavigaci: Boolean
-        get() = sp.getBoolean("skryvatNavigaci", true)
+        get() = sp.getBoolean("skryvatNavigaci", false)
         set(v) = sp.edit().putBoolean("skryvatNavigaci", v).apply()
 
     /** Běží rozdělané domalování do masky? Kvůli textům a fázím po restartu. */

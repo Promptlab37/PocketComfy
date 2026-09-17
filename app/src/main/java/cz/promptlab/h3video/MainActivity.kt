@@ -735,7 +735,10 @@ private fun BottomBar(tab: Tab, updateWaiting: Boolean, onSelect: (Tab) -> Unit)
             .fillMaxWidth()
             .background(Surface1)
             .navigationBarsPadding()
-            .padding(vertical = 6.dp),
+            // Mezera navíc pod vlastní lištou: `navigationBarsPadding` zajistí,
+            // že se tlačítka nepřekrývají se systémovými, ale nalepená na sebe
+            // se pletou prstu — Galerie se trefovala do Zpět.
+            .padding(top = 6.dp, bottom = 14.dp),
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         BarItem(t("Tvořit"), Icons.Default.AutoAwesome, tab == Tab.CREATE) { onSelect(Tab.CREATE) }
