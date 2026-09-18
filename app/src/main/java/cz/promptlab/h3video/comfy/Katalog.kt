@@ -114,7 +114,11 @@ object Katalog {
         "https://docs.comfy.org/tutorials/audio/yue2/yue2",
         "Hudba — volba YuE2"
     )
-    private val LSI = Balik(
+    private val LTXV = Balik(
+        "ComfyUI-LTXVideo", "https://github.com/Lightricks/ComfyUI-LTXVideo",
+        "Video ze zvuku"
+    )
+        private val LSI = Balik(
         "LSI-Minimax-Segment-Timeline", "", "Časová osa (balík není veřejný)"
     )
     private val KREA = Balik(
@@ -123,6 +127,14 @@ object Katalog {
 
     /** Třída uzlu → balík, který ji přináší. */
     private val UZLY: Map<String, Balik> = mapOf(
+        "LTXVAudioVAEEncode" to LTXV,
+        "LTXVConcatAVLatent" to LTXV,
+        "LTXVSeparateAVLatent" to LTXV,
+        "LTXVLatentUpsampler" to LTXV,
+        "LTXVImgToVideoInplace" to LTXV,
+        "LTXVDualCFGGuider" to LTXV,
+        "LTXVPreprocess" to LTXV,
+        "LatentUpscaleModelLoader" to LTXV,
         "Power Lora Loader (rgthree)" to RGTHREE,
         "Any Switch (rgthree)" to RGTHREE,
         "SeedVR2VideoUpscaler" to SEEDVR2,
@@ -189,7 +201,27 @@ object Katalog {
             "models/checkpoints", "Hudba — volba YuE2 (3,9 GB)",
             "$HF/Comfy-Org/YuE2/resolve/main/checkpoints/yue2_3b_int8_convrot.safetensors"
         ),
-        "z_image_turbo_bf16.safetensors" to Soubor(
+        "ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Video ze zvuku (21 GB)",
+            "$HF/Lightricks/LTX-2.5/resolve/main/transformers/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
+        ),
+        "gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors" to Soubor(
+            "models/text_encoders", "Video ze zvuku (15 GB)",
+            "$HF/Lightricks/LTX-2.5/resolve/main/text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors"
+        ),
+        "ltx-2.5-video-vae-bf16.safetensors" to Soubor(
+            "models/vae", "Video ze zvuku",
+            "$HF/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-video-vae-bf16.safetensors"
+        ),
+        "ltx-2.5-audio-vae-bf16.safetensors" to Soubor(
+            "models/vae", "Video ze zvuku — bez něj se zvuk nedostane do latentu",
+            "$HF/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-audio-vae-bf16.safetensors"
+        ),
+        "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors" to Soubor(
+            "models/latent_upscale_models", "Video ze zvuku — druhý průchod",
+            "$HF/Lightricks/LTX-2.5/resolve/main/latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
+        ),
+                "z_image_turbo_bf16.safetensors" to Soubor(
             "models/diffusion_models", "Obrázek",
             "$HF/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors"
         ),

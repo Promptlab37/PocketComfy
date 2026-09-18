@@ -176,6 +176,17 @@ enum class Mode(
         titleCs = "Hudba",
         shortCs = "Hudba",
         detailCs = "ACE-Step nebo YuE2 — celá píseň z textu"
+    ),
+
+    /**
+     * LTX 2.5: fotka + hotový zvukový soubor → video, které na ten zvuk mluví.
+     * Jediná karta, kde se délka nezadává — graf si ji spočítá z délky zvuku
+     * (`fps × délka + 1`), takže model nemá jak větu neodříct do konce.
+     */
+    LTXAUDIO(
+        titleCs = "Video ze zvuku",
+        shortCs = "Ze zvuku",
+        detailCs = "LTX 2.5 — fotka mluví na tvůj zvuk, délka sedí přesně"
     );
 
     /** Název karty v jazyce rozhraní (překlad až při čtení). */
@@ -188,7 +199,8 @@ enum class Mode(
 
     /** Vyrábí tahle karta video? Obrázkové karty vrací PNG, Hudba MP3. */
     val isVideo: Boolean
-        get() = this == ALLINONE || this == TALK || this == TIMELINE || this == LONG
+        get() = this == ALLINONE || this == TALK || this == TIMELINE ||
+            this == LONG || this == LTXAUDIO
 }
 
 /**
@@ -250,6 +262,9 @@ fun ovladaProKartu(
     }
     // Projekt sám nic negeneruje — žádné sdílené nastavení se ho netýká.
     Mode.PROJEKT -> Ovlada.NIC
+    // Video ze zvuku: kroky, sigmy i plátno jsou z předlohy LTX 2.5,
+    // poměr stran si karta volí sama vlastním přepínačem.
+    Mode.LTXAUDIO -> Ovlada.NIC
     Mode.LONG -> Ovlada(rozliseni = !dlouheNavazuje)
     else -> Ovlada()
 }

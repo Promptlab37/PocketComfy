@@ -9,6 +9,122 @@ data class EditLoraFile(val name: String, val metadata: JSONObject? = null) {
     fun compatibility(motor: EditMotor): LoraCompatibility = EditLoras.compatibility(motor, name, metadata)
 }
 
+/**
+ * Spouštěcí slovo LoRA — to, bez čeho se natrénovaný styl v obrázku vůbec
+ * neprojeví.
+ *
+ * Čte se z metadat souboru (`/view_metadata/loras`), protože jinde ho appka
+ * vzít nemá: v ComfyUI je vidět jen jméno souboru a na webu, odkud LoRA
+ * pochází, se appka nedostane. Pořadí zdrojů jde od nejpřesnějšího:
+ *
+ *  1. `modelspec.trigger_phrase` — standardizované pole, když ho autor vyplnil
+ *  2. `ss_trigger_words` / `trigger_words` / `activation_text` — starší tvary
+ *     z Kohya a CivitAI, klidně jako JSON pole nebo seznam oddělený čárkami
+ *  3. `ss_tag_frequency` — nejčastější značka trénovací sady. Když autor
+ *     nevyplnil nic, tohle je jediná stopa; u stylových LoRA to bývá přesně
+ *     ten řetězec, co se má napsat do zadání.
+ *
+ * Vrací **jedno** slovo nebo frázi, ne celý seznam: do zadání se dosazuje
+ * automaticky a nacpat tam deset značek by ho rozbilo víc, než by pomohlo.
+ */
+object LoraTrigger {
+
+    /** Písmeno nebo číslice — hranice slova, ať „cat" nesedí uvnitř „catalog". */
+    private const val PISMENO = "\\p{L}\\p{N}"
+    private const val MEZERY = "\\s*"
+    private const val MEZERA = "\\s"
+
+    private val KLICE = listOf(
+        "modelspec.trigger_phrase", "ss_trigger_words", "trigger_words",
+        "activation_text", "ss_activation_text", "trainedWords",
+    )
+
+    /** Značky, které nejsou spouštěčem ničeho — nemá smysl je psát do zadání. */
+    private val NUDNE = setOf(
+        "1girl", "1boy", "solo", "woman", "man", "person", "photo", "photograph",
+        "realistic", "photorealistic", "highres", "best quality", "masterpiece",
+    )
+
+    fun prosoubor(file: EditLoraFile?): String? = zMetadat(file?.metadata)
+
+    fun zMetadat(m: JSONObject?): String? {
+        if (m == null) return null
+        for (klic in KLICE) {
+            prvni(m.optString(klic))?.let { return it }
+        }
+        return zTagu(m.optString("ss_tag_frequency"))
+    }
+
+    /**
+     * Z hodnoty vytáhne první použitelnou frázi. Hodnota může přijít jako
+     * prosté slovo, jako seznam oddělený čárkami i jako JSON pole — CivitAI
+     * a Kohya to ukládají každý jinak.
+     */
+    private fun prvni(hodnota: String?): String? {
+        val text = hodnota?.trim().orEmpty()
+        if (text.isBlank() || text == "null" || text == "[]" || text == "{}") return null
+        val pole = runCatching { org.json.JSONArray(text) }.getOrNull()
+        if (pole != null) {
+            for (i in 0 until pole.length()) {
+                val v = pole.optString(i).trim()
+                if (v.isNotBlank() && v.lowercase(Locale.ROOT) !in NUDNE) return v
+            }
+            return null
+        }
+        return text.split(',')
+            .map { it.trim().trim('"', '[', ']') }
+            .firstOrNull { it.isNotBlank() && it.lowercase(Locale.ROOT) !in NUDNE }
+    }
+
+    /**
+     * `ss_tag_frequency` je JSON `{"složka": {"značka": počet}}`. Bere se
+     * značka s nejvyšším počtem — ta, která byla u každého obrázku, tedy
+     * ta, kterou se styl volá.
+     */
+    private fun zTagu(text: String?): String? {
+        val root = runCatching { JSONObject(text.orEmpty()) }.getOrNull() ?: return null
+        var nejlepsi: String? = null
+        var nejvic = 0
+        for (slozka in root.keys()) {
+            val tagy = root.optJSONObject(slozka) ?: continue
+            for (tag in tagy.keys()) {
+                val pocet = tagy.optInt(tag)
+                val cisty = tag.trim()
+                if (cisty.isBlank() || cisty.lowercase(Locale.ROOT) in NUDNE) continue
+                if (pocet > nejvic) { nejvic = pocet; nejlepsi = cisty }
+            }
+        }
+        return nejlepsi
+    }
+
+    /**
+     * Vrátí zadání s dosazeným spouštěčem nové LoRA a bez spouštěče té
+     * předchozí.
+     *
+     * Odebírá se **jen** přesně ten řetězec, který tam appka sama vložila
+     * ([stary]) — kdyby se sahalo na cokoli jiného, škrtla by uživateli
+     * vlastní text. Když už nový spouštěč v zadání je (napsal si ho sám),
+     * nepřidává se podruhé.
+     */
+    fun dosad(prompt: String, stary: String?, novy: String?): String {
+        var text = prompt
+        if (!stary.isNullOrBlank() && stary != novy) text = odeber(text, stary)
+        if (novy.isNullOrBlank()) return text.trim()
+        if (obsahuje(text, novy)) return text.trim()
+        return if (text.isBlank()) novy else text.trimEnd().trimEnd(',') + ", " + novy
+    }
+
+    private fun obsahuje(prompt: String, fraze: String): Boolean =
+        Regex("(^|[^" + PISMENO + "])" + Regex.escape(fraze) + "($|[^" + PISMENO + "])",
+            RegexOption.IGNORE_CASE).containsMatchIn(prompt)
+
+    private fun odeber(prompt: String, fraze: String): String =
+        prompt.replace(
+            Regex("(^|," + MEZERY + ")" + Regex.escape(fraze) + "(?=$|[," + MEZERA + "])",
+                RegexOption.IGNORE_CASE), "",
+        ).replace(Regex("," + MEZERY + ","), ", ").trim().trim(',').trim()
+}
+
 /** Metadata mají přednost před názvem. Neoznačený soubor vyžaduje přiřazení uživatelem. */
 object EditLoras {
     private fun normalized(text: String) = text.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9]"), "")

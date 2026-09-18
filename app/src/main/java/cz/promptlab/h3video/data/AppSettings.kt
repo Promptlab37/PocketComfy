@@ -216,6 +216,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeModel3d", false)
         set(v) = sp.edit().putBoolean("activeModel3d", v).apply()
 
+    /** Běží Video ze zvuku (LTX 2.5)? Kvůli ukazateli průběhu po restartu. */
+    var activeLtx: Boolean
+        get() = sp.getBoolean("activeLtx", false)
+        set(v) = sp.edit().putBoolean("activeLtx", v).apply()
+
     // ------------------------------------------------------------ parametry
 
     /** Prompt se pamatuje zvlášť pro každou kartu – jsou to jiné druhy zadání. */

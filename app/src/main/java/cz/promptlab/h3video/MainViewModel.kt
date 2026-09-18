@@ -47,6 +47,10 @@ import cz.promptlab.h3video.data.Model3dStore
 import cz.promptlab.h3video.data.model3dHints
 import cz.promptlab.h3video.data.model3dProblem
 import cz.promptlab.h3video.data.MusicScene
+import cz.promptlab.h3video.data.LtxScene
+import cz.promptlab.h3video.data.LtxStore
+import cz.promptlab.h3video.data.ltxHints
+import cz.promptlab.h3video.data.ltxProblem
 import cz.promptlab.h3video.data.MusicStore
 import cz.promptlab.h3video.data.musicHints
 import cz.promptlab.h3video.data.musicProblem
@@ -547,13 +551,58 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         it.copy(zimageModel = id, zimageKroky = 0, zimageCfg = 0f)
     }
 
-    fun addLora(name: String) = update { p ->
-        if (p.extraLoras.any { it.name == name }) p
-        else p.copy(extraLoras = p.extraLoras + LoraEntry(name))
+    fun addLora(name: String) {
+        update { p ->
+            if (p.extraLoras.any { it.name == name }) p
+            else p.copy(extraLoras = p.extraLoras + LoraEntry(name))
+        }
+        // Spouštěcí slovo rovnou do zadání — bez něj LoRA nic neudělá.
+        upravZadaniOSpoustec(name, pridat = true)
     }
 
-    fun removeLora(name: String) = update { p ->
-        p.copy(extraLoras = p.extraLoras.filterNot { it.name == name })
+    fun removeLora(name: String) {
+        update { p -> p.copy(extraLoras = p.extraLoras.filterNot { it.name == name }) }
+        // Odebere se jen ten řetězec, který tam appka sama vložila.
+        upravZadaniOSpoustec(name, pridat = false)
+    }
+
+    /**
+     * Spouštěcí slova LoRA, která se už zjišťovala. Nikdy se nečte dvakrát:
+     * u video karty se seznam LoRA načítá bez metadat (jen jména), takže
+     * metadata jednoho souboru dotáhne až tenhle dotaz — a ten ať jde po síti
+     * jednou, ne při každém klepnutí.
+     */
+    private val spoustecCache = mutableMapOf<String, String?>()
+
+    /**
+     * Přidá nebo odebere spouštěcí slovo LoRA v zadání. Běží na pozadí:
+     * metadata se u video karty tahají ze serveru, což nesmí zdržet kliknutí.
+     */
+    private fun upravZadaniOSpoustec(name: String, pridat: Boolean) {
+        if (name.isBlank()) return
+        viewModelScope.launch {
+            val slovo = zjistiSpoustec(name) ?: return@launch
+            update { p ->
+                p.copy(
+                    prompt = cz.promptlab.h3video.data.LoraTrigger.dosad(
+                        p.prompt,
+                        stary = if (pridat) null else slovo,
+                        novy = if (pridat) slovo else null,
+                    )
+                )
+            }
+        }
+    }
+
+    private suspend fun zjistiSpoustec(name: String): String? {
+        if (spoustecCache.containsKey(name)) return spoustecCache[name]
+        spoustec(name)?.let { spoustecCache[name] = it; return it }
+        val meta = withContext(Dispatchers.IO) {
+            runCatching { ComfyClient(settings.serverUrl).loraMetadata(name) }.getOrNull()
+        }
+        val slovo = cz.promptlab.h3video.data.LoraTrigger.zMetadat(meta)
+        spoustecCache[name] = slovo
+        return slovo
     }
 
     fun setLoraEnabled(name: String, on: Boolean) = update { p ->
@@ -716,6 +765,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.THREESTEP ->
                 if (p.prompt.isBlank()) t("Napiš, co se má ve videu dít.") else null
             Mode.MUSIC -> musicProblem(_music.value)
+            Mode.LTXAUDIO -> ltxProblem(_ltx.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
             Mode.ANGLE -> angleProblem(_angle.value)
             Mode.FACESWAP -> faceSwapProblem(_swap.value)
@@ -757,7 +807,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private val vsechnySceny: List<StateFlow<Any?>> get() = listOf(
         _params, _scene, _timeline, _aio, _edit, _upscale, _music,
-        _restore, _angle, _swap, _inpaint, _long, _model3d, _projekt, _aioAvailable,
+        _restore, _angle, _swap, _inpaint, _long, _model3d, _ltx, _projekt, _aioAvailable,
     )
 
     /**
@@ -791,6 +841,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // Obrázek z textu jede na vlastní předloze; upozornění k videu se ho netýkají.
         if (p.mode == Mode.IMAGE) return emptyList()
         if (p.mode == Mode.MUSIC) return musicHints(_music.value)
+        if (p.mode == Mode.LTXAUDIO) return ltxHints(_ltx.value)
         if (p.mode == Mode.RESTORE) return emptyList()
         // Úhel kamery jede na vlastní předloze; upozornění k videu se ho netýkají.
         if (p.mode == Mode.ANGLE) return emptyList()
@@ -994,6 +1045,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         ),
                         emptyList(),
                         musicScene = s,
+                    )
+                }
+            }
+
+            // Video ze zvuku: do fronty jde popis scény, délka se nezadává —
+            // spočítá si ji graf z nahraného zvuku.
+            Mode.LTXAUDIO -> {
+                val s = _ltx.value
+                QueuedRun(id, p.mode.title, s.popis) {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = s.popis,
+                            steps = cz.promptlab.h3video.comfy.Ltx25Builder.STEPS,
+                        ),
+                        listOfNotNull(s.obrazek),
+                        ltxScene = s,
                     )
                 }
             }
@@ -2593,12 +2660,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 else -> return
             }
         }
-        updateEdit { it.withLora(it.selectedLora.copy(name = name)) }
+        updateEdit {
+            val puvodni = it.selectedLora.name
+            it.withLora(it.selectedLora.copy(name = name)).copy(
+                prompt = cz.promptlab.h3video.data.LoraTrigger.dosad(
+                    it.prompt, spoustec(puvodni), spoustec(name),
+                ),
+            )
+        }
     }
 
     fun setEditUserLoraStrength(value: Float) {
         if (value.isFinite()) updateEdit { it.withLora(it.selectedLora.copy(strength = value.coerceIn(0f, 2f))) }
     }
+
+    /**
+     * Spouštěcí slovo vybrané LoRA. Bez něj se natrénovaný styl neprojeví
+     * a uživatel ho z názvu souboru nepozná — appka ho proto dosadí do
+     * zadání sama, viz [cz.promptlab.h3video.data.LoraTrigger].
+     */
+    private fun spoustec(name: String): String? =
+        cz.promptlab.h3video.data.LoraTrigger.prosoubor(
+            _editLoras.value.files.firstOrNull { it.name == name }
+        )
 
     fun setImageLora(slot: Int, name: String, confirmedUnknown: Boolean = false) {
         if (slot !in 0..1) return
@@ -2612,9 +2696,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             val selected = ImageLoras.selected(p)
             val choices = MutableList(2) { selected.getOrElse(it) { EditLora() } }
+            val puvodni = choices[slot].name
             choices[slot] = choices[slot].copy(name = name)
             if (name.isNotBlank() && choices[1 - slot].name == name) choices[1 - slot] = EditLora()
-            p.copy(imageLoras = p.imageLoras + (model.id to choices))
+            p.copy(
+                imageLoras = p.imageLoras + (model.id to choices),
+                prompt = cz.promptlab.h3video.data.LoraTrigger.dosad(
+                    p.prompt, spoustec(puvodni), spoustec(name),
+                ),
+            )
         }
     }
 
@@ -2689,7 +2779,47 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         musicStore.save(next)
     }
 
-    fun setMusicMotor(v: cz.promptlab.h3video.data.MusicMotor) = updateMusic { it.copy(motor = v) }
+    // ------------------------------------------------------ video ze zvuku
+
+    private val ltxStore = LtxStore(app)
+
+    private val _ltx = MutableStateFlow(LtxScene())
+    val ltx: StateFlow<LtxScene> = _ltx.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val restored = withContext(Dispatchers.IO) { ltxStore.load() }
+            if (restored == LtxScene()) return@launch
+            // Náhled se neukládá (je to bitmapa), takže se po startu dopočítá
+            // z uloženého souboru — jinak by karta po restartu vypadala,
+            // jako by fotka vybraná nebyla.
+            val nahled = restored.obrazek?.let {
+                withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(it) }
+            }
+            _ltx.value = restored.copy(nahled = nahled)
+        }
+    }
+
+    private fun updateLtx(block: (LtxScene) -> LtxScene) {
+        val next = block(_ltx.value)
+        _ltx.value = next
+        ltxStore.save(next)
+    }
+
+    fun setLtxPopis(v: String) = updateLtx { it.copy(popis = v) }
+    fun setLtxPomer(v: cz.promptlab.h3video.data.LtxPomer) = updateLtx { it.copy(pomer = v) }
+    fun setLtxObrazek(f: java.io.File?) = updateLtx { it.copy(obrazek = f) }
+
+    /**
+     * Zvuk se ukládá i s délkou. Karta z ní počítá, kolik snímků z běhu vyjde,
+     * a varuje u dlouhých nahrávek — počítat ji znovu při každém překreslení
+     * obrazovky by znamenalo otevírat soubor v hlavním vlákně.
+     */
+    fun setLtxZvuk(f: java.io.File?, sekund: Float) = updateLtx {
+        it.copy(zvuk = f, zvukSekund = if (f == null) 0f else sekund)
+    }
+
+        fun setMusicMotor(v: cz.promptlab.h3video.data.MusicMotor) = updateMusic { it.copy(motor = v) }
     fun setMusicStyl(v: String) = updateMusic { it.copy(styl = v) }
     fun setMusicText(v: String) = updateMusic { it.copy(text = v) }
     fun setMusicSeconds(v: Int) = updateMusic {
@@ -2708,6 +2838,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Proč se vybraná nahrávka nedala použít. Prázdné = všechno v pořádku. */
     private val _predlohaChyba = MutableStateFlow<String?>(null)
     val musicPredlohaChyba: StateFlow<String?> = _predlohaChyba.asStateFlow()
+
+    private val _ltxZvukChyba = MutableStateFlow<String?>(null)
+    val ltxZvukChyba: StateFlow<String?> = _ltxZvukChyba.asStateFlow()
 
     fun setMusicRezim(v: cz.promptlab.h3video.data.MusicRezim) = updateMusic { it.copy(rezim = v) }
 
@@ -2744,6 +2877,102 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             updateMusic { it.copy(predloha = soubor) }
         }
     }
+
+    /**
+     * Zvuk pro kartu Video ze zvuku. Kopíruje se k sobě a rovnou se z něj
+     * změří délka: karta z ní počítá, kolik snímků z běhu vyjde, a otevírat
+     * soubor při každém překreslení obrazovky by znamenalo práci navíc
+     * v hlavním vlákně.
+     */
+    fun pickLtxZvuk(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val soubor = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<Application>()
+                    val jmeno = nazevSouboru(uri) ?: "rec.wav"
+                    val cil = java.io.File(app.filesDir, "ltx_zvuk_" + bezpecnyNazev(jmeno))
+                    app.filesDir.listFiles()
+                        ?.filter { it.name.startsWith("ltx_zvuk_") && it != cil }
+                        ?.forEach { it.delete() }
+                    app.contentResolver.openInputStream(uri)!!
+                        .use { vstup -> cil.outputStream().use { vstup.copyTo(it) } }
+                    cil.takeIf { it.length() > 0 }
+                }.getOrNull()
+            } ?: run {
+                _ltxZvukChyba.value = t("Zvuk se nepodařilo načíst. Zkus jiný soubor.")
+                return@launch
+            }
+            val sekund = withContext(Dispatchers.IO) { delkaZvuku(soubor) }
+            if (sekund <= 0f) {
+                soubor.delete()
+                _ltxZvukChyba.value =
+                    t("Z toho souboru nejde přečíst délka zvuku. Zkus MP3 nebo WAV.")
+                return@launch
+            }
+            _ltxZvukChyba.value = null
+            setLtxZvuk(soubor, sekund)
+        }
+    }
+
+    /** Fotka prvního snímku pro kartu Video ze zvuku. */
+    fun pickLtxObrazek(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val soubor = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<Application>()
+                    val resolver = app.contentResolver
+                    val ext = (android.webkit.MimeTypeMap.getSingleton()
+                        .getExtensionFromMimeType(resolver.getType(uri)) ?: "png").lowercase()
+                    val dir = java.io.File(app.filesDir, "ltx").also { it.mkdirs() }
+                    dir.listFiles()?.forEach { it.delete() }
+                    if (ext in setOf("png", "jpg", "jpeg", "webp")) {
+                        val cil = java.io.File(dir, "prvni.$ext")
+                        resolver.openInputStream(uri)?.use { vstup ->
+                            cil.outputStream().use { vstup.copyTo(it) }
+                        } ?: return@runCatching null
+                        cil.takeIf { it.length() > 0 }
+                    } else {
+                        // HEIC ze Samsungu server nepřečte — překóduje se na JPEG
+                        // i s otočením podle EXIF, stejně jako u Opravy fotky.
+                        val bmp = ImageUtils.loadUpright(getApplication(), uri, 4096)
+                            ?: return@runCatching null
+                        val cil = java.io.File(dir, "prvni.jpg")
+                        cil.outputStream().use {
+                            bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it)
+                        }
+                        cil
+                    }
+                }.getOrNull()
+            } ?: return@launch
+            val nahled = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(soubor) }
+            updateLtx { it.copy(obrazek = soubor, nahled = nahled) }
+        }
+    }
+
+    fun clearLtxObrazek() {
+        runCatching {
+            java.io.File(getApplication<Application>().filesDir, "ltx").listFiles()
+                ?.forEach { it.delete() }
+        }
+        updateLtx { it.copy(obrazek = null, nahled = null) }
+    }
+
+    fun clearLtxZvuk() {
+        _ltxZvukChyba.value = null
+        setLtxZvuk(null, 0f)
+    }
+
+    /** Délka zvuku v sekundách; 0 = nepřečetlo se (poškozený nebo cizí formát). */
+    private fun delkaZvuku(f: java.io.File): Float = runCatching {
+        val mmr = android.media.MediaMetadataRetriever()
+        mmr.use {
+            it.setDataSource(f.absolutePath)
+            it.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull()?.let { ms -> ms / 1000f } ?: 0f
+        }
+    }.getOrDefault(0f)
 
     fun clearMusicPredloha() {
         _predlohaChyba.value = null

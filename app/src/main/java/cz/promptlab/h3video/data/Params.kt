@@ -165,6 +165,8 @@ data class GenParams(
             Mode.THREESTEP -> 0
             Mode.MUSIC -> 0
             Mode.RESTORE -> 1
+            // Video ze zvuku: jedna fotka, ze které video začne.
+            Mode.LTXAUDIO -> 1
             // Úhel kamery: jedna fotka, ze které se objekt otočí.
             Mode.ANGLE -> 1
             // 3D model: jedna fotka předmětu.

@@ -357,6 +357,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             MusicSection(vm)
         }
 
+        // ------------------------------------------------- video ze zvuku
+        if (mode == Mode.LTXAUDIO) {
+            LtxSection(vm)
+        }
+
         // ----------------------------------------------------- oprava fotky
         if (mode == Mode.RESTORE) {
             RestoreSection(vm)
@@ -754,6 +759,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 mode == Mode.IMAGE -> t("Vygenerovat obrázek")
                 mode == Mode.THREESTEP -> t("Vygenerovat video")
                 mode == Mode.MUSIC -> t("Vygenerovat skladbu")
+                mode == Mode.LTXAUDIO -> t("Vygenerovat video ze zvuku")
                 mode == Mode.RESTORE -> t("Opravit fotku")
                 mode == Mode.ANGLE -> t("Otočit pohled")
                 mode == Mode.FACESWAP -> t("Vyměnit tvář")
