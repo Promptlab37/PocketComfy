@@ -149,6 +149,8 @@ object Slovnik {
         "Tvář" to "Face",
         "Zvětšit" to "Upscale",
         "Hudba" to "Music",
+        "trénovaná na Turbu" to "trained on Turbo",
+        "trénovaná na Base" to "trained on Base",
         "Video ze zvuku" to "Video from audio",
         "Ze zvuku" to "From audio",
         "LTX 2.5 — fotka mluví na tvůj zvuk, délka sedí přesně" to "LTX 2.5 — a photo speaks over your audio, length matches exactly",

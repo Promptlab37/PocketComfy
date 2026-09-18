@@ -31,6 +31,70 @@ object ImageLoras {
         return if (family == expected) LoraCompatibility.MATCH else LoraCompatibility.INCOMPATIBLE
     }
 
+    /**
+     * Na kterou větev Z-Image je LoRA trénovaná.
+     *
+     * Turbo je destilát Z-Image Base, takže se soubory **načtou na obojím** —
+     * tvary tenzorů sedí. Liší se ale režim, ve kterém vznikly: Turbo jede na
+     * osmi krocích s cfg 1, Base na dvaceti s cfg 2+. LoRA z Turba se proto
+     * na Base často přepálí a LoRA z Base je na Turbu naopak slabá.
+     *
+     * Rozeznat se to dá jen z názvu a metadat — `ss_base_model_version` u obou
+     * větví říká jen „zimage". Proto se podle toho nic neskrývá, jen řadí
+     * a popisuje: zahodit soubor kvůli tomu, že v názvu nemá „base", by
+     * uživateli sebralo LoRA, které mu fungují.
+     */
+    enum class ZVetev { TURBO, BASE, NEURCENO }
+
+    fun vetev(file: EditLoraFile): ZVetev {
+        val zdroj = norm(
+            (file.metadata?.let { m ->
+                listOf("ss_output_name", "ss_base_model_version", "modelspec.architecture",
+                    "modelspec.title")
+                    .mapNotNull { k -> m.optString(k).takeIf(String::isNotBlank) }
+                    .joinToString(" ")
+            }.orEmpty()) + " " + file.name
+        )
+        val turbo = "turbo" in zdroj || "zit" in zdroj
+        val base = "base" in zdroj || "zib" in zdroj
+        return when {
+            turbo && !base -> ZVetev.TURBO
+            base && !turbo -> ZVetev.BASE
+            else -> ZVetev.NEURCENO      // „Base & Turbo", nebo nic neříkající název
+        }
+    }
+
+    /** Větev, kterou má zvolený model — pro řazení nabídky. */
+    fun vetevModelu(model: T2iModel): ZVetev = when (model) {
+        T2iModel.BASE -> ZVetev.BASE
+        T2iModel.TURBO, T2iModel.PHOTOREAL -> ZVetev.TURBO
+        else -> ZVetev.NEURCENO
+    }
+
+    /**
+     * Nabídka seřazená tak, aby nahoře byly LoRA pro zvolenou větev. Nic se
+     * nevyhazuje — jen se to, co patří jinam, propadne dolů.
+     */
+    fun seradPodleVetve(model: T2iModel, files: List<EditLoraFile>): List<EditLoraFile> {
+        val chci = vetevModelu(model)
+        if (chci == ZVetev.NEURCENO) return files
+        return files.sortedBy { f ->
+            when (vetev(f)) {
+                chci -> 0
+                ZVetev.NEURCENO -> 1
+                else -> 2
+            }
+        }
+    }
+
+    /** Popisek pod jménem v nabídce; prázdný, když není co dodat. */
+    fun poznamkaVetve(model: T2iModel, file: EditLoraFile): String {
+        val chci = vetevModelu(model)
+        val ma = vetev(file)
+        if (chci == ZVetev.NEURCENO || ma == ZVetev.NEURCENO || ma == chci) return ""
+        return if (ma == ZVetev.TURBO) t("trénovaná na Turbu") else t("trénovaná na Base")
+    }
+
     fun selected(p: GenParams): List<EditLora> {
         val model = T2iModel.zId(p.zimageModel)
         p.imageLoras[model.id]?.let { return it }

@@ -44,6 +44,10 @@ fun ImageLoraSection(vm: MainViewModel, params: GenParams) {
     for (slot in 0..1) key(model.id, slot) {
         ModelLoraSection(model.stitek, selected.getOrElse(slot) { EditLora() }, catalog,
             compatibility = { ImageLoras.compatibility(model, it) },
+            // Turbo i Base jsou jedna rodina — soubory se načtou na obojím.
+            // Nahoru proto patří ty pro zvolenou větev, zbytek se jen popíše.
+            serad = { ImageLoras.seradPodleVetve(model, it) },
+            poznamka = { ImageLoras.poznamkaVetve(model, it) },
             refresh = { vm.refreshEditLoras(force = true) },
             select = { name, confirmed -> vm.setImageLora(slot, name, confirmed) },
             strength = { vm.setImageLoraStrength(slot, it) },
@@ -57,6 +61,8 @@ private fun ModelLoraSection(
     compatibility: (EditLoraFile) -> LoraCompatibility, refresh: () -> Unit,
     select: (String, Boolean) -> Unit, strength: (Float) -> Unit,
     title: String = t("LoRA pro %s").format(modelName),
+    serad: (List<EditLoraFile>) -> List<EditLoraFile> = { it },
+    poznamka: (EditLoraFile) -> String = { "" },
 ) {
     var picker by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -112,14 +118,20 @@ private fun ModelLoraSection(
                 Text(if (unknown) t("U těchto souborů chybí označení modelu. Vyberte jen LoRA určenou pro aktuální model.")
                     else t("Výběr podle základního modelu v metadatech nebo názvu souboru."),
                     style = MaterialTheme.typography.bodySmall, color = TextMid)
-                val files = (if (unknown) unclassified else matching).filter { it.name.contains(query.trim(), true) }
+                val files = serad(
+                    (if (unknown) unclassified else matching).filter { it.name.contains(query.trim(), true) }
+                )
                 LazyColumn(Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
                     item {
                         ListItem(headlineContent = { Text(t("Bez doplňkové LoRA")) },
                             modifier = Modifier.clickable { select("", false); picker = false })
                     }
                     items(files, key = { it.name }) { file ->
+                        val note = poznamka(file)
                         ListItem(headlineContent = { Text(file.name, style = MaterialTheme.typography.bodyMedium) },
+                            supportingContent = if (note.isBlank()) null else {
+                                { Text(note, style = MaterialTheme.typography.bodySmall, color = Amber) }
+                            },
                             trailingContent = { if (selected.name == file.name) Icon(Icons.Default.Check, null, tint = Cyan) },
                             modifier = Modifier.clickable {
                                 if (unknown) confirm = file.name
