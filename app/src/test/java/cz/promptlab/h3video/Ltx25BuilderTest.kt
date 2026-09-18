@@ -3,6 +3,7 @@ package cz.promptlab.h3video
 import cz.promptlab.h3video.comfy.Ltx25Builder
 import cz.promptlab.h3video.comfy.Stage
 import cz.promptlab.h3video.data.LtxPomer
+import cz.promptlab.h3video.data.LtxRezim
 import cz.promptlab.h3video.data.LtxScene
 import cz.promptlab.h3video.data.ltxProblem
 import org.json.JSONObject
@@ -25,11 +26,14 @@ import java.io.File
 class Ltx25BuilderTest {
 
     private val sablona: String = File("src/main/res/raw/workflow_ltx25_audio.json").readText()
+    private val sablonaT2v: String = File("src/main/res/raw/workflow_ltx25_t2v.json").readText()
+    private val sablonaI2v: String = File("src/main/res/raw/workflow_ltx25_i2v.json").readText()
 
     private fun JSONObject.inputs(node: String): JSONObject =
         getJSONObject(node).getJSONObject("inputs")
 
     private fun scene() = LtxScene(
+        rezim = LtxRezim.ZVUK,
         obrazek = File("neexistuje.png"),
         zvuk = File("neexistuje.wav"),
         zvukSekund = 8.4f,
@@ -115,19 +119,80 @@ class Ltx25BuilderTest {
     }
 
     @Test
+    fun `z textu se fotka ani zvuk nedosazuji`() {
+        val s = scene().copy(rezim = LtxRezim.TEXT, sekundy = 6f)
+        val wf = Ltx25Builder.build(sablonaT2v, s, 11L, "prvni.png", "rec.wav")
+
+        // Předloha Z textu ty uzly vůbec nemá — sáhnout na ně by byla výjimka.
+        assertFalse(wf.has(Ltx25Builder.N_OBRAZEK))
+        assertFalse(wf.has(Ltx25Builder.N_ZVUK))
+        // Délka jde do TÉHOŽ vzorce fps × délka + 1 jako u nahraného zvuku.
+        assertEquals(6.0, wf.inputs(Ltx25Builder.N_SEKUNDY).getDouble("value"), 0.001)
+        assertEquals("a * b + 1", wf.inputs(Ltx25Builder.N_DELKA).getString("expression"))
+        assertEquals(
+            Ltx25Builder.N_SEKUNDY,
+            wf.inputs(Ltx25Builder.N_DELKA).getJSONArray("values.b").getString(0),
+        )
+    }
+
+    @Test
+    fun `z obrazku se dosadi fotka a delka, zvuk ne`() {
+        val s = scene().copy(rezim = LtxRezim.OBRAZEK, sekundy = 8f)
+        val wf = Ltx25Builder.build(sablonaI2v, s, 11L, "prvni.png", "rec.wav")
+
+        assertEquals("prvni.png", wf.inputs(Ltx25Builder.N_OBRAZEK).getString("image"))
+        assertFalse(wf.has(Ltx25Builder.N_ZVUK))
+        assertEquals(8.0, wf.inputs(Ltx25Builder.N_SEKUNDY).getDouble("value"), 0.001)
+    }
+
+    @Test
+    fun `u vymysleneho zvuku se latent nemaskuje`() {
+        // Maska s hodnotou 0 znamená „tenhle zvuk neměň" — to má smysl jen
+        // u nahraného souboru. U vymýšleného zvuku by ho zmrazila na tichu.
+        val t2v = JSONObject(sablonaT2v)
+        val i2v = JSONObject(sablonaI2v)
+        for (wf in listOf(t2v, i2v)) {
+            assertFalse(wf.has("468"))      // SetLatentNoiseMask
+            assertFalse(wf.has("465"))      // LTXVAudioVAEEncode
+            assertTrue(wf.has("480"))       // LTXVEmptyLatentAudio
+            assertTrue(wf.has("482"))       // LTXVAudioVAEDecode
+        }
+        // Vygenerovaný zvuk musí skončit ve videu, ne se zahodit.
+        assertEquals("482", t2v.inputs("451").getJSONArray("audio").getString(0))
+    }
+
+    @Test
+    fun `druhy pruchod navazuje na zvuk z prvniho`() {
+        val wf = JSONObject(sablonaI2v)
+        // Zvuk vznikl v prvním průchodu (uzel 439 = rozdělení jeho výsledku),
+        // takže druhý průchod musí navázat na něj, ne na prázdný latent.
+        val audio = wf.inputs("443").getJSONArray("audio_latent")
+        assertEquals("439", audio.getString(0))
+        assertEquals(1, audio.getInt(1))
+    }
+
+    @Test
     fun `karta rekne, co chybi`() {
         val fotka = File.createTempFile("ltx", ".png").also { it.deleteOnExit() }
         val zvuk = File.createTempFile("ltx", ".wav").also { it.deleteOnExit() }
 
+        // Z textu stačí popis — fotka ani zvuk se po nikom nechtějí.
+        assertNull(ltxProblem(LtxScene(rezim = LtxRezim.TEXT, popis = "a cat")))
+        assertNotNull(ltxProblem(LtxScene(rezim = LtxRezim.TEXT)))
+        // Z obrázku chce fotku, ale ne zvuk.
+        assertNull(ltxProblem(LtxScene(rezim = LtxRezim.OBRAZEK, obrazek = fotka, popis = "a cat")))
+
         assertNotNull(ltxProblem(LtxScene()))
         // Každý chybějící kus má vlastní hlášku — ať člověk ví, co doplnit.
         assertFalse(ltxProblem(LtxScene()) == ltxProblem(LtxScene(obrazek = fotka)))
-        assertNotNull(ltxProblem(LtxScene(obrazek = fotka, zvuk = zvuk)))
-        assertNull(ltxProblem(LtxScene(obrazek = fotka, zvuk = zvuk, popis = "a cat")))
+        assertNotNull(ltxProblem(LtxScene(rezim = LtxRezim.ZVUK, obrazek = fotka, zvuk = zvuk)))
+        assertNull(ltxProblem(
+            LtxScene(rezim = LtxRezim.ZVUK, obrazek = fotka, zvuk = zvuk, popis = "a cat")
+        ))
         // Neexistující soubor se počítá jako nevybraný (mohl zmizet z cache).
-        assertNotNull(
-            ltxProblem(LtxScene(obrazek = File("neexistuje.png"), zvuk = zvuk, popis = "a cat"))
-        )
+        assertNotNull(ltxProblem(LtxScene(
+            rezim = LtxRezim.ZVUK, obrazek = File("neexistuje.png"), zvuk = zvuk, popis = "a cat",
+        )))
     }
 
     @Test
@@ -142,8 +207,20 @@ class Ltx25BuilderTest {
 
     @Test
     fun `snimku podle delky zvuku`() {
-        assertEquals(0, LtxScene().snimku)
-        assertEquals(211, LtxScene(zvukSekund = 8.4f).snimku)
+        assertEquals(211, LtxScene(rezim = LtxRezim.ZVUK, zvukSekund = 8.4f).snimku)
+        // Bez vybraného zvuku není z čeho počítat.
+        assertEquals(0, LtxScene(rezim = LtxRezim.ZVUK).snimku)
+        // U zbylých režimů se počítá ze zadané délky, ne ze souboru.
+        assertEquals(151, LtxScene(rezim = LtxRezim.TEXT, sekundy = 6f).snimku)
+    }
+
+    @Test
+    fun `kazdy rezim ma vlastni predlohu`() {
+        val jmena = LtxRezim.entries.map { it.sablona }
+        assertEquals(jmena.size, jmena.toSet().size)
+        LtxRezim.entries.forEach {
+            assertTrue(File("src/main/res/raw/${it.sablona}.json").exists())
+        }
     }
 
     @Test
@@ -152,6 +229,8 @@ class Ltx25BuilderTest {
         assertEquals("", puvodni.inputs(Ltx25Builder.N_OBRAZEK).getString("image"))
         assertEquals("", puvodni.inputs(Ltx25Builder.N_ZVUK).getString("audio"))
         assertEquals("", puvodni.inputs(Ltx25Builder.N_POPIS).getString("text"))
+        assertEquals("", JSONObject(sablonaT2v).inputs(Ltx25Builder.N_POPIS).getString("text"))
+        assertEquals("", JSONObject(sablonaI2v).inputs(Ltx25Builder.N_OBRAZEK).getString("image"))
     }
 
     @Test

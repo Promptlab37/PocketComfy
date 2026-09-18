@@ -1059,7 +1059,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             prompt = s.popis,
                             steps = cz.promptlab.h3video.comfy.Ltx25Builder.STEPS,
                         ),
-                        listOfNotNull(s.obrazek),
+                        if (s.rezim.chceObrazek) listOfNotNull(s.obrazek) else emptyList(),
                         ltxScene = s,
                     )
                 }
@@ -2806,6 +2806,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ltxStore.save(next)
     }
 
+    fun setLtxRezim(v: cz.promptlab.h3video.data.LtxRezim) = updateLtx { it.copy(rezim = v) }
+    fun setLtxSekundy(v: Float) = updateLtx {
+        it.copy(sekundy = v.coerceIn(LtxScene.MIN_SEKUND, LtxScene.MAX_SEKUND))
+    }
     fun setLtxPopis(v: String) = updateLtx { it.copy(popis = v) }
     fun setLtxPomer(v: cz.promptlab.h3video.data.LtxPomer) = updateLtx { it.copy(pomer = v) }
     fun setLtxObrazek(f: java.io.File?) = updateLtx { it.copy(obrazek = f) }

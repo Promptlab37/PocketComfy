@@ -2,11 +2,12 @@ package cz.promptlab.h3video.comfy
 
 import android.content.Context
 import cz.promptlab.h3video.R
+import cz.promptlab.h3video.data.LtxRezim
 import cz.promptlab.h3video.data.LtxScene
 import org.json.JSONObject
 
 /**
- * Stavitel grafu pro kartu **Video ze zvuku** — LTX 2.5, dvouprůchodová
+ * Stavitel grafu pro kartu **LTX 2.5** — dvouprůchodová
  * destilovaná předloha (`res/raw/workflow_ltx25_audio.json`, převzatá
  * z uživatelova workflow „LTX-2.5 Image Audio to Video – Lipsync").
  *
@@ -41,17 +42,26 @@ object Ltx25Builder {
     const val N_NOISE_1 = "433"
     const val N_NOISE_2 = "442"
 
+    /** Ručně zadaná délka v sekundách (režimy Z textu a Z obrázku). */
+    const val N_SEKUNDY = "481"
+
     /** Kroky obou průchodů dohromady — podle nich se počítá ukazatel průběhu. */
     const val STEPS = 11
 
-    private var cached: String? = null
+    private val cached = mutableMapOf<LtxRezim, String>()
 
-    private fun template(ctx: Context): String = cached ?: ctx.resources
-        .openRawResource(R.raw.workflow_ltx25_audio)
-        .bufferedReader().use { it.readText() }.also { cached = it }
+    private fun zdroj(rezim: LtxRezim): Int = when (rezim) {
+        LtxRezim.TEXT -> R.raw.workflow_ltx25_t2v
+        LtxRezim.OBRAZEK -> R.raw.workflow_ltx25_i2v
+        LtxRezim.ZVUK -> R.raw.workflow_ltx25_audio
+    }
+
+    private fun template(ctx: Context, rezim: LtxRezim): String = cached.getOrPut(rezim) {
+        ctx.resources.openRawResource(zdroj(rezim)).bufferedReader().use { it.readText() }
+    }
 
     fun build(ctx: Context, scene: LtxScene, seed: Long, obrazek: String, zvuk: String): JSONObject =
-        build(template(ctx), scene, seed, obrazek, zvuk)
+        build(template(ctx, scene.rezim), scene, seed, obrazek, zvuk)
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
     fun build(
@@ -59,12 +69,21 @@ object Ltx25Builder {
     ): JSONObject {
         val wf = JSONObject(template)
 
-        wf.inputs(N_OBRAZEK).put("image", obrazek)
-        wf.inputs(N_ZVUK).apply {
-            put("audio", zvuk)
-            put("start_time", 0.0)
-            // 0 = celý soubor. Cokoli jiného je strop, který by řeč utnul.
-            put("duration", 0.0)
+        // Uzly, které v předloze daného režimu vůbec nejsou, se nedosazují:
+        // graf Z textu nemá načítač fotky a graf bez nahraného zvuku nemá
+        // načítač zvuku. Sahat na ně by skončilo výjimkou.
+        if (scene.rezim.chceObrazek) wf.inputs(N_OBRAZEK).put("image", obrazek)
+        if (scene.rezim == LtxRezim.ZVUK) {
+            wf.inputs(N_ZVUK).apply {
+                put("audio", zvuk)
+                put("start_time", 0.0)
+                // 0 = celý soubor. Cokoli jiného je strop, který by řeč utnul.
+                put("duration", 0.0)
+            }
+        } else {
+            // Délka jde do TÉHOŽ vzorce `fps × délka + 1` jako u nahraného
+            // zvuku — jen se druhý činitel bere ze zadání, ne ze souboru.
+            wf.inputs(N_SEKUNDY).put("value", scene.sekundy.toDouble())
         }
         wf.inputs(N_POPIS).put("text", scene.popis)
         wf.inputs(N_ROZLISENI).put("aspect_ratio", scene.pomer.hodnota)
@@ -84,6 +103,7 @@ object Ltx25Builder {
         getJSONObject(node).getJSONObject("inputs")
 
     fun stageForClass(cls: String?): Stage = when (cls) {
+        "LTXVEmptyLatentAudio", "LTXVAudioVAEDecode" -> Stage.ENCODING
         "UNETLoader", "CLIPLoader", "VAELoader", "LatentUpscaleModelLoader" -> Stage.MODELS
         "LoadImage", "VHS_LoadAudioUpload", "ResizeImageMaskNode",
         "LTXVPreprocess", "ResolutionSelector" -> Stage.REFERENCES

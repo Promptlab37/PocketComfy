@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.promptlab.h3video.MainViewModel
 import cz.promptlab.h3video.data.LtxPomer
+import cz.promptlab.h3video.data.LtxRezim
 import cz.promptlab.h3video.data.LtxScene
 import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.ui.theme.Outline1
@@ -43,12 +44,11 @@ import cz.promptlab.h3video.ui.theme.TextLow
 import cz.promptlab.h3video.ui.theme.TextMid
 
 /**
- * Karta **Video ze zvuku** (LTX 2.5).
+ * Karta **LTX 2.5** — jeden model, tři způsoby zadání.
  *
- * Proti ostatním video kartám tu schválně **není délka**. Počet snímků si
- * spočítá graf z délky nahraného zvuku (`fps × délka + 1`), takže nejde
- * zadat kratší video, než je řeč — a přesně kvůli tomu karta vznikla.
- * Ukazuje se proto jen to, co z toho vyjde.
+ * Karta se podle režimu mění: fotka zmizí u „Z textu", pole délky zmizí
+ * u „Ze zvuku" (tam ji určuje nahraný soubor a nejde ji přebít — kvůli tomu
+ * ten režim vznikl). Nabízet pole, které graf zahodí, je horší než ho skrýt.
  */
 @Composable
 fun LtxSection(vm: MainViewModel) {
@@ -63,7 +63,22 @@ fun LtxSection(vm: MainViewModel) {
         ActivityResultContracts.GetContent()
     ) { uri -> vm.pickLtxZvuk(uri) }
 
-    SectionCard(
+    SectionCard(title = t("Co se dělá"), subtitle = t("Jeden model, tři způsoby zadání")) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillRow(
+                items = LtxRezim.entries.toList(),
+                selected = scene.rezim,
+                label = { it.title },
+                onSelect = { vm.setLtxRezim(it) },
+            )
+            Text(
+                scene.rezim.detail,
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+            )
+        }
+    }
+
+    if (scene.rezim.chceObrazek) SectionCard(
         title = t("Fotka"),
         subtitle = t("První snímek videa — z něj se bere podoba i prostředí")
     ) {
@@ -105,7 +120,7 @@ fun LtxSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(
+    if (scene.rezim == LtxRezim.ZVUK) SectionCard(
         title = t("Zvuk"),
         subtitle = scene.zvuk?.name ?: t("Řeč nebo zpěv — video se na něj napasuje")
     ) {
@@ -143,14 +158,33 @@ fun LtxSection(vm: MainViewModel) {
         }
     }
 
+    if (scene.rezim.zadavaSeDelka) SectionCard(
+        title = t("Délka"),
+        subtitle = t("Kolik sekund má video trvat"),
+    ) {
+        LabeledSlider(
+            t("Délka"), "%.0f s".format(scene.sekundy), scene.sekundy,
+            LtxScene.MIN_SEKUND..LtxScene.MAX_SEKUND,
+            onChange = { vm.setLtxSekundy(it) },
+        )
+        Text(
+            t("%d snímků při %d fps").format(scene.snimku, LtxScene.FPS),
+            style = MaterialTheme.typography.bodySmall, color = TextLow,
+        )
+    }
+
     SectionCard(
         title = t("Scéna"),
-        subtitle = t("Co je v záběru a co se děje — anglicky")
+        subtitle = if (scene.rezim == LtxRezim.ZVUK)
+            t("Co je v záběru a co se děje — anglicky")
+        else t("Co je vidět A co je slyšet — anglicky")
     ) {
         DarkTextField(
             value = scene.popis,
             onValueChange = { vm.setLtxPopis(it) },
-            placeholder = t("A news anchor in a dark blue studio speaks to the camera…"),
+            placeholder = if (scene.rezim == LtxRezim.ZVUK)
+                t("A news anchor in a dark blue studio speaks to the camera…")
+            else t("A rainy night street, neon signs, distant traffic and rain on metal…"),
             minHeight = 110.dp,
             onClear = { vm.setLtxPopis("") },
         )

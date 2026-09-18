@@ -5,6 +5,46 @@ import androidx.compose.runtime.Immutable
 import org.json.JSONObject
 
 /**
+ * Co se na kartě **LTX 2.5** dělá. Jeden model, tři způsoby zadání —
+ * lišící se jen tím, co do grafu přijde a odkud se bere délka.
+ *
+ * Zvuk vzniká u všech tří: LTX 2.5 je model obrazu **i zvuku**. U [TEXT]
+ * a [OBRAZEK] si ho vymyslí (prázdný zvukový latent, do zadání patří i popis
+ * zvuku), u [ZVUK] dostane hotový soubor a napasuje na něj obraz.
+ */
+enum class LtxRezim(
+    /** Předloha v `res/raw`; každý režim má vlastní, ověřenou proti serveru. */
+    val sablona: String,
+    private val titleCs: String,
+    private val detailCs: String,
+) {
+    TEXT(
+        sablona = "workflow_ltx25_t2v",
+        titleCs = "Z textu",
+        detailCs = "Jen z popisu. Zvuk k tomu model vymyslí sám",
+    ),
+    OBRAZEK(
+        sablona = "workflow_ltx25_i2v",
+        titleCs = "Z obrázku",
+        detailCs = "Rozhýbe fotku a dodá k ní zvuk",
+    ),
+    ZVUK(
+        sablona = "workflow_ltx25_audio",
+        titleCs = "Ze zvuku",
+        detailCs = "Fotka mluví na tvůj zvuk — délka sedí přesně na něj",
+    );
+
+    val title: String get() = t(titleCs)
+    val detail: String get() = t(detailCs)
+
+    /** Bere tenhle režim fotku prvního snímku? */
+    val chceObrazek: Boolean get() = this != TEXT
+
+    /** Zadává se délka ručně? U [ZVUK] ji určuje nahraný soubor. */
+    val zadavaSeDelka: Boolean get() = this != ZVUK
+}
+
+/**
  * Tvar obrazu u karty **Video ze zvuku**. Hodnoty jsou přesně ty, které zná
  * uzel `ResolutionSelector` — jiný řetězec by uzel neuměl přečíst.
  */
@@ -36,6 +76,8 @@ enum class LtxPomer(
  */
 @Immutable
 data class LtxScene(
+    /** Způsob zadání — určuje předlohu i to, která pole karty platí. */
+    val rezim: LtxRezim = LtxRezim.OBRAZEK,
     /** První snímek — z něj se bere podoba i prostředí. */
     val obrazek: java.io.File? = null,
     /** Náhled vybrané fotky; do uloženého zadání nepatří, jen na obrazovku. */
@@ -51,14 +93,21 @@ data class LtxScene(
     val popis: String = "",
     /** Tvar obrazu. */
     val pomer: LtxPomer = LtxPomer.NA_VYSKU,
+    /**
+     * Délka v sekundách u režimů [LtxRezim.TEXT] a [LtxRezim.OBRAZEK].
+     * U [LtxRezim.ZVUK] se nepoužije — tam ji určuje nahraný soubor.
+     */
+    val sekundy: Float = 5f,
 ) {
     /**
      * Kolik snímků z toho vyjde při 25 fps — jen pro popisek v kartě.
      * Zaokrouhluje se: 8,4 s je v plovoucí čárce o kousek míň než 210 snímků
      * a useknutím by karta hlásila o snímek míň, než graf opravdu spočítá.
      */
-    val snimku: Int get() =
-        if (zvukSekund > 0f) Math.round(FPS * zvukSekund) + 1 else 0
+    val snimku: Int get() {
+        val delka = if (rezim == LtxRezim.ZVUK) zvukSekund else sekundy
+        return if (delka > 0f) Math.round(FPS * delka) + 1 else 0
+    }
 
     companion object {
         /** Snímková frekvence předlohy; graf z ní počítá délku latentu. */
@@ -70,13 +119,19 @@ data class LtxScene(
          * které karta varuje.
          */
         const val ROZUMNY_STROP_S = 20f
+
+        /** Meze ručně zadávané délky. */
+        const val MIN_SEKUND = 2f
+        const val MAX_SEKUND = 20f
     }
 }
 
 /** Co kartě chybí, než se dá spustit. */
 fun ltxProblem(s: LtxScene): String? = when {
-    s.obrazek?.exists() != true -> t("Vyber fotku, ze které video začne.")
-    s.zvuk?.exists() != true -> t("Vyber zvuk, na který se bude mluvit.")
+    s.rezim.chceObrazek && s.obrazek?.exists() != true ->
+        t("Vyber fotku, ze které video začne.")
+    s.rezim == LtxRezim.ZVUK && s.zvuk?.exists() != true ->
+        t("Vyber zvuk, na který se bude mluvit.")
     s.popis.isBlank() -> t("Popiš scénu — kdo je v záběru a co dělá.")
     else -> null
 }
@@ -84,10 +139,17 @@ fun ltxProblem(s: LtxScene): String? = when {
 /** Upozornění, která nebrání spuštění. */
 fun ltxHints(s: LtxScene): List<String> {
     val out = mutableListOf<String>()
-    out += t("Délku videa určuje zvuk — model ji nemá jak useknout.")
-    if (s.zvukSekund > LtxScene.ROZUMNY_STROP_S) {
-        out += t("Zvuk je delší než 20 s. Běh poroste do desítek minut, ") +
-            t("protože se model nevejde do paměti grafiky celý.")
+    if (s.rezim == LtxRezim.ZVUK) {
+        out += t("Délku videa určuje zvuk — model ji nemá jak useknout.")
+        if (s.zvukSekund > LtxScene.ROZUMNY_STROP_S) {
+            out += t("Zvuk je delší než 20 s. Běh poroste do desítek minut, ") +
+                t("protože se model nevejde do paměti grafiky celý.")
+        }
+    } else {
+        // LTX 2.5 skládá obraz i zvuk najednou. Kdo do zadání napíše jen to,
+        // co je vidět, dostane zvuk odhadnutý ze scény — a bývá to šum.
+        out += t("Napiš i to, co má být slyšet — hlas, ruch, hudbu. ") +
+            t("Model skládá obraz a zvuk zároveň.")
     }
     out += t("Popis piš anglicky — model je učený na anglické popisky.")
     return out
@@ -101,6 +163,8 @@ class LtxStore(ctx: Context) {
     fun load(): LtxScene = runCatching {
         val j = JSONObject(sp.getString(KEY, "{}")!!)
         LtxScene(
+            rezim = runCatching { LtxRezim.valueOf(j.optString("rezim")) }
+                .getOrDefault(LtxRezim.OBRAZEK),
             // Soubor mohl mezitím zmizet (úklid cache, přeinstalace) — pak
             // je to, jako by vybraný nebyl.
             obrazek = j.optString("obrazek").takeIf { it.isNotBlank() }
@@ -111,6 +175,8 @@ class LtxStore(ctx: Context) {
             popis = j.optString("popis"),
             pomer = runCatching { LtxPomer.valueOf(j.optString("pomer")) }
                 .getOrDefault(LtxPomer.NA_VYSKU),
+            sekundy = j.optDouble("sekundy", 5.0).toFloat()
+                .coerceIn(LtxScene.MIN_SEKUND, LtxScene.MAX_SEKUND),
         )
     }.getOrDefault(LtxScene())
 
@@ -118,6 +184,8 @@ class LtxStore(ctx: Context) {
         sp.edit().putString(
             KEY,
             JSONObject()
+                .put("rezim", s.rezim.name)
+                .put("sekundy", s.sekundy.toDouble())
                 .put("obrazek", s.obrazek?.absolutePath ?: "")
                 .put("zvuk", s.zvuk?.absolutePath ?: "")
                 .put("zvukSekund", s.zvukSekund.toDouble())

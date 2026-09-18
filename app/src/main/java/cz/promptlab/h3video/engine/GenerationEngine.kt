@@ -448,8 +448,10 @@ object GenerationEngine {
         } else if (inpaintScene != null) {
             "Domalovat · " + inpaintScene.model.title
         } else if (ltxScene != null) {
-            "Video ze zvuku · LTX 2.5" +
-                (if (ltxScene.zvukSekund > 0f) " · %.1f s".format(ltxScene.zvukSekund) else "")
+            "LTX 2.5 · " + ltxScene.rezim.title +
+                (if (ltxScene.snimku > 0)
+                    " · %.1f s".format(ltxScene.snimku / cz.promptlab.h3video.data.LtxScene.FPS.toFloat())
+                else "")
         } else if (musicScene != null) {
             "Hudba · " + musicScene.motor.title + " · " + musicScene.delka + " s"
         } else if (t2i) {
@@ -748,7 +750,8 @@ object GenerationEngine {
         // Video ze zvuku: řeč jde na server jako hotový soubor a graf si z jeho
         // délky spočítá počet snímků. Proto se smí nahrát jen celý — zkracovat
         // ho tady by znamenalo přesně tu useknutou větu, kvůli které karta vznikla.
-        val ltxZvuk = ltxScene?.zvuk
+        val ltxZvuk = ltxScene
+            ?.takeIf { it.rezim == cz.promptlab.h3video.data.LtxRezim.ZVUK }?.zvuk
             ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
         // Namluvené repliky (dialogy). Pořadí je závazné – podle něj se
         // v promptu číslují značky <Audio N>.

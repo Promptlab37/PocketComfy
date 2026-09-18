@@ -179,14 +179,18 @@ enum class Mode(
     ),
 
     /**
-     * LTX 2.5: fotka + hotový zvukový soubor → video, které na ten zvuk mluví.
-     * Jediná karta, kde se délka nezadává — graf si ji spočítá z délky zvuku
-     * (`fps × délka + 1`), takže model nemá jak větu neodříct do konce.
+     * LTX 2.5 — model obrazu **i zvuku**, tři způsoby zadání pod jednou
+     * kartou: z textu, z obrázku a z hotového zvuku.
+     *
+     * U režimu „Ze zvuku" se délka nezadává: graf si ji spočítá z délky
+     * nahraného souboru (`fps × délka + 1`), takže model nemá jak větu
+     * neodříct do konce. U zbylých dvou se zadává v sekundách a jde do
+     * téhož vzorce.
      */
     LTXAUDIO(
-        titleCs = "Video ze zvuku",
-        shortCs = "Ze zvuku",
-        detailCs = "LTX 2.5 — fotka mluví na tvůj zvuk, délka sedí přesně"
+        titleCs = "LTX 2.5",
+        shortCs = "LTX",
+        detailCs = "Video ze zadání, z fotky nebo na hotový zvuk — s nativním zvukem"
     );
 
     /** Název karty v jazyce rozhraní (překlad až při čtení). */
