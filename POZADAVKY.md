@@ -48,6 +48,14 @@ Obrázek). Platí u nich ale minimální verze jádra: uzly **TRELLIS.2** a
 **YuE2** na kartě Hudba **až od 0.36.0**. Na starší verzi se nic neinstaluje,
 ComfyUI se aktualizuje.
 
+Karta **Video ze zvuku** potřebuje balík
+[ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) (uzly
+`LTXVAudioVAEEncode`, `LTXVConcatAVLatent`, `LTXVSeparateAVLatent`,
+`LTXVLatentUpsampler`, `LTXVImgToVideoInplace`, `LTXVDualCFGGuider`,
+`LTXVPreprocess`, `LatentUpscaleModelLoader`) a k tomu VideoHelperSuite kvůli
+`VHS_LoadAudioUpload`. Verze balíku musí znát **LTX 2.5** — starší zná jen 2.3
+a část uzlů v ní chybí.
+
 Pozn.: balíky LSI-Minimax-Segment-Timeline a balík s uzly Krea2Edit/H3
 nejsou veřejně dostupné — bez nich nepojedou karty Časová osa a Úprava
 obrázku (a živý náhled u videa). Ostatní karty fungují normálně.
@@ -76,6 +84,9 @@ po kartách, ať nestahuješ, co nepoužiješ.
   **od 0.36.0**, stejně jako YuE2.
 
 **diffusion_models/**
+- `ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors`
+  (karta Video ze zvuku, **21 GB**), z
+  [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video z textu/obrázků)
 - `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (reference → video, Dialogy)
   — obojí z [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3),
@@ -102,6 +113,9 @@ v kterékoli z nich, stěhovat ho nemusíš.
   načítá ho uzel `UnetLoaderGGUF` z balíku ComfyUI-GGUF
 
 **text_encoders/**
+- `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors` (karta Video
+  ze zvuku, **15 GB**), z
+  [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` (MiniMax H3, 14,6 GB)
 - `qwen3vl_32b_minimax_h3_int8_convrot.safetensors` (karta 3 kroky, 25,3 GB) —
   ta pred‑loha má enkodér zapsaný napevno, nvfp4 se u ní nepoužije
@@ -115,6 +129,9 @@ v kterékoli z nich, stěhovat ho nemusíš.
   [Comfy-Org/ERNIE-Image](https://huggingface.co/Comfy-Org/ERNIE-Image)
 
 **vae/**
+- `ltx-2.5-video-vae-bf16.safetensors` a `ltx-2.5-audio-vae-bf16.safetensors`
+  (karta Video ze zvuku; bez toho druhého se zvuk nedostane do latentu), z
+  [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_video_vae_fp16.safetensors`
 - `minimax_h3_audio_vae_fp32.safetensors`
 - `qwen_image_vae.safetensors` (Krea 2, Oprava fotky, Úhel kamery)
@@ -140,6 +157,9 @@ v kterékoli z nich, stěhovat ho nemusíš.
   z fotky úhel objektivu), z [Comfy-Org/MoGe](https://huggingface.co/Comfy-Org/MoGe)
 
 **latent_upscale_models/**
+- `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` (karta Video ze
+  zvuku — druhý průchod, 0,95 GB), z
+  [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_latent_upscaler_3d_fp16.safetensors` (Dlouhé video — rychlý první
   záběr — a karta 3 kroky), z [LBH-123-AI/Minimax_h3_latent_Upscaler](https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler)
 

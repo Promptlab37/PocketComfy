@@ -159,6 +159,18 @@ if /i "!ODP!"=="a" (
   echo   Pozn.: k tomu je potreba i samotny YuE2 z nabidky vyse.
 )
 
+set /p ODP="Karta Video ze zvuku - LTX 2.5, cca 38 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  REM Fotka + zvukovy soubor -> video, ktere na ten zvuk mluvi. Pocet snimku
+  REM si graf spocita z delky zvuku, takze se rec nema jak useknout.
+  call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/transformers/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors" "models\diffusion_models\ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
+  call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors" "models\text_encoders\gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors"
+  call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-video-vae-bf16.safetensors" "models\vae\ltx-2.5-video-vae-bf16.safetensors"
+  call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-audio-vae-bf16.safetensors" "models\vae\ltx-2.5-audio-vae-bf16.safetensors"
+  call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors" "models\latent_upscale_models\ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
+  echo   Pozn.: k tomu je potreba balik ComfyUI-LTXVideo ve verzi, ktera zna LTX 2.5.
+)
+
 set /p ODP="Karta Oprava fotky - Qwen Image Edit 2511, cca 31 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/drbaph/Qwen-Image-Edit-2511-FP8/resolve/main/qwen_image_edit_2511_fp8_e4m3fn.safetensors" "models\diffusion_models\qwen_image_edit_2511_fp8_e4m3fn.safetensors"

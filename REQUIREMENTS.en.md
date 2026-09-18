@@ -47,6 +47,14 @@ behind the 3D model card ship in ComfyUI **from 0.34 on**, and
 **YuE2** option on the Music card **from 0.36.0 on**. On an older build there is
 nothing to install, you update ComfyUI.
 
+The **Video from audio** card needs the
+[ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) pack (nodes
+`LTXVAudioVAEEncode`, `LTXVConcatAVLatent`, `LTXVSeparateAVLatent`,
+`LTXVLatentUpsampler`, `LTXVImgToVideoInplace`, `LTXVDualCFGGuider`,
+`LTXVPreprocess`, `LatentUpscaleModelLoader`) plus VideoHelperSuite for
+`VHS_LoadAudioUpload`. The pack must be a version that knows **LTX 2.5** —
+older ones only know 2.3 and some nodes are missing.
+
 Note: the LSI-Minimax-Segment-Timeline pack and the Krea2Edit/H3 helper nodes
 are **not publicly available** — without them the Timeline and Image edit cards
 will not run (nor the live preview during video). All other cards work normally.
@@ -76,6 +84,9 @@ by card, so you only download what you actually use.
   nodes ship in ComfyUI core **from 0.36.0 on**, same as YuE2.
 
 **diffusion_models/**
+- `ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors`
+  (Video from audio card, **21 GB**), from
+  [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video from text/images)
 - `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (references → video, Dialogue)
   — both from [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3),
@@ -102,6 +113,9 @@ sit in either; there is no need to move it.
   loaded by `UnetLoaderGGUF` from the ComfyUI-GGUF pack
 
 **text_encoders/**
+- `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors` (Video from
+  audio card, **15 GB**), from
+  [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` (MiniMax H3, 14.6 GB)
 - `qwen3vl_32b_minimax_h3_int8_convrot.safetensors` (3 steps card, 25.3 GB) —
   that template pins its encoder, so nvfp4 is not used there
@@ -115,6 +129,9 @@ sit in either; there is no need to move it.
   [Comfy-Org/ERNIE-Image](https://huggingface.co/Comfy-Org/ERNIE-Image)
 
 **vae/**
+- `ltx-2.5-video-vae-bf16.safetensors` and `ltx-2.5-audio-vae-bf16.safetensors`
+  (Video from audio card; without the second one the audio never reaches the
+  latent), from [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_video_vae_fp16.safetensors`
 - `minimax_h3_audio_vae_fp32.safetensors`
 - `qwen_image_vae.safetensors` (Krea 2, Photo restore, Camera angle)
@@ -140,6 +157,9 @@ sit in either; there is no need to move it.
   angle from the photo), from [Comfy-Org/MoGe](https://huggingface.co/Comfy-Org/MoGe)
 
 **latent_upscale_models/**
+- `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` (Video from audio
+  card — second pass, 0.95 GB), from
+  [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_latent_upscaler_3d_fp16.safetensors` (Long video — fast first
   shot — and the 3 steps card), from [LBH-123-AI/Minimax_h3_latent_Upscaler](https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler)
 
