@@ -16,14 +16,12 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Karty Oprava fotky (Qwen 2511) a Výměna tváře (ACE++) jedou na
- * uživatelových workflow. Testy hlídají, že se dosazují jen fotky a seed
- * a že vyladěné hodnoty předloh zůstávají netknuté.
+ * Karty Oprava fotky (Qwen 2.1) a Výměna tváře (ACE++).
  */
 class RestoreFaceSwapBuilderTest {
 
     private val restore: String =
-        File("src/main/res/raw/workflow_qwen_restore.json").readText()
+        File("src/main/res/raw/workflow_qwen21_edit.json").readText()
     private val swap: String =
         File("src/main/res/raw/workflow_ace_faceswap.json").readText()
 
@@ -56,15 +54,18 @@ class RestoreFaceSwapBuilderTest {
     fun `oprava - vyladene hodnoty zustavaji`() {
         val wf = RestoreBuilder.build(restore, 1L, listOf("a.png"))
         val s = wf.inputs(RestoreBuilder.N_SAMPLER)
-        assertEquals(4, s.getInt("steps"))
-        assertEquals("euler_ancestral", s.getString("sampler_name"))
-        assertEquals("beta57", s.getString("scheduler"))
+        assertEquals(25, s.getInt("steps"))
+        assertEquals("euler", s.getString("sampler_name"))
+        assertEquals("simple", s.getString("scheduler"))
         // opravovací zadání je pevné a nesmí být prázdné
         assertTrue(
-            wf.inputs(RestoreBuilder.N_PROMPT).getString("value")
-                .contains("photo reconstruction")
+            wf.inputs(RestoreBuilder.N_PROMPT).getString("prompt")
+                .contains("Restore <image1>")
         )
-        assertEquals(RestoreBuilder.STEPS, 4)
+        assertEquals(RestoreBuilder.STEPS, 25)
+        assertEquals("H3RestoreQwen21", wf.inputs(RestoreBuilder.N_SAVE).getString("filename_prefix"))
+        assertTrue(wf.toString().contains("qwen_image_2.1_int8_convrot.safetensors"))
+        assertTrue(!wf.toString().contains("2511"))
     }
 
     @Test

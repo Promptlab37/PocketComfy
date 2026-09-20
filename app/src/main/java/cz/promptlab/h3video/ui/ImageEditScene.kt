@@ -26,10 +26,14 @@ import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.data.EditMotor
 import cz.promptlab.h3video.data.EditZamer
+import cz.promptlab.h3video.data.Qwen21CacheDevice
+import cz.promptlab.h3video.data.Qwen21CachePrecision
+import cz.promptlab.h3video.data.Qwen21Resolution
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,22 +74,60 @@ fun ImageEditSection(vm: MainViewModel) {
 
     SectionCard(
         title = t("Fotka k úpravě"),
-        subtitle = t("Z ní se bere podoba i scéna")
+        subtitle = if (scene.motor == EditMotor.QWEN21) {
+            t("Obrázek 1 je vždy ten, který se upravuje")
+        } else t("Z ní se bere podoba i scéna")
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             EditSlot(
                 thumb = scene.thumb,
-                popisek = t("Upravovaná fotka"),
+                popisek = if (scene.motor == EditMotor.QWEN21) t("Obrázek 1 — upravovaný")
+                    else t("Upravovaná fotka"),
                 modifier = Modifier.weight(1f),
                 onPick = { pickFor = "source"; pick.launch(imageOnly) },
                 onClear = { vm.clearEditImage("source") },
             )
-            EditSlot(
-                thumb = scene.personThumb,
-                popisek = t("Osoba navíc (nepovinné)"),
-                modifier = Modifier.weight(1f),
-                onPick = { pickFor = "person"; pick.launch(imageOnly) },
-                onClear = { vm.clearEditImage("person") },
+            if (scene.motor != EditMotor.QWEN21) {
+                EditSlot(
+                    thumb = scene.personThumb,
+                    popisek = t("Osoba navíc (nepovinné)"),
+                    modifier = Modifier.weight(1f),
+                    onPick = { pickFor = "person"; pick.launch(imageOnly) },
+                    onClear = { vm.clearEditImage("person") },
+                )
+            } else Spacer(Modifier.weight(1f))
+        }
+    }
+
+    if (scene.motor == EditMotor.QWEN21) SectionCard(
+        title = t("Další předlohy"),
+        subtitle = t("Až 9 referencí navíc; v zadání je označ <image2> až <image10>")
+    ) {
+        val refs = scene.references
+        val slots = buildList {
+            refs.forEachIndexed { index, ref -> add(Triple(index, ref.thumb, true)) }
+            if (refs.size < ImageEditScene.MAX_QWEN21_REFERENCES) add(Triple(refs.size, null, false))
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            slots.chunked(2).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    row.forEach { (index, thumb, filled) ->
+                        val kind = "reference${index + 2}"
+                        EditSlot(
+                            thumb = thumb,
+                            popisek = if (filled) t("Obrázek %d").format(index + 2)
+                                else t("Přidat obrázek %d").format(index + 2),
+                            modifier = Modifier.weight(1f),
+                            onPick = { pickFor = kind; pick.launch(imageOnly) },
+                            onClear = { vm.clearEditImage(kind) },
+                        )
+                    }
+                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                }
+            }
+            Text(
+                t("První obrázek určuje velikost výsledku. Ostatní mohou mít jiný poměr stran."),
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
             )
         }
     }
@@ -98,7 +140,9 @@ fun ImageEditSection(vm: MainViewModel) {
             DarkTextField(
                 value = scene.prompt,
                 onValueChange = { vm.setEditPrompt(it) },
-                placeholder = t("Dej jí červenou bundu a přesaď je na zasněženou horskou cestu"),
+                placeholder = if (scene.motor == EditMotor.QWEN21 && scene.references.isNotEmpty()) {
+                    t("Ponech člověka z <image1> a obleč mu bundu z <image2>")
+                } else t("Dej jí červenou bundu a přesaď je na zasněženou horskou cestu"),
                 minHeight = 110.dp,
                 onClear = { vm.setEditPrompt("") },
             )
@@ -126,28 +170,42 @@ fun ImageEditSection(vm: MainViewModel) {
         }
     }
 
-    EditLoraSection(vm, scene)
+    // Qwen 2.1 je nová architektura. LoRA pro jiné modely na ni nesedí.
+    if (scene.motor != EditMotor.QWEN21) EditLoraSection(vm, scene)
 
-    if (scene.motor == EditMotor.QWEN) SectionCard(
-        title = t("Rychlost proti kvalitě"),
-        subtitle = t("Obojí má oficiální předloha, liší se počtem kroků")
+    if (scene.motor == EditMotor.QWEN21) SectionCard(
+        title = t("Qwen Image 2.1"),
+        subtitle = t("Nativní 2K, více předloh a průhledné RGBA")
     ) {
-        Column {
-            PillRow(
-                items = listOf(true, false),
-                selected = scene.qwenRychle,
-                label = { if (it) t("Rychle — 4 kroky") else t("Kvalitně — 40 kroků") },
-                onSelect = { vm.setEditQwenRychle(it) },
+        Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            LabeledSlider(
+                label = t("Počet kroků"),
+                value = t("%d kroků").format(scene.qwen21Steps),
+                position = scene.qwen21Steps.toFloat(),
+                range = 10f..50f,
+                onChange = { vm.setEditQwen21Steps(it.roundToInt()) },
+                note = t("Oficiální workflow začíná na 25. Pro maximum detailu použij 40–50."),
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                if (scene.qwenRychle) {
-                    t("Zrychlovací LoRA. Na běžné úpravy stačí a je to řádově rychlejší.")
-                } else {
-                    t("Bez zrychlovací LoRA a se skutečným cfg. Poslouchá zadání nejlíp, ale trvá to.")
-                },
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-            )
+            Column {
+                Text(t("Velikost referencí"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                Spacer(Modifier.height(8.dp))
+                PillRow(
+                    items = Qwen21Resolution.entries.toList(),
+                    selected = scene.qwen21Resolution,
+                    label = { it.label },
+                    onSelect = { vm.setEditQwen21Resolution(it) },
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    t("1024 px je oficiální výchozí hodnota. 2K zachová víc detailu, ale spotřebuje výrazně víc paměti."),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow,
+                )
+            }
+            EditToggleRow(
+                t("Průhledné pozadí (RGBA)"),
+                t("Přidá do zadání výslovný pokyn k alfa kanálu. Výsledek zůstane PNG."),
+                scene.qwen21Transparent,
+            ) { vm.setEditQwen21Transparent(it) }
         }
     }
 
@@ -157,7 +215,9 @@ fun ImageEditSection(vm: MainViewModel) {
         title = t("Nastavení úpravy"),
         // Klein páčky na věrnost ani vidění předlohy nemá — vypisovat je
         // v souhrnu by tvrdilo, že něco dělají.
-        souhrn = if (scene.motor != EditMotor.KREA2) {
+        souhrn = if (scene.motor == EditMotor.QWEN21) {
+            t("cache %s · %s").format(scene.qwen21CacheDevice.label, scene.qwen21CachePrecision.label)
+        } else if (scene.motor != EditMotor.KREA2) {
             t("rozměry podle předlohy")
         } else {
             scene.resolution.label + " · vidí " + scene.groundingPx + " px" +
@@ -165,7 +225,7 @@ fun ImageEditSection(vm: MainViewModel) {
         },
         klic = "nastaveni-edit",
     ) {
-        SectionCard(
+        if (scene.motor != EditMotor.QWEN21) SectionCard(
             title = t("Rozlišení"),
             subtitle = t("Kolem 1 MP je u tohohle modelu nejjistější"),
             trailing = {
@@ -196,6 +256,38 @@ fun ImageEditSection(vm: MainViewModel) {
                     range = 0.4f..ImageEditScene.MAX_MEGAPIXELS,
                     onChange = { vm.setEditMegapixels((it * 10).roundToInt() / 10f) },
                     note = t("Nad 1 MP se u dvou lidí začíná rozpadat podoba."),
+                )
+            }
+        }
+
+        if (scene.motor == EditMotor.QWEN21) SectionCard(
+            title = t("KV cache"),
+            subtitle = t("Qwen si reference spočítá jednou a používá je ve všech krocích")
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Column {
+                    Text(t("Kam uložit cache"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                    Spacer(Modifier.height(8.dp))
+                    PillRow(
+                        items = Qwen21CacheDevice.entries.toList(),
+                        selected = scene.qwen21CacheDevice,
+                        label = { it.label },
+                        onSelect = { vm.setEditQwen21CacheDevice(it) },
+                    )
+                }
+                Column {
+                    Text(t("Přesnost cache"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                    Spacer(Modifier.height(8.dp))
+                    PillRow(
+                        items = Qwen21CachePrecision.entries.toList(),
+                        selected = scene.qwen21CachePrecision,
+                        label = { it.label },
+                        onSelect = { vm.setEditQwen21CachePrecision(it) },
+                    )
+                }
+                Text(
+                    t("Automaticky je nejbezpečnější. INT8 cache zabere polovinu, INT4 čtvrtinu, ale může lehce snížit přesnost úpravy. Vypnutí cache šetří paměť za cenu pomalejšího běhu."),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow,
                 )
             }
         }
@@ -252,6 +344,26 @@ fun ImageEditSection(vm: MainViewModel) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun EditToggleRow(
+    title: String,
+    detail: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyMedium)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
+        }
+        Switch(checked = checked, onCheckedChange = onChange, colors = switchColors())
     }
 }
 

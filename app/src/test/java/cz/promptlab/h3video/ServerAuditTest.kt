@@ -73,7 +73,7 @@ class ServerAuditTest {
         val texty = listOf(
             "workflow_h3_ultra.json", "workflow_krea2_edit.json",
             "workflow_seedvr2_upscale.json", "workflow_zimage_t2i.json",
-            "workflow_ace_music.json", "workflow_qwen_restore.json",
+            "workflow_ace_music.json", "workflow_qwen21_edit.json",
             "workflow_ace_faceswap.json",
         ).map { File(dir, it).readText() }
         val potreby = ServerAudit.collect(texty)

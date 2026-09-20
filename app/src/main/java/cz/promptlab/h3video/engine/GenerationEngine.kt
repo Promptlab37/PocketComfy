@@ -101,9 +101,9 @@ sealed interface GenState {
         val isMusicYue2: Boolean = false,
         /** Předělání nahrávky (YuE2 + SheetSage2) — jiné fáze než nová skladba. */
         val isMusicCover: Boolean = false,
-        /** Beh opravuje starou fotku (Qwen 2511) - texty "Opravuji". */
+        /** Běh opravuje starou fotku (Qwen 2.1) — texty „Opravuji“. */
         val isRestore: Boolean = false,
-        /** Beh otaci objekt do jineho uhlu (Qwen 2511 + LoRA) - texty "Otacim". */
+        /** Běh otáčí objekt do jiného úhlu (Qwen 2.1) — texty „Otáčím“. */
         val isAngle: Boolean = false,
         /** Beh meni tvar (ACE++) - texty "Menim tvar". */
         val isSwap: Boolean = false,
@@ -206,7 +206,7 @@ object GenerationEngine {
      * se běh dohledává podle uložených příznaků, ne podle scény.
      */
     @Volatile private var editKlein: Boolean = false
-    @Volatile private var editQwen: Boolean = false
+    @Volatile private var editQwen21: Boolean = false
 
     /** Běží zvětšování (SeedVR2 gigapixel)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var upscaleRun: Boolean = false
@@ -229,7 +229,7 @@ object GenerationEngine {
      */
     @Volatile private var musicCover: Boolean = false
 
-    /** Běží oprava fotky (Qwen 2511)? Vlastní workflow z APK, výsledek PNG. */
+    /** Běží oprava fotky (Qwen 2.1)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var restoreRun: Boolean = false
 
     /** Běží výměna tváře (ACE++)? Vlastní workflow z APK, výsledek PNG. */
@@ -270,7 +270,7 @@ object GenerationEngine {
             ?: SeedVr2Builder.stageForClass(nodeClasses[node])
         editRun -> when {
             editKlein -> cz.promptlab.h3video.comfy.KleinEditBuilder.stageForClass(nodeClasses[node])
-            editQwen -> cz.promptlab.h3video.comfy.QwenEditBuilder.stageForClass(nodeClasses[node])
+            editQwen21 -> cz.promptlab.h3video.comfy.Qwen21EditBuilder.stageForClass(nodeClasses[node])
             else -> Krea2Builder.stageForClass(nodeClasses[node])
         }
         aioRun -> AioBuilder.stageForClass(nodeClasses[node])
@@ -292,7 +292,7 @@ object GenerationEngine {
             ?: SeedVr2Builder.rangeForClass(nodeClasses[node])
         editRun -> when {
             editKlein -> cz.promptlab.h3video.comfy.KleinEditBuilder.rangeForClass(nodeClasses[node])
-            editQwen -> cz.promptlab.h3video.comfy.QwenEditBuilder.rangeForClass(nodeClasses[node])
+            editQwen21 -> cz.promptlab.h3video.comfy.Qwen21EditBuilder.rangeForClass(nodeClasses[node])
             else -> Krea2Builder.rangeForClass(nodeClasses[node])
         }
         aioRun -> AioBuilder.rangeForClass(nodeClasses[node])
@@ -320,7 +320,7 @@ object GenerationEngine {
             SeedVr2Builder.reportsSteps(nodeClasses[node])
         editRun -> when {
             editKlein -> cz.promptlab.h3video.comfy.KleinEditBuilder.reportsSteps(nodeClasses[node])
-            editQwen -> cz.promptlab.h3video.comfy.QwenEditBuilder.reportsSteps(nodeClasses[node])
+            editQwen21 -> cz.promptlab.h3video.comfy.Qwen21EditBuilder.reportsSteps(nodeClasses[node])
             else -> Krea2Builder.reportsSteps(nodeClasses[node])
         }
         aioRun -> AioBuilder.reportsSteps(nodeClasses[node])
@@ -390,9 +390,9 @@ object GenerationEngine {
         t2i: Boolean = false,
         /** Hudba: ACE-Step 1.5, vlastní workflow z APK, výsledkem je MP3. */
         musicScene: cz.promptlab.h3video.data.MusicScene? = null,
-        /** Oprava fotky: Qwen 2511, vlastní workflow z APK, výsledkem je PNG. */
+        /** Oprava fotky: Qwen 2.1, vlastní workflow z APK, výsledkem je PNG. */
         restoreScene: cz.promptlab.h3video.data.RestoreScene? = null,
-        /** Úhel kamery: Qwen 2511 + LoRA, vlastní workflow z APK, výsledkem je PNG. */
+        /** Úhel kamery: Qwen 2.1, vlastní workflow z APK, výsledkem je PNG. */
         angleScene: cz.promptlab.h3video.data.AngleScene? = null,
         /** Výměna tváře: ACE++, vlastní workflow z APK, výsledkem je PNG. */
         swapScene: cz.promptlab.h3video.data.FaceSwapScene? = null,
@@ -410,7 +410,7 @@ object GenerationEngine {
         resetRun()
         editRun = editScene != null
         editKlein = editScene?.motor == cz.promptlab.h3video.data.EditMotor.KLEIN
-        editQwen = editScene?.motor == cz.promptlab.h3video.data.EditMotor.QWEN
+        editQwen21 = editScene?.motor == cz.promptlab.h3video.data.EditMotor.QWEN21
         upscaleRun = upscaleScene != null
         t2iRun = t2i
         musicRun = musicScene != null
@@ -783,8 +783,8 @@ object GenerationEngine {
             editScene != null -> when (editScene.motor) {
                 cz.promptlab.h3video.data.EditMotor.KLEIN ->
                     cz.promptlab.h3video.comfy.KleinEditBuilder.build(app, editScene, seed, names)
-                cz.promptlab.h3video.data.EditMotor.QWEN ->
-                    cz.promptlab.h3video.comfy.QwenEditBuilder.build(app, editScene, seed, names)
+                cz.promptlab.h3video.data.EditMotor.QWEN21 ->
+                    cz.promptlab.h3video.comfy.Qwen21EditBuilder.build(app, editScene, seed, names)
                 cz.promptlab.h3video.data.EditMotor.KREA2 ->
                     Krea2Builder.build(app, editScene, seed, names)
             }
@@ -832,23 +832,20 @@ object GenerationEngine {
                     Yue2MusicBuilder.build(app, musicScene, seed, hudbaPredloha)
                 else AceMusicBuilder.build(app, musicScene, seed)
 
-            // Úhel kamery: tentýž Qwen 2511, ale s LoRA na pózy kamery.
+            // Úhel kamery: nativní editace pohledu přes Qwen Image 2.1.
             angleScene != null ->
                 AngleBuilder.build(
                     app, seed, names,
                     azimut = angleScene.azimut,
                     vyska = angleScene.vyska,
                     odstup = angleScene.odstup,
-                    sila = angleScene.sila,
                 )
 
-            // Oprava fotky jede na uživatelově Qwen 2511 workflow z APK.
+            // Oprava fotky používá stejný Qwen Image 2.1 jako běžná editace.
             restoreScene != null ->
                 RestoreBuilder.build(
                     app, seed, names,
                     pokyn = restoreScene.pokyn,
-                    lora = restoreScene.lora,
-                    loraSila = restoreScene.loraSila,
                 )
 
             // Výměna tváře jede na uživatelově ACE++ workflow z APK.
@@ -905,15 +902,20 @@ object GenerationEngine {
         }
         // Čtyři průchody TRELLISu dohromady — bez toho by ukazatel počítal
         // s krokem jednoho průchodu a doskočil na sto procent už po prvním.
-        plannedSteps = if (model3dScene != null) Trellis2Builder.STEPS_CELKEM
-        else effective.steps
+        plannedSteps = when {
+            model3dScene != null -> Trellis2Builder.STEPS_CELKEM
+            restoreScene != null -> RestoreBuilder.STEPS
+            angleScene != null -> AngleBuilder.STEPS
+            editScene?.motor == cz.promptlab.h3video.data.EditMotor.QWEN21 -> editScene.qwen21Steps
+            else -> effective.steps
+        }
         // Podle tříd uzlů se u šablon balíku poznávají fáze běhu.
         if (jedeNaAio) nodeClasses = AioBuilder.nodeClasses(workflow)
         if (editScene != null) nodeClasses = when (editScene.motor) {
             cz.promptlab.h3video.data.EditMotor.KLEIN ->
                 cz.promptlab.h3video.comfy.KleinEditBuilder.nodeClasses(workflow)
-            cz.promptlab.h3video.data.EditMotor.QWEN ->
-                cz.promptlab.h3video.comfy.QwenEditBuilder.nodeClasses(workflow)
+            cz.promptlab.h3video.data.EditMotor.QWEN21 ->
+                cz.promptlab.h3video.comfy.Qwen21EditBuilder.nodeClasses(workflow)
             cz.promptlab.h3video.data.EditMotor.KREA2 -> Krea2Builder.nodeClasses(workflow)
         }
         if (upscaleScene != null) nodeClasses = SeedVr2Builder.nodeClasses(workflow)

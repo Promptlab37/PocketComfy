@@ -2545,6 +2545,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val templates = listOf(
                         R.raw.workflow_h3_ultra,
                         R.raw.workflow_krea2_edit,
+                        R.raw.workflow_qwen21_edit,
                         R.raw.workflow_seedvr2_upscale,
                         R.raw.workflow_zimage_t2i,
                         R.raw.workflow_h3_3step,
@@ -2554,7 +2555,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         R.raw.workflow_trellis2,
                         R.raw.workflow_ace_music,
                         R.raw.workflow_yue2_music,
-                        R.raw.workflow_qwen_restore,
                         R.raw.workflow_ace_faceswap,
                         R.raw.workflow_inpaint_klein,
                         R.raw.workflow_inpaint_fill,
@@ -2614,7 +2614,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setEditLoraSila(v: Float) = updateEdit { it.copy(loraSila = v) }
 
-    fun setEditQwenRychle(v: Boolean) = updateEdit { it.copy(qwenRychle = v) }
+    fun setEditQwen21Steps(v: Int) = updateEdit { it.copy(qwen21Steps = v.coerceIn(10, 50)) }
+
+    fun setEditQwen21Resolution(v: cz.promptlab.h3video.data.Qwen21Resolution) =
+        updateEdit { it.copy(qwen21Resolution = v) }
+
+    fun setEditQwen21CacheDevice(v: cz.promptlab.h3video.data.Qwen21CacheDevice) =
+        updateEdit { it.copy(qwen21CacheDevice = v) }
+
+    fun setEditQwen21CachePrecision(v: cz.promptlab.h3video.data.Qwen21CachePrecision) =
+        updateEdit { it.copy(qwen21CachePrecision = v) }
+
+    fun setEditQwen21Transparent(v: Boolean) = updateEdit { it.copy(qwen21Transparent = v) }
 
     data class EditLoraCatalog(
         val files: List<EditLoraFile> = emptyList(), val loading: Boolean = false,
@@ -2718,17 +2729,37 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** `druh` je "source" (upravovaná fotka) nebo "person" (vkládaná osoba). */
+    /**
+     * `druh` je `source`, staré `person`, nebo `reference2` až `reference10`.
+     * Reference se drží kompaktně: po odebrání se další posunou, takže značky
+     * `<image2>`, `<image3>` v zadání vždy odpovídají tomu, co je na kartě.
+     */
     fun pickEditImage(druh: String, uri: Uri?) {
         if (uri == null) return
         viewModelScope.launch {
-            val target = editStore.imageFile(druh)
+            val refIndex = when {
+                druh == "person" -> 0
+                druh.startsWith("reference") -> druh.removePrefix("reference").toIntOrNull()?.minus(2)
+                else -> null
+            }
+            val target = if (refIndex != null) editStore.newReferenceFile() else editStore.imageFile(druh)
             val thumb = withContext(Dispatchers.IO) {
                 ImageUtils.importToApp(getApplication(), uri, target)
             } ?: return@launch
             updateEdit {
-                if (druh == "person") it.copy(person = target, personThumb = thumb)
-                else it.copy(source = target, thumb = thumb)
+                if (refIndex != null) {
+                    val refs = it.references.toMutableList()
+                    if (refIndex !in 0..refs.size || refIndex >= cz.promptlab.h3video.data.ImageEditScene.MAX_QWEN21_REFERENCES) {
+                        target.delete()
+                        it
+                    } else {
+                        val old = refs.getOrNull(refIndex)?.file
+                        val item = cz.promptlab.h3video.data.EditReference(target, thumb)
+                        if (refIndex == refs.size) refs += item else refs[refIndex] = item
+                        if (old != null && old != target) runCatching { old.delete() }
+                        it.withReferences(refs)
+                    }
+                } else it.copy(source = target, thumb = thumb)
             }
         }
     }
@@ -2752,10 +2783,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun clearEditImage(druh: String) {
-        runCatching { editStore.imageFile(druh).delete() }
         updateEdit {
-            if (druh == "person") it.copy(person = null, personThumb = null)
-            else it.copy(source = null, thumb = null)
+            val refIndex = when {
+                druh == "person" -> 0
+                druh.startsWith("reference") -> druh.removePrefix("reference").toIntOrNull()?.minus(2)
+                else -> null
+            }
+            if (refIndex != null) {
+                val refs = it.references.toMutableList()
+                refs.getOrNull(refIndex)?.file?.let { file -> runCatching { file.delete() } }
+                if (refIndex in refs.indices) refs.removeAt(refIndex)
+                it.withReferences(refs)
+            } else {
+                it.source?.let { file -> runCatching { file.delete() } }
+                it.copy(source = null, thumb = null)
+            }
         }
     }
 
@@ -2971,10 +3013,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Délka zvuku v sekundách; 0 = nepřečetlo se (poškozený nebo cizí formát). */
     private fun delkaZvuku(f: java.io.File): Float = runCatching {
         val mmr = android.media.MediaMetadataRetriever()
-        mmr.use {
-            it.setDataSource(f.absolutePath)
-            it.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+        try {
+            mmr.setDataSource(f.absolutePath)
+            mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull()?.let { ms -> ms / 1000f } ?: 0f
+        } finally {
+            // AutoCloseable má MediaMetadataRetriever až od API 29; release()
+            // funguje na celém minSdk 26 a lint pak správně nehlásí NewApi.
+            mmr.release()
         }
     }.getOrDefault(0f)
 
@@ -3146,49 +3192,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private val _restoreLoras = MutableStateFlow<List<String>>(emptyList())
-    val restoreLoras: StateFlow<List<String>> = _restoreLoras.asStateFlow()
-
-    /**
-     * LoRA použitelné na kartě Oprava. Filtr pouští jen ty pro Qwen Image
-     * **Edit** — obyčejné qwenovské LoRA na text→obrázek na editační váhy
-     * nepasují. Co si předloha načítá sama (Lightning, upscale, realismus),
-     * se ze seznamu vyhazuje, aby nešlo vybrat totéž dvakrát.
-     */
-    fun refreshRestoreLoras() {
-        if (_restoreLoras.value.isNotEmpty()) return
-        viewModelScope.launch {
-            val nalezene = withContext(Dispatchers.IO) {
-                runCatching {
-                    val vlastni = cz.promptlab.h3video.comfy.RestoreBuilder.loraVRetezu(
-                        org.json.JSONObject(
-                            getApplication<android.app.Application>().resources
-                                .openRawResource(cz.promptlab.h3video.R.raw.workflow_qwen_restore)
-                                .bufferedReader().use { it.readText() }
-                        )
-                    )
-                    ComfyClient(settings.serverUrl).loraNames().filter { n ->
-                        n.contains("qwen", ignoreCase = true) &&
-                            (n.contains("edit", ignoreCase = true) ||
-                                n.contains("2511") || n.contains("2512")) &&
-                            n !in vlastni && !jeZrychlovaci(n)
-                    }
-                }.getOrDefault(emptyList())
-            }
-            if (nalezene.isNotEmpty()) _restoreLoras.value = nalezene.sorted()
-        }
-    }
-
-    /**
-     * Zrychlovací LoRA (Lightning, Turbo, „4steps"). Do nabídky nepatří:
-     * předloha už jednu takovou načítá a běží na čtyři kroky, takže druhá
-     * by kvalitu jen srazila. Karta nemá ukazovat volby, které si škodí.
-     */
-    private fun jeZrychlovaci(n: String): Boolean =
-        listOf("lightning", "turbo", "4steps", "8steps", "lightx2v")
-            .any { n.contains(it, ignoreCase = true) }
-
-    /** Změna nastavení karty Oprava (zadání, LoRA, síla). */
+    /** Změna nastavení karty Oprava. */
     fun updateRestore(zmena: (RestoreScene) -> RestoreScene) {
         _restore.value = zmena(_restore.value)
         restoreStore.save(_restore.value)

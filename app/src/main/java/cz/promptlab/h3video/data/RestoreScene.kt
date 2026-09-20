@@ -6,7 +6,7 @@ import androidx.compose.runtime.Immutable
 import java.io.File
 
 /**
- * Karta **Oprava fotky** — uživatelovo Qwen Image Edit 2511 workflow na
+ * Karta **Oprava fotky** — Qwen Image 2.1 na
  * záchranu starých fotek: škrábance, prach, roztrhané okraje, kolorizace,
  * doostření. Zadání je pevné (vyladěný opravovací prompt v předloze),
  * dosazuje se JEN fotka a seed — proto je karta tak jednoduchá.
@@ -23,13 +23,6 @@ data class RestoreScene(
      * v ní stojí „no shape deformation", což je pravý opak cílené opravy.
      */
     val pokyn: String = "",
-    /**
-     * Cílená LoRA nad rámec předlohy (prázdné = žádná). Předloha už tři LoRA
-     * řetězí (Lightning, upscale, realismus), tahle se přivěsí na konec.
-     */
-    val lora: String = "",
-    /** Síla cílené LoRA. */
-    val loraSila: Float = 1f,
 ) {
     val uploadImages: List<File> get() = listOfNotNull(source)
 }
@@ -48,8 +41,6 @@ class RestoreStore(private val ctx: Context) {
     fun load(): RestoreScene {
         val zaklad = RestoreScene(
             pokyn = sp.getString(KEY_POKYN, "") ?: "",
-            lora = sp.getString(KEY_LORA, "") ?: "",
-            loraSila = sp.getFloat(KEY_SILA, 1f),
         )
         val name = sp.getString(KEY, null) ?: return zaklad
         val f = File(dir(), name)
@@ -60,15 +51,11 @@ class RestoreStore(private val ctx: Context) {
         sp.edit()
             .putString(KEY, s.source?.name)
             .putString(KEY_POKYN, s.pokyn)
-            .putString(KEY_LORA, s.lora)
-            .putFloat(KEY_SILA, s.loraSila)
             .apply()
     }
 
     private companion object {
         const val KEY = "restoreScene"
         const val KEY_POKYN = "restorePokyn"
-        const val KEY_LORA = "restoreLora"
-        const val KEY_SILA = "restoreLoraSila"
     }
 }

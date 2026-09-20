@@ -98,10 +98,10 @@ enum class Mode(
     ),
 
     /**
-     * Tentýž objekt z jiného místa: Qwen Image Edit 2511 s LoRA
-     * `multiple-angles`. Uživatel nic nepíše — posuvníky nastaví, odkud se
+     * Tentýž objekt z jiného místa přes Qwen Image 2.1. Uživatel nic nepíše —
+     * ovladače nastaví, odkud se
      * kamera dívá (8 směrů), jak vysoko (4) a jak daleko (3), a z toho se
-     * složí zadání ve tvaru, na kterém je LoRA natrénovaná.
+     * složí přesný přirozený pokyn pro nový pohled.
      */
     ANGLE(
         titleCs = "Úhel kamery",
@@ -110,7 +110,7 @@ enum class Mode(
     ),
 
     /**
-     * Uživatelovo Qwen Image Edit 2511 workflow na záchranu starých fotek —
+     * Qwen Image 2.1 na záchranu starých fotek —
      * škrábance, prach, kolorizace, doostření. Zadání je vyladěné v předloze,
      * dosazuje se jen fotka a seed, takže karta je jen fotka + tlačítko.
      */

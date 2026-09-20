@@ -78,6 +78,12 @@ object ImageUtils {
         return bos.toByteArray()
     }
 
+    fun toPng(bmp: Bitmap): ByteArray {
+        val bos = ByteArrayOutputStream()
+        bmp.compress(Bitmap.CompressFormat.PNG, 100, bos)
+        return bos.toByteArray()
+    }
+
     /** Delší hrana náhledu v UI. Víc nemá smysl, karta obrázku je menší než 200 dp. */
     private const val THUMB_EDGE = 480
 
@@ -101,14 +107,16 @@ object ImageUtils {
     }
 
     /**
-     * Vybraný obrázek narovná, zmenší a uloží jako JPEG do složky aplikace.
+     * Vybraný obrázek narovná, zmenší a uloží do složky aplikace. Cíl `.png`
+     * zachová alfa kanál (potřebuje ho Qwen Image 2.1), ostatní cíle zůstávají
+     * úsporný JPEG.
      * Díky tomu přežije restart i zabití procesu a při odesílání se už jen čte
      * hotový soubor — nezáleží na tom, jestli mezitím vypršelo oprávnění k URI.
      */
     fun importToApp(ctx: Context, uri: Uri, target: File): Bitmap? {
         val bmp = loadUpright(ctx, uri) ?: return null
         target.parentFile?.mkdirs()
-        target.writeBytes(toJpeg(bmp))
+        target.writeBytes(if (target.extension.equals("png", true)) toPng(bmp) else toJpeg(bmp))
         val thumb = scaleTo(bmp, THUMB_EDGE)
         if (thumb != bmp) bmp.recycle()
         return thumb

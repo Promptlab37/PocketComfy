@@ -1,0 +1,84 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "inputs": {
+      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+      "weight_dtype": "default"
+    },
+    "_meta": { "title": "Qwen Image 2.1" }
+  },
+  "2": {
+    "class_type": "CLIPLoader",
+    "inputs": {
+      "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+      "type": "qwen_image",
+      "device": "default"
+    },
+    "_meta": { "title": "Qwen3-VL 8B" }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "inputs": {
+      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+    },
+    "_meta": { "title": "Qwen Image 2.1 RGBA VAE" }
+  },
+  "4": {
+    "class_type": "QwenImage21Cache",
+    "inputs": {
+      "model": ["1", 0],
+      "device": "auto",
+      "dtype": "default"
+    },
+    "_meta": { "title": "KV cache" }
+  },
+  "10": {
+    "class_type": "TextEncodeQwenImage21",
+    "inputs": {
+      "clip": ["2", 0],
+      "vae": ["3", 0],
+      "prompt": "",
+      "negative_prompt": "",
+      "resolution": 1024,
+      "images.image_1": ["100", 0]
+    },
+    "_meta": { "title": "Zadání a reference" }
+  },
+  "20": {
+    "class_type": "KSampler",
+    "inputs": {
+      "seed": 0,
+      "steps": 25,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0,
+      "model": ["4", 0],
+      "positive": ["10", 0],
+      "negative": ["10", 1],
+      "latent_image": ["10", 2]
+    },
+    "_meta": { "title": "Qwen Image 2.1 sampling" }
+  },
+  "30": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": ["20", 0],
+      "vae": ["3", 0]
+    },
+    "_meta": { "title": "RGBA dekódování" }
+  },
+  "40": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "images": ["30", 0],
+      "filename_prefix": "H3Video_qwen21_edit"
+    },
+    "_meta": { "title": "Výsledek" }
+  },
+  "100": {
+    "class_type": "LoadImage",
+    "inputs": { "image": "" },
+    "_meta": { "title": "Obrázek 1 — upravovaný" }
+  }
+}

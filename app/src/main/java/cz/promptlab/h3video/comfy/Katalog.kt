@@ -55,10 +55,6 @@ object Katalog {
         "https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch",
         "Výměna tváře a Domalovat"
     )
-    private val QWENUTILS = Balik(
-        "Comfyui-QwenEditUtils", "https://github.com/lrzjason/Comfyui-QwenEditUtils",
-        "Oprava fotky"
-    )
     private val IMPACT = Balik(
         "ComfyUI-Impact-Pack", "https://github.com/ltdrdata/ComfyUI-Impact-Pack",
         "Výměna tváře"
@@ -114,6 +110,13 @@ object Katalog {
         "https://docs.comfy.org/tutorials/audio/yue2/yue2",
         "Hudba — volba YuE2"
     )
+    /** Qwen Image 2.1 přibyl do jádra až 20. 9. 2026, po stabilní 0.36.0. */
+    private val COMFY_QWEN21 = Balik(
+        "Aktualizace ComfyUI na verzi z 20. 9. 2026 nebo novější — Qwen Image 2.1 "
+            + "je přímo v jádru, žádný custom balík se neinstaluje",
+        "https://github.com/Comfy-Org/ComfyUI",
+        "Úprava obrázku — Qwen Image 2.1"
+    )
     private val LTXV = Balik(
         "ComfyUI-LTXVideo", "https://github.com/Lightricks/ComfyUI-LTXVideo",
         "Video ze zvuku"
@@ -159,12 +162,12 @@ object Katalog {
         "LoadImageWithFilename" to PRAVEEN,
         "InpaintCropImproved" to INPAINT,
         "InpaintStitchImproved" to INPAINT,
-        "QwenEditConfigPreparer" to QWENUTILS,
-        "TextEncodeQwenImageEditPlusCustom" to QWENUTILS,
         "ImageResize+" to ESSENTIALS,
         "ImpactGaussianBlurMask" to IMPACT,
         "MiniMaxH3TeaCache" to TEACACHE,
         "YuE2GenerateABC" to COMFY035,
+        "TextEncodeQwenImage21" to COMFY_QWEN21,
+        "QwenImage21Cache" to COMFY_QWEN21,
         // Přepisovač nahrávky do not — také přímo v jádře od 0.36.0.
         "SheetSage2AudioToABC" to COMFY035,
         "AudioEncoderLoader" to COMFY035,
@@ -233,21 +236,21 @@ object Katalog {
             "models/vae", "Obrázek",
             "$HF/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors"
         ),
-        "qwen_image_edit_2511_fp8_e4m3fn.safetensors" to Soubor(
-            "models/diffusion_models", "Oprava fotky",
-            "$HF/drbaph/Qwen-Image-Edit-2511-FP8/resolve/main/qwen_image_edit_2511_fp8_e4m3fn.safetensors"
-        ),
-        "qwen_2.5_vl_7b_fp8_scaled.safetensors" to Soubor(
-            "models/text_encoders", "Oprava fotky",
-            "$HF/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
-        ),
         "qwen_image_vae.safetensors" to Soubor(
-            "models/vae", "Oprava fotky a Úprava obrázku",
+            "models/vae", "Úprava obrázku — Krea 2",
             "$HF/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors"
         ),
-        "Qwen-Image-Edit-2511-Lightning-4steps-V1.0-fp32.safetensors" to Soubor(
-            "models/loras", "Oprava fotky",
-            "$HF/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-fp32.safetensors"
+        "qwen_image_2.1_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Úprava obrázku, Oprava fotky a Úhel kamery — Qwen Image 2.1 (7,3 GB)",
+            "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_int8_convrot.safetensors"
+        ),
+        "qwen3vl_8b_int8_convrot.safetensors" to Soubor(
+            "models/text_encoders", "Úprava obrázku, Oprava fotky a Úhel kamery — Qwen Image 2.1 (9,4 GB)",
+            "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors"
+        ),
+        "qwen_image_2.1_vae_bf16.safetensors" to Soubor(
+            "models/vae", "Úprava obrázku, Oprava fotky a Úhel kamery — Qwen Image 2.1 (0,7 GB, RGBA)",
+            "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors"
         ),
         "flux1-Fill-Dev_FP8.safetensors" to Soubor(
             "models/diffusion_models", "Výměna tváře a Domalovat (volba Flux Fill)",
@@ -385,24 +388,6 @@ object Katalog {
         "moge_2_vitl_normal_fp16.safetensors" to Soubor(
             "models/geometry_estimation", "3D model — Pixal3D odhaduje úhel objektivu",
             "$HF/Comfy-Org/MoGe/resolve/main/geometry_estimation/moge_2_vitl_normal_fp16.safetensors"
-        ),
-        // Karta Úhel kamery.
-        "qwen-image-edit-2511-multiple-angles-lora.safetensors" to Soubor(
-            "models/loras", "Úhel kamery",
-            "$HF/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA/resolve/main/qwen-image-edit-2511-multiple-angles-lora.safetensors"
-        ),
-        "Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors" to Soubor(
-            "models/loras", "Úhel kamery",
-            "$HF/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors"
-        ),
-        // Oprava fotky: zbylé dvě LoRA, dřív bez odkazu.
-        "qwen_image_edit_2511_upscale.safetensors" to Soubor(
-            "models/loras", "Oprava fotky",
-            "$HF/starsfriday/Qwen-Image-Edit-2511-Upscale2K/resolve/main/qwen_image_edit_2511_upscale.safetensors"
-        ),
-        "flymy_realism.safetensors" to Soubor(
-            "models/loras", "Oprava fotky",
-            "$HF/flymy-ai/qwen-image-realism-lora/resolve/main/flymy_realism.safetensors"
         ),
         // Úprava obrázku přes Klein předlohu kóduje, takže chce plný enkodér.
         "full_encoder_small_decoder.safetensors" to Soubor(

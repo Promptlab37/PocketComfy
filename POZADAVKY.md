@@ -33,7 +33,6 @@ chybí u tebe).
 | nody Krea 2 Edit* | Krea2EditModelPatch, Krea2EditGroundedEncode, SpectrumApplyMiniMaxH3, H3CacheBust | Úprava obrázku, video karty |
 | ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | Výměna tváře, Domalovat |
 | ComfyUI-MiniMaxH3-TeaCache | MiniMaxH3TeaCache | video karty (volitelné zrychlení) |
-| Comfyui-QwenEditUtils | QwenEditConfigPreparer, TextEncodeQwenImageEditPlusCustom | Oprava fotky |
 | ComfyUI_essentials | ImageResize+ | Výměna tváře |
 | Impact Pack* | ImpactGaussianBlurMask | Výměna tváře |
 | ComfyUI-GGUF | UnetLoaderGGUF | Obrázek — jen volitelný alternativní model ve formátu GGUF |
@@ -47,6 +46,13 @@ Obrázek). Platí u nich ale minimální verze jádra: uzly **TRELLIS.2** a
 `YuE2GenerateABC`, `YuE2GenerateMusic` a `EmptyYuE2LatentAudio` pro volbu
 **YuE2** na kartě Hudba **až od 0.36.0**. Na starší verzi se nic neinstaluje,
 ComfyUI se aktualizuje.
+
+Karty **Úprava obrázku**, **Oprava fotky** a **Úhel kamery** používají Qwen
+Image 2.1 a jeho nové vestavěné uzly
+`TextEncodeQwenImage21` a `QwenImage21Cache`, které vyšly až **20. 9. 2026**.
+Stabilní ComfyUI 0.36.0 je ještě neobsahuje: je potřeba aktuální ComfyUI z
+tohoto data nebo novější (u Desktop/Cloud může být nutné počkat na další
+stabilní vydání). Žádný custom node se neinstaluje.
 
 Karta **Video ze zvuku** potřebuje balík
 [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) (uzly
@@ -95,7 +101,9 @@ po kartách, ať nestahuješ, co nepoužiješ.
 - `z_image_turbo_bf16.safetensors` (karta Obrázek)
 - `z_image_bf16.safetensors` (karta Obrázek — volba Z-Image Base, 11,5 GB),
   z [Comfy-Org/z_image](https://huggingface.co/Comfy-Org/z_image)
-- `qwen_image_edit_2511_fp8_e4m3fn.safetensors` (Oprava fotky a Úhel kamery)
+- `qwen_image_2.1_int8_convrot.safetensors` (Úprava obrázku, Oprava fotky a
+  Úhel kamery — Qwen Image 2.1,
+  7,3 GB), z [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
 - `flux1-Fill-Dev_FP8.safetensors` (Výměna tváře, Domalovat — volba Flux Fill)
 - `flux-2-klein-9b.safetensors` (Domalovat a karta Obrázek — volba FLUX.2 Klein;
   stáhni fp8 vydání z [black-forest-labs/FLUX.2-klein-9b-fp8](https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8),
@@ -121,7 +129,9 @@ v kterékoli z nich, stěhovat ho nemusíš.
   ta pred‑loha má enkodér zapsaný napevno, nvfp4 se u ní nepoužije
 - `qwen3vl_4b_fp8_scaled.safetensors` (Krea 2)
 - `qwen_3_4b.safetensors` (karta Obrázek — Z-Image Turbo i Base)
-- `qwen_2.5_vl_7b_fp8_scaled.safetensors` (Oprava fotky, Úhel kamery)
+- `qwen3vl_8b_int8_convrot.safetensors` (Úprava obrázku, Oprava fotky a Úhel
+  kamery — Qwen Image 2.1,
+  9,4 GB), z [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
 - `clip_l.safetensors` + `t5xxl_fp16.safetensors` (Výměna tváře, Domalovat — Flux Fill)
 - `qwen_3_8b_fp8mixed.safetensors` (karta Obrázek a Domalovat — FLUX.2 Klein), z
   [Comfy-Org/vae-text-encorder-for-flux-klein-9b](https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b)
@@ -134,7 +144,11 @@ v kterékoli z nich, stěhovat ho nemusíš.
   [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_video_vae_fp16.safetensors`
 - `minimax_h3_audio_vae_fp32.safetensors`
-- `qwen_image_vae.safetensors` (Krea 2, Oprava fotky, Úhel kamery)
+- `qwen_image_vae.safetensors` (Krea 2)
+- `qwen_image_2.1_vae_bf16.safetensors` (Úprava obrázku, Oprava fotky a Úhel
+  kamery — Qwen Image 2.1,
+  0,7 GB; 64kanálové RGBA VAE pro průhlednost), z
+  [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
 - `ae.sft` (karta Obrázek, Domalovat a Výměna tváře — FLUX/Z-Image autoenkodér)
 - `flux2-vae.safetensors` (karta Obrázek a Domalovat — FLUX.2 Klein a ERNIE),
   ze stejného repozitáře jako enkodér výš
@@ -168,15 +182,6 @@ v kterékoli z nich, stěhovat ho nemusíš.
 - zrychlovací (Turbo) LoRA k MiniMax H3 podle výběru v appce — nabídka se čte
   ze serveru, veřejné jsou ve složce `loras/` v
   [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3)
-- `Qwen-Image-Edit-2511-Lightning-4steps-V1.0-fp32.safetensors`
-  ([lightx2v](https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning)),
-  `qwen_image_edit_2511_upscale.safetensors`
-  ([starsfriday](https://huggingface.co/starsfriday/Qwen-Image-Edit-2511-Upscale2K)),
-  `flymy_realism.safetensors`
-  ([flymy-ai](https://huggingface.co/flymy-ai/qwen-image-realism-lora)) — Oprava fotky
-- `qwen-image-edit-2511-multiple-angles-lora.safetensors`
-  ([fal](https://huggingface.co/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA)) +
-  `Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors` (Úhel kamery)
 - `comfyui_portrait_lora64.safetensors` (ACE++), `FLUX.1-Turbo-Alpha.safetensors` (Výměna tváře)
 - `h3/TaoMate-H3-3step-ComfyUI.safetensors` (karta 3 kroky, 2,5 GB) — v podsložce
   `h3` a přesně pod tímhle jménem; na ní celý postup stojí, bez ní jsou tři kroky
@@ -185,6 +190,16 @@ v kterékoli z nich, stěhovat ho nemusíš.
 
 **vae_approx/**
 - `taeh3.safetensors` (živý náhled u videa, volitelné)
+
+### Licence Qwen Image 2.1
+
+Qwen Image 2.1 není pod Apache 2.0. Váhy byly vydány pod
+**Qwen Research License Agreement** a bez zvláštní licence jsou povolené
+jen pro **nekomerční výzkum a vyhodnocování**. Pro komerční použití autoři
+vyžadují samostatnou licenci přes `model-business@notice.qwencloud.com`.
+Aplikace váhy nešíří ani nestahuje; uživatel je přebírá přímo z Hugging Face
+a musí podmínky přijmout sám. Text licence:
+[QwenLM/Qwen-Image-2.1 LICENSE](https://github.com/QwenLM/Qwen-Image-2.1/blob/main/LICENSE).
 
 **SeedVR2** (karta Zvětšit): `seedvr2_ema_7b-Q4_K_M.gguf` a
 `ema_vae_fp16.safetensors` si balík **stáhne sám při prvním použití**.

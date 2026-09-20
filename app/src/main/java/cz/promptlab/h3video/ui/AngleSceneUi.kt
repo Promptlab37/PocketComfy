@@ -45,8 +45,7 @@ import cz.promptlab.h3video.ui.theme.TextMid
  * kamera táhne kolem objektu, a bokorys na výšku. Žádné psaní ani posuvníky:
  * zadání pro model se skládá z polohy kamery ([AngleBuilder.prompt]).
  *
- * Kamera skáče jen na natrénované polohy (8 × 4 × 3 = 96 póz). Plynulý pohyb
- * by sliboval, co model neumí — mezipolohy by graf stejně zahodil.
+ * Kamera skáče na 8 × 4 × 3 = 96 jednoznačně popsaných poloh.
  */
 @Composable
 fun AngleSection(vm: MainViewModel) {
@@ -128,13 +127,6 @@ fun AngleSection(vm: MainViewModel) {
             Text(
                 scene.popis,
                 style = MaterialTheme.typography.bodyMedium, color = TextMid
-            )
-
-            Spacer(Modifier.height(12.dp))
-            SilaLory(scene.sila, t("Síla přesunu")) { v -> vm.updateAngle { it.copy(sila = v) } }
-            Text(
-                t("Níž než 1 posune pohled míň, ale drží líp podobu předlohy."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
             )
 
             Spacer(Modifier.height(10.dp))

@@ -173,12 +173,12 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeMusicCover", false)
         set(v) = sp.edit().putBoolean("activeMusicCover", v).apply()
 
-    /** Běží rozdělaná oprava fotky (Qwen 2511)? Kvůli textům a fázím po restartu. */
+    /** Běží rozdělaná oprava fotky (Qwen 2.1)? Kvůli textům a fázím po restartu. */
     var activeRestore: Boolean
         get() = sp.getBoolean("activeRestore", false)
         set(v) = sp.edit().putBoolean("activeRestore", v).apply()
 
-    /** Běží rozdělaný úhel kamery (Qwen 2511 + LoRA)? Kvůli textům a fázím po restartu. */
+    /** Běží rozdělaný úhel kamery (Qwen 2.1)? Kvůli textům a fázím po restartu. */
     var activeAngle: Boolean
         get() = sp.getBoolean("activeAngle", false)
         set(v) = sp.edit().putBoolean("activeAngle", v).apply()

@@ -25,8 +25,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
-import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.ui.theme.TextLow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -47,10 +45,8 @@ import cz.promptlab.h3video.ui.theme.TextMid
  * opravovací zadání je vyladěné v předloze (škrábance, kolorizace,
  * doostření, potrhané okraje).
  *
- * Pod tím je nepovinné vlastní zadání a cílená LoRA, pro případ, kdy nejde
- * o starou fotku, ale o opravu konkrétního kusu hotového obrázku. Vlastní
- * zadání předlohové NAHRAZUJE: v tom předlohovém stojí „no shape
- * deformation", takže by cílenou opravu tvaru rovnou popřelo.
+ * Pod tím je nepovinné vlastní zadání pro cílenou opravu. Staré LoRA pro
+ * LoRA pro starší architekturu nejsou s Qwen Image 2.1 kompatibilní, proto je karta nenabízí.
  */
 @Composable
 fun RestoreSection(vm: MainViewModel) {
@@ -103,9 +99,6 @@ fun RestoreSection(vm: MainViewModel) {
         }
     }
 
-    val loras by vm.restoreLoras.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) { vm.refreshRestoreLoras() }
-
     SectionCard(
         title = t("Cílená oprava"),
         subtitle = t("Nepovinné. Prázdné = obecná záchrana staré fotky jako dosud")
@@ -121,30 +114,9 @@ fun RestoreSection(vm: MainViewModel) {
             if (scene.pokyn.isNotBlank()) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    t("Vlastní zadání nahradí opravovací zadání předlohy."),
-                    style = MaterialTheme.typography.bodySmall, color = Amber
+                    t("Vlastní zadání nahradí obecnou obnovu, Qwen 2.1 k němu přidá ochranu detailů."),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
-            }
-
-            if (loras.isNotEmpty()) {
-                Spacer(Modifier.height(12.dp))
-                LoraSeznam(
-                    nadpis = t("Cílená LoRA (nepovinná)"),
-                    seznam = loras,
-                    vybrana = scene.lora,
-                    prazdna = t("Žádná"),
-                    onVybrat = { lora -> vm.updateRestore { it.copy(lora = lora) } },
-                )
-                if (scene.lora.isNotBlank()) {
-                    Spacer(Modifier.height(4.dp))
-                    SilaLory(scene.loraSila) { v ->
-                        vm.updateRestore { it.copy(loraSila = v) }
-                    }
-                    Text(
-                        t("Řadí se za tři LoRA předlohy. Některé chtějí v zadání spouštěcí slovo."),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
-                    )
-                }
             }
         }
     }

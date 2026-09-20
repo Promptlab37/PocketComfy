@@ -131,8 +131,7 @@ object EditLoras {
 
     fun compatibility(motor: EditMotor, name: String, metadata: JSONObject? = null): LoraCompatibility {
         val filename = normalized(name)
-        if (filename.contains("krea2identityedit") ||
-            (filename.contains("qwen") && listOf("lightning", "4steps", "8steps").any { it in filename })) {
+        if (filename.contains("krea2identityedit")) {
             return LoraCompatibility.BUILT_IN
         }
         // Pouze údaje o základním modelu, nikdy popis nebo trénovací prompty.
@@ -149,7 +148,7 @@ object EditLoras {
         if (value.isBlank()) return LoraCompatibility.UNKNOWN
         val family = when {
             "krea2" in value -> EditMotor.KREA2
-            "qwen" in value && ("edit" in value || "2511" in value) -> EditMotor.QWEN
+            "qwenimage21" in value || "qwenimage2.1" in value -> EditMotor.QWEN21
             "klein" in value && "4b" in value -> return LoraCompatibility.INCOMPATIBLE
             "klein" in value && "9b" in value -> EditMotor.KLEIN
             // Označení Klein bez velikosti nebo obecné Qwen/FLUX.2 nestačí.

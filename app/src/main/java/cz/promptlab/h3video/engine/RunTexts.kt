@@ -145,8 +145,8 @@ fun stageDetailText(stage: Stage, kind: RunKind): String = when {
         RunKind.LONG -> t("MiniMax H3 (referenční váhy) + enkodér")
         RunKind.EDIT -> t("Krea 2 + textový enkodér")
         RunKind.T2I -> t("Z-Image Turbo + textový enkodér")
-        RunKind.RESTORE -> t("Qwen Image Edit 2511 + LoRA")
-        RunKind.ANGLE -> t("Qwen Image Edit 2511 + LoRA na úhly")
+        RunKind.RESTORE -> t("Qwen Image 2.1 — obnova fotografie")
+        RunKind.ANGLE -> t("Qwen Image 2.1 — nový úhel kamery")
         RunKind.SWAP -> t("Flux Fill + portrétní LoRA")
         RunKind.INPAINT -> t("Model na domalování + textový enkodér")
         RunKind.UPSCALE -> "SeedVR2 + VAE"

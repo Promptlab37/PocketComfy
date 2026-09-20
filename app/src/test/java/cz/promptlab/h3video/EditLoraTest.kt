@@ -21,16 +21,6 @@ class EditLoraTest {
         assertLora(graph)
     }
 
-    @Test fun `qwen prida lora na rychle i kvalitni ceste a zachova lightning`() {
-        for (fast in listOf(true, false)) {
-            val graph = QwenEditBuilder.build(template("workflow_qwen_edit"), scene(EditMotor.QWEN).copy(qwenRychle = fast), 42, listOf("image.png"))
-            assertEquals(EditLoraBuilder.NODE, upstream(graph, QwenEditBuilder.N_SAMPLER))
-            assertEquals(if (fast) QwenEditBuilder.N_LORA else QwenEditBuilder.N_CFGNORM, upstream(graph, EditLoraBuilder.NODE))
-            assertEquals(if (fast) 4 else 40, inputs(graph, QwenEditBuilder.N_SAMPLER).getInt("steps"))
-            assertLora(graph)
-        }
-    }
-
     @Test fun `klein vede lora do guideru a zachova obe reference`() {
         val graph = KleinEditBuilder.build(template("workflow_flux2_klein_edit"), scene(EditMotor.KLEIN), 42, listOf("a.png", "b.png"))
         assertEquals(EditLoraBuilder.NODE, upstream(graph, KleinEditBuilder.N_GUIDER))
@@ -63,20 +53,19 @@ class EditLoraTest {
 
     @Test fun `volba patri modelu a prezije serializaci i prepnuti zpet`() {
         val krea = scene(EditMotor.KREA2)
-        val qwen = krea.copy(motor = EditMotor.QWEN)
-        assertTrue(qwen.selectedLora.name.isEmpty())
-        val both = qwen.withLora(EditLora("qwen.safetensors", 1.1f))
+        val klein = krea.copy(motor = EditMotor.KLEIN)
+        assertTrue(klein.selectedLora.name.isEmpty())
+        val both = klein.withLora(EditLora("klein.safetensors", 1.1f))
         val restored = both.copy(modelLoras = EditLoras.decode(EditLoras.encode(both.modelLoras)))
-        assertEquals(EditLora("qwen.safetensors", 1.1f), restored.selectedLora)
+        assertEquals(EditLora("klein.safetensors", 1.1f), restored.selectedLora)
         assertEquals(krea.selectedLora, restored.copy(motor = EditMotor.KREA2).selectedLora)
     }
 
     @Test fun `nabidka rozlisuje rodiny a velikost klein`() {
         assertEquals(LoraCompatibility.MATCH, EditLoras.compatibility(EditMotor.KREA2, "Krea_2/style.safetensors"))
-        assertEquals(LoraCompatibility.MATCH, EditLoras.compatibility(EditMotor.QWEN, "qwen_image_edit/custom.safetensors"))
         assertEquals(LoraCompatibility.MATCH, EditLoras.compatibility(EditMotor.KLEIN, "Flux-2-Klein-9B/style.safetensors"))
         assertEquals(LoraCompatibility.INCOMPATIBLE, EditLoras.compatibility(EditMotor.KLEIN, "klein-4b.safetensors"))
-        assertEquals(LoraCompatibility.INCOMPATIBLE, EditLoras.compatibility(EditMotor.KREA2, "qwen_edit.safetensors"))
+        assertEquals(LoraCompatibility.UNKNOWN, EditLoras.compatibility(EditMotor.KREA2, "qwen_edit.safetensors"))
         assertEquals(LoraCompatibility.UNKNOWN, EditLoras.compatibility(EditMotor.KLEIN, "portrait.safetensors"))
         assertEquals(LoraCompatibility.UNKNOWN, EditLoras.compatibility(EditMotor.KLEIN, "klein_portrait.safetensors"))
     }
@@ -84,13 +73,12 @@ class EditLoraTest {
     @Test fun `metadata mohou rozpoznat libovolne pojmenovany soubor`() {
         val metadata = JSONObject().put("ss_base_model_version", "flux-2-klein-9b")
         assertEquals(LoraCompatibility.MATCH, EditLoras.compatibility(EditMotor.KLEIN, "portrait.safetensors", metadata))
-        assertEquals(LoraCompatibility.INCOMPATIBLE, EditLoras.compatibility(EditMotor.QWEN, "qwen_edit_name.safetensors", metadata))
+        assertEquals(LoraCompatibility.INCOMPATIBLE, EditLoras.compatibility(EditMotor.KREA2, "qwen_edit_name.safetensors", metadata))
         val prompt = JSONObject().put("ss_tag_frequency", "qwen edit flux klein 9b")
         assertEquals(LoraCompatibility.UNKNOWN, EditLoras.compatibility(EditMotor.KLEIN, "portrait.safetensors", prompt))
     }
 
     @Test fun `vestavene lora se nenabizi podruhe`() {
         assertEquals(LoraCompatibility.BUILT_IN, EditLoras.compatibility(EditMotor.KREA2, "krea2_identity_edit_v1_2.safetensors"))
-        assertEquals(LoraCompatibility.BUILT_IN, EditLoras.compatibility(EditMotor.QWEN, QwenEditBuilder.LORA_FILE))
     }
 }

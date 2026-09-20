@@ -18,19 +18,18 @@ import java.io.File
  * **mazání objektů Turbo varianta nezvládá spolehlivě**.
  */
 @Immutable
-/**
- * Čím se fotka upraví. Obojí je editační model, každý jinak postavený.
- */
+/** Čím se fotka upraví. Každý motor je postavený jinak. */
 enum class EditMotor(private val nazevCs: String, private val popisCs: String) {
     KREA2(
         "Krea 2",
         "Má páčku na věrnost podoby a je rychlejší. Druhou předlohu bere " +
             "jako osobu, kterou má do scény vložit.",
     ),
-    QWEN(
-        "Qwen Image Edit 2511",
-        "Na zadání nejposlušnější z těch tří — mění jen to, co jsi napsal, " +
-            "a zbytek obrázku nechává. Druhou předlohu bere jako „obrázek 2“.",
+    QWEN21(
+        "Qwen Image 2.1",
+        "Nový 7B model pro přesné úpravy, text a věrnost lidí i výrobků. Umí až " +
+            "10 obrázků a průhledné RGBA, ale potřebuje nejnovější ComfyUI. " +
+            "Výzkumná licence dovoluje bez zvláštního souhlasu jen nekomerční použití.",
     ),
     KLEIN(
         "FLUX.2 Klein 9B",
@@ -41,6 +40,37 @@ enum class EditMotor(private val nazevCs: String, private val popisCs: String) {
     val nazev: String get() = t(nazevCs)
     val popis: String get() = t(popisCs)
 }
+
+/** Kolik detailu z každé reference dostane Qwen 2.1. */
+enum class Qwen21Resolution(val pixels: Int, private val labelCs: String) {
+    ORIGINAL(0, "Původní velikost"),
+    STANDARD(1024, "1024 px — doporučeno"),
+    NATIVE_2K(2048, "2048 px — maximum");
+
+    val label: String get() = t(labelCs)
+}
+
+/** Kam Qwen 2.1 ukládá KV cache společnou pro všechny vzorkovací kroky. */
+enum class Qwen21CacheDevice(val value: String, private val labelCs: String) {
+    AUTO("auto", "Automaticky"),
+    GPU("gpu", "Grafická karta"),
+    CPU("cpu", "Operační paměť"),
+    OFF("off", "Vypnout cache");
+
+    val label: String get() = t(labelCs)
+}
+
+/** Přesnost KV cache. Nižší přesnost šetří paměť, ne váhy modelu. */
+enum class Qwen21CachePrecision(val value: String, private val labelCs: String) {
+    DEFAULT("default", "Plná přesnost"),
+    INT8("int8", "INT8 — poloviční cache"),
+    INT4("int4", "INT4 — čtvrtinová cache");
+
+    val label: String get() = t(labelCs)
+}
+
+/** Další reference za hlavním obrázkem; soubor a náhled se drží spolu. */
+data class EditReference(val file: File, val thumb: Bitmap?)
 
 /**
  * Co má u úpravy vyhrát, když si zadání a předloha odporují.
@@ -93,6 +123,8 @@ data class ImageEditScene(
     /** Druhá předloha — osoba, kterou chce uživatel do scény vložit. */
     val person: File? = null,
     val personThumb: Bitmap? = null,
+    /** Qwen 2.1 umí za druhou předlohou ještě obrázky 3–10. */
+    val moreReferences: List<EditReference> = emptyList(),
     /** Co se má změnit, běžnou řečí. */
     val prompt: String = "",
     /**
@@ -111,11 +143,15 @@ data class ImageEditScene(
     val groundingPx: Int = EditZamer.VYVAZENE.grounding,
     /** Síla LoRA na totožnost. Nižší = ochotnější změna. */
     val loraSila: Float = EditZamer.VYVAZENE.loraSila,
-    /**
-     * Qwen: rychlá cesta přes Lightning LoRA (4 kroky), nebo pomalá a lepší
-     * (40 kroků). Obojí má oficiální předloha, jen schované za přepínačem.
-     */
-    val qwenRychle: Boolean = true,
+    /** Qwen 2.1: počet kroků. Oficiální ComfyUI předloha začíná na 25. */
+    val qwen21Steps: Int = 25,
+    /** Qwen 2.1: plocha, na kterou se každá reference srovná při kódování. */
+    val qwen21Resolution: Qwen21Resolution = Qwen21Resolution.STANDARD,
+    /** Qwen 2.1: umístění a přesnost prefixové KV cache. */
+    val qwen21CacheDevice: Qwen21CacheDevice = Qwen21CacheDevice.AUTO,
+    val qwen21CachePrecision: Qwen21CachePrecision = Qwen21CachePrecision.DEFAULT,
+    /** Přidá modelu výslovný pokyn k výstupu s alfa kanálem. */
+    val qwen21Transparent: Boolean = false,
     /** Každý motor má vlastní volbu: LoRA se nepřenáší mezi nekompatibilními modely. */
     val modelLoras: Map<EditMotor, EditLora> = emptyMap(),
     /** Delší hrana výstupu; 1 MP je podle autora rozumný strop. */
@@ -130,6 +166,30 @@ data class ImageEditScene(
 
     val hasPerson: Boolean get() = person != null
 
+    /** Reference za hlavním obrázkem v pořadí, v jakém je model uvidí. */
+    val references: List<EditReference>
+        get() = listOfNotNull(person?.let { EditReference(it, personThumb) }) + moreReferences
+
+    /** Uloží kompaktní pořadí referencí zpět do starého slotu 2 a nových slotů 3–10. */
+    fun withReferences(items: List<EditReference>): ImageEditScene {
+        val refs = items.take(MAX_QWEN21_REFERENCES)
+        return copy(
+            person = refs.firstOrNull()?.file,
+            personThumb = refs.firstOrNull()?.thumb,
+            moreReferences = refs.drop(1),
+        )
+    }
+
+    /** Prompt posílaný Qwen 2.1; přepínač průhlednosti je skutečný pokyn modelu. */
+    val qwen21Prompt: String
+        get() = buildString {
+            append(prompt.trim())
+            if (qwen21Transparent) {
+                if (isNotEmpty()) append(" ")
+                append("The output must be an RGBA image with alpha channel and a transparent background.")
+            }
+        }
+
     /** Který záměr odpovídá nastaveným páčkám, nebo null u vlastního mixu. */
     val zamer: EditZamer?
         get() = EditZamer.entries.firstOrNull {
@@ -142,13 +202,20 @@ data class ImageEditScene(
         copy(groundingPx = z.grounding, refBoost = z.refBoost, loraSila = z.loraSila)
 
     /** Obrázky v pořadí, v jakém se nahrávají do ComfyUI. */
-    val uploadImages: List<File> get() = listOfNotNull(source, person)
+    val uploadImages: List<File>
+        get() = if (motor == EditMotor.QWEN21) {
+            listOfNotNull(source) + references.take(MAX_QWEN21_REFERENCES).map { it.file }
+        } else {
+            listOfNotNull(source, person)
+        }
 
     companion object {
         /** Nad 2 MP se podle autora obsah začíná zdvojovat. */
         const val MAX_MEGAPIXELS = 2f
         const val MIN_GROUNDING = 256
         const val MAX_GROUNDING = 1536
+        /** Devět referencí + upravovaný obrázek = oficiální limit deset. */
+        const val MAX_QWEN21_REFERENCES = 9
     }
 }
 
@@ -163,6 +230,15 @@ fun imageEditProblem(s: ImageEditScene): String? = when {
 fun imageEditHints(s: ImageEditScene): List<String> {
     val out = mutableListOf<String>()
     val text = s.prompt.lowercase()
+    if (s.motor == EditMotor.QWEN21) {
+        if (s.references.isNotEmpty() && !Regex("<image\\d+>").containsMatchIn(s.prompt)) {
+            out += t("U více předloh napiš do zadání <image1>, <image2>… Model pak přesně ví, z které má co převzít.")
+        }
+        if (s.qwen21Resolution == Qwen21Resolution.NATIVE_2K) {
+            out += t("Kódování referencí ve 2K bere výrazně víc paměti. Když dojde VRAM nebo RAM, vrať 1024 px a cache dej na INT8.")
+        }
+        return out
+    }
     if (listOf("odeber", "smaž", "smaz", "vymaž", "vymaz", "remove", "delete", "erase")
             .any { it in text }
     ) {

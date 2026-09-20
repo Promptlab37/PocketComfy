@@ -8,11 +8,11 @@ import java.io.File
 
 /**
  * Karta **Úhel kamery** — z jedné fotky tentýž objekt z jiného místa
- * (Qwen Image Edit 2511 + LoRA `multiple-angles`).
+ * pomocí nativní editace Qwen Image 2.1.
  *
  * Uživatel nezadává text: nastaví, odkud se má kamera dívat, jak vysoko
- * a jak daleko. Z toho se složí zadání ve tvaru, na kterém je LoRA
- * natrénovaná — viz [AngleBuilder.prompt].
+ * a jak daleko. Z toho se složí přesný přirozený pokyn pro model — viz
+ * [AngleBuilder.prompt].
  *
  * Fotka se ukládá bez zmenšení a překódování (jako u karty Oprava fotky).
  */
@@ -26,11 +26,6 @@ data class AngleScene(
     val vyska: Int = 1,
     /** Odstup od objektu, index do [AngleBuilder.ODSTUPY]. Výchozí polocelek. */
     val odstup: Int = 1,
-    /**
-     * Síla LoRA. Jednička je hodnota z předlohy; níž se pohled posune míň,
-     * ale drží se líp podoba předlohy.
-     */
-    val sila: Float = 1f,
 ) {
     val uploadImages: List<File> get() = listOfNotNull(source)
 
@@ -57,7 +52,6 @@ class AngleStore(private val ctx: Context) {
             azimut = sp.getInt(KEY_AZIMUT, 0),
             vyska = sp.getInt(KEY_VYSKA, 1),
             odstup = sp.getInt(KEY_ODSTUP, 1),
-            sila = sp.getFloat(KEY_SILA, 1f),
         )
         val name = sp.getString(KEY, null) ?: return zaklad
         val f = File(dir(), name)
@@ -70,7 +64,6 @@ class AngleStore(private val ctx: Context) {
             .putInt(KEY_AZIMUT, s.azimut)
             .putInt(KEY_VYSKA, s.vyska)
             .putInt(KEY_ODSTUP, s.odstup)
-            .putFloat(KEY_SILA, s.sila)
             .apply()
     }
 
@@ -79,6 +72,5 @@ class AngleStore(private val ctx: Context) {
         const val KEY_AZIMUT = "angleAzimut"
         const val KEY_VYSKA = "angleVyska"
         const val KEY_ODSTUP = "angleOdstup"
-        const val KEY_SILA = "angleSila"
     }
 }

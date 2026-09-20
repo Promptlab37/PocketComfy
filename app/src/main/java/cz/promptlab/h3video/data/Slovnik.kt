@@ -61,9 +61,56 @@ object Slovnik {
         "Níž než 1 posune pohled míň, ale drží líp podobu předlohy." to "Below 1 the view moves less but keeps the original likeness better.",
         "Zadání pro model" to "Prompt sent to the model",
         "Otáčím pohled" to "Turning the view",
-        "Qwen Image Edit 2511 + LoRA na úhly" to "Qwen Image Edit 2511 + camera-angle LoRA",
+        "Qwen Image 2.1 — nový úhel kamery" to "Qwen Image 2.1 — new camera angle",
         "Nový úhel kamery" to "New camera angle",
         "Otočit pohled" to "Turn the view",
+        // Qwen Image 2.1 — Úprava obrázku (3.64).
+        "Qwen Image 2.1" to "Qwen Image 2.1",
+        "Nový 7B model pro přesné úpravy, text a věrnost lidí i výrobků. Umí až 10 obrázků a průhledné RGBA, ale potřebuje nejnovější ComfyUI. Výzkumná licence dovoluje bez zvláštního souhlasu jen nekomerční použití." to
+            "A new 7B model for precise edits, typography, and faithful people and products. It supports up to 10 images and transparent RGBA, but needs the latest ComfyUI. Its research license permits only non-commercial use without a separate agreement.",
+        "Obrázek 1 je vždy ten, který se upravuje" to "Image 1 is always the image being edited",
+        "Obrázek 1 — upravovaný" to "Image 1 — edit target",
+        "Další předlohy" to "Additional references",
+        "Až 9 referencí navíc; v zadání je označ <image2> až <image10>" to
+            "Up to 9 more references; identify them as <image2> through <image10> in the prompt",
+        "Obrázek %d" to "Image %d",
+        "Přidat obrázek %d" to "Add image %d",
+        "První obrázek určuje velikost výsledku. Ostatní mohou mít jiný poměr stran." to
+            "The first image sets the output size. Other references may use a different aspect ratio.",
+        "Ponech člověka z <image1> a obleč mu bundu z <image2>" to
+            "Keep the person from <image1> and dress them in the jacket from <image2>",
+        "Nativní 2K, více předloh a průhledné RGBA" to
+            "Native 2K, multiple references, and transparent RGBA",
+        "Oficiální workflow začíná na 25. Pro maximum detailu použij 40–50." to
+            "The official workflow starts at 25. Use 40–50 for maximum detail.",
+        "Velikost referencí" to "Reference size",
+        "Původní velikost" to "Original size",
+        "1024 px — doporučeno" to "1024 px — recommended",
+        "2048 px — maximum" to "2048 px — maximum",
+        "1024 px je oficiální výchozí hodnota. 2K zachová víc detailu, ale spotřebuje výrazně víc paměti." to
+            "1024 px is the official default. 2K preserves more detail but uses substantially more memory.",
+        "Průhledné pozadí (RGBA)" to "Transparent background (RGBA)",
+        "Přidá do zadání výslovný pokyn k alfa kanálu. Výsledek zůstane PNG." to
+            "Adds an explicit alpha-channel instruction to the prompt. The result stays a PNG.",
+        "cache %s · %s" to "cache %s · %s",
+        "KV cache" to "KV cache",
+        "Qwen si reference spočítá jednou a používá je ve všech krocích" to
+            "Qwen computes the references once and reuses them at every step",
+        "Kam uložit cache" to "Where to store the cache",
+        "Přesnost cache" to "Cache precision",
+        "Automaticky" to "Automatic",
+        "Grafická karta" to "GPU",
+        "Operační paměť" to "System memory",
+        "Vypnout cache" to "Disable cache",
+        "Plná přesnost" to "Full precision",
+        "INT8 — poloviční cache" to "INT8 — half-size cache",
+        "INT4 — čtvrtinová cache" to "INT4 — quarter-size cache",
+        "Automaticky je nejbezpečnější. INT8 cache zabere polovinu, INT4 čtvrtinu, ale může lehce snížit přesnost úpravy. Vypnutí cache šetří paměť za cenu pomalejšího běhu." to
+            "Automatic is safest. INT8 halves the cache and INT4 quarters it, but may slightly reduce edit accuracy. Disabling the cache saves memory at the cost of a slower run.",
+        "U více předloh napiš do zadání <image1>, <image2>… Model pak přesně ví, z které má co převzít." to
+            "With multiple references, use <image1>, <image2>… in the prompt so the model knows exactly what to take from each.",
+        "Kódování referencí ve 2K bere výrazně víc paměti. Když dojde VRAM nebo RAM, vrať 1024 px a cache dej na INT8." to
+            "Encoding references at 2K uses substantially more memory. If VRAM or RAM runs out, return to 1024 px and set the cache to INT8.",
         // Knihovna obsahu a LoRA pro editační modely.
         "Knihovna obsahu" to "Content library",
         "v aplikaci" to "in the app",
@@ -268,7 +315,9 @@ object Slovnik {
         "MiniMax H3 + textový enkodér" to "MiniMax H3 + text encoder",
         "Krea 2 + textový enkodér" to "Krea 2 + text encoder",
         "Z-Image Turbo + textový enkodér" to "Z-Image Turbo + text encoder",
-        "Qwen Image Edit 2511 + LoRA" to "Qwen Image Edit 2511 + LoRA",
+        "Qwen Image 2.1 — obnova fotografie" to "Qwen Image 2.1 — photo restoration",
+        "Vlastní zadání nahradí obecnou obnovu, Qwen 2.1 k němu přidá ochranu detailů." to
+            "Your instruction replaces general restoration; Qwen 2.1 adds detail-preservation guidance.",
         "Flux Fill + portrétní LoRA" to "Flux Fill + portrait LoRA",
         "Nejdelší část – obraz i zvuk najednou" to "The long part — video and audio at once",
         "Celá skladba vzniká najednou" to "The whole song is generated in one pass",
