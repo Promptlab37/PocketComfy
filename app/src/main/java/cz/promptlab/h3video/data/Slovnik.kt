@@ -609,6 +609,10 @@ object Slovnik {
         "✨ Vylepšit prompt" to "✨ Improve the prompt",
         "✨ Vylepšit zadání" to "✨ Improve the instruction",
         "✨ Vylepšit (Qwen)" to "✨ Improve (Qwen)",
+        "Qwenův přepisovač tohle zadání odmítl. " +
+            "Zkus ✨ Vylepšit (odvázaně) — ten nic nepřepisuje." to
+            "Qwen's rewriter refused this request. " +
+            "Try ✨ Improve (unfiltered) — that one rewrites nothing.",
         "Qwen se podívá i na fotky, ale odvážnější zadání sám zjemní. " +
             "Odvázaný nepřepisuje nic, zato fotku nevidí — píše jen z toho, " +
             "co napíšeš ty." to

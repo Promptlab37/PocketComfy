@@ -69,7 +69,7 @@ class Qwen21PeBuilderTest {
             "S", "x", Qwen21PeBuilder.MODEL_T2I, emptyList(),
             Qwen21PeBuilder.MAX_TOKENU_RYCHLE, 1L,
         )
-        assertEquals(1536, inputs(wf, Qwen21PeBuilder.N_GEN).getInt("max_length"))
+        assertEquals(640, inputs(wf, Qwen21PeBuilder.N_GEN).getInt("max_length"))
         assertTrue(Qwen21PeBuilder.MAX_TOKENU_RYCHLE < Qwen21PeBuilder.MAX_TOKENU_T2I)
     }
 
@@ -174,5 +174,25 @@ class Qwen21PeBuilderTest {
         assertTrue(system.contains("sanitise it, and never refuse"))
         // Model se po prepisu uklidi z VRAM, hned potom se generuje.
         assertTrue(llm.getBoolean("force_offload"))
+    }
+
+    /**
+     * Odmitnuti se musi poznat od useknute odpovedi. U odmitnuti nema smysl
+     * radit "zkus to znovu" — model odmitne zas; spravna rada je prepnout
+     * na odvazany vylepsovac.
+     */
+    @Test
+    fun `odmitnuti se pozna od poraditelne chyby`() {
+        val odmitnuti = "I must refuse to generate this content. It is not permissible."
+        assertTrue(Qwen21PeBuilder.jeOdmitnuti(odmitnuti))
+        assertNull(Qwen21PeBuilder.parse(odmitnuti))
+        // Platny prepis odmitnuti neni.
+        assertFalse(
+            Qwen21PeBuilder.jeOdmitnuti("""{"rewritten_prompt": "x", "wh_ratio": "1:1"}""")
+        )
+        // Prazdna odpoved taky ne — to je jina porucha.
+        assertFalse(Qwen21PeBuilder.jeOdmitnuti(""))
+        // Odmitnuti za blokem uvahy.
+        assertTrue(Qwen21PeBuilder.jeOdmitnuti("<think>hmm</think> I cannot help with that."))
     }
 }

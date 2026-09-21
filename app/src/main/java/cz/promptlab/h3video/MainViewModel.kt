@@ -2168,7 +2168,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     uklidPredPrepisem(client)
                     Qwen21PeBuilder.parse(syrove) ?: throw ComfyException(
                         "prepis bez JSON",
-                        "Přepisovač nevrátil použitelný výsledek. Zkus to znovu.",
+                        if (Qwen21PeBuilder.jeOdmitnuti(syrove)) {
+                            "Qwenův přepisovač tohle zadání odmítl. " +
+                                "Zkus ✨ Vylepšit (odvázaně) — ten nic nepřepisuje."
+                        } else {
+                            "Přepisovač nevrátil použitelný výsledek. Zkus to znovu."
+                        },
                     )
                 }
             }

@@ -103,8 +103,13 @@ object Qwen21PeBuilder {
      * Měřeno 21. 9. 2026 na RTX 4060 Ti: model píše ~2,8 tokenu za vteřinu.
      * S uvažováním napsal za osm a půl minuty necelou pětinu z 24000 tokenů
      * a uživatel to musel zabít. Proto je rychlý režim výchozí.
+     *
+     * 640 proto, že povedený přepis skončí kolem 350 tokenů. Vyšší strop
+     * pomáhá jen tomu, kdo se rozpovídá do prázdna — typicky když model
+     * zadání odmítne a píše dlouhé zdůvodnění. Jeden takový běh u uživatele
+     * spotřeboval celých 1536 tokenů a šest minut.
      */
-    const val MAX_TOKENU_RYCHLE = 1536
+    const val MAX_TOKENU_RYCHLE = 640
 
     private const val VISION = "<|vision_start|><|image_pad|><|vision_end|>"
 
@@ -239,6 +244,19 @@ object Qwen21PeBuilder {
             posledni = odkaz(id)
         }
         return posledni
+    }
+
+    /**
+     * Vrátil model místo přepisu odmítnutí?
+     *
+     * Odmítnutí nemá JSON a je to souvislá próza o tom, proč to nejde.
+     * Pozná se tak, že v ní chybí `{` a zároveň není prázdná. Volajícímu to
+     * dovolí poradit odvázaný vylepšovač místo neužitečného „zkus to znovu" —
+     * opakování u odmítnutí nepomůže, model odmítne zas.
+     */
+    fun jeOdmitnuti(odpoved: String): Boolean {
+        val zaUvahou = odpoved.substringAfter("</think>", odpoved).trim()
+        return zaUvahou.isNotEmpty() && !zaUvahou.contains('{')
     }
 
     /** Co přepisovač vrátil. */
