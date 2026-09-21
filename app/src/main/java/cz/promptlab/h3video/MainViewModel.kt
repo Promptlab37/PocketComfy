@@ -2491,6 +2491,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     first = it.first.copy(image = target, thumb = thumb),
                 )
             }
+            // Poměr stran z té fotky — stejně, jako když ji uživatel vybere
+            // ručně. Bez toho zůstane plátno z minulé úlohy (typicky 16:9)
+            // a H3 obrázek na výšku roztáhne. Musí být až po updateAio:
+            // vstupUrcujePomer se ptá na režim karty, a ten se mění tady.
+            prevezmiPomerZeVstupu("first", target, video = false)
             hlidejProfilKCeste()
             setMode(Mode.ALLINONE)
             selectTab(Tab.CREATE)
