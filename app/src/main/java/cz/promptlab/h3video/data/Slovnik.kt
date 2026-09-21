@@ -608,6 +608,12 @@ object Slovnik {
             "What to keep from the photos (face, hair, clothes) and what to skip",
         "✨ Vylepšit prompt" to "✨ Improve the prompt",
         "✨ Vylepšit zadání" to "✨ Improve the instruction",
+        "✨ Vylepšit (Qwen)" to "✨ Improve (Qwen)",
+        "✨ Vylepšit (odvázaně)" to "✨ Improve (unfiltered)",
+        "Qwen je na tenhle model vycvičený a poradí i poměr stran, " +
+            "ale odvážnější zadání sám zjemní. Odvázaný nepřepisuje nic." to
+            "Qwen is trained for this model and suggests an aspect ratio, " +
+            "but it softens bolder requests on its own. The unfiltered one rewrites nothing.",
         "Velikost" to "Size",
         "Qwen 2.1 umí 2K nativně" to "Qwen 2.1 does 2K natively",
         "Generovat ve 2K" to "Generate at 2K",

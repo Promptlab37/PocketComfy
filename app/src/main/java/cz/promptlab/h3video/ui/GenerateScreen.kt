@@ -920,9 +920,15 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     onSelect = { v -> vm.update { it.copy(aspect = v) } }
                 )
                 // ✨ Vylepšovač: pár slov (klidně česky) → plný prompt.
-                // U Z-Image ho píše obecný LLM podle pravidel Z-Image, u Qwen
-                // Image 2.1 jeho vlastní přepisovač PE-T2I od Qwenu — ten umí
-                // navíc doporučit poměr stran, tak se rovnou nastaví.
+                //
+                // U Qwen 2.1 jsou nabídnuté DVA, protože každý umí něco jiného:
+                //  - PE-T2I od Qwenu je na tenhle model vycvičený a doporučí
+                //    i poměr stran, ale je cenzurovaný — ověřeno 21. 9. 2026:
+                //    zadání „akt" potichu přepsal na ženu v podprsence, aniž
+                //    by cokoli odmítl,
+                //  - obecný vylepšovač jede na odblokovaném modelu z `models/LLM`
+                //    (viz ImagePromptBuilder.vyberModel) a nepřepisuje nic.
+                // Jedno tlačítko by tu volbu schovalo, proto jsou vidět obě.
                 val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
                 val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
                 val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
@@ -932,18 +938,23 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     MainViewModel.PraceNaPromptu.PREKLAD
                 val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
                 Spacer(Modifier.height(8.dp))
+                val jeQwen21 = T2iModel.zId(params.zimageModel) == T2iModel.QWEN21
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    OutlineButton(
-                        if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
-                        color = Cyan,
-                    ) {
-                        if (!bezi) {
-                            if (T2iModel.zId(params.zimageModel) == T2iModel.QWEN21) {
-                                vm.vylepsiQwen21Prompt(proUpravu = false)
-                            } else {
-                                vm.vylepsiObrazovyPrompt()
-                            }
-                        }
+                    if (jeQwen21) {
+                        OutlineButton(
+                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit (Qwen)"),
+                            color = Cyan,
+                        ) { if (!bezi) vm.vylepsiQwen21Prompt(proUpravu = false) }
+                        Spacer(Modifier.width(8.dp))
+                        OutlineButton(
+                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
+                            color = cz.promptlab.h3video.ui.theme.Amber,
+                        ) { if (!bezi) vm.vylepsiObrazovyPrompt() }
+                    } else {
+                        OutlineButton(
+                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
+                            color = Cyan,
+                        ) { if (!bezi) vm.vylepsiObrazovyPrompt() }
                     }
                     Spacer(Modifier.width(8.dp))
                     // Kdo si prompt napsal sám, nechce ho rozepsat — chce ho
@@ -980,6 +991,14 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                                 .padding(horizontal = 6.dp, vertical = 4.dp)
                         )
                     }
+                }
+                if (jeQwen21) {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        t("Qwen je na tenhle model vycvičený a poradí i poměr stran, " +
+                            "ale odvážnější zadání sám zjemní. Odvázaný nepřepisuje nic."),
+                        style = MaterialTheme.typography.bodySmall, color = TextLow,
+                    )
                 }
                 (stavPrepisu as? MainViewModel.RewriteState.Fail)?.let {
                     Spacer(Modifier.height(4.dp))
