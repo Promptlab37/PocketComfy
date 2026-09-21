@@ -2090,10 +2090,27 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         "zadny model",
                         "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
                     )
+                    // Odblokovaný Qwen3-VL fotku vidět umí — potřebuje k sobě
+                    // jen svůj projektor. Když na serveru není, jede se dál
+                    // naslepo z textu; to je pořád lepší než spadnout.
+                    val mmprojNabidka = spec.getJSONObject("input").getJSONObject("required")
+                        .getJSONArray("mmproj").getJSONArray(0)
+                    val mmproj = ImagePromptBuilder.vyberMmproj(
+                        model,
+                        (0 until mmprojNabidka.length()).map { mmprojNabidka.getString(it) },
+                    )
+                    val fotky = if (mmproj == "None") emptyList() else {
+                        _edit.value.uploadImages.map { f ->
+                            client.uploadImage(f.readBytes(), f.name)
+                        }
+                    }
                     val wf = ImagePromptBuilder.buildUprava(
                         zadani = zadani,
                         model = model,
                         seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                        pocetPredloh = _edit.value.uploadImages.size,
+                        mmproj = mmproj,
+                        obrazky = fotky,
                     )
                     spustPrepisAPockej(client, wf, ImagePromptBuilder.N_PREVIEW)
                 }

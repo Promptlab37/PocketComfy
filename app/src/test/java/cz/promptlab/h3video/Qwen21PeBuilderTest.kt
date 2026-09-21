@@ -164,9 +164,10 @@ class Qwen21PeBuilderTest {
         val system = llm.getString("system_prompt")
         assertEquals("sundej ji bundu", llm.getString("custom_prompt"))
         // Pokyn k uprave, ne popis obrazku.
-        assertTrue(system.contains("editing instruction"))
-        // Nevidi fotku, takze si nesmi domyslet, co na ni je.
-        assertTrue(system.contains("NOT looking at the photo"))
+        assertTrue(system.contains("editing request"))
+        // Umi obe role: lokalni zmenu i preskladani sceny.
+        assertTrue(system.contains("A LOCAL CHANGE"))
+        assertTrue(system.contains("A NEW SCENE OR POSE"))
         // Znacky referenci musi prezit.
         assertTrue(system.contains("<image2>"))
         // A hlavne: nesmi nic zjemnovat — to je duvod, proc vedle Qwena existuje.
@@ -194,5 +195,50 @@ class Qwen21PeBuilderTest {
         assertFalse(Qwen21PeBuilder.jeOdmitnuti(""))
         // Odmitnuti za blokem uvahy.
         assertTrue(Qwen21PeBuilder.jeOdmitnuti("<think>hmm</think> I cannot help with that."))
+    }
+
+    @Test
+    fun `vidouci rezim potrebuje projektor i obsluhu chatu`() {
+        val model = "Huihui-Qwen3-VL-8B-Instruct-abliterated-Q6_K.gguf"
+        val nabidka = listOf(
+            "None",
+            "Huihui-Qwen3-VL-8B-Instruct-abliterated-mmproj-F16.gguf",
+            "Qwen3.5-4B_mmproj-F16.gguf",
+        )
+        val mmproj = ImagePromptBuilder.vyberMmproj(model, nabidka)
+        assertEquals("Huihui-Qwen3-VL-8B-Instruct-abliterated-mmproj-F16.gguf", mmproj)
+        assertEquals("Qwen3-VL", ImagePromptBuilder.obsluha(model))
+        // Cizi projektor se nesmi spárovat.
+        assertEquals("None", ImagePromptBuilder.vyberMmproj("neznamy-model.gguf", nabidka))
+
+        val wf = ImagePromptBuilder.buildUprava(
+            "posad je do lesa", model, 1L, pocetPredloh = 2,
+            mmproj = mmproj, obrazky = listOf("a.png", "b.png"),
+        )
+        val loader = wf.getJSONObject(ImagePromptBuilder.N_LOADER).getJSONObject("inputs")
+        assertEquals(mmproj, loader.getString("mmproj"))
+        // Uzel odmitne graf, kdyz je projektor bez obsluhy chatu.
+        assertTrue(loader.getString("chat_handler") != "None")
+        // Obrazove tokeny musi byt povolene, jinak model fotku nezakoduje.
+        assertTrue(loader.getInt("image_max_tokens") > 0)
+        val llm = wf.getJSONObject(ImagePromptBuilder.N_LLM).getJSONObject("inputs")
+        assertTrue(llm.has("images"))
+        // Predlohy jdou do modelu zmensene.
+        assertEquals(
+            ImagePromptBuilder.PREDLOHA_MAX_PX,
+            wf.getJSONObject("150").getJSONObject("inputs").getInt("largest_size"),
+        )
+        // Zadani nese, kolik predloh je a co znamenaji.
+        assertTrue(llm.getString("custom_prompt").contains("<image2>"))
+    }
+
+    @Test
+    fun `bez projektoru se obrazky vubec neposilaji`() {
+        val wf = ImagePromptBuilder.buildUprava("x", "model.gguf", 1L, pocetPredloh = 2)
+        val loader = wf.getJSONObject(ImagePromptBuilder.N_LOADER).getJSONObject("inputs")
+        assertEquals("None", loader.getString("mmproj"))
+        assertEquals("None", loader.getString("chat_handler"))
+        assertEquals(0, loader.getInt("image_max_tokens"))
+        assertTrue(!wf.getJSONObject(ImagePromptBuilder.N_LLM).getJSONObject("inputs").has("images"))
     }
 }

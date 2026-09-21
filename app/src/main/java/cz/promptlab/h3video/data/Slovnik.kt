@@ -613,12 +613,10 @@ object Slovnik {
             "Zkus ✨ Vylepšit (odvázaně) — ten nic nepřepisuje." to
             "Qwen's rewriter refused this request. " +
             "Try ✨ Improve (unfiltered) — that one rewrites nothing.",
-        "Qwen se podívá i na fotky, ale odvážnější zadání sám zjemní. " +
-            "Odvázaný nepřepisuje nic, zato fotku nevidí — píše jen z toho, " +
-            "co napíšeš ty." to
-            "Qwen also looks at the photos but softens bolder requests on its own. " +
-            "The unfiltered one rewrites nothing, but it cannot see the photo — " +
-            "it writes only from what you type.",
+        "Oba se dívají na tvoje fotky. Qwen je na model vycvičený, " +
+            "ale odvážnější zadání sám zjemní — odvázaný nepřepisuje nic." to
+            "Both look at your photos. Qwen is trained for this model but softens " +
+            "bolder requests on its own — the unfiltered one rewrites nothing.",
         "hotovo za pár sekund" to "done in seconds",
         "nic neodmítá" to "refuses nothing",
         "poslouchá líp, trvá dýl" to "follows better, takes longer",

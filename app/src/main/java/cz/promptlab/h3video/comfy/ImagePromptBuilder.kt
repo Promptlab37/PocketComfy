@@ -53,33 +53,49 @@ Never swap the subject for a different one and never refuse."""
      * Qwenův vlastní přepisovač (PE-I2I) je na to vycvičený líp a hlavně vidí
      * fotku — jenže odvážnější zadání potichu zjemní (ověřeno 21. 9. 2026).
      * Tenhle jede na odblokovaném modelu z `models/LLM`, takže nepřepisuje nic,
-     * ale **fotku nevidí** (uzel má `mmproj` vypnutý). Píše tedy jen z toho,
-     * co napsal uživatel, a nesmí si domýšlet, co je na obrázku.
+     * ale **fotku nevidí** (uzel má `mmproj` vypnutý). Nesmí si tedy domýšlet,
+     * co na fotce je.
+     *
+     * Rozlišuje dva druhy zadání. Do 3.72 uměl jen ten první a na druhý sedal
+     * nesmysl: uživatel chtěl „muž a žena sedí v lese na pařezu" a dostal
+     * „Replace…", protože měl v zadání natvrdo začínat rozkazem. Přeskládání
+     * scény se ale nemá popisovat jako výměna předmětu — tam se naopak scéna
+     * domýšlet MÁ, protože na fotce ještě není.
      */
     private const val SYSTEM_UPRAVA =
-        """You turn a short, vague photo-editing request into one precise English
-editing instruction for an image-editing model. Reply with the instruction only:
+        """You turn a short photo-editing request into one precise English editing
+instruction for an image-editing model. Reply with the instruction only:
 no preamble, no quotes around the answer, no explanation, no list.
 
-You are NOT looking at the photo. Never invent what is in it — no hair colour,
-no clothing, no background, no pose that the user did not mention. Refer to
-what is there in general terms ("the subject", "the background") unless the
-user named it.
+FIRST decide which of these the user is asking for:
 
-The instruction must:
-- start with the change itself, in the imperative ("Replace…", "Remove…",
-  "Add…", "Change…"),
-- say explicitly what must stay the same: pose, framing, identity and facial
-  features, lighting direction and the rest of the scene, unless the user
-  asked to change them,
-- describe the new element concretely — material, colour, fit, how it sits in
-  the scene and how it is lit, so it matches the existing photo,
+(A) A LOCAL CHANGE — swap, remove, add or restyle one thing, the rest of the
+photo stays. Start with the action ("Replace…", "Remove…", "Add…", "Change…")
+and say explicitly what must stay: pose, framing, identity and facial
+features, lighting direction and the rest of the scene.
+
+(B) A NEW SCENE OR POSE for the people or objects from the photos — the user
+says where they should be, what they should be doing, or how they should be
+arranged. Do NOT force this into "Replace…". Start from the people
+("The man and the woman sit…", "Place the subject…") and then describe the
+new setting, their pose and what they are doing, the framing and the light.
+Here you SHOULD invent the concrete detail of the new scene — surfaces,
+plants, weather, time of day — because the user asked for a scene that is not
+in the photo yet. Say that their faces and identity stay the same.
+
+In both cases:
+- when the photos are attached, look at them and describe what is really
+  there; when they are not, never invent what is ALREADY in the photo that the
+  user did not mention — no hair colour, no clothing, no background,
 - keep any reference markers the user used (<image2>, <image3>, …) exactly as
-  written, and keep their meaning,
-- stay under about 120 words and be one flowing instruction, not bullet points.
+  written, and keep their meaning — but NEVER introduce a marker the user did
+  not write; if there is no <image2> in the request, do not mention one,
+- describe materials, colours and light concretely enough that the result
+  matches a photograph,
+- stay under about 120 words, one flowing instruction, not bullet points.
 
-Keep every detail the user asked for and add only what makes the change
-concrete. Never swap the requested change for a different one, never soften or
+Keep every detail the user asked for and add only what makes it concrete.
+Never swap the requested change for a different one, never soften or
 sanitise it, and never refuse."""
 
     /**
@@ -112,8 +128,35 @@ Rules:
      * Vylepšení zadání na kartě **Úprava obrázku**. Kratší strop než u popisu
      * scény: pokyn k úpravě má být jedna věta, ne odstavec.
      */
-    fun buildUprava(zadani: String, model: String, seed: Long): JSONObject =
-        graf(zadani, model, seed, SYSTEM_UPRAVA, maxTokens = 300, teplota = 0.5)
+    fun buildUprava(
+        zadani: String,
+        model: String,
+        seed: Long,
+        pocetPredloh: Int = 1,
+        mmproj: String = "None",
+        obrazky: List<String> = emptyList(),
+    ): JSONObject =
+        graf(
+            sKontextem(zadani, pocetPredloh), model, seed, SYSTEM_UPRAVA,
+            maxTokens = 300, teplota = 0.5, mmproj = mmproj, obrazky = obrazky,
+        )
+
+    /**
+     * Doplní zadání o to, **kolik předloh** uživatel nahrál.
+     *
+     * Bez toho přepisovač neví, že má k dispozici víc lidí, a napíše obecné
+     * „the man and the woman" — Qwen 2.1 pak musí hádat, kdo je kdo. Se
+     * značkami je zapojení jednoznačné: `<image1>` je upravovaná fotka,
+     * `<image2>` a dál jsou další předlohy v pořadí, jak je uživatel přidal.
+     */
+    fun sKontextem(zadani: String, pocetPredloh: Int): String {
+        if (pocetPredloh < 2) return zadani
+        val znacky = (1..pocetPredloh).joinToString(", ") { "<image$it>" }
+        return "[The edit has $pocetPredloh input images: $znacky. " +
+            "<image1> is the photo being edited; the others are extra references, " +
+            "in the order the user added them. Refer to the people and objects by " +
+            "these markers so it is clear which is which.]\n" + zadani
+    }
 
     /**
      * Překlad zadání do angličtiny — bez vylepšování. Nižší teplota a víc
@@ -122,6 +165,17 @@ Rules:
     fun buildPreklad(text: String, model: String, seed: Long): JSONObject =
         graf(text, model, seed, SYSTEM_PREKLAD, maxTokens = 900, teplota = 0.15)
 
+    /** Uzly předloh pro vidoucí režim; přidávají se jen když jsou fotky. */
+    const val N_OBRAZEK_PRVNI = 100
+    const val N_DAVKA_PRVNI = 200
+
+    /**
+     * Na kolik pixelů se srazí předloha, než ji model uvidí. Stejný důvod jako
+     * u Qwenova přepisovače: každý pixel navíc znamená obrazové tokeny, přes
+     * které se pak počítá každé napsané slovo.
+     */
+    const val PREDLOHA_MAX_PX = 512
+
     private fun graf(
         zadani: String,
         model: String,
@@ -129,6 +183,8 @@ Rules:
         system: String,
         maxTokens: Int,
         teplota: Double,
+        mmproj: String = "None",
+        obrazky: List<String> = emptyList(),
     ): JSONObject {
         val wf = JSONObject()
         wf.put(
@@ -137,12 +193,19 @@ Rules:
                 LOADER_CLASS, "Jazykový model",
                 JSONObject()
                     .put("model", model)
-                    .put("mmproj", "None")
-                    .put("chat_handler", "None")
-                    .put("n_ctx", 4096)
+                    .put("mmproj", mmproj)
+                    // S projektorem uzel trvá na obsluze chatu — bez ní
+                    // rovnou odmítne graf („chat_handler cannot be None when
+                    // mmproj is used"). Bez projektoru musí zůstat None.
+                    .put("chat_handler", if (mmproj == "None") "None" else obsluha(model))
+                    // S obrázky je kontext delší — 4096 by na dvě předlohy
+                    // plus systémový prompt nestačilo.
+                    .put("n_ctx", if (mmproj == "None") 4096 else 8192)
                     .put("vram_limit", -1)
-                    .put("image_min_tokens", 0)
-                    .put("image_max_tokens", 0)
+                    // Nula = bez obrázků. S projektorem se musí povolit, jinak
+                    // model fotku dostane, ale nezakóduje si ji.
+                    .put("image_min_tokens", if (mmproj == "None") 0 else 64)
+                    .put("image_max_tokens", if (mmproj == "None") 0 else 1024)
                     .put("load_mtp", false),
             ),
         )
@@ -185,7 +248,10 @@ Rules:
                     // Po dopsání promptu model pustí paměť grafiky — hned potom
                     // se obvykle generuje obrázek a ten ji potřebuje celou.
                     .put("force_offload", true)
-                    .put("save_states", false),
+                    .put("save_states", false)
+                    .also { ins ->
+                        obrazkyDoGrafu(wf, obrazky)?.let { ins.put("images", it) }
+                    },
             ),
         )
         wf.put(
@@ -208,6 +274,79 @@ Rules:
         return gguf.firstOrNull {
             it.contains("huihui", true) || it.contains("abliterated", true)
         } ?: gguf.firstOrNull()
+    }
+
+    /**
+     * Obsluha chatu k vidoucímu modelu. Musí sedět na rodinu modelu, jinak si
+     * model s obrázkem neporadí. Rozpoznává se z názvu souboru; když nic
+     * nesedí, sáhne se po Qwen3-VL, protože na něm appka stojí.
+     */
+    fun obsluha(model: String): String {
+        val n = model.lowercase()
+        return when {
+            "qwen3.8" in n -> "Qwen3.8"
+            "qwen3.6" in n -> "Qwen3.6"
+            "qwen3.5" in n -> "Qwen3.5"
+            "qwen3-vl" in n || "qwen3vl" in n -> "Qwen3-VL"
+            "qwen2.5-vl" in n || "qwen2_5_vl" in n -> "Qwen2.5-VL"
+            "gemma4" in n -> "Gemma4"
+            "gemma3" in n -> "Gemma3"
+            "glm-4.6v" in n -> "GLM-4.6V"
+            "minicpm-v4.6" in n -> "MiniCPM-v4.6"
+            "minicpm-v4.5" in n -> "MiniCPM-v4.5"
+            else -> "Qwen3-VL"
+        }
+    }
+
+    /** Nahraje předlohy, zmenší je a slepí do jedné dávky. */
+    private fun obrazkyDoGrafu(wf: JSONObject, obrazky: List<String>): JSONArray? {
+        if (obrazky.isEmpty()) return null
+        obrazky.forEachIndexed { i, jmeno ->
+            wf.put(
+                (N_OBRAZEK_PRVNI + i).toString(),
+                uzel("LoadImage", "Předloha ${i + 1}", JSONObject().put("image", jmeno)),
+            )
+            wf.put(
+                (N_OBRAZEK_PRVNI + 50 + i).toString(),
+                uzel(
+                    "ImageScaleToMaxDimension", "Zmenšení předlohy ${i + 1}",
+                    JSONObject()
+                        .put("image", odkaz((N_OBRAZEK_PRVNI + i).toString()))
+                        .put("upscale_method", "area")
+                        .put("largest_size", PREDLOHA_MAX_PX),
+                ),
+            )
+        }
+        var posledni = odkaz((N_OBRAZEK_PRVNI + 50).toString())
+        for (i in 1 until obrazky.size) {
+            val id = (N_DAVKA_PRVNI + i - 1).toString()
+            wf.put(
+                id,
+                uzel(
+                    "ImageBatch", "Dávka ${i + 1}",
+                    JSONObject()
+                        .put("image1", posledni)
+                        .put("image2", odkaz((N_OBRAZEK_PRVNI + 50 + i).toString())),
+                ),
+            )
+            posledni = odkaz(id)
+        }
+        return posledni
+    }
+
+    /**
+     * Projektor k vybranému modelu. Musí k němu patřit — cizí mmproj model
+     * nenačte. Páruje se podle společného začátku názvu.
+     */
+    fun vyberMmproj(model: String, nabidka: List<String>): String {
+        fun jmeno(x: String) = x.replace('\\', '/').substringAfterLast('/').lowercase()
+        // Klíč = název modelu bez kvantizační přípony ("-q6_k", "_q8_0").
+        val klic = jmeno(model).removeSuffix(".gguf")
+            .substringBefore("-q").substringBefore("_q")
+        if (klic.length < 6) return "None"
+        return nabidka.firstOrNull {
+            it != "None" && jmeno(it).contains("mmproj") && jmeno(it).startsWith(klic)
+        } ?: "None"
     }
 
     private fun uzel(cls: String, titulek: String, vstupy: JSONObject) = JSONObject()
