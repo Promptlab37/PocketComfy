@@ -503,42 +503,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // ------------------------------------------------- Karta Obrázek: modely
 
-    private val _imageModels = MutableStateFlow<List<String>>(emptyList())
-
-    /**
-     * Modely pro kartu Obrázek: `UNETLoader` i `UnetLoaderGGUF` dohromady.
-     * Jsou to dva různé seznamy ze serveru (jádro nezná příponu `.gguf`),
-     * ale pro člověka je to jedna nabídka „co mám na disku".
-     */
-    val imageModels: StateFlow<List<String>> = _imageModels.asStateFlow()
-
-    private val _imageModelError = MutableStateFlow<String?>(null)
-    val imageModelError: StateFlow<String?> = _imageModelError.asStateFlow()
-
-    fun loadImageModels() {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    val client = ComfyClient(settings.serverUrl)
-                    (client.unetNames() + client.unetGgufNames()).distinct()
-                }
-            }.fold(
-                onSuccess = { _imageModels.value = it; _imageModelError.value = null },
-                onFailure = { _imageModelError.value = "Seznam modelů se nepodařilo načíst — server neodpovídá." }
-            )
-        }
-    }
-
-    fun setImageModelFile(name: String) = update { it.copy(zimageVlastniModel = name) }
 
     fun setImageModelKroky(kroky: Int) = update {
-        val v = kroky.coerceIn(ZImageBuilder.VLASTNI_KROKY_MIN, ZImageBuilder.VLASTNI_KROKY_MAX)
-        it.copy(zimageKroky = v, zimageVlastniKroky = v)
+        val v = kroky.coerceIn(ZImageBuilder.KROKY_MIN, ZImageBuilder.KROKY_MAX)
+        it.copy(zimageKroky = v)
     }
 
     fun setImageModelCfg(cfg: Float) = update {
-        val v = cfg.coerceIn(1f, ZImageBuilder.VLASTNI_CFG_MAX)
-        it.copy(zimageCfg = v, zimageVlastniCfg = v)
+        val v = cfg.coerceIn(1f, ZImageBuilder.CFG_MAX)
+        it.copy(zimageCfg = v)
     }
 
     /**
@@ -1016,7 +989,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             // aby ukazatel průběhu počítal krok X/N a ne podle nastavení videa.
             Mode.IMAGE -> QueuedRun(id, p.mode.title, p.prompt) {
                 GenerationEngine.start(
-                    p.copy(steps = ZImageBuilder.stepsFor(p.zimageModel, ZImageBuilder.vlastniZ(p))),
+                    p.copy(steps = ZImageBuilder.stepsFor(p.zimageModel)),
                     emptyList(),
                     t2i = true,
                 )

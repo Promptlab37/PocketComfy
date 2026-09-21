@@ -802,7 +802,6 @@ object GenerationEngine {
                     app, effective.prompt, effective.aspect, seed,
                     model = effective.zimageModel,
                     userLoras = cz.promptlab.h3video.data.ImageLoras.selected(effective),
-                    vlastni = ZImageBuilder.vlastniZ(effective),
                     kroky = ZImageBuilder.vzorkovani(effective).first,
                     cfg = ZImageBuilder.vzorkovani(effective).second,
                     qwen2k = effective.qwen21Dvak,

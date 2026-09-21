@@ -34,9 +34,11 @@ enum class T2iModel(
     /**
      * Soubor, který se pro tuhle volbu dosadí do grafu. Karta ho ukazuje,
      * aby bylo vidět, na čem se doopravdy generuje — a aby si člověk všiml,
-     * že se dá vyměnit. U [VLASTNI] žádný není, ten si vybírá uživatel.
+     * že se dá vyměnit.
      */
     val soubor: String = "",
+    /** Krátká charakteristika do podtitulku karty. */
+    val podtitul: String = "",
 ) {
     TURBO(
         "turbo", "Z-Image Turbo",
@@ -44,6 +46,7 @@ enum class T2iModel(
         8,
         1f,
         "z_image_turbo_bf16.safetensors",
+        "hotovo za pár sekund",
     ),
     PHOTOREAL(
         "photoreal", "Photoreal (odvázaný)",
@@ -51,6 +54,7 @@ enum class T2iModel(
         20,
         2f,
         ZImageBuilder.NSFW_MODEL_FILE,
+        "nic neodmítá",
     ),
     BASE(
         "base", "Z-Image Base",
@@ -60,6 +64,7 @@ enum class T2iModel(
         25,
         ZImageBuilder.BASE_CFG.toFloat(),
         ZImageBuilder.BASE_MODEL_FILE,
+        "poslouchá líp, trvá dýl",
     ),
     KLEIN(
         "klein", "FLUX.2 Klein 9B",
@@ -67,6 +72,7 @@ enum class T2iModel(
         4,
         1f,
         "flux-2-klein-9b.safetensors",
+        "drží složité zadání a text",
     ),
     ERNIE(
         "ernie", "ERNIE Image Turbo",
@@ -74,6 +80,7 @@ enum class T2iModel(
         9,
         1f,
         "ernie-image-turbo-Q8_0.gguf",
+        "jiný rukopis",
     ),
     QWEN21(
         "qwen21", "Qwen Image 2.1",
@@ -82,26 +89,12 @@ enum class T2iModel(
         25,
         1f,
         "qwen_image_2.1_int8_convrot.safetensors",
-    ),
-
-    /**
-     * Cokoli dalšího z rodiny Z-Image, co je na serveru — finetune z CivitAI,
-     * vlastní trénink, jiná kvantizace. Soubor, kroky i cfg si volí uživatel,
-     * zbytek grafu zůstává z předlohy Turba.
-     *
-     * Kroky tady nic neznamenají: [ZImageBuilder.stepsFor] si je u téhle volby
-     * bere z nastavení. Osmička je jen výchozí stav nového výběru.
-     */
-    VLASTNI(
-        "vlastni", "Vlastní model",
-        "Jiný Z-Image model ze serveru. Vybereš soubor a řekneš kroky a cfg.",
-        8,
-        1f,
+        "text v obraze a 2K",
     );
 
     /** Jede na šabloně Z-Image (a smí se k němu tedy přimíchat zimage LoRA)? */
     val zRodinyZImage: Boolean
-        get() = this == TURBO || this == PHOTOREAL || this == BASE || this == VLASTNI
+        get() = this == TURBO || this == PHOTOREAL || this == BASE
 
     companion object {
         /**
@@ -166,6 +159,11 @@ object ZImageBuilder {
      * v jednom uzlu nejde, `LoraLoaderModelOnly` bere právě jednu.
      */
     const val N_NSFW_LORA2 = "91"
+
+    /** Meze posuvníků kroků a cfg na kartě Obrázek. */
+    const val KROKY_MIN = 1
+    const val KROKY_MAX = 50
+    const val CFG_MAX = 10f
     const val NSFW_LORA_FILE = "zimage_nsfw_v1.safetensors"
 
     /**
@@ -181,37 +179,11 @@ object ZImageBuilder {
     /** Z-Image Base — nedestilovaná varianta téhož modelu, na serveru vedle Turba. */
     const val BASE_MODEL_FILE = "z_image_bf16.safetensors"
 
-    /**
-     * Vlastní model: co uživatel vybral ze serveru a s jakým vzorkováním.
-     *
-     * Kroky a cfg se ptát musíme — z názvu souboru se nepoznají. Destilované
-     * finetuny Turba jedou na cfg 1 a 8–12 krocích, nedestilované potřebují
-     * cfg kolem čtyř a kroků násobně víc; špatná dvojice nedá chybu, jen
-     * ošklivý obrázek.
-     */
-    data class Vlastni(val soubor: String, val kroky: Int = VLASTNI_KROKY, val cfg: Float = 1f)
 
-    const val VLASTNI_KROKY = 8
-    const val VLASTNI_CFG = 1f
-
-    /** Meze posuvníků u vlastního modelu — širší už nedává smysl ani u Base. */
-    const val VLASTNI_KROKY_MIN = 1
-    const val VLASTNI_KROKY_MAX = 50
-    const val VLASTNI_CFG_MAX = 10f
 
     /** GGUF umí načíst jen uzel z balíku ComfyUI-GGUF, UNETLoader ne. */
     fun jeGguf(soubor: String): Boolean = soubor.endsWith(".gguf", ignoreCase = true)
 
-    /**
-     * Vlastní model z nastavení — jedno místo pro stavitele grafu i pro
-     * ukazatel průběhu, ať se nerozejdou v tom, kolik kroků běh má.
-     * Null znamená „tahle volba se teď nepoužívá", včetně stavu, kdy je
-     * vybraná, ale soubor ještě žádný.
-     */
-    fun vlastniZ(p: cz.promptlab.h3video.data.GenParams): Vlastni? =
-        if (T2iModel.zId(p.zimageModel) == T2iModel.VLASTNI && p.zimageVlastniModel.isNotBlank())
-            Vlastni(p.zimageVlastniModel, p.zimageVlastniKroky, p.zimageVlastniCfg)
-        else null
 
     /**
      * Base není destilovaný, takže cfg 1 (co má Turbo) nevede vůbec. Autoři
@@ -270,10 +242,7 @@ object ZImageBuilder {
     }
 
     /** Kroky podle zvoleného modelu (ukazatel průběhu s nimi musí souhlasit). */
-    fun stepsFor(model: String, vlastni: Vlastni? = null): Int {
-        val m = T2iModel.zId(model)
-        return if (m == T2iModel.VLASTNI && vlastni != null) vlastni.kroky else m.kroky
-    }
+    fun stepsFor(model: String): Int = T2iModel.zId(model).kroky
 
     private val cached = HashMap<T2iModel, String>()
 
@@ -311,14 +280,13 @@ object ZImageBuilder {
         loraFile: String = NSFW_LORA_FILE,
         loraFile2: String = "", nsfwSila2: Float = 1f,
         userLoras: List<EditLora> = emptyList(),
-        vlastni: Vlastni? = null,
         kroky: Int = 0,
         cfg: Float = 0f,
         qwen2k: Boolean = false,
     ): JSONObject = build(
         template(ctx, T2iModel.zId(model)),
         prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile, loraFile2, nsfwSila2,
-        userLoras, vlastni, kroky, cfg, qwen2k,
+        userLoras, kroky, cfg, qwen2k,
     )
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
@@ -328,7 +296,6 @@ object ZImageBuilder {
         loraFile: String = NSFW_LORA_FILE,
         loraFile2: String = "", nsfwSila2: Float = 1f,
         userLoras: List<EditLora> = emptyList(),
-        vlastni: Vlastni? = null,
         kroky: Int = 0,
         cfg: Float = 0f,
         qwen2k: Boolean = false,
@@ -339,7 +306,7 @@ object ZImageBuilder {
         if (m.zRodinyZImage) {
             buildZImage(
                 wf, m, prompt, w, h, seed, nsfwLora, nsfwSila, loraFile, loraFile2, nsfwSila2,
-                vlastni, kroky, cfg,
+                kroky, cfg,
             )
         } else if (m == T2iModel.QWEN21) {
             val (qw, qh) = if (qwen2k) size2kFor(aspect) else (w to h)
@@ -410,22 +377,12 @@ object ZImageBuilder {
         wf: JSONObject, m: T2iModel, prompt: String, w: Int, h: Int, seed: Long,
         nsfwLora: Boolean, nsfwSila: Float, loraFile: String,
         loraFile2: String = "", nsfwSila2: Float = 1f,
-        vlastni: Vlastni? = null,
         kroky: Int = 0,
         cfg: Float = 0f,
     ): JSONObject {
-        // Poradi prednosti: co rekl volajici > co si nese vlastni model
-        // > vychozi hodnota volby z vyctu.
-        val ucinneKroky = when {
-            kroky > 0 -> kroky
-            m == T2iModel.VLASTNI && vlastni != null -> vlastni.kroky
-            else -> m.kroky
-        }
-        val ucinneCfg = when {
-            cfg > 0f -> cfg
-            m == T2iModel.VLASTNI && vlastni != null -> vlastni.cfg
-            else -> m.cfg
-        }
+        // Co rekl volajici ma prednost pred vychozi hodnotou volby z vyctu.
+        val ucinneKroky = if (kroky > 0) kroky else m.kroky
+        val ucinneCfg = if (cfg > 0f) cfg else m.cfg
 
         when (m) {
             // GGUF potřebuje jiný loader — UNETLoader umí jen safetensors.
@@ -442,22 +399,6 @@ object ZImageBuilder {
             // Base jede na stejném grafu, jen s vlastním modelem — sampler
             // i shift zůstávají z předlohy.
             T2iModel.BASE -> wf.inputs(N_UNET).put("unet_name", BASE_MODEL_FILE)
-            // Vlastní model ze serveru: mění se jen loader, soubor a vzorkování.
-            // Když uživatel nic nevybral, zůstane předloha Turba — prázdné jméno
-            // by ComfyUI odmítlo a spadlo by to až na serveru.
-            T2iModel.VLASTNI -> if (vlastni != null && vlastni.soubor.isNotBlank()) {
-                if (jeGguf(vlastni.soubor)) {
-                    wf.put(
-                        N_UNET,
-                        JSONObject()
-                            .put("class_type", "UnetLoaderGGUF")
-                            .put("inputs", JSONObject().put("unet_name", vlastni.soubor))
-                            .put("_meta", JSONObject().put("title", "Vlastní model (GGUF)")),
-                    )
-                } else {
-                    wf.inputs(N_UNET).put("unet_name", vlastni.soubor)
-                }
-            }
             // Turbo: soubor modelu z předlohy zůstává.
             else -> Unit
         }

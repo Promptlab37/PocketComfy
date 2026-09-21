@@ -142,46 +142,33 @@ class SablonyProtiServeruTest {
     }
 
     /**
-     * Karta Obrázek, volba **Vlastní model**. Graf se od předlohy liší třemi
-     * věcmi a každou umí rozbít jinak: GGUF vyměňuje celou třídu loaderu,
-     * cfg nad jedničkou přidává uzel negativu a kroky s cfg jdou z posuvníků,
-     * takže můžou vylézt z mezí, které uzel dovoluje.
+     * Kraje posuvníků kroků a cfg na kartě Obrázek. Co appka dovolí nastavit,
+     * to musí uzel přijmout — jinak běh spadne až na serveru.
      */
     @Test
-    fun `vlastni model na karte Obrazek sedi se schematy uzlu`() {
+    fun `kraje posuvniku na karte Obrazek sedi se schematy uzlu`() {
         assumeTrue("ComfyUI neodpovídá — kontrola se přeskočí", stahni("$server/system_stats", 4_000) != null)
 
         val sablona = File(rawDir, "workflow_zimage_t2i.json").readText()
+        val B = cz.promptlab.h3video.comfy.ZImageBuilder
         val varianty = listOf(
-            "safetensors, cfg 1" to cz.promptlab.h3video.comfy.ZImageBuilder.Vlastni(
-                "z_image_turbo_bf16.safetensors", 8, 1f
-            ),
-            "GGUF" to cz.promptlab.h3video.comfy.ZImageBuilder.Vlastni(
-                "zimage_nsfw_photoreal_v61_Q8.gguf", 12, 1f
-            ),
-            // Kraje posuvníků: co appka dovolí nastavit, musí uzel přijmout.
-            "nedestilovaný, cfg 4" to cz.promptlab.h3video.comfy.ZImageBuilder.Vlastni(
-                "z_image_bf16.safetensors",
-                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MAX,
-                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG_MAX,
-            ),
-            "nejméně kroků" to cz.promptlab.h3video.comfy.ZImageBuilder.Vlastni(
-                "z_image_turbo_bf16.safetensors",
-                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MIN, 1f
-            ),
+            "nejmíň kroků" to (B.KROKY_MIN to 1f),
+            "nejvíc kroků a cfg" to (B.KROKY_MAX to B.CFG_MAX),
+            "výchozí Turbo" to (0 to 0f),
         )
 
         val chyby = mutableListOf<String>()
-        varianty.forEach { (popis, vlastni) ->
-            val wf = cz.promptlab.h3video.comfy.ZImageBuilder.build(
+        varianty.forEach { (popis, hodnoty) ->
+            val (kroky, cfg) = hodnoty
+            val wf = B.build(
                 sablona, "kocka", cz.promptlab.h3video.data.Aspect.SQUARE_1_1, 1L,
-                model = "vlastni", vlastni = vlastni,
+                model = "turbo", kroky = kroky, cfg = cfg,
             )
-            chyby += zkontroluj(wf, "Obrázek / vlastní model / $popis")
+            chyby += zkontroluj(wf, "Obrázek / $popis")
         }
 
         assertTrue(
-            "Graf vlastního modelu nesedí se schématy uzlů:\n" + chyby.joinToString("\n"),
+            "Graf karty Obrázek nesedí se schématy uzlů:\n" + chyby.joinToString("\n"),
             chyby.isEmpty(),
         )
     }

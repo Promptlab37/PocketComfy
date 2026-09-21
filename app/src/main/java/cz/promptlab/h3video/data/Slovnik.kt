@@ -609,6 +609,20 @@ object Slovnik {
         "✨ Vylepšit prompt" to "✨ Improve the prompt",
         "✨ Vylepšit zadání" to "✨ Improve the instruction",
         "✨ Vylepšit (Qwen)" to "✨ Improve (Qwen)",
+        "hotovo za pár sekund" to "done in seconds",
+        "nic neodmítá" to "refuses nothing",
+        "poslouchá líp, trvá dýl" to "follows better, takes longer",
+        "drží složité zadání a text" to "holds complex prompts and text",
+        "jiný rukopis" to "a different hand",
+        "text v obraze a 2K" to "text in image and 2K",
+        "Oficiální předloha Qwenu má 25. Víc kroků = víc detailu a času." to
+            "Qwen's official template uses 25. More steps = more detail and time.",
+        "Qwen 2.1 je na cfg 1 stavěný a zadání na ní drží. Zvyšovat není potřeba." to
+            "Qwen 2.1 is built for cfg 1 and follows the prompt there. No need to raise it.",
+        "Nad 1 se u Qwen 2.1 začne uplatňovat i negativní prompt, " +
+            "ale oficiální předloha jede na 1 — vyšší hodnota může uškodit." to
+            "Above 1 the negative prompt starts to apply on Qwen 2.1, " +
+            "but the official template runs at 1 — a higher value can hurt.",
         "✨ Vylepšit (odvázaně)" to "✨ Improve (unfiltered)",
         "Qwen je na tenhle model vycvičený a poradí i poměr stran, " +
             "ale odvážnější zadání sám zjemní. Odvázaný nepřepisuje nic." to

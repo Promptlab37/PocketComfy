@@ -85,11 +85,8 @@ data class GenParams(
      * nenabízí nic, co tam doopravdy není. Prázdno = uživatel ještě nevybral
      * a graf zůstává na modelu z předlohy.
      */
-    val zimageVlastniModel: String = "",
     /** Kroky vlastního modelu — z názvu souboru se nepoznají, musí je říct člověk. */
-    val zimageVlastniKroky: Int = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY,
     /** Cfg vlastního modelu. Destilované Turbo jede na 1, nedestilovaný základ na ~4. */
-    val zimageVlastniCfg: Float = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG,
     /**
      * Karta Obrázek: kroky vzorkování, které nastavil uživatel. **Nula znamená
      * „nech výchozí podle modelu"** — při přepnutí modelu se vrací na nulu,

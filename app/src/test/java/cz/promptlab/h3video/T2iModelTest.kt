@@ -40,85 +40,43 @@ class T2iModelTest {
     fun `jen Turbo snese odvazanou LoRA`() {
         assertTrue(T2iModel.TURBO.zRodinyZImage)
         assertTrue(T2iModel.BASE.zRodinyZImage)
-        assertTrue(T2iModel.VLASTNI.zRodinyZImage)
         assertFalse(T2iModel.KLEIN.zRodinyZImage)
         assertFalse(T2iModel.ERNIE.zRodinyZImage)
     }
 
-    /**
-     * Vlastni model v safetensors: meni se jen jmeno souboru a vzorkovani,
-     * loader zustava `UNETLoader` a zbytek predlohy se nesahne.
-     */
-    @Test
-    fun `vlastni model v safetensors meni jen soubor a vzorkovani`() {
-        val wf = ZImageBuilder.build(
-            zimage, "x", Aspect.SQUARE_1_1, 7L, model = "vlastni",
-            vlastni = ZImageBuilder.Vlastni("muj_zimage_finetune.safetensors", 10, 1f),
-        )
-        val u = wf.getJSONObject(ZImageBuilder.N_UNET)
-        assertEquals("UNETLoader", u.getString("class_type"))
-        assertEquals("muj_zimage_finetune.safetensors", u.getJSONObject("inputs").getString("unet_name"))
-        val s = wf.inputs(ZImageBuilder.N_SAMPLER)
-        assertEquals(10, s.getInt("steps"))
-        assertEquals(1.0, s.getDouble("cfg"), 0.001)
-        // Vzorkovac, planovac i shift zustavaji z predlohy.
-        assertEquals("res_multistep", s.getString("sampler_name"))
-        assertEquals("simple", s.getString("scheduler"))
-        assertEquals(3.0, wf.inputs(ZImageBuilder.N_SHIFT).getDouble("shift"), 0.001)
-        // Na cfg 1 se negativ nepocita, takze zustava vynulovany tenzor z predlohy.
-        assertEquals("ConditioningZeroOut", wf.getJSONObject("33").getString("class_type"))
-        assertEquals("33", s.getJSONArray("negative").getString(0))
-    }
+
+
 
     /**
-     * GGUF umi nacist jen uzel z balicku ComfyUI-GGUF. Kdyby se poslal do
-     * `UNETLoader`, spadne to az na serveru hlaskou o neznamem souboru.
+     * Volba „Vlastní model" byla z karty odstranena ve 3.70. Kdo ji mel
+     * ulozenou, nesmi zustat viset na neznamem id — [T2iModel.zId] ho vrati
+     * na Turbo a graf pojede z predlohy.
      */
     @Test
-    fun `vlastni model v GGUF dostane vlastni loader`() {
-        val wf = ZImageBuilder.build(
-            zimage, "x", Aspect.SQUARE_1_1, 7L, model = "vlastni",
-            vlastni = ZImageBuilder.Vlastni("zimage_nsfw_photoreal_v61_Q8.gguf", 12, 1f),
-        )
-        val u = wf.getJSONObject(ZImageBuilder.N_UNET)
-        assertEquals("UnetLoaderGGUF", u.getString("class_type"))
-        assertEquals(
-            "zimage_nsfw_photoreal_v61_Q8.gguf",
-            u.getJSONObject("inputs").getString("unet_name"),
-        )
-        assertTrue(ZImageBuilder.jeGguf("a.GGUF"))
-        assertFalse(ZImageBuilder.jeGguf("a.safetensors"))
-    }
-
-    /**
-     * Nad cfg 1 vzorkovac negativ opravdu pocita, takze vynulovany tenzor
-     * nestaci — stejny duvod jako u Base, viz ZImageBaseNegativTest.
-     */
-    @Test
-    fun `vlastni model se cfg nad jednickou dostane skutecny negativ`() {
-        val wf = ZImageBuilder.build(
-            zimage, "x", Aspect.SQUARE_1_1, 7L, model = "vlastni",
-            vlastni = ZImageBuilder.Vlastni("z_image_bf16.safetensors", 25, 4f),
-        )
-        val s = wf.inputs(ZImageBuilder.N_SAMPLER)
-        assertEquals(4.0, s.getDouble("cfg"), 0.001)
-        val neg = s.getJSONArray("negative").getString(0)
-        assertEquals(ZImageBuilder.N_NEG_BASE, neg)
-        assertEquals("CLIPTextEncode", wf.getJSONObject(neg).getString("class_type"))
-        assertEquals("", wf.inputs(neg).getString("text"))
-    }
-
-    /**
-     * Vybrana volba bez souboru nesmi poslat na server prazdne jmeno modelu —
-     * graf zustane na predloze Turba.
-     */
-    @Test
-    fun `vlastni model bez vybraneho souboru nechava predlohu`() {
+    fun `stare ulozene vlastni nastaveni spadne zpatky na Turbo`() {
         val wf = ZImageBuilder.build(zimage, "x", Aspect.SQUARE_1_1, 7L, model = "vlastni")
         val u = wf.getJSONObject(ZImageBuilder.N_UNET)
         assertEquals("UNETLoader", u.getString("class_type"))
         assertEquals("z_image_turbo_bf16.safetensors", u.getJSONObject("inputs").getString("unet_name"))
         assertEquals(8, wf.inputs(ZImageBuilder.N_SAMPLER).getInt("steps"))
+    }
+
+    /**
+     * Karta se musi ridit vybranym modelem. Kdyz nekdo prida dalsi volbu
+     * a zapomene na popisky, podtitul karty by lhal — jako do 3.69, kdy
+     * u Qwen Image 2.1 svitilo "Z-Image Turbo".
+     */
+    @Test
+    fun `kazdy model ma vlastni stitek, popis i podtitul`() {
+        T2iModel.entries.forEach { m ->
+            assertTrue("${m.name}: chybi stitek", m.stitek.isNotBlank())
+            assertTrue("${m.name}: chybi popis", m.popis.isNotBlank())
+            assertTrue("${m.name}: chybi podtitul", m.podtitul.isNotBlank())
+        }
+        assertEquals(
+            T2iModel.entries.size,
+            T2iModel.entries.map { it.stitek }.toSet().size,
+        )
     }
 
     @Test
@@ -216,12 +174,7 @@ class T2iModelTest {
         assertEquals(25, ZImageBuilder.stepsFor("base"))
         assertEquals(4, ZImageBuilder.stepsFor("klein"))
         assertEquals(9, ZImageBuilder.stepsFor("ernie"))
-        // Vlastni model kroky z vyctu nema — rekl je uzivatel.
-        assertEquals(
-            17,
-            ZImageBuilder.stepsFor("vlastni", ZImageBuilder.Vlastni("m.safetensors", 17, 1f)),
-        )
-        // Bez vybraneho souboru bezi predloha Turba, takze i kroky jsou jeji.
+        // Odstranena volba "vlastni" spadne na Turbo i s jeho kroky.
         assertEquals(8, ZImageBuilder.stepsFor("vlastni"))
     }
 

@@ -94,6 +94,17 @@ class Qwen21T2iTest {
     }
 
     @Test
+    fun `cfg 1 je u Qwen 2_1 spravna hodnota, ne vada`() {
+        // Karta do 3.69 u kazdeho modelu hlasila "na cfg 1 nema prompt zadnou
+        // vahu" — text psany pro destilovane Z-Image Turbo. U Qwen 2.1 je cfg 1
+        // naopak hodnota z oficialni predlohy ComfyUI a rada ji zvedat je
+        // skodliva. Tenhle test drzi fakt, o ktery se napoveda opira.
+        assertEquals(1f, T2iModel.QWEN21.cfg, 1e-6f)
+        assertEquals(25, T2iModel.QWEN21.kroky)
+        assertEquals(1.0, inputs(graf(), ZImageBuilder.N_Q21_SAMPLER).getDouble("cfg"), 1e-9)
+    }
+
+    @Test
     fun `generovani nikdy nezmensuje predlohy`() {
         // Zmenšení na 1024 px patří VÝHRADNĚ do grafu vylepšovače zadání —
         // ten má scénu jen pochopit. Do generování se dostat nesmí, jinak by

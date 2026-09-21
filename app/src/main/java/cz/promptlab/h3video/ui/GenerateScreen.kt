@@ -886,9 +886,13 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
 @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
+    // Karta se řídí vybraným modelem, ne tím, se kterým kdysi vznikla:
+    // podtitul, nápovědy i nabídka LoRA se mění podle něj. Do 3.69 tu svítilo
+    // „Z-Image Turbo" i s Qwen Image 2.1 a rady platily jen pro Turbo.
+    val vybranyModel = T2iModel.zId(params.zimageModel)
     SectionCard(
         title = t("Nový obrázek"),
-        subtitle = t("Z-Image Turbo — hotovo za pár sekund")
+        subtitle = t(vybranyModel.stitek) + " — " + t(vybranyModel.podtitul),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             DarkTextField(
@@ -926,7 +930,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     MainViewModel.PraceNaPromptu.PREKLAD
                 val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
                 Spacer(Modifier.height(8.dp))
-                val jeQwen21 = T2iModel.zId(params.zimageModel) == T2iModel.QWEN21
+                val jeQwen21 = vybranyModel == T2iModel.QWEN21
                 // U Qwen 2.1 jsou tlačítka tři a do jednoho řádku se na telefon
                 // nevejdou — obyčejný Row by to poslední (Přeložit) vystrčil
                 // mimo obrazovku. FlowRow je zalomí pod sebe.
@@ -1021,7 +1025,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
             Column {
                 Text(t("Model"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                 Spacer(Modifier.height(8.dp))
-                val model = T2iModel.zId(params.zimageModel)
+                val model = vybranyModel
                 PillRow(
                     items = T2iModel.entries.toList(),
                     selected = model,
@@ -1034,14 +1038,8 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
                 Spacer(Modifier.height(8.dp))
-                VlastniModelPicker(vm, params, model)
-                Spacer(Modifier.height(2.dp))
-                val (ucinneKroky, ucinneCfg) =
-                    cz.promptlab.h3video.comfy.ZImageBuilder.vzorkovani(params)
-                Text(
-                    t("%d kroků").format(ucinneKroky) + " · cfg " + "%.1f".format(ucinneCfg),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                )
+                Spacer(Modifier.height(10.dp))
+                VzorkovaniObrazku(vm, params)
                 // Qwen 2.1 je na 2K stavěný. Tabulka rozměrů karty je z Z-Image
                 // Turba (~1 Mpx) a brala by mu polovinu detailu, proto volba.
                 // Ostatní modely karty 2K neumí, tak se ukazuje jen u něj.
@@ -1057,9 +1055,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
             }
             // Žádná stávající LoRA na Qwen 2.1 nesedí — 32 vrstev proti 60
             // u starého Qwen-Image.
-            if (T2iModel.zId(params.zimageModel) != T2iModel.QWEN21) {
-                ImageLoraSection(vm, params)
-            }
+            if (vybranyModel != T2iModel.QWEN21) ImageLoraSection(vm, params)
         }
     }
 }
@@ -1616,118 +1612,47 @@ fun DarkTextField(
     }
 }
 
-/**
- * Karta Obrázek, volba **Vlastní model**: výběr souboru ze serveru a k němu
- * kroky a cfg.
- *
- * Nabídka se čte z ComfyUI (`UNETLoader` i `UnetLoaderGGUF`), takže se
- * nenabízí nic, co na serveru není. Nahoře jsou soubory, které mají v názvu
- * `zimage`/`z_image`/`zit` — na téhle kartě jede šablona Z-Image a cizí
- * architektura v ní nepoběží. Zbytek disku se ukáže na vyžádání: pojmenování
- * je jen zvyk, ne záruka, a vlastní trénink se může jmenovat jakkoli.
- */
 @Composable
-private fun VlastniModelPicker(
-    vm: MainViewModel,
-    params: cz.promptlab.h3video.data.GenParams,
-    model: T2iModel,
-) {
-    val modely by vm.imageModels.collectAsStateWithLifecycle()
-    val chyba by vm.imageModelError.collectAsStateWithLifecycle()
-    var otevreno by remember { mutableStateOf(false) }
-    var vsechny by remember { mutableStateOf(false) }
-    val vlastni = model == T2iModel.VLASTNI
-
-    fun zRodiny(jmeno: String): Boolean {
-        val n = jmeno.lowercase().substringAfterLast('/').substringAfterLast('\\')
-        return "zimage" in n || "z_image" in n || n.startsWith("zit")
-    }
-
-    val nase = modely.filter(::zRodiny)
-    val ostatni = modely - nase.toSet()
-    val nabidka = if (vsechny) nase + ostatni else nase
-
-    LaunchedEffect(Unit) { vm.loadImageModels() }
-
-    // Soubor, na kterém se teď generuje. U připravených voleb je daný, u vlastní
-    // ho vybral uživatel — a dokud si žádný nevybral, jede se dál na Turbu.
-    val soubor = if (vlastni) params.zimageVlastniModel else model.soubor
-
+private fun VzorkovaniObrazku(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            t("Soubor modelu"),
-            style = MaterialTheme.typography.labelMedium, color = TextLow
-        )
-        // Tlačítko je vidět vždycky, ne až po vybrání poslední pilulky: řádek
-        // voleb se na telefonu posouvá do strany, takže schovaný výběr modelu
-        // nikdo nenašel. Kliknutí na kterýkoli soubor přepne kartu na volbu
-        // „Vlastní model" samo.
-        OutlineButton(
-            text = soubor.ifBlank { t("Vybrat model ze serveru") },
-            modifier = Modifier.fillMaxWidth(),
-            onClick = { otevreno = !otevreno; if (otevreno) vm.loadImageModels() }
-        )
-        if (otevreno) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                nabidka.forEach { jmeno ->
-                    PickRow(jmeno, soubor == jmeno) {
-                        vm.setImageModelFile(jmeno)
-                        vm.update { it.copy(zimageModel = T2iModel.VLASTNI.id) }
-                        otevreno = false
-                    }
-                }
-                when {
-                    chyba != null -> Text(
-                        t(chyba!!), style = MaterialTheme.typography.bodySmall, color = Amber
-                    )
-                    modely.isEmpty() -> Text(
-                        t("Seznam se načítá ze serveru…"),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
-                    )
-                    !vsechny && ostatni.isNotEmpty() -> OutlineButton(
-                        t("Zobrazit i ostatní modely") + " (${ostatni.size})",
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { vsechny = true }
-                    )
-                }
-            }
-        }
-        if (!vlastni) {
-            Text(
-                t("Vyber jiný soubor a karta přepne na „Vlastní model“."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
-        } else if (params.zimageVlastniModel.isBlank()) {
-            Text(
-                t("Dokud model nevybereš, generuje se na Z-Image Turbo z předlohy."),
-                style = MaterialTheme.typography.bodySmall, color = Amber
-            )
-        } else if (cz.promptlab.h3video.comfy.ZImageBuilder.jeGguf(params.zimageVlastniModel)) {
-            Text(
-                t("Model v GGUF načte uzel z balíku ComfyUI-GGUF — bez něj běh skončí chybou."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
-        }
-
-        // Kroky a cfg platí pro celou rodinu Z-Image, ne jen pro vlastní model:
-        // právě cfg je páčka na „model neposlouchá zadání".
+        // Nápovědy MUSÍ odpovídat vybranému modelu. Do 3.69 tu svítilo
+        // „na cfg 1 nemá prompt žádnou váhu" i u Qwen Image 2.1, kde je cfg 1
+        // naopak oficiální hodnota z předlohy ComfyUI — rada zvednout cfg na 2
+        // by výsledek zhoršila.
+        val model = T2iModel.zId(params.zimageModel)
+        val jeQwen21 = model == T2iModel.QWEN21
         val (ucinneKroky, ucinneCfg) = cz.promptlab.h3video.comfy.ZImageBuilder.vzorkovani(params)
         LabeledSlider(
             label = t("Počet kroků"), value = "$ucinneKroky",
             position = ucinneKroky.toFloat(),
-            range = cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MIN.toFloat()..
-                cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_KROKY_MAX.toFloat(),
+            range = cz.promptlab.h3video.comfy.ZImageBuilder.KROKY_MIN.toFloat()..
+                cz.promptlab.h3video.comfy.ZImageBuilder.KROKY_MAX.toFloat(),
             onChange = { v -> vm.setImageModelKroky(v.toInt()) },
-            note = t("Víc kroků = víc detailu a času. Turbo si vystačí s 8, s vyšším cfg dej 20 a víc.")
+            note = if (jeQwen21) {
+                t("Oficiální předloha Qwenu má 25. Víc kroků = víc detailu a času.")
+            } else {
+                t("Víc kroků = víc detailu a času. Turbo si vystačí s 8, s vyšším cfg dej 20 a víc.")
+            },
         )
         LabeledSlider(
             label = t("Vedení promptem (cfg)"), value = "%.1f".format(ucinneCfg),
             position = ucinneCfg,
-            range = 1f..cz.promptlab.h3video.comfy.ZImageBuilder.VLASTNI_CFG_MAX,
+            range = 1f..cz.promptlab.h3video.comfy.ZImageBuilder.CFG_MAX,
             onChange = { v -> vm.setImageModelCfg(v) },
-            note = t("Na 1 si model zadání vykládá po svém. Kolem 2 začne poslouchat pózu a kompozici.")
+            note = if (jeQwen21) {
+                t("Qwen 2.1 je na cfg 1 stavěný a zadání na ní drží. Zvyšovat není potřeba.")
+            } else {
+                t("Na 1 si model zadání vykládá po svém. Kolem 2 začne poslouchat pózu a kompozici.")
+            },
         )
-        if (ucinneCfg <= 1f) {
+        if (jeQwen21 && ucinneCfg > 1f) {
+            Text(
+                t("Nad 1 se u Qwen 2.1 začne uplatňovat i negativní prompt, " +
+                    "ale oficiální předloha jede na 1 — vyšší hodnota může uškodit."),
+                style = MaterialTheme.typography.bodySmall, color = Amber
+            )
+        }
+        if (!jeQwen21 && ucinneCfg <= 1f) {
             Text(
                 t("Na cfg 1 nemá prompt žádnou váhu — destilované Turbo jede bez vedení. ") +
                     t("Když model neposlouchá pózu, zvedni cfg na 2."),
@@ -1737,10 +1662,6 @@ private fun VlastniModelPicker(
     }
 }
 
-/**
- * Karta výběru modelu. Stojí nad LoRA, protože se nejdřív vybírá, na čem se
- * generuje, a teprve pak čím se to dolaďuje.
- */
 @Composable
 private fun ModelCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
     // Referenční cesta má vlastní váhy (ref2va) a ty se z workflow neberou pryč –
