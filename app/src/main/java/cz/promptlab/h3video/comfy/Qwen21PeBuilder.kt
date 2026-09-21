@@ -63,8 +63,25 @@ object Qwen21PeBuilder {
     /** První uzel `LoadImage`; další jdou po jedné nahoru. */
     const val N_OBRAZEK_PRVNI = 100
 
+    /** První uzel zmenšení předlohy; jeden ke každé fotce. */
+    const val N_ZMENSENI_PRVNI = 150
+
     /** První uzel `ImageBatch` ve slepenci dávky. */
     const val N_DAVKA_PRVNI = 200
+
+    /**
+     * Na kolik pixelů se srazí delší strana předlohy, než ji uvidí přepisovač.
+     *
+     * Přepisovač má scénu jen **pochopit**, ne z ní číst drobné písmo. Každý
+     * pixel navíc se ale promítne do obrazových tokenů, přes které pak model
+     * počítá každé napsané slovo. Změřeno 21. 9. 2026: fotka 2048×1693 plus
+     * reference 944×2048 srazily rychlost z ~29 na **2 tokeny za vteřinu**,
+     * tedy z dvaceti vteřin na jedenáct minut.
+     *
+     * Na velikost výsledného obrázku to nemá vliv — ta se řídí předlohou
+     * v samotném generování, ne tím, co viděl přepisovač.
+     */
+    const val PREDLOHA_MAX_PX = 1024
 
     const val NODE_CLASS = "TextGenerate"
     const val LOADER_CLASS = "CLIPLoader"
@@ -196,8 +213,18 @@ object Qwen21PeBuilder {
                     JSONObject().put("image", jmeno),
                 ),
             )
+            wf.put(
+                (N_ZMENSENI_PRVNI + i).toString(),
+                uzel(
+                    "ImageScaleToMaxDimension", "Zmenšení předlohy ${i + 1}",
+                    JSONObject()
+                        .put("image", odkaz((N_OBRAZEK_PRVNI + i).toString()))
+                        .put("upscale_method", "area")
+                        .put("largest_size", PREDLOHA_MAX_PX),
+                ),
+            )
         }
-        var posledni = odkaz((N_OBRAZEK_PRVNI).toString())
+        var posledni = odkaz((N_ZMENSENI_PRVNI).toString())
         for (i in 1 until obrazky.size) {
             val id = (N_DAVKA_PRVNI + i - 1).toString()
             wf.put(
@@ -206,7 +233,7 @@ object Qwen21PeBuilder {
                     "ImageBatch", "Dávka ${i + 1}",
                     JSONObject()
                         .put("image1", posledni)
-                        .put("image2", odkaz((N_OBRAZEK_PRVNI + i).toString())),
+                        .put("image2", odkaz((N_ZMENSENI_PRVNI + i).toString())),
                 ),
             )
             posledni = odkaz(id)

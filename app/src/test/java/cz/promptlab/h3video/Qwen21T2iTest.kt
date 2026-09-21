@@ -94,6 +94,19 @@ class Qwen21T2iTest {
     }
 
     @Test
+    fun `generovani nikdy nezmensuje predlohy`() {
+        // Zmenšení na 1024 px patří VÝHRADNĚ do grafu vylepšovače zadání —
+        // ten má scénu jen pochopit. Do generování se dostat nesmí, jinak by
+        // uživateli tiše klesla kvalita výstupu.
+        listOf(sablona, sablonaUpravy).forEach { predloha ->
+            assertTrue(!predloha.contains("ImageScaleToMaxDimension"))
+            assertTrue(!predloha.contains("ImageScaleBy"))
+        }
+        val wf = graf().toString()
+        assertTrue(!wf.contains("ImageScaleToMaxDimension"))
+    }
+
+    @Test
     fun `bez predlohy se do enkoderu neposilaji zadne obrazky`() {
         val e = inputs(graf(), ZImageBuilder.N_Q21_TEXT)
         assertTrue(e.keys().asSequence().none { it.startsWith("images") })

@@ -94,6 +94,7 @@ class Qwen21PeBuilderTest {
         )
         assertTrue(!inputs(wf, Qwen21PeBuilder.N_GEN).has("image"))
         assertTrue(!wf.has(Qwen21PeBuilder.N_OBRAZEK_PRVNI.toString()))
+        assertTrue(!wf.has(Qwen21PeBuilder.N_ZMENSENI_PRVNI.toString()))
     }
 
     @Test
@@ -102,12 +103,19 @@ class Qwen21PeBuilderTest {
             "S", "x", Qwen21PeBuilder.MODEL_I2I, listOf("a.png", "b.png", "c.png"),
             Qwen21PeBuilder.MAX_TOKENU_I2I, 1L,
         )
-        // Tři LoadImage a dva ImageBatch; na vstup jde poslední dávka.
+        // Tři LoadImage, ke každé zmenšení, a dva ImageBatch.
         assertEquals("a.png", inputs(wf, "100").getString("image"))
         assertEquals("c.png", inputs(wf, "102").getString("image"))
         assertEquals("ImageBatch", wf.getJSONObject("201").getString("class_type"))
         val vstup = inputs(wf, Qwen21PeBuilder.N_GEN).getJSONArray("image")
         assertEquals("201", vstup.getString(0))
+        // Do dávky jdou ZMENŠENÉ fotky, ne originály — jinak přepisovač počítá
+        // přes tisíce obrazových tokenů a spadne z ~29 na 2 tokeny za vteřinu.
+        assertEquals("100", inputs(wf, "150").getJSONArray("image").getString(0))
+        assertEquals(Qwen21PeBuilder.PREDLOHA_MAX_PX, inputs(wf, "150").getInt("largest_size"))
+        assertEquals("150", inputs(wf, "200").getJSONArray("image1").getString(0))
+        assertEquals("151", inputs(wf, "200").getJSONArray("image2").getString(0))
+        assertEquals("152", inputs(wf, "201").getJSONArray("image2").getString(0))
     }
 
     @Test
