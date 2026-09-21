@@ -569,19 +569,6 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 T2iModel.zId(params.zimageModel) == T2iModel.QWEN21
             if (ovlada.lora && !qwen21) LoraCard(vm, params)
 
-            if (qwen21) {
-                SectionCard(
-                    title = t("Velikost"),
-                    subtitle = t("Qwen 2.1 umí 2K nativně"),
-                ) {
-                    ToggleRow(
-                        t("Generovat ve 2K"),
-                        t("Čtyřnásobek pixelů a výrazně víc paměti i času. " +
-                            "Vypnuto = okolo 1 megapixelu jako ostatní modely karty."),
-                        params.qwen21Dvak,
-                    ) { v -> vm.update { it.copy(qwen21Dvak = v) } }
-                }
-            }
 
             val onWorkflowDefaults = remember(params) { vm.matchesWorkflow(params) }
             SectionCard(
@@ -896,6 +883,7 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
     }
 }
 
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
     SectionCard(
@@ -939,13 +927,19 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
                 Spacer(Modifier.height(8.dp))
                 val jeQwen21 = T2iModel.zId(params.zimageModel) == T2iModel.QWEN21
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                // U Qwen 2.1 jsou tlačítka tři a do jednoho řádku se na telefon
+                // nevejdou — obyčejný Row by to poslední (Přeložit) vystrčil
+                // mimo obrazovku. FlowRow je zalomí pod sebe.
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     if (jeQwen21) {
                         OutlineButton(
                             if (bezi) t("Přepisuji…") else t("✨ Vylepšit (Qwen)"),
                             color = Cyan,
                         ) { if (!bezi) vm.vylepsiQwen21Prompt(proUpravu = false) }
-                        Spacer(Modifier.width(8.dp))
                         OutlineButton(
                             if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
                             color = cz.promptlab.h3video.ui.theme.Amber,
@@ -956,9 +950,8 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                             color = Cyan,
                         ) { if (!bezi) vm.vylepsiObrazovyPrompt() }
                     }
-                    Spacer(Modifier.width(8.dp))
                     // Kdo si prompt napsal sám, nechce ho rozepsat — chce ho
-                    // jen anglicky. To dělá druhé tlačítko.
+                    // jen anglicky. To dělá tohle tlačítko.
                     OutlineButton(
                         if (beziPreklad) t("Překládám…") else t("🌐 Přeložit"),
                         color = cz.promptlab.h3video.ui.theme.Violet,
@@ -967,29 +960,32 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                             vm.prelozPrompt(MainViewModel.PromptPole.OBRAZEK)
                         }
                     }
-                    postup?.let { (kolik, _) ->
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            t("napsáno %d").format(kolik),
-                            style = MaterialTheme.typography.bodySmall, color = TextLow,
-                        )
-                    }
-                    if (bezi || beziPreklad) {
-                        Spacer(Modifier.width(10.dp))
-                        androidx.compose.material3.CircularProgressIndicator(
-                            Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
-                        )
-                    }
-                    if (!bezi && puvodni != null) {
-                        Spacer(Modifier.width(12.dp))
-                        Text(
-                            t("Vrátit původní"),
-                            style = MaterialTheme.typography.bodySmall, color = TextMid,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { vm.vratPuvodniPromptObrazku() }
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        )
+                }
+                if (bezi || beziPreklad || (!bezi && puvodni != null)) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        if (bezi || beziPreklad) {
+                            androidx.compose.material3.CircularProgressIndicator(
+                                Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
+                            )
+                            postup?.let { (kolik, _) ->
+                                Spacer(Modifier.width(10.dp))
+                                Text(
+                                    t("napsáno %d").format(kolik),
+                                    style = MaterialTheme.typography.bodySmall, color = TextLow,
+                                )
+                            }
+                        }
+                        if (!bezi && puvodni != null) {
+                            Text(
+                                t("Vrátit původní"),
+                                style = MaterialTheme.typography.bodySmall, color = TextMid,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { vm.vratPuvodniPromptObrazku() }
+                                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                            )
+                        }
                     }
                 }
                 if (jeQwen21) {
@@ -1009,7 +1005,12 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 }
 
                 Spacer(Modifier.height(6.dp))
-                val (w, h) = cz.promptlab.h3video.comfy.ZImageBuilder.sizeFor(params.aspect)
+                val dvak = jeQwen21 && params.qwen21Dvak
+                val (w, h) = if (dvak) {
+                    cz.promptlab.h3video.comfy.ZImageBuilder.size2kFor(params.aspect)
+                } else {
+                    cz.promptlab.h3video.comfy.ZImageBuilder.sizeFor(params.aspect)
+                }
                 Text(
                     t("Vyjde %d×%d px. Z výsledku se dá rovnou pokračovat do Úpravy obrázku nebo do Zvětšit.")
                         .format(w, h),
@@ -1041,8 +1042,24 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     t("%d kroků").format(ucinneKroky) + " · cfg " + "%.1f".format(ucinneCfg),
                     style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
+                // Qwen 2.1 je na 2K stavěný. Tabulka rozměrů karty je z Z-Image
+                // Turba (~1 Mpx) a brala by mu polovinu detailu, proto volba.
+                // Ostatní modely karty 2K neumí, tak se ukazuje jen u něj.
+                if (model == T2iModel.QWEN21) {
+                    Spacer(Modifier.height(10.dp))
+                    ToggleRow(
+                        t("Generovat ve 2K"),
+                        t("Čtyřnásobek pixelů a výrazně víc paměti i času. " +
+                            "Vypnuto = okolo 1 megapixelu jako ostatní modely karty."),
+                        params.qwen21Dvak,
+                    ) { v -> vm.update { it.copy(qwen21Dvak = v) } }
+                }
             }
-            ImageLoraSection(vm, params)
+            // Žádná stávající LoRA na Qwen 2.1 nesedí — 32 vrstev proti 60
+            // u starého Qwen-Image.
+            if (T2iModel.zId(params.zimageModel) != T2iModel.QWEN21) {
+                ImageLoraSection(vm, params)
+            }
         }
     }
 }
