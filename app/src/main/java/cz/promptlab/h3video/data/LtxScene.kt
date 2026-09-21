@@ -98,6 +98,11 @@ data class LtxScene(
      * U [LtxRezim.ZVUK] se nepoužije — tam ji určuje nahraný soubor.
      */
     val sekundy: Float = 5f,
+    /**
+     * Doplňková LoRA na transformer. Sedí celá rodina LTX — soubory pro 2.3
+     * i pro 2.5 mají stejný tvar (48 bloků, šířka 4096), viz [LtxLoras].
+     */
+    val lora: EditLora = EditLora(),
 ) {
     /**
      * Kolik snímků z toho vyjde při 25 fps — jen pro popisek v kartě.
@@ -177,6 +182,10 @@ class LtxStore(ctx: Context) {
                 .getOrDefault(LtxPomer.NA_VYSKU),
             sekundy = j.optDouble("sekundy", 5.0).toFloat()
                 .coerceIn(LtxScene.MIN_SEKUND, LtxScene.MAX_SEKUND),
+            lora = EditLora(
+                name = j.optString("lora"),
+                strength = j.optDouble("loraSila", 0.8).toFloat().coerceIn(0f, 2f),
+            ),
         )
     }.getOrDefault(LtxScene())
 
@@ -191,6 +200,8 @@ class LtxStore(ctx: Context) {
                 .put("zvukSekund", s.zvukSekund.toDouble())
                 .put("popis", s.popis)
                 .put("pomer", s.pomer.name)
+                .put("lora", s.lora.name)
+                .put("loraSila", s.lora.strength.toDouble())
                 .toString()
         ).apply()
     }

@@ -70,15 +70,63 @@ object AngleBuilder {
             kotlin.math.abs(ODSTUP_POMER[it] - pomer)
         } ?: 1
 
-    /** Přirozený pokyn pro Qwen 2.1; starý LoRA spouštěč už není potřeba. */
+    /**
+     * O kolik stupňů a kterým směrem kamera objede objekt.
+     *
+     * Vrací kladné číslo a slovo `right`/`left`, ne 0–360°: otočení „o 90°
+     * doleva" je pro model srozumitelnější než „na 270°". Směry odpovídají
+     * uzlu `QwenMultiangleCameraNode` — ten je počítá od kamery, ne od
+     * objektu (na 90° sedí kamera vpravo od původního místa a říká tomu
+     * „right side view"), takže i tady je `right` = kamera jde doprava.
+     */
+    fun otoceni(azimut: Int): Pair<Int, String> {
+        val stupne = (azimut.coerceIn(AZIMUTY.indices) * 45)
+        return if (stupne <= 180) stupne to "right" else (360 - stupne) to "left"
+    }
+
+    /** Výška kamery ve stupních nad úrovní očí; záporná je podhled. */
+    fun vyskaPopis(vyska: Int): String {
+        val slovo = VYSKY[vyska.coerceIn(VYSKY.indices)].first
+        return when (val st = VYSKA_STUPNE[vyska.coerceIn(VYSKY.indices)].toInt()) {
+            0 -> "at eye level ($slovo)"
+            in Int.MIN_VALUE..-1 -> "${-st} degrees below eye level, tilted up ($slovo)"
+            else -> "$st degrees above eye level, tilted down ($slovo)"
+        }
+    }
+
+    /**
+     * Pokyn pro Qwen Image 2.1.
+     *
+     * **Píše se jako otočení o stupně, ne jako název pohledu.** Qwen popisuje
+     * změnu pohledu v dokumentaci právě takhle („rotate by 90 degrees", „full
+     * 180-degree rotation") a jen na to je vycvičený. Samotné „left side view"
+     * bral jako slabý pokyn a fotku nechal skoro zepředu; „back view" prošlo,
+     * protože 180° je natolik jednoznačné, že se splete těžko. Nahlášeno
+     * 21. 9. 2026 („dám z levé strany a je to pořád zepředu, zezadu funguje").
+     *
+     * Druhá polovina opravy je **poměr vět**: původní pokyn měl jednu větu
+     * o otočení a dlouhý výčet toho, co se nesmí změnit. Oficiální systémový
+     * prompt Qwenu (`qwen21_pe_system_i2i.txt`) přitom varuje přesně před
+     * tímhle — *under-editing*, kdy se žádaná změna provede jen naznačeně.
+     * Zachování se proto drží krátce a pokyn vede operace.
+     */
     fun prompt(azimut: Int, vyska: Int, odstup: Int): String {
         val smer = AZIMUTY[azimut.coerceIn(AZIMUTY.indices)].first
-        val vyskaKamery = VYSKY[vyska.coerceIn(VYSKY.indices)].first
         val zaber = ODSTUPY[odstup.coerceIn(ODSTUPY.indices)].first
-        return "Edit <image1> into a $smer, $vyskaKamery, $zaber. " +
-            "Change only the camera viewpoint and framing. Preserve the exact subject, " +
-            "identity, clothing, materials, proportions, lighting and scene; reconstruct " +
-            "newly visible surfaces consistently and photorealistically."
+        val (stupne, strana) = otoceni(azimut)
+        val otoc = when {
+            stupne == 0 -> "Keep the camera in front of the subject in <image1>"
+            stupne == 180 -> "Orbit the camera a full 180 degrees around the subject " +
+                "in <image1> to look at it from directly behind"
+            else -> "Orbit the camera $stupne degrees to the $strana around the subject " +
+                "in <image1>, keeping the subject centred"
+        }
+        return "$otoc. Render the subject from that new $smer, " +
+            "${vyskaPopis(vyska)}, as a $zaber. " +
+            "This is a real change of viewpoint, not a crop or a rotation of the picture: " +
+            "surfaces that were hidden before must now be drawn, and surfaces that turn " +
+            "away must disappear. Keep the same subject, clothing, materials, colours " +
+            "and lighting, and draw the newly visible parts photorealistically."
     }
 
     fun popis(azimut: Int, vyska: Int, odstup: Int): String = listOf(

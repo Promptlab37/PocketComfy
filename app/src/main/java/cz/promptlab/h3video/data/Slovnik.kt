@@ -651,6 +651,30 @@ object Slovnik {
         "Přepisovač nevrátil použitelný výsledek. Zkus to znovu." to
             "The rewriter returned nothing usable. Try again.",
         "Přepisuji…" to "Rewriting…",
+        // karta LTX 2.5 — přepisovač popisu a LoRA
+        "✨ Vylepšit (LTX)" to "✨ Improve (LTX)",
+        "Nejdřív napiš aspoň pár slov o tom, co má být vidět." to
+            "Write a few words about what should be on screen first.",
+        "Oba napíšou dlouhý popis záběru: velikost záběru, pohyb " to
+            "Both write a long shot description: shot size, camera ",
+        "kamery a zvuk vpletený do děje. Odvázaný nic nezjemňuje." to
+            "motion and sound woven into the action. The unfiltered one softens nothing.",
+        "Oba napíšou dlouhý popis záběru i s pohybem kamery. " to
+            "Both write a long shot description including camera motion. ",
+        "Zvuk máš svůj, takže ho nevymýšlejí — popíšou, co je z něj vidět." to
+            "The soundtrack is yours, so they do not invent it — they describe what is visible in it.",
+        "pro 2.5" to "for 2.5",
+        "pro 2.3 — na 2.5 sedí" to "for 2.3 — fits 2.5",
+        "rodina LTX" to "LTX family",
+        "Server nemá uzly llama.cpp — bez nich odvázaný přepisovač nejede." to
+            "The server has no llama.cpp nodes — the unfiltered rewriter needs them.",
+        // karta Domalovat — třetí motor
+        "Nejlíp drží podobu lidí, ale je nejpomalejší (25 kroků)" to
+            "Holds people's likeness best, but is the slowest (25 steps)",
+        "Tenhle model poslouchá příkazy — napiš, co se s tím místem má stát" to
+            "This model follows commands — write what should happen to that spot",
+        "Když se výsledek nepovede, zkus jiný model — každý kreslí jinak" to
+            "If the result misses, try another model — each one paints differently",
         "Podkresová hudba" to "Background music",
         "AI k videu vymyslí i soundtrack" to "The AI also invents a soundtrack",
         "Jen zvuky scény — bez vymyšlené hudby" to "Scene sounds only — no invented music",

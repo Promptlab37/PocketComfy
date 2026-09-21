@@ -45,9 +45,13 @@ object InpaintBuilder {
     /** Kroky z předloh — ukazatel průběhu na ně přepočítává hlášení serveru. */
     const val KLEIN_STEPS = 4
     const val FILL_STEPS = 8
+    const val QWEN21_STEPS = 25
 
-    fun stepsFor(model: InpaintModel): Int =
-        if (model == InpaintModel.KLEIN) KLEIN_STEPS else FILL_STEPS
+    fun stepsFor(model: InpaintModel): Int = when (model) {
+        InpaintModel.KLEIN -> KLEIN_STEPS
+        InpaintModel.FILL -> FILL_STEPS
+        InpaintModel.QWEN21 -> QWEN21_STEPS
+    }
 
     /**
      * Klein je editační model: dostane původní výřez jako referenci a zadání
@@ -59,18 +63,34 @@ object InpaintBuilder {
      */
     fun zadaniProModel(model: InpaintModel, prompt: String): String {
         val text = prompt.trim()
-        if (model != InpaintModel.KLEIN || text.isEmpty()) return text
-        return "Repaint the masked region of the image so that it shows: $text. " +
-            "Actually change that region — do not return it unchanged. " +
-            "Match the surrounding lighting, perspective and grain, and keep " +
-            "the rest of the image exactly as it is."
+        if (text.isEmpty()) return text
+        return when (model) {
+            InpaintModel.FILL -> text
+            InpaintModel.KLEIN ->
+                "Repaint the masked region of the image so that it shows: $text. " +
+                    "Actually change that region — do not return it unchanged. " +
+                    "Match the surrounding lighting, perspective and grain, and keep " +
+                    "the rest of the image exactly as it is."
+            // Qwen 2.1 čte zadání jako pokyn k úpravě a výřez zná jako
+            // <image1> — stejný tvar jako na kartě Úprava obrázku. Zbytek
+            // fotky za maskou neřeší: ten do grafu ani nevstupuje.
+            InpaintModel.QWEN21 ->
+                "In <image1>, repaint the masked region so that it shows: $text. " +
+                    "Apply the change clearly — the region must not come back unchanged. " +
+                    "Keep the people, objects and style outside the masked region " +
+                    "exactly as they are, and match the surrounding lighting, " +
+                    "perspective, focus and grain so the repainted part blends in."
+        }
     }
 
     private val cached = HashMap<InpaintModel, String>()
 
     private fun template(ctx: Context, model: InpaintModel): String = cached.getOrPut(model) {
-        val res = if (model == InpaintModel.KLEIN) R.raw.workflow_inpaint_klein
-        else R.raw.workflow_inpaint_fill
+        val res = when (model) {
+            InpaintModel.KLEIN -> R.raw.workflow_inpaint_klein
+            InpaintModel.FILL -> R.raw.workflow_inpaint_fill
+            InpaintModel.QWEN21 -> R.raw.workflow_inpaint_qwen21
+        }
         ctx.resources.openRawResource(res).bufferedReader().use { it.readText() }
     }
 
@@ -93,8 +113,18 @@ object InpaintBuilder {
         val wf = JSONObject(template)
         wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
         wf.inputs(N_MASK).put("image", images.getOrElse(1) { "" })
-        wf.inputs(N_TEXT).put("text", zadaniProModel(model, prompt))
-        if (model == InpaintModel.KLEIN) {
+        // Qwen má zadání v `prompt`, oba flux modely v `text` — je to jiná
+        // třída uzlu, ne jiné pojmenování téhož.
+        wf.inputs(N_TEXT).put(
+            if (model == InpaintModel.QWEN21) "prompt" else "text",
+            zadaniProModel(model, prompt),
+        )
+        if (model == InpaintModel.QWEN21) {
+            wf.inputs(N_SAMPLER).put("seed", seed)
+            // Pod maskou má vzniknout obsah ze zadání, ne dokreslení toho,
+            // co tam bylo. Sílu karta u tohohle modelu ani nenabízí.
+            wf.inputs(N_SAMPLER).put("denoise", 1.0)
+        } else if (model == InpaintModel.KLEIN) {
             wf.inputs(N_NOISE).put("noise_seed", seed)
             // Klein: LoraLoaderModelOnly mezi UNETLoader a vedení. Bez vybrané
             // LoRA se graf šablony nezmění ani o bajt.
@@ -139,12 +169,13 @@ object InpaintBuilder {
 
     fun stageForClass(cls: String?): Stage = when (cls) {
         "UNETLoader", "CLIPLoader", "DualCLIPLoader", "VAELoader",
-        "Power Lora Loader (rgthree)", "LoraLoaderModelOnly" -> Stage.MODELS
+        "Power Lora Loader (rgthree)", "LoraLoaderModelOnly",
+        "QwenImage21Cache" -> Stage.MODELS
         "LoadImage", "ImageToMask", "InpaintCropImproved", "GetImageSize",
         "VAEEncode", "SetLatentNoiseMask" -> Stage.REFERENCES
         "CLIPTextEncode", "ReferenceLatent", "ConditioningZeroOut", "FluxGuidance",
         "InpaintModelConditioning", "Flux2Scheduler", "KSamplerSelect", "RandomNoise",
-        "CFGGuider" -> Stage.ENCODING
+        "CFGGuider", "TextEncodeQwenImage21" -> Stage.ENCODING
         "KSampler", "SamplerCustomAdvanced" -> Stage.SAMPLING
         "VAEDecode", "InpaintStitchImproved", "SaveImage" -> Stage.MUXING
         else -> Stage.SAMPLING

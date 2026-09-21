@@ -140,17 +140,17 @@ fun InpaintSection(vm: MainViewModel) {
         // Každý model čte zadání jinak: Flux Fill maluje do díry to, co
         // popíšeš, kdežto Klein bere zadání jako příkaz k úpravě — popis
         // typu „muž s břichem" pro něj znamená „nech to tak".
-        subtitle = if (scene.model == InpaintModel.KLEIN)
-            t("Klein poslouchá příkazy — napiš, co se s tím místem má stát")
-        else t("Popiš to jako výsledný obraz, ne jako příkaz")
+        subtitle = if (scene.model == InpaintModel.FILL)
+            t("Popiš to jako výsledný obraz, ne jako příkaz")
+        else t("Tenhle model poslouchá příkazy — napiš, co se s tím místem má stát")
     ) {
         Column {
             DarkTextField(
                 value = scene.prompt,
                 onValueChange = { vm.setInpaintPrompt(it) },
-                placeholder = if (scene.model == InpaintModel.KLEIN)
-                    t("posaď ho na dřevěnou lavičku pod stromem")
-                else t("dřevěná lavička pod stromem, dopolední světlo"),
+                placeholder = if (scene.model == InpaintModel.FILL)
+                    t("dřevěná lavička pod stromem, dopolední světlo")
+                else t("posaď ho na dřevěnou lavičku pod stromem"),
                 minHeight = 100.dp,
                 onClear = { vm.setInpaintPrompt("") },
             )
@@ -168,14 +168,16 @@ fun InpaintSection(vm: MainViewModel) {
     SkladaciSekce(
         title = t("Model a doladění"),
         souhrn = scene.model.title +
-            (if (scene.lora.isNotBlank()) " · LoRA" else "") +
+            // U Qwenu LoRA neexistuje — uložená volba z jiného modelu by
+            // ve shrnutí strašila, i když ji graf vůbec nedostane.
+            (if (scene.lora.isNotBlank() && scene.model != InpaintModel.QWEN21) " · LoRA" else "") +
             (if (scene.model == InpaintModel.FILL && scene.sila < 1f)
                 " · síla %.2f".format(scene.sila) else ""),
         klic = "nastaveni-inpaint",
     ) {
         SectionCard(
             title = t("Čím domalovat"),
-            subtitle = t("Když se výsledek nepovede, zkus druhý model — každý kreslí jinak")
+            subtitle = t("Když se výsledek nepovede, zkus jiný model — každý kreslí jinak")
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 PillRow(
@@ -194,7 +196,7 @@ fun InpaintSection(vm: MainViewModel) {
         // Základní modely mají o některých motivech jen mlhavou představu —
         // hlavně o anatomii. LoRA trénovaná přímo na to je jediné, co s tím
         // spolehlivě pohne; musí ale patřit ke stejné rodině jako model.
-        SectionCard(
+        if (scene.model != InpaintModel.QWEN21) SectionCard(
             title = t("Doplňková LoRA"),
             subtitle = if (lory.isEmpty())
                 t("Na serveru není žádná LoRA pro tenhle model")

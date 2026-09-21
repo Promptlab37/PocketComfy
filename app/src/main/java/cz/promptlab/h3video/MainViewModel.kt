@@ -12,6 +12,8 @@ import cz.promptlab.h3video.comfy.ComfyException
 import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.comfy.H3RefWriteBuilder
 import cz.promptlab.h3video.comfy.ImagePromptBuilder
+import cz.promptlab.h3video.comfy.Ltx25Builder
+import cz.promptlab.h3video.comfy.Ltx25PromptBuilder
 import cz.promptlab.h3video.comfy.PromptRewriteBuilder
 import cz.promptlab.h3video.comfy.Qwen21PeBuilder
 import cz.promptlab.h3video.comfy.ZImageBuilder
@@ -3161,6 +3163,151 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun setLtxZvuk(f: java.io.File?, sekund: Float) = updateLtx {
         it.copy(zvuk = f, zvukSekund = if (f == null) 0f else sekund)
+    }
+
+    /**
+     * Výběr LoRA na kartě LTX.
+     *
+     * Rodina LTX sedí celá (48 bloků, šířka 4096 — ověřeno proti souborům
+     * na serveru), takže se neblokuje nic z ní; neoznačené soubory jde
+     * potvrdit stejně jako u ostatních karet. Spouštěcí slovo se dosadí do
+     * popisu sámo, jinak se natrénovaný styl neprojeví.
+     */
+    fun setLtxLora(name: String, confirmedUnknown: Boolean = false) {
+        if (name.isNotBlank()) {
+            val file = _editLoras.value.files.firstOrNull { it.name == name } ?: return
+            when (cz.promptlab.h3video.data.LtxLoras.compatibility(file)) {
+                LoraCompatibility.MATCH -> Unit
+                LoraCompatibility.UNKNOWN -> if (!confirmedUnknown) return
+                else -> return
+            }
+        }
+        updateLtx {
+            val puvodni = it.lora.name
+            it.copy(
+                lora = it.lora.copy(name = name),
+                popis = cz.promptlab.h3video.data.LoraTrigger.dosad(
+                    it.popis, spoustec(puvodni), spoustec(name),
+                ),
+            )
+        }
+    }
+
+    fun setLtxLoraStrength(value: Float) {
+        if (value.isFinite()) updateLtx { it.copy(lora = it.lora.copy(strength = value.coerceIn(0f, 2f))) }
+    }
+
+    /**
+     * ✨ Vylepšit popis přes **oficiální přepisovač LTX**.
+     *
+     * Jede nad `gemma4` enkodérem z předlohy té samé karty, takže se nic
+     * nestahuje a popis píše model, který ho pak bude i číst. Uzel
+     * `TextGenerateLTX2Prompt` si podle přítomnosti fotky sám vybere pravidla
+     * pro i2v nebo t2v — proto se fotka posílá, kdykoli ji karta má.
+     */
+    fun vylepsiLtxPopis() = vylepsiLtx(odvazane = false)
+
+    /**
+     * ✨ Vylepšit popis **odvázaně** — odblokovaný Qwen3-VL přes llama.cpp.
+     * Pravidla LTX dostane v systémovém promptu; nic sám nezjemňuje.
+     */
+    fun vylepsiLtxPopisOdvazane() = vylepsiLtx(odvazane = true)
+
+    private fun vylepsiLtx(odvazane: Boolean) {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val scene = _ltx.value
+        val zadani = scene.popis.trim()
+        if (zadani.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(
+                t("Nejdřív napiš aspoň pár slov o tom, co má být vidět."),
+                PraceNaPromptu.VYLEPSENI,
+            )
+            return
+        }
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    // 12B enkodér i odvázaný model chtějí místo na grafice.
+                    uklidPredPrepisem(client)
+                    val fotka = scene.obrazek?.takeIf { it.exists() }
+                    val (wf, uzel) = if (odvazane) {
+                        odvazanyLtxGraf(client, scene, zadani, fotka)
+                    } else {
+                        oficialniLtxGraf(client, scene, zadani, fotka)
+                    }
+                    spustPrepisAPockej(client, wf, uzel)
+                }
+            }
+            vysledek.onSuccess { text ->
+                _rewriteOriginal.value = zadani
+                updateLtx { it.copy(popis = ImagePromptBuilder.ocisti(text)) }
+                _rewriteState.value = RewriteState.Idle
+            }.onFailure { e ->
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    PraceNaPromptu.VYLEPSENI,
+                )
+            }
+        }
+    }
+
+    private suspend fun oficialniLtxGraf(
+        client: ComfyClient,
+        scene: cz.promptlab.h3video.data.LtxScene,
+        zadani: String,
+        fotka: java.io.File?,
+    ): Pair<org.json.JSONObject, String> {
+        client.objectInfo(Ltx25PromptBuilder.NODE_CLASS) ?: throw ComfyException(
+            "uzel chybi",
+            "Server nemá uzel ${Ltx25PromptBuilder.NODE_CLASS} — potřebuje ComfyUI, " +
+                "které zná LTX 2. Odvázaný přepisovač jede i bez něj.",
+        )
+        val encoder = Ltx25Builder.encoderZPredlohy(getApplication(), scene.rezim)
+        val nahrana = fotka?.let { client.uploadImage(it.readBytes(), it.name) }
+        return Ltx25PromptBuilder.buildOficialni(
+            zadani = zadani,
+            encoder = encoder,
+            obrazek = nahrana,
+            seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+        ) to Ltx25PromptBuilder.N_PREVIEW
+    }
+
+    private suspend fun odvazanyLtxGraf(
+        client: ComfyClient,
+        scene: cz.promptlab.h3video.data.LtxScene,
+        zadani: String,
+        fotka: java.io.File?,
+    ): Pair<org.json.JSONObject, String> {
+        val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS) ?: throw ComfyException(
+            "llama uzel chybi",
+            "Server nemá uzly llama.cpp — bez nich odvázaný přepisovač nejede.",
+        )
+        fun nabidka(pole: String): List<String> {
+            val a = spec.getJSONObject("input").getJSONObject("required")
+                .getJSONArray(pole).getJSONArray(0)
+            return (0 until a.length()).map { a.getString(it) }
+        }
+        val model = ImagePromptBuilder.vyberModel(nabidka("model")) ?: throw ComfyException(
+            "zadny model",
+            "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
+        )
+        // Bez projektoru fotku neuvidí. Jede se dál naslepo — systémový prompt
+        // mu pak řekne, ať si prostředí nevymýšlí.
+        val mmproj = ImagePromptBuilder.vyberMmproj(model, nabidka("mmproj"))
+        val fotky = if (mmproj == "None" || fotka == null) emptyList()
+        else listOf(client.uploadImage(fotka.readBytes(), fotka.name))
+        return Ltx25PromptBuilder.buildOdvazany(
+            rezim = scene.rezim,
+            zadani = zadani,
+            sekundy = if (scene.rezim == cz.promptlab.h3video.data.LtxRezim.ZVUK)
+                scene.zvukSekund else scene.sekundy,
+            model = model,
+            seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+            mmproj = mmproj,
+            obrazky = fotky,
+        ) to Ltx25PromptBuilder.N_PREVIEW_ODVAZANY
     }
 
         fun setMusicMotor(v: cz.promptlab.h3video.data.MusicMotor) = updateMusic { it.copy(motor = v) }

@@ -32,6 +32,18 @@ enum class InpaintModel(
     KLEIN(
         titleCs = "FLUX.2 Klein",
         detailCs = "Rychlejší (4 kroky), ale poslouchá příkazy — „dej mu plnovous“",
+    ),
+
+    /**
+     * Jednotný model Qwen Image 2.1. Vlastní uzel na masku nemá — maskuje se
+     * tak, že místo prázdného latentu jde do vzorkování zdrojový výřez přes
+     * `VAEEncode` + `SetLatentNoiseMask`. Výřez přitom zůstává i **referencí**
+     * v `TextEncodeQwenImage21`, takže model vidí okolí masky a drží podobu
+     * líp než oba flux modely. Platí za to časem: 25 kroků proti 4 u Kleina.
+     */
+    QWEN21(
+        titleCs = "Qwen Image 2.1",
+        detailCs = "Nejlíp drží podobu lidí, ale je nejpomalejší (25 kroků)",
     );
 
     val title: String get() = t(titleCs)
@@ -92,6 +104,9 @@ fun loryProModel(model: InpaintModel, vse: List<String>): List<String> {
             val flux = jmeno.contains("flux", true) || jmeno.contains("-f1", true)
             flux && flux2Znaky.none { jmeno.contains(it, ignoreCase = true) }
         }
+        // Qwen Image 2.1 je nová architektura — nesedí na ni ani LoRA pro
+        // starší Qwen Image. Nabízet tu cokoli by znamenalo nabízet past.
+        InpaintModel.QWEN21 -> emptyList()
     }.sorted()
 }
 

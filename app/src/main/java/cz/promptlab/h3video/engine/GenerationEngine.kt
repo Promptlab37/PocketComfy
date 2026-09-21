@@ -868,11 +868,14 @@ object GenerationEngine {
             longScene != null ->
                 LongVideoBuilder.build(longScene, effective, seed, videoName, names)
 
-            // Domalování do masky: Klein 9B, nebo Flux Fill podle volby karty.
+            // Domalování do masky: Flux Fill, Klein 9B nebo Qwen Image 2.1
+            // podle volby karty. Qwen LoRA nemá — uložená volba z jiného
+            // modelu se do jeho grafu nesmí dostat.
             inpaintScene != null ->
                 InpaintBuilder.build(
                     app, inpaintScene.model, inpaintScene.prompt, seed, names,
-                    lora = inpaintScene.lora,
+                    lora = if (inpaintScene.model == cz.promptlab.h3video.data.InpaintModel.QWEN21)
+                        "" else inpaintScene.lora,
                     loraSila = inpaintScene.loraSila,
                     sila = inpaintScene.sila,
                 )

@@ -241,15 +241,15 @@ object Katalog {
             "$HF/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors"
         ),
         "qwen_image_2.1_int8_convrot.safetensors" to Soubor(
-            "models/diffusion_models", "Obrázek, Úprava obrázku, Oprava fotky a Úhel kamery — Qwen Image 2.1 (7,3 GB)",
+            "models/diffusion_models", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (7,3 GB)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_int8_convrot.safetensors"
         ),
         "qwen3vl_8b_int8_convrot.safetensors" to Soubor(
-            "models/text_encoders", "Obrázek, Úprava obrázku, Oprava fotky a Úhel kamery — Qwen Image 2.1 (9,4 GB)",
+            "models/text_encoders", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (9,4 GB)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors"
         ),
         "qwen_image_2.1_vae_bf16.safetensors" to Soubor(
-            "models/vae", "Obrázek, Úprava obrázku, Oprava fotky a Úhel kamery — Qwen Image 2.1 (0,7 GB, RGBA)",
+            "models/vae", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (0,7 GB, RGBA)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors"
         ),
         "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors" to Soubor(

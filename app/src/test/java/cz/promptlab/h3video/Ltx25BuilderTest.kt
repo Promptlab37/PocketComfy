@@ -2,6 +2,10 @@ package cz.promptlab.h3video
 
 import cz.promptlab.h3video.comfy.Ltx25Builder
 import cz.promptlab.h3video.comfy.Stage
+import cz.promptlab.h3video.data.EditLora
+import cz.promptlab.h3video.data.EditLoraFile
+import cz.promptlab.h3video.data.LoraCompatibility
+import cz.promptlab.h3video.data.LtxLoras
 import cz.promptlab.h3video.data.LtxPomer
 import cz.promptlab.h3video.data.LtxRezim
 import cz.promptlab.h3video.data.LtxScene
@@ -232,6 +236,87 @@ class Ltx25BuilderTest {
         assertEquals("", puvodni.inputs(Ltx25Builder.N_POPIS).getString("text"))
         assertEquals("", JSONObject(sablonaT2v).inputs(Ltx25Builder.N_POPIS).getString("text"))
         assertEquals("", JSONObject(sablonaI2v).inputs(Ltx25Builder.N_OBRAZEK).getString("image"))
+    }
+
+
+    /**
+     * LoRA se musí dostat do **obou** průchodů. Předloha je dvouprůchodová
+     * a druhý vodič si bere model taky z načítače — kdyby zůstal na něm,
+     * druhý průchod by LoRA z obrazu zase vyčistil.
+     */
+    @Test
+    fun `lora se zapoji do vsech vodicu`() {
+        val wf = Ltx25Builder.build(
+            sablona,
+            LtxScene(rezim = LtxRezim.ZVUK, popis = "x",
+                lora = EditLora("ltxdeepthroat_v01.safetensors", 0.7f)),
+            1L, "a.png", "b.wav",
+        )
+        val lora = wf.inputs(Ltx25Builder.N_LORA)
+        assertEquals("ltxdeepthroat_v01.safetensors", lora.getString("lora_name"))
+        assertEquals(0.7, lora.getDouble("strength_model"), 1e-6)
+        assertEquals(Ltx25Builder.N_UNET, lora.getJSONArray("model").getString(0))
+
+        // Na načítač modelu smí odkazovat už jen samotná LoRA.
+        val primo = wf.keys().asSequence().filter { id ->
+            id != Ltx25Builder.N_LORA &&
+                wf.inputs(id).optJSONArray("model")?.optString(0) == Ltx25Builder.N_UNET
+        }.toList()
+        assertEquals(emptyList<String>(), primo)
+
+        // A oba vodiče musí viset na LoRA.
+        val vodice = wf.keys().asSequence().filter {
+            wf.getJSONObject(it).getString("class_type") == "LTXVDualCFGGuider"
+        }.toList()
+        assertEquals(2, vodice.size)
+        vodice.forEach {
+            assertEquals(Ltx25Builder.N_LORA, wf.inputs(it).getJSONArray("model").getString(0))
+        }
+    }
+
+    @Test
+    fun `bez vybrane lory graf zustava beze zmeny`() {
+        val wf = Ltx25Builder.build(
+            sablona, LtxScene(rezim = LtxRezim.ZVUK, popis = "x"), 1L, "a.png", "b.wav",
+        )
+        assertFalse(wf.has(Ltx25Builder.N_LORA))
+        assertEquals(
+            Ltx25Builder.N_UNET,
+            wf.inputs("435").getJSONArray("model").getString(0),
+        )
+    }
+
+    /**
+     * Celá rodina LTX sedí — soubory pro LTX-2, 2.3 i 2.5 mají 48 bloků
+     * a šířku 4096 (ověřeno proti souborům na serveru 21. 9. 2026). Blokovat
+     * se smí jen cizí rodiny.
+     */
+    @Test
+    fun `filtr propusti celou rodinu LTX a zastavi cizi modely`() {
+        listOf(
+            "LTX2.3_Crisp_Enhance.safetensors",
+            "ltx-2-19b-lora-camera-control-static.safetensors",
+            "little_more_sharpness_r16_v1_ltx25.safetensors",
+            "kiss_ltx2_lora.safetensors",
+        ).forEach {
+            assertEquals(it, LoraCompatibility.MATCH, LtxLoras.compatibility(it))
+        }
+        listOf(
+            "FLUX.1-Turbo-Alpha.safetensors",
+            "qwen-image-2.1-neco.safetensors",
+            "Wan2.2-Lightning.safetensors",
+        ).forEach { assertEquals(it, LoraCompatibility.INCOMPATIBLE, LtxLoras.compatibility(it)) }
+        // Neoznačené se neschovávají, jen čekají na potvrzení uživatelem.
+        assertEquals(LoraCompatibility.UNKNOWN, LtxLoras.compatibility("Cleopatra.safetensors"))
+    }
+
+    @Test
+    fun `blizsi verze se radi nahoru`() {
+        val poradi = LtxLoras.serad(
+            listOf("kiss_ltx2_lora.safetensors", "a_ltx25.safetensors", "b_ltx23.safetensors")
+                .map { EditLoraFile(it) }
+        ).map { it.name }
+        assertEquals(listOf("a_ltx25.safetensors", "b_ltx23.safetensors", "kiss_ltx2_lora.safetensors"), poradi)
     }
 
     @Test

@@ -45,6 +45,13 @@ object Ltx25Builder {
     /** Ručně zadaná délka v sekundách (režimy Z textu a Z obrázku). */
     const val N_SEKUNDY = "481"
 
+    /**
+     * Textový enkodér (gemma4). Appka ho nedosazuje — čte ho
+     * [encoderZPredlohy] pro přepisovač promptu, aby vylepšování popisu
+     * jelo nad **týmž** modelem, který pak bude popis číst.
+     */
+    const val N_CLIP = "418"
+
     /** Kroky obou průchodů dohromady — podle nich se počítá ukazatel průběhu. */
     const val STEPS = 11
 
@@ -89,6 +96,8 @@ object Ltx25Builder {
         wf.inputs(N_ROZLISENI).put("aspect_ratio", scene.pomer.hodnota)
         wf.inputs(N_FPS).put("value", LtxScene.FPS)
 
+        zapojLoru(wf, scene.lora)
+
         wf.inputs(N_NOISE_1).put("noise_seed", seed)
         // Druhý průchod má vlastní šum. Odvozený, ne náhodný — jinak by se
         // běh nedal zopakovat z jednoho čísla v historii.
@@ -99,12 +108,62 @@ object Ltx25Builder {
     /** Seed druhého průchodu odvozený z prvního, ať je běh zopakovatelný. */
     fun druhySeed(seed: Long): Long = (seed % 999_999_999_937L) + 1
 
+    /** Načítač modelu, ze kterého pijí oba průchody. */
+    const val N_UNET = "410"
+
+    /** Doplňková LoRA. Vzniká jen tehdy, když je nějaká vybraná. */
+    const val N_LORA = "990"
+
+    /**
+     * Vloží `LoraLoaderModelOnly` mezi načítač transformeru a **oba** vodiče.
+     *
+     * Přepojit se musí každý uzel, který si bere `model` z [N_UNET] — tahle
+     * předloha je dvouprůchodová, takže vodiče (`LTXVDualCFGGuider`) jsou dva.
+     * Přepojit jen první by znamenalo, že druhý průchod LoRA zahodí a přes
+     * zvětšení latentu ji z obrazu zase vyčistí. Proto se hledají podle
+     * odkazu, ne podle seznamu čísel — kdyby předloha někdy dostala třetí
+     * průchod, zapojí se sám.
+     */
+    fun zapojLoru(wf: JSONObject, lora: cz.promptlab.h3video.data.EditLora) {
+        if (lora.name.isBlank()) return
+        wf.put(
+            N_LORA,
+            JSONObject()
+                .put("class_type", "LoraLoaderModelOnly")
+                .put("_meta", JSONObject().put("title", "LoRA ${lora.name}"))
+                .put(
+                    "inputs",
+                    JSONObject()
+                        .put("model", org.json.JSONArray().put(N_UNET).put(0))
+                        .put("lora_name", lora.name)
+                        .put("strength_model", lora.strength.toDouble()),
+                ),
+        )
+        val naLoru = org.json.JSONArray().put(N_LORA).put(0)
+        wf.keys().asSequence().toList().forEach { id ->
+            if (id == N_LORA) return@forEach
+            val inputs = wf.getJSONObject(id).getJSONObject("inputs")
+            val odkaz = inputs.optJSONArray("model") ?: return@forEach
+            if (odkaz.optString(0) == N_UNET) inputs.put("model", naLoru)
+        }
+    }
+
+    /** Jméno enkodéru z předlohy karty — vstup pro oficiální přepisovač promptu. */
+    fun encoderZPredlohy(ctx: Context, rezim: LtxRezim): String =
+        encoderZPredlohy(template(ctx, rezim))
+
+    /** Stejné čtení z textu předlohy, ať jde ověřit testem bez Androidu. */
+    fun encoderZPredlohy(template: String): String =
+        JSONObject(template).getJSONObject(N_CLIP).getJSONObject("inputs")
+            .getString("clip_name")
+
     private fun JSONObject.inputs(node: String): JSONObject =
         getJSONObject(node).getJSONObject("inputs")
 
     fun stageForClass(cls: String?): Stage = when (cls) {
         "LTXVEmptyLatentAudio", "LTXVAudioVAEDecode" -> Stage.ENCODING
-        "UNETLoader", "CLIPLoader", "VAELoader", "LatentUpscaleModelLoader" -> Stage.MODELS
+        "UNETLoader", "CLIPLoader", "VAELoader", "LatentUpscaleModelLoader",
+        "LoraLoaderModelOnly" -> Stage.MODELS
         "LoadImage", "VHS_LoadAudioUpload", "ResizeImageMaskNode",
         "LTXVPreprocess", "ResolutionSelector" -> Stage.REFERENCES
         "CLIPTextEncode", "LTXVConditioning", "LTXVAudioVAEEncode",

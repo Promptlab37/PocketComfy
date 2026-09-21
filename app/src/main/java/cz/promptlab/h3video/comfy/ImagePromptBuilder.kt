@@ -183,7 +183,13 @@ Rules:
      */
     const val PREDLOHA_MAX_PX = 512
 
-    private fun graf(
+    /**
+     * Graf odblokovaného přepisovače přes llama.cpp. Je veřejný, protože ho
+     * staví i [Ltx25PromptBuilder] — plumbing kolem loaderu, projektoru
+     * a předloh je stejné, liší se jen systémový prompt. Dvě kopie téhle
+     * funkce by se rozešly při prvním zásahu do loaderu.
+     */
+    fun graf(
         zadani: String,
         model: String,
         seed: Long,

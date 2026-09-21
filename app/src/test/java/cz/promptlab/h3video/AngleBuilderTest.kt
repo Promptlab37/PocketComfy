@@ -49,8 +49,56 @@ class AngleBuilderTest {
         assertTrue(prompt.contains("right side view"))
         assertTrue(prompt.contains("high-angle shot"))
         assertTrue(prompt.contains("close-up"))
-        assertTrue(prompt.contains("Preserve the exact subject"))
         assertFalse(prompt.contains("<sks>"))
+    }
+
+    /**
+     * Qwen 2.1 rozumí změně pohledu jako **otočení o stupně** — samotný název
+     * pohledu bral jako slabý pokyn a fotku nechal skoro beze změny. Hlídá se
+     * proto, že v pokynu stupně a strana opravdu jsou.
+     */
+    @Test fun `pokyn nese otoceni ve stupnich a spravnou stranu`() {
+        assertEquals(0 to "right", AngleBuilder.otoceni(0))
+        assertEquals(90 to "right", AngleBuilder.otoceni(2))
+        assertEquals(180 to "right", AngleBuilder.otoceni(4))
+        // 225° se říká „o 135 doleva", ne „na 225" — kratší cesta kolem objektu.
+        assertEquals(135 to "left", AngleBuilder.otoceni(5))
+        assertEquals(90 to "left", AngleBuilder.otoceni(6))
+        assertEquals(45 to "left", AngleBuilder.otoceni(7))
+
+        val zleva = AngleBuilder.prompt(6, 1, 1)
+        assertTrue(zleva, zleva.contains("90 degrees to the left"))
+        assertTrue(zleva.contains("left side view"))
+
+        val zezadu = AngleBuilder.prompt(4, 1, 1)
+        assertTrue(zezadu, zezadu.contains("180 degrees"))
+
+        // Zepředu se neotáčí o nic — „orbit 0 degrees" by byl nesmysl.
+        val zepredu = AngleBuilder.prompt(0, 1, 1)
+        assertFalse(zepredu.contains("0 degrees"))
+        assertTrue(zepredu.contains("Keep the camera in front"))
+    }
+
+    /**
+     * Zachování nesmí pokyn přehlušit: oficiální systémový prompt Qwenu varuje
+     * před *under-editing*, kdy se žádaná změna provede jen naznačeně. Proto
+     * vede operace a věta o otočení stojí před větou o zachování.
+     */
+    @Test fun `operace vede pred zachovanim`() {
+        val p = AngleBuilder.prompt(6, 1, 1)
+        assertTrue(p.indexOf("degrees to the left") < p.indexOf("Keep the same subject"))
+        assertTrue(p.contains("not a crop"))
+    }
+
+    @Test fun `vyska je vzdy i ve stupnich`() {
+        assertTrue(AngleBuilder.vyskaPopis(0).contains("30 degrees below eye level"))
+        assertTrue(AngleBuilder.vyskaPopis(1).contains("at eye level"))
+        assertTrue(AngleBuilder.vyskaPopis(2).contains("30 degrees above eye level"))
+        assertTrue(AngleBuilder.vyskaPopis(3).contains("60 degrees above eye level"))
+        // Slovník uzlu zůstává v závorce — je to slovo, na kterém je model učený.
+        AngleBuilder.VYSKY.indices.forEach {
+            assertTrue(AngleBuilder.vyskaPopis(it).contains(AngleBuilder.VYSKY[it].first))
+        }
     }
 
     @Test fun `graf dosadi fotku seed prompt a oficialni vzorkovani`() {

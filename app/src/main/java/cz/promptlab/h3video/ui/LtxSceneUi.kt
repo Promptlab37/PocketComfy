@@ -15,6 +15,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.CircularProgressIndicator
+import cz.promptlab.h3video.ui.theme.Cyan
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -50,6 +57,7 @@ import cz.promptlab.h3video.ui.theme.TextMid
  * u „Ze zvuku" (tam ji určuje nahraný soubor a nejde ji přebít — kvůli tomu
  * ten režim vznikl). Nabízet pole, které graf zahodí, je horší než ho skrýt.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun LtxSection(vm: MainViewModel) {
     val scene by vm.ltx.collectAsStateWithLifecycle()
@@ -179,15 +187,75 @@ fun LtxSection(vm: MainViewModel) {
             t("Co je v záběru a co se děje — anglicky")
         else t("Co je vidět A co je slyšet — anglicky")
     ) {
-        DarkTextField(
-            value = scene.popis,
-            onValueChange = { vm.setLtxPopis(it) },
-            placeholder = if (scene.rezim == LtxRezim.ZVUK)
-                t("A news anchor in a dark blue studio speaks to the camera…")
-            else t("A rainy night street, neon signs, distant traffic and rain on metal…"),
-            minHeight = 110.dp,
-            onClear = { vm.setLtxPopis("") },
-        )
+        Column {
+            DarkTextField(
+                value = scene.popis,
+                onValueChange = { vm.setLtxPopis(it) },
+                placeholder = if (scene.rezim == LtxRezim.ZVUK)
+                    t("A news anchor in a dark blue studio speaks to the camera…")
+                else t("A rainy night street, neon signs, distant traffic and rain on metal…"),
+                minHeight = 110.dp,
+                onClear = { vm.setLtxPopis("") },
+            )
+            // LTX 2.5 nečte klíčová slova, ale dlouhý popisek jednoho záběru
+            // — s velikostí záběru, pohybem kamery a zvukem vpleteným do děje.
+            // Ručně to nikdo psát nebude, proto dvě tlačítka:
+            //  - oficiální jede nad tímtéž gemma4 enkodérem, který popis pak
+            //    i čte, ale odvážnější zadání potichu zjemní,
+            //  - odvázaný nepřepisuje nic; pravidla LTX dostane v systémovém
+            //    promptu a fotku vidí, když je na serveru projektor.
+            val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
+            val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
+                MainViewModel.PraceNaPromptu.VYLEPSENI
+            val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
+            Spacer(Modifier.height(10.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OutlineButton(
+                    if (bezi) t("Přepisuji…") else t("✨ Vylepšit (LTX)"),
+                    color = Cyan,
+                ) { if (!bezi) vm.vylepsiLtxPopis() }
+                OutlineButton(
+                    if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
+                    color = Amber,
+                ) { if (!bezi) vm.vylepsiLtxPopisOdvazane() }
+            }
+            if (bezi) {
+                Spacer(Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
+                    // Bez počtu napsaných slov to vypadá zaseklé.
+                    postup?.let { (kolik, _) ->
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            t("napsáno %d").format(kolik),
+                            style = MaterialTheme.typography.bodySmall, color = TextLow,
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                if (scene.rezim == LtxRezim.ZVUK)
+                    t("Oba napíšou dlouhý popis záběru i s pohybem kamery. " +
+                        "Zvuk máš svůj, takže ho nevymýšlejí — popíšou, co je z něj vidět.")
+                else t("Oba napíšou dlouhý popis záběru: velikost záběru, pohyb " +
+                    "kamery a zvuk vpletený do děje. Odvázaný nic nezjemňuje."),
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+            )
+            (stavPrepisu as? MainViewModel.RewriteState.Fail)
+                ?.takeIf { it.druh == MainViewModel.PraceNaPromptu.VYLEPSENI }
+                ?.let { chyba ->
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        chyba.message,
+                        style = MaterialTheme.typography.bodySmall, color = Amber,
+                    )
+                }
+        }
     }
 
     SectionCard(title = t("Tvar obrazu"), subtitle = t("Poměr stran hotového videa")) {
@@ -198,4 +266,6 @@ fun LtxSection(vm: MainViewModel) {
             onSelect = { vm.setLtxPomer(it) },
         )
     }
+
+    LtxLoraSection(vm, scene)
 }

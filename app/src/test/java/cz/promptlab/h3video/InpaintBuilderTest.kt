@@ -17,7 +17,8 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Karta **Domalovat** má dvě předlohy (FLUX.2 Klein a Flux Fill). Testy hlídají,
+ * Karta **Domalovat** má tři předlohy (Flux Fill, FLUX.2 Klein, Qwen Image 2.1).
+ * Testy hlídají,
  * že se do nich dosazují JEN fotka, maska, zadání a seed — a že vyladěné
  * hodnoty (kroky, cfg, vedení, model, VAE, enkodér) zůstávají netknuté.
  */
@@ -27,6 +28,8 @@ class InpaintBuilderTest {
         File("src/main/res/raw/workflow_inpaint_klein.json").readText()
     private val fill: String =
         File("src/main/res/raw/workflow_inpaint_fill.json").readText()
+    private val qwen: String =
+        File("src/main/res/raw/workflow_inpaint_qwen21.json").readText()
 
     private fun JSONObject.inputs(node: String): JSONObject =
         getJSONObject(node).getJSONObject("inputs")
@@ -256,5 +259,97 @@ class InpaintBuilderTest {
         assertTrue(InpaintBuilder.reportsSteps("SamplerCustomAdvanced"))
         assertTrue(InpaintBuilder.reportsSteps("KSampler"))
         assertFalse(InpaintBuilder.reportsSteps("VAEDecode"))
+    }
+
+    /**
+     * Qwen Image 2.1 vlastní uzel na masku nemá. Maskuje se tím, že do
+     * vzorkování jde místo prázdného latentu **zdrojový výřez** přes
+     * `VAEEncode` + `SetLatentNoiseMask`. Kdyby latent přišel odjinud
+     * (třeba z třetího výstupu textového uzlu), maska by nedržela a model
+     * by přemaloval celý výřez.
+     */
+    @Test fun `qwen 21 maskuje pres zdrojovy latent, ne prazdny`() {
+        val wf = InpaintBuilder.build(qwen, InpaintModel.QWEN21, "lavička", 7L,
+            listOf("foto.png", "maska.png"))
+        assertEquals("foto.png", wf.inputs(InpaintBuilder.N_IMAGE).getString("image"))
+        assertEquals("maska.png", wf.inputs(InpaintBuilder.N_MASK).getString("image"))
+
+        val latent = wf.inputs(InpaintBuilder.N_SAMPLER).getJSONArray("latent_image")
+        assertEquals("SetLatentNoiseMask", wf.getJSONObject(latent.getString(0)).getString("class_type"))
+        val maskovany = wf.inputs(latent.getString(0))
+        assertEquals("VAEEncode",
+            wf.getJSONObject(maskovany.getJSONArray("samples").getString(0)).getString("class_type"))
+        // Maska je ta vyříznutá kolem štětce, ne původní celá.
+        assertEquals("InpaintCropImproved",
+            wf.getJSONObject(maskovany.getJSONArray("mask").getString(0)).getString("class_type"))
+        bezVisicichOdkazu(wf)
+    }
+
+    /**
+     * Výřez musí být zároveň **referencí** — jen tak model vidí okolí masky
+     * a udrží podobu. A `resolution` musí zůstat 0: jakákoli jiná hodnota
+     * zmenší referenci jinak než vzorkovaný latent a edit ujede.
+     */
+    @Test fun `qwen 21 vidi vyrez jako referenci ve stejne velikosti`() {
+        val wf = InpaintBuilder.build(qwen, InpaintModel.QWEN21, "x", 1L, listOf("a.png", "b.png"))
+        val text = wf.inputs(InpaintBuilder.N_TEXT)
+        assertEquals(0, text.getInt("resolution"))
+        val ref = text.getJSONArray("images.image_1")
+        assertEquals("InpaintCropImproved", wf.getJSONObject(ref.getString(0)).getString("class_type"))
+        // Reference i latent berou TENTÝŽ výstup výřezu (1 = oříznutý obraz).
+        assertEquals(1, ref.getInt(1))
+        val vae = wf.inputs(
+            wf.inputs(wf.inputs(InpaintBuilder.N_SAMPLER).getJSONArray("latent_image").getString(0))
+                .getJSONArray("samples").getString(0)
+        )
+        assertEquals(ref.toString(), vae.getJSONArray("pixels").toString())
+    }
+
+    @Test fun `qwen 21 dostane zadani jako pokyn a do spravneho pole`() {
+        val wf = InpaintBuilder.build(qwen, InpaintModel.QWEN21, "dřevěná lavička", 3L,
+            listOf("a.png", "b.png"))
+        val text = wf.inputs(InpaintBuilder.N_TEXT)
+        // Uzel má pole `prompt`, ne `text` — je to jiná třída, ne jiný název.
+        assertFalse(text.has("text"))
+        val zadani = text.getString("prompt")
+        assertTrue(zadani.contains("<image1>"))
+        assertTrue(zadani.contains("dřevěná lavička"))
+        assertTrue(zadani.contains("must not come back unchanged"))
+        assertEquals("", text.getString("negative_prompt"))
+        assertEquals(3L, wf.inputs(InpaintBuilder.N_SAMPLER).getLong("seed"))
+        // Pod maskou vzniká obsah ze zadání, ne dokreslení původního.
+        assertEquals(1.0, wf.inputs(InpaintBuilder.N_SAMPLER).getDouble("denoise"), 1e-6)
+        assertEquals(InpaintBuilder.QWEN21_STEPS,
+            wf.inputs(InpaintBuilder.N_SAMPLER).getInt("steps"))
+    }
+
+    /** Na Qwen 2.1 nesedí žádná LoRA — karta žádnou nenabízí a graf žádnou nemá. */
+    @Test fun `qwen 21 nema lora`() {
+        assertEquals(emptyList<String>(), cz.promptlab.h3video.data.loryProModel(
+            InpaintModel.QWEN21,
+            listOf("flux-fill.safetensors", "klein-neco.safetensors", "qwen-neco.safetensors"),
+        ))
+        val wf = InpaintBuilder.build(qwen, InpaintModel.QWEN21, "x", 1L, listOf("a.png", "b.png"),
+            lora = "cokoli.safetensors", loraSila = 1f)
+        assertFalse(wf.keys().asSequence().any {
+            wf.getJSONObject(it).getString("class_type") == "LoraLoaderModelOnly"
+        })
+    }
+
+    @Test fun `qwen 21 predloha nenese zadani predchoziho behu`() {
+        val p = JSONObject(qwen)
+        assertEquals("", p.inputs(InpaintBuilder.N_IMAGE).getString("image"))
+        assertEquals("", p.inputs(InpaintBuilder.N_MASK).getString("image"))
+        assertEquals("", p.inputs(InpaintBuilder.N_TEXT).getString("prompt"))
+    }
+
+    @Test fun `vsechny tridy qwen predlohy maji fazi`() {
+        val p = JSONObject(qwen)
+        p.keys().forEach { id ->
+            val cls = p.getJSONObject(id).getString("class_type")
+            assertTrue("uzel $cls nemá fázi",
+                InpaintBuilder.stageForClass(cls) != Stage.MODELS || cls.contains("Loader") ||
+                    cls == "QwenImage21Cache")
+        }
     }
 }

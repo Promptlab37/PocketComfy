@@ -55,6 +55,29 @@ fun ImageLoraSection(vm: MainViewModel, params: GenParams) {
     }
 }
 
+/**
+ * LoRA na kartě **LTX 2.5**.
+ *
+ * Rodina LTX sedí celá — soubory pro LTX-2, 2.3 i 2.5 mají stejný tvar
+ * (48 bloků, šířka 4096), ověřeno proti souborům na serveru. Nahoru se proto
+ * jen řadí ty s bližší verzí, nic se nezakazuje.
+ */
+@Composable
+fun LtxLoraSection(vm: MainViewModel, scene: LtxScene) {
+    val catalog by vm.editLoras.collectAsStateWithLifecycle()
+    val server by vm.server.collectAsStateWithLifecycle()
+    LaunchedEffect(server) { vm.refreshEditLoras() }
+    ModelLoraSection(
+        "LTX 2.5", scene.lora, catalog,
+        compatibility = { LtxLoras.compatibility(it) },
+        serad = { LtxLoras.serad(it) },
+        poznamka = { LtxLoras.poznamka(it) },
+        refresh = { vm.refreshEditLoras(force = true) },
+        select = { name, confirmed -> vm.setLtxLora(name, confirmed) },
+        strength = { vm.setLtxLoraStrength(it) },
+    )
+}
+
 @Composable
 private fun ModelLoraSection(
     modelName: String, selected: EditLora, catalog: MainViewModel.EditLoraCatalog,
