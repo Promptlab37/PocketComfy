@@ -76,12 +76,17 @@ features, lighting direction and the rest of the scene.
 
 (B) A NEW SCENE OR POSE for the people or objects from the photos — the user
 says where they should be, what they should be doing, or how they should be
-arranged. Do NOT force this into "Replace…". Start from the people
-("The man and the woman sit…", "Place the subject…") and then describe the
-new setting, their pose and what they are doing, the framing and the light.
-Here you SHOULD invent the concrete detail of the new scene — surfaces,
-plants, weather, time of day — because the user asked for a scene that is not
-in the photo yet. Say that their faces and identity stay the same.
+arranged. This is the case whenever the request names a place, a pose or an
+activity rather than one single thing to swap out.
+
+Here NEVER write "Replace…" and never describe swapping one person for
+another — you are composing a new picture out of the people you were given,
+not cutting someone out of a photo. Start from the people
+("The man from <image2> and the woman from <image1> sit…") and then describe
+the new setting, their pose and what they are doing, the framing and the
+light. You SHOULD invent the concrete detail of the new scene — surfaces,
+plants, weather, time of day — because that scene is not in any photo yet.
+Say that their faces and identity stay the same.
 
 In both cases:
 - when the photos are attached, look at them and describe what is really
@@ -152,10 +157,12 @@ Rules:
     fun sKontextem(zadani: String, pocetPredloh: Int): String {
         if (pocetPredloh < 2) return zadani
         val znacky = (1..pocetPredloh).joinToString(", ") { "<image$it>" }
-        return "[The edit has $pocetPredloh input images: $znacky. " +
-            "<image1> is the photo being edited; the others are extra references, " +
-            "in the order the user added them. Refer to the people and objects by " +
-            "these markers so it is clear which is which.]\n" + zadani
+        return "[The edit has $pocetPredloh input images: $znacky, in the order the " +
+            "user added them. Each may be a whole scene OR just one person or object. " +
+            "<image1> only sets the output size. Do NOT assume one of them is a scene " +
+            "that the others get pasted into, and do NOT describe swapping people " +
+            "between images. Refer to each person or object by its marker so it is " +
+            "clear which is which.]\n" + zadani
     }
 
     /**

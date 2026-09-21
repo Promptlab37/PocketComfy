@@ -241,4 +241,31 @@ class Qwen21PeBuilderTest {
         assertEquals(0, loader.getInt("image_max_tokens"))
         assertTrue(!wf.getJSONObject(ImagePromptBuilder.N_LLM).getJSONObject("inputs").has("images"))
     }
+
+    /**
+     * S vic predlohami nesmi kontext tvrdit, ze jedna z nich je "scena, do
+     * ktere se ostatni vlepi". Model si to precetl jako vymenu lidi a psal
+     * "Replace the woman in <image1> with the woman from <image2>", i kdyz
+     * uzivatel chtel oba posadit do lesa (21. 9. 2026).
+     */
+    @Test
+    fun `kontext predloh nesvadi k vymene lidi mezi fotkami`() {
+        val k = ImagePromptBuilder.sKontextem("posad je do lesa", 2)
+        assertTrue(k.contains("<image1>, <image2>"))
+        assertTrue(k.contains("only sets the output size"))
+        assertTrue(k.contains("do NOT describe swapping people"))
+        assertTrue(!k.contains("is the photo being edited"))
+        // Jedina predloha kontext nepotrebuje.
+        assertEquals("posad je do lesa", ImagePromptBuilder.sKontextem("posad je do lesa", 1))
+    }
+
+    @Test
+    fun `preskladani sceny ma zakazane Replace`() {
+        val system = ImagePromptBuilder.buildUprava("x", "m.gguf", 1L)
+            .getJSONObject(ImagePromptBuilder.N_LLM).getJSONObject("inputs")
+            .getString("system_prompt")
+        val vetevB = system.substringAfter("(B) A NEW SCENE OR POSE")
+        assertTrue(vetevB.contains("NEVER write \"Replace"))
+        assertTrue(vetevB.contains("never describe swapping one person for"))
+    }
 }
