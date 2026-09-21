@@ -805,6 +805,7 @@ object GenerationEngine {
                     vlastni = ZImageBuilder.vlastniZ(effective),
                     kroky = ZImageBuilder.vzorkovani(effective).first,
                     cfg = ZImageBuilder.vzorkovani(effective).second,
+                    qwen2k = effective.qwen21Dvak,
                 )
 
             // 3 kroky: rychlé video z textu, dva průchody se zvětšením

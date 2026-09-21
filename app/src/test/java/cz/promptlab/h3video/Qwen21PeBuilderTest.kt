@@ -3,6 +3,7 @@ package cz.promptlab.h3video
 import cz.promptlab.h3video.comfy.Qwen21PeBuilder
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -24,7 +25,13 @@ class Qwen21PeBuilderTest {
         assertTrue(text.startsWith("<|im_start|>"))
         assertTrue(text.contains("<|im_start|>system\nSYSTEM<|im_end|>"))
         assertTrue(text.contains("uprav oblohu"))
-        assertTrue(text.endsWith("<|im_start|>assistant\n"))
+        // Bez uvažování končí chat prázdným blokem <think> — model pak píše
+        // rovnou odpověď místo tisíců tokenů rozvahy.
+        assertTrue(text.endsWith("<|im_start|>assistant\n<think>\n</think>\n"))
+        assertTrue(
+            Qwen21PeBuilder.chatText("S", "x", 0, uvazovani = true)
+                .endsWith("<|im_start|>assistant\n")
+        )
     }
 
     @Test
@@ -50,7 +57,19 @@ class Qwen21PeBuilderTest {
         // autoři je nepředávají, takže musí zůstat neutrální.
         assertEquals(0.0, g.getDouble("sampling_mode.min_p"), 1e-9)
         assertEquals(1.0, g.getDouble("sampling_mode.repetition_penalty"), 1e-9)
-        assertTrue(g.getBoolean("thinking"))
+        // Výchozí stav je bez rozvahy: s ní model na téhle kartě píše
+        // desítky minut (změřeno 21. 9. 2026, ~2,8 tokenu za vteřinu).
+        assertFalse(g.getBoolean("thinking"))
+    }
+
+    @Test
+    fun `rychly rezim ma rozumny strop, aby se beh nemohl rozjet`() {
+        val wf = Qwen21PeBuilder.build(
+            "S", "x", Qwen21PeBuilder.MODEL_T2I, emptyList(),
+            Qwen21PeBuilder.MAX_TOKENU_RYCHLE, 1L,
+        )
+        assertEquals(1536, inputs(wf, Qwen21PeBuilder.N_GEN).getInt("max_length"))
+        assertTrue(Qwen21PeBuilder.MAX_TOKENU_RYCHLE < Qwen21PeBuilder.MAX_TOKENU_T2I)
     }
 
     @Test

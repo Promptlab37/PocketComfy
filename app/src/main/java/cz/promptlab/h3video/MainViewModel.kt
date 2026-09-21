@@ -1811,11 +1811,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     // ------------------------------------------------ ✨ vylepšení promptu (AI)
 
+    /**
+     * Co se s promptem zrovna dělá. Bez tohohle rozlišení svítilo „Přepisuji…"
+     * i „Překládám…" naráz, protože obě tlačítka čtou jeden a týž stav —
+     * a chybová hláška se ukazovala dvakrát.
+     */
+    enum class PraceNaPromptu { PREKLAD, VYLEPSENI }
+
     sealed interface RewriteState {
         data object Idle : RewriteState
-        data object Busy : RewriteState
-        data class Fail(val message: String) : RewriteState
+        data class Busy(val druh: PraceNaPromptu) : RewriteState
+        data class Fail(val message: String, val druh: PraceNaPromptu) : RewriteState
     }
+
+    /** Běží zrovna tenhle druh práce? */
+    fun RewriteState.bezi(druh: PraceNaPromptu) = this is RewriteState.Busy && this.druh == druh
+
+    /**
+     * Průběh přepisu: kolik tokenů model napsal ze stropu. Přepisovače Qwen 2.1
+     * píšou nejdřív dlouhou vnitřní rozvahu, takže bez tohohle vypadá appka
+     * minuty zaseklá. Null = nic neběží nebo server průběh nehlásí.
+     */
+    private val _rewriteProgress = MutableStateFlow<Pair<Int, Int>?>(null)
+    val rewriteProgress: StateFlow<Pair<Int, Int>?> = _rewriteProgress.asStateFlow()
 
     private val _rewriteState = MutableStateFlow<RewriteState>(RewriteState.Idle)
     val rewriteState: StateFlow<RewriteState> = _rewriteState.asStateFlow()
@@ -1833,36 +1851,96 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Odešle graf přepisovače a počká na text z náhledového uzlu.
      * Společné pro kartu All in One i Obrázek — liší se jen graf.
      */
+
+    /**
+     * Uklidí paměť grafiky kolem přepisu promptu.
+     *
+     * Přepisovače jsou samy o sobě velké modely (Qwen 2.1 PE má 9,5 GB) a jedou
+     * MIMO [GenerationEngine], takže se na ně jeho úklid nevztahuje. Bez tohohle
+     * volání se model nacpal do VRAM vedle toho, co tam zrovna zbylo z minulého
+     * generování, a ComfyUI ho pak dohrávalo po částech z RAM — přepis, který má
+     * trvat desítky sekund, se protáhl na minuty. A po přepisu zůstal viset
+     * a překážel modelu, který má obrázek skutečně vyrobit.
+     *
+     * Pravidla jsou stejná jako u generování: s `comfy-aimdo` a připnutou pamětí
+     * se `/free` nevolá vůbec, protože zastavuje celý počítač.
+     */
+    private suspend fun uklidPredPrepisem(client: ComfyClient) {
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val stats = client.systemStats() ?: return@runCatching
+                if (!ComfyClient.smiUvolnit(stats)) return@runCatching
+                client.freeMemory()
+                kotlinx.coroutines.delay(1200)
+            }
+        }
+    }
+
+    /**
+     * Pošle graf přepisu a počká na text z náhledového uzlu.
+     *
+     * Průběh se čte z websocketu (`progress`), protože uzel `TextGenerate`
+     * hlásí, kolik tokenů už napsal. Kromě ukazatele v UI to řeší i konec
+     * čekání: **strop se počítá od poslední známky života, ne od začátku.**
+     * Pevné čtyři minuty stačily starému vylepšovači, ale Qwen 2.1 PE píše
+     * na téhle kartě kolem tří tokenů za vteřinu a rozvahu dlouhou tisíce
+     * tokenů — appka by to vzdala, zatímco server dál počítá do prázdna.
+     */
     private suspend fun spustPrepisAPockej(
         client: ComfyClient,
         wf: org.json.JSONObject,
         uzelNahledu: String,
     ): String {
         val promptId = java.util.UUID.randomUUID().toString()
-        client.queuePrompt(wf, java.util.UUID.randomUUID().toString(), promptId)
-        // LLM se načítá z disku, první přepis klidně přes minutu.
-        val limit = System.currentTimeMillis() + 240_000
-        while (System.currentTimeMillis() < limit) {
-            val h = client.history(promptId)
-            if (h != null) {
-                val status = h.optJSONObject("status")
-                if (status?.optString("status_str") == "error") throw ComfyException(
-                    "rewrite error",
-                    "Přepis na serveru selhal — mrkni do logu ComfyUI.",
-                )
-                val text = h.optJSONObject("outputs")
-                    ?.optJSONObject(uzelNahledu)
-                    ?.optJSONArray("text")
-                if (text != null && text.length() > 0) return text.getString(0)
-                if (status?.optBoolean("completed") == true) throw ComfyException(
-                    "bez textu",
-                    "Server přepis dokončil, ale nevrátil text.",
-                )
+        val clientId = java.util.UUID.randomUUID().toString()
+        _rewriteProgress.value = null
+        val zivot = java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis())
+        val ws = runCatching {
+            client.openWebSocket(clientId, object : okhttp3.WebSocketListener() {
+                override fun onMessage(webSocket: okhttp3.WebSocket, text: String) {
+                    val zprava = runCatching { org.json.JSONObject(text) }.getOrNull() ?: return
+                    val data = zprava.optJSONObject("data") ?: return
+                    if (data.optString("prompt_id").isNotEmpty() &&
+                        data.optString("prompt_id") != promptId
+                    ) return
+                    zivot.set(System.currentTimeMillis())
+                    if (zprava.optString("type") == "progress") {
+                        val max = data.optInt("max", 0)
+                        if (max > 0) _rewriteProgress.value = data.optInt("value", 0) to max
+                    }
+                }
+            })
+        }.getOrNull()
+        try {
+            client.queuePrompt(wf, clientId, promptId)
+            // Ticho po tuhle dobu znamená, že se běh někde zasekl. Načítání
+            // modelu z disku umí mlčet i minutu, proto ne míň.
+            val ticho = 300_000L
+            while (System.currentTimeMillis() - zivot.get() < ticho) {
+                val h = client.history(promptId)
+                if (h != null) {
+                    val status = h.optJSONObject("status")
+                    if (status?.optString("status_str") == "error") throw ComfyException(
+                        "rewrite error",
+                        "Přepis na serveru selhal — mrkni do logu ComfyUI.",
+                    )
+                    val text = h.optJSONObject("outputs")
+                        ?.optJSONObject(uzelNahledu)
+                        ?.optJSONArray("text")
+                    if (text != null && text.length() > 0) return text.getString(0)
+                }
+                kotlinx.coroutines.delay(1000)
             }
-            delay(1500)
+            throw ComfyException(
+                "rewrite timeout",
+                "Přepisovač se neozval pět minut. Mrkni, jestli ComfyUI běží.",
+            )
+        } finally {
+            ws?.cancel()
+            _rewriteProgress.value = null
         }
-        throw ComfyException("timeout", "Přepis trvá moc dlouho — zkus to znovu.")
     }
+
 
     // ------------------------------------------------ 🌐 překlad promptu (AI)
 
@@ -1899,10 +1977,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (_rewriteState.value is RewriteState.Busy) return
         val zadani = textPole(pole).trim()
         if (zadani.isBlank()) {
-            _rewriteState.value = RewriteState.Fail(t("Nejdřív něco napiš, ať je co překládat."))
+            _rewriteState.value = RewriteState.Fail(t("Nejdřív něco napiš, ať je co překládat."), PraceNaPromptu.PREKLAD)
             return
         }
-        _rewriteState.value = RewriteState.Busy
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.PREKLAD)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
@@ -1936,7 +2014,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Překlad se nepovedl.")
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Překlad se nepovedl."),
+                    PraceNaPromptu.PREKLAD,
                 )
             }
         }
@@ -1958,11 +2037,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val zadani = _params.value.prompt.trim()
         if (zadani.isBlank()) {
             _rewriteState.value = RewriteState.Fail(
-                t("Nejdřív napiš aspoň pár slov o tom, co chceš.")
+                t("Nejdřív napiš aspoň pár slov o tom, co chceš."),
+                PraceNaPromptu.VYLEPSENI,
             )
             return
         }
-        _rewriteState.value = RewriteState.Busy
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
@@ -1994,7 +2074,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl."
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    PraceNaPromptu.VYLEPSENI,
                 )
             }
         }
@@ -2016,12 +2097,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val zadani = (if (proUpravu) _edit.value.prompt else _params.value.prompt).trim()
         if (zadani.isBlank()) {
             _rewriteState.value = RewriteState.Fail(
-                t("Nejdřív napiš aspoň pár slov o tom, co chceš.")
+                t("Nejdřív napiš aspoň pár slov o tom, co chceš."),
+                PraceNaPromptu.VYLEPSENI,
             )
             return
         }
         val fotky = if (proUpravu) _edit.value.uploadImages else emptyList<java.io.File>()
-        _rewriteState.value = RewriteState.Busy
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
@@ -2044,11 +2126,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         zadani = zadani,
                         model = model,
                         obrazky = jmena,
-                        maxTokenu = if (proUpravu) Qwen21PeBuilder.MAX_TOKENU_I2I
-                        else Qwen21PeBuilder.MAX_TOKENU_T2I,
+                        maxTokenu = Qwen21PeBuilder.MAX_TOKENU_RYCHLE,
                         seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
                     )
+                    // Před: ať se přepisovač vejde celý do VRAM.
+                    uklidPredPrepisem(client)
                     val syrove = spustPrepisAPockej(client, wf, Qwen21PeBuilder.N_PREVIEW)
+                    // Po: uzel TextGenerate model sám nepustí (na rozdíl od
+                    // starších přepisovačů, co mají force_offload), takže by
+                    // zůstal ve VRAM a překážel Qwen Image 2.1.
+                    uklidPredPrepisem(client)
                     Qwen21PeBuilder.parse(syrove) ?: throw ComfyException(
                         "prepis bez JSON",
                         "Přepisovač nevrátil použitelný výsledek. Zkus to znovu.",
@@ -2069,7 +2156,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl."
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    PraceNaPromptu.VYLEPSENI,
                 )
             }
         }
@@ -2097,10 +2185,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val p = _params.value
         val zadani = s.prompt.trim()
         if (zadani.isBlank()) {
-            _rewriteState.value = RewriteState.Fail("Nejdřív napiš aspoň pár slov o tom, co chceš.")
+            _rewriteState.value = RewriteState.Fail("Nejdřív napiš aspoň pár slov o tom, co chceš.", PraceNaPromptu.VYLEPSENI)
             return
         }
-        _rewriteState.value = RewriteState.Busy
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
@@ -2179,7 +2267,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl."
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    PraceNaPromptu.VYLEPSENI,
                 )
             }
         }

@@ -30,6 +30,8 @@ data class GenParams(
     val shiftVideo: Float = 12.191111f,
     val shiftAudio: Float = 3f,
     val sageAttention: Boolean = true,
+    /** Karta Obrázek, Qwen 2.1: generovat ve 2K místo ~1 Mpx. */
+    val qwen21Dvak: Boolean = false,
     /** Spectrum – přibližný akcelerátor v ULTRA workflow; týká se jen Časové osy. */
     val spectrum: Boolean = true,
     /** Komprese hotového souboru, ne kvalita generování. */

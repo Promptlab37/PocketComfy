@@ -608,6 +608,16 @@ object Slovnik {
             "What to keep from the photos (face, hair, clothes) and what to skip",
         "✨ Vylepšit prompt" to "✨ Improve the prompt",
         "✨ Vylepšit zadání" to "✨ Improve the instruction",
+        "Velikost" to "Size",
+        "Qwen 2.1 umí 2K nativně" to "Qwen 2.1 does 2K natively",
+        "Generovat ve 2K" to "Generate at 2K",
+        "Čtyřnásobek pixelů a výrazně víc paměti i času. " +
+            "Vypnuto = okolo 1 megapixelu jako ostatní modely karty." to
+            "Four times the pixels and far more memory and time. " +
+            "Off = around 1 megapixel like the other models on this card.",
+        "napsáno %d" to "written %d",
+        "Přepisovač se neozval pět minut. Mrkni, jestli ComfyUI běží." to
+            "The rewriter went quiet for five minutes. Check that ComfyUI is running.",
         "Server je starší než ComfyUI 0.37 — chybí uzel na přepis zadání." to
             "The server is older than ComfyUI 0.37 — the rewriting node is missing.",
         "Přepisovač nevrátil použitelný výsledek. Zkus to znovu." to

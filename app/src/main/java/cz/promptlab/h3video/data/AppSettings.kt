@@ -244,6 +244,7 @@ class AppSettings(ctx: Context) {
             .putInt("crf", d.crf)
             .putBoolean("spectrum", d.spectrum)
             .putBoolean("sage", d.sageAttention)
+            .putBoolean("qwen21_2k", d.qwen21Dvak)
             .putBoolean("turbo", true)
             .putBoolean(MIGRATED, true)
             .apply()
@@ -304,6 +305,7 @@ class AppSettings(ctx: Context) {
             shiftAudio = sp.getFloat("shiftAudio", defaults.shiftAudio),
             spectrum = sp.getBoolean("spectrum", defaults.spectrum),
             sageAttention = sp.getBoolean("sage", defaults.sageAttention),
+            qwen21Dvak = sp.getBoolean("qwen21_2k", defaults.qwen21Dvak),
             crf = sp.getInt("crf", defaults.crf),
             livePreview = sp.getBoolean("livePreview", defaults.livePreview),
             teaCache = sp.getBoolean("teaCache", defaults.teaCache),
@@ -350,6 +352,7 @@ class AppSettings(ctx: Context) {
             putFloat("shiftAudio", p.shiftAudio)
             putBoolean("spectrum", p.spectrum)
             putBoolean("sage", p.sageAttention)
+            putBoolean("qwen21_2k", p.qwen21Dvak)
             putInt("crf", p.crf)
             putBoolean("livePreview", p.livePreview)
             putBoolean("teaCache", p.teaCache)

@@ -562,7 +562,26 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             // teprve pak čím se to dolaďuje.
             if (ovlada.model) ModelCard(vm, params)
 
-            if (ovlada.lora) LoraCard(vm, params)
+            // Qwen 2.1 je jiná architektura (32 vrstev proti 60 u starého
+            // Qwen-Image), takže na něj žádná stávající LoRA nesedí a nabídka
+            // by byla mrtvá volba.
+            val qwen21 = params.mode == Mode.IMAGE &&
+                T2iModel.zId(params.zimageModel) == T2iModel.QWEN21
+            if (ovlada.lora && !qwen21) LoraCard(vm, params)
+
+            if (qwen21) {
+                SectionCard(
+                    title = t("Velikost"),
+                    subtitle = t("Qwen 2.1 umí 2K nativně"),
+                ) {
+                    ToggleRow(
+                        t("Generovat ve 2K"),
+                        t("Čtyřnásobek pixelů a výrazně víc paměti i času. " +
+                            "Vypnuto = okolo 1 megapixelu jako ostatní modely karty."),
+                        params.qwen21Dvak,
+                    ) { v -> vm.update { it.copy(qwen21Dvak = v) } }
+                }
+            }
 
             val onWorkflowDefaults = remember(params) { vm.matchesWorkflow(params) }
             SectionCard(
@@ -906,7 +925,12 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 // navíc doporučit poměr stran, tak se rovnou nastaví.
                 val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
                 val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
-                val bezi = stavPrepisu is MainViewModel.RewriteState.Busy
+                val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
+                    MainViewModel.PraceNaPromptu.VYLEPSENI
+                // Vlastní příznak, ať překladové tlačítko nesvítí při vylepšování.
+                val beziPreklad = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
+                    MainViewModel.PraceNaPromptu.PREKLAD
+                val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     OutlineButton(
@@ -925,10 +949,21 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     // Kdo si prompt napsal sám, nechce ho rozepsat — chce ho
                     // jen anglicky. To dělá druhé tlačítko.
                     OutlineButton(
-                        if (bezi) t("Překládám…") else t("🌐 Přeložit"),
+                        if (beziPreklad) t("Překládám…") else t("🌐 Přeložit"),
                         color = cz.promptlab.h3video.ui.theme.Violet,
-                    ) { if (!bezi) vm.prelozPrompt(MainViewModel.PromptPole.OBRAZEK) }
-                    if (bezi) {
+                    ) {
+                        if (!bezi && !beziPreklad) {
+                            vm.prelozPrompt(MainViewModel.PromptPole.OBRAZEK)
+                        }
+                    }
+                    postup?.let { (kolik, _) ->
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            t("napsáno %d").format(kolik),
+                            style = MaterialTheme.typography.bodySmall, color = TextLow,
+                        )
+                    }
+                    if (bezi || beziPreklad) {
                         Spacer(Modifier.width(10.dp))
                         androidx.compose.material3.CircularProgressIndicator(
                             Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp

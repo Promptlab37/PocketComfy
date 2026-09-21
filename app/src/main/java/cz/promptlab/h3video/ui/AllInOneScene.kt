@@ -167,7 +167,8 @@ fun AllInOneSection(vm: MainViewModel) {
                 ) {
                     val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
                     val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
-                    val bezi = stavPrepisu is MainViewModel.RewriteState.Busy
+                    val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
+                        MainViewModel.PraceNaPromptu.VYLEPSENI
                     Spacer(Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlineButton(

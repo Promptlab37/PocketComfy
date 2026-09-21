@@ -26,17 +26,19 @@ import org.json.JSONObject
  * [chatText] — tokenizér má zadní vrátka: text začínající na `<|im_start|>`
  * použije **beze změny** (tamtéž, `tokenize_with_weights`).
  *
- * Vedlejší efekt téhle cesty je žádoucí: Comfy přidává `<think></think>`
- * (tedy vypnuté uvažování) jen do vlastní šablony. Když si text skládáme
- * sami, uvažování zůstává zapnuté — přesně jako `enable_thinking=True`
- * v referenčním skriptu.
+ * Druhá vědomá odchylka: **uvažování je ve výchozím stavu vypnuté**, i když
+ * autoři pouští model s `enable_thinking=True`. Změřeno 21. 9. 2026 na
+ * RTX 4060 Ti: model píše ~2,8 tokenu za vteřinu, takže rozvaha dlouhá
+ * tisíce tokenů znamená desítky minut na jedno kliknutí. To se jako tlačítko
+ * v appce používat nedá. Bez rozvahy napíše rovnou odpověď v řádu stovek
+ * tokenů. Zapíná se parametrem `uvazovani` v [build].
  *
  * Všechno ostatní drží autorovy hodnoty, protože se liší od výchozích hodnot
  * uzlu a ovlivňují výstup:
  *
  * | parametr | autoři | výchozí v uzlu | u nás |
  * |---|---|---|---|
- * | max_new_tokens | 24000 / 16256 | 512 | [MAX_TOKENU_I2I] / [MAX_TOKENU_T2I] |
+ * | max_new_tokens | 24000 / 16256 | 512 | [MAX_TOKENU_RYCHLE] (bez rozvahy) |
  * | temperature | 1.0 | 0.7 | 1.0 |
  * | top_k | 20 | 64 | 20 |
  * | top_p | 0.95 | 0.95 | 0.95 |
@@ -70,11 +72,22 @@ object Qwen21PeBuilder {
     const val MODEL_I2I = "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors"
     const val MODEL_T2I = "qwen3.5_9b_qwen_image_2.1_pe_t2i.int8_convrot.safetensors"
 
-    /** `max_new_tokens` z referenčního skriptu PE-I2I. */
+    /** `max_new_tokens` z referenčního skriptu PE-I2I (s uvažováním). */
     const val MAX_TOKENU_I2I = 24000
 
-    /** `max_new_tokens` z referenčního skriptu PE-T2I. */
+    /** `max_new_tokens` z referenčního skriptu PE-T2I (s uvažováním). */
     const val MAX_TOKENU_T2I = 16256
+
+    /**
+     * Strop bez uvažování. Odpověď je jen JSON s přepsaným promptem, takže
+     * pár set tokenů bohatě stačí — a hlavně to zastropuje běh, který by se
+     * jinak mohl rozjet na desítky minut.
+     *
+     * Měřeno 21. 9. 2026 na RTX 4060 Ti: model píše ~2,8 tokenu za vteřinu.
+     * S uvažováním napsal za osm a půl minuty necelou pětinu z 24000 tokenů
+     * a uživatel to musel zabít. Proto je rychlý režim výchozí.
+     */
+    const val MAX_TOKENU_RYCHLE = 1536
 
     private const val VISION = "<|vision_start|><|image_pad|><|vision_end|>"
 
@@ -97,12 +110,21 @@ object Qwen21PeBuilder {
      * Musí začínat `<|im_start|>`, jinak ho ComfyUI zabalí do vlastní šablony
      * a systémová zpráva se zahodí.
      */
-    fun chatText(system: String, zadani: String, pocetObrazku: Int): String = buildString {
+    fun chatText(
+        system: String,
+        zadani: String,
+        pocetObrazku: Int,
+        uvazovani: Boolean = false,
+    ): String = buildString {
         append("<|im_start|>system\n").append(system.trim()).append("<|im_end|>\n")
         append("<|im_start|>user\n")
         repeat(pocetObrazku) { append(VISION) }
         append(zadani.trim()).append("<|im_end|>\n")
         append("<|im_start|>assistant\n")
+        // Prázdný blok uvažování = model rovnou píše odpověď. Přesně tohle
+        // dělá ComfyUI ve vlastní šabloně, když je `thinking` vypnuté
+        // (`qwen35.py`); chat si skládáme sami, tak si to doplníme taky.
+        if (!uvazovani) append("<think>\n</think>\n")
     }
 
     /**
@@ -119,6 +141,7 @@ object Qwen21PeBuilder {
         obrazky: List<String>,
         maxTokenu: Int,
         seed: Long,
+        uvazovani: Boolean = false,
     ): JSONObject {
         val wf = JSONObject()
         wf.put(
@@ -136,7 +159,7 @@ object Qwen21PeBuilder {
 
         val vstupy = JSONObject()
             .put("clip", odkaz(N_CLIP))
-            .put("prompt", chatText(system, zadani, obrazky.size))
+            .put("prompt", chatText(system, zadani, obrazky.size, uvazovani))
             .put("max_length", maxTokenu)
             .put("sampling_mode", "on")
             .put("sampling_mode.temperature", 1.0)
@@ -145,9 +168,9 @@ object Qwen21PeBuilder {
             .put("sampling_mode.min_p", 0.0)
             .put("sampling_mode.repetition_penalty", 1.0)
             .put("sampling_mode.seed", seed)
-            // Uvažování zapnuté jako v referenčním skriptu. Při vlastním chatu
-            // se sice hodnota neuplatní, ale ať v grafu není opačný záměr.
-            .put("thinking", true)
+            // Při vlastním chatu se hodnota neuplatní (rozhoduje `<think>` blok
+            // v textu), ale ať v grafu není opačný záměr.
+            .put("thinking", uvazovani)
 
         obrazkyDoGrafu(wf, obrazky)?.let { vstupy.put("image", it) }
 

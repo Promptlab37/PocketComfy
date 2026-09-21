@@ -152,9 +152,11 @@ fun ImageEditSection(vm: MainViewModel) {
             // zadání zvládne — popis pak napíše anglicky, jak to model chce.
             if (scene.motor == EditMotor.QWEN21) {
                 val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
-                val bezi = stavPrepisu is cz.promptlab.h3video.MainViewModel.RewriteState.Busy
+                val bezi = (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Busy)
+                    ?.druh == cz.promptlab.h3video.MainViewModel.PraceNaPromptu.VYLEPSENI
                 Spacer(Modifier.height(10.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
                     OutlineButton(
                         if (bezi) t("Přepisuji…") else t("✨ Vylepšit zadání"),
                         color = Cyan,
@@ -164,9 +166,21 @@ fun ImageEditSection(vm: MainViewModel) {
                         androidx.compose.material3.CircularProgressIndicator(
                             Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp,
                         )
+                        // Model píše nejdřív dlouhou rozvahu, takže bez počtu
+                        // napsaných slov to vypadá zaseklé i po minutách.
+                        postup?.let { (kolik, _) ->
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                t("napsáno %d").format(kolik),
+                                style = MaterialTheme.typography.bodySmall, color = TextLow,
+                            )
+                        }
                     }
                 }
-                (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Fail)?.let { chyba ->
+                (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Fail)
+                    ?.takeIf {
+                        it.druh == cz.promptlab.h3video.MainViewModel.PraceNaPromptu.VYLEPSENI
+                    }?.let { chyba ->
                     Spacer(Modifier.height(6.dp))
                     Text(
                         chyba.message,

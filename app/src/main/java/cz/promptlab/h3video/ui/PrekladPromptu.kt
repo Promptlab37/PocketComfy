@@ -45,7 +45,9 @@ fun PrekladPromptu(
 ) {
     val stav by vm.rewriteState.collectAsStateWithLifecycle()
     val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
-    val bezi = stav is MainViewModel.RewriteState.Busy
+    // Jen překlad — jinak by tlačítko svítilo i při vylepšování promptu.
+    val bezi = (stav as? MainViewModel.RewriteState.Busy)?.druh ==
+        MainViewModel.PraceNaPromptu.PREKLAD
 
     Row(verticalAlignment = Alignment.CenterVertically) {
         OutlineButton(
@@ -68,7 +70,8 @@ fun PrekladPromptu(
             )
         }
     }
-    (stav as? MainViewModel.RewriteState.Fail)?.let {
+    (stav as? MainViewModel.RewriteState.Fail)
+        ?.takeIf { it.druh == MainViewModel.PraceNaPromptu.PREKLAD }?.let {
         Spacer(Modifier.height(4.dp))
         Text(it.message, style = MaterialTheme.typography.bodySmall, color = Danger)
     }

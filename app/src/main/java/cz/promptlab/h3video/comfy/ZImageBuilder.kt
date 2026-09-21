@@ -314,10 +314,11 @@ object ZImageBuilder {
         vlastni: Vlastni? = null,
         kroky: Int = 0,
         cfg: Float = 0f,
+        qwen2k: Boolean = false,
     ): JSONObject = build(
         template(ctx, T2iModel.zId(model)),
         prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile, loraFile2, nsfwSila2,
-        userLoras, vlastni, kroky, cfg,
+        userLoras, vlastni, kroky, cfg, qwen2k,
     )
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
@@ -330,6 +331,7 @@ object ZImageBuilder {
         vlastni: Vlastni? = null,
         kroky: Int = 0,
         cfg: Float = 0f,
+        qwen2k: Boolean = false,
     ): JSONObject {
         val m = T2iModel.zId(model)
         val wf = JSONObject(template)
@@ -340,7 +342,8 @@ object ZImageBuilder {
                 vlastni, kroky, cfg,
             )
         } else if (m == T2iModel.QWEN21) {
-            buildQwen21(wf, prompt, w, h, seed, kroky, cfg)
+            val (qw, qh) = if (qwen2k) size2kFor(aspect) else (w to h)
+            buildQwen21(wf, prompt, qw, qh, seed, kroky, cfg)
         } else {
             buildFlux2(wf, m, prompt, w, h, seed)
         }
@@ -529,6 +532,24 @@ object ZImageBuilder {
      * rozměr určuje prázdné plátno — přesně jako v oficiální předloze ComfyUI.
      * Negativ zůstává prázdný: předloha jede na cfg 1, kde se neuplatní.
      */
+    /**
+     * Plátno pro Qwen 2.1 ve 2K — tabulka `WH_RATIO_TO_SIZE` z referenčního
+     * skriptu autorů (`Qwen21PeBuilder.ROZMERY`). Model je na 2K stavěný;
+     * ~1 Mpx tabulka karty je z Z-Image Turba a brala by mu polovinu detailu.
+     *
+     * 21:9 autoři neuvádějí, tak se dopočítá na stejnou plochu jako 16:9.
+     */
+    fun size2kFor(aspect: Aspect): Pair<Int, Int> = when (aspect) {
+        Aspect.SQUARE_1_1 -> 2048 to 2048
+        Aspect.LANDSCAPE_16_9 -> 2752 to 1536
+        Aspect.PORTRAIT_9_16 -> 1536 to 2752
+        Aspect.LANDSCAPE_4_3 -> 2400 to 1792
+        Aspect.PORTRAIT_3_4 -> 1792 to 2400
+        Aspect.LANDSCAPE_3_2 -> 2528 to 1696
+        Aspect.PORTRAIT_2_3 -> 1696 to 2528
+        Aspect.ULTRAWIDE_21_9 -> 3200 to 1344
+    }
+
     private fun buildQwen21(
         wf: JSONObject, prompt: String, w: Int, h: Int, seed: Long, kroky: Int, cfg: Float,
     ): JSONObject {
