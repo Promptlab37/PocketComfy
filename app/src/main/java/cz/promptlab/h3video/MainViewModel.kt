@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import cz.promptlab.h3video.comfy.ComfyClient
 import cz.promptlab.h3video.comfy.ComfyException
 import cz.promptlab.h3video.data.t
+import cz.promptlab.h3video.comfy.H3RefWriteBuilder
 import cz.promptlab.h3video.comfy.ImagePromptBuilder
 import cz.promptlab.h3video.comfy.PromptRewriteBuilder
 import cz.promptlab.h3video.comfy.Qwen21PeBuilder
@@ -2231,6 +2232,63 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * „Z obrázku" dostane i snímek a popíše, co na něm vidí. LLM se po
      * přepisu z VRAM uklidí, video pak jede jako obvykle.
      */
+    /**
+     * Přepis zadání pro **Ref2VA** — režim Reference na kartě All in One.
+     *
+     * Jede na `MiniMaxH3UniversalWriter`: ten si nejdřív nechá každou předlohu
+     * popsat vidoucím modelem a pak z popisů napíše celý H3 prompt o šesti
+     * polích. Obě role obsadí **odblokovaný** model, takže nic nezjemňuje.
+     *
+     * Fotky se posílají jako `<Subject N>`, ne `<Picture N>`: uživatel jimi
+     * říká „takhle ti lidé vypadají", ne „tenhle snímek je první".
+     */
+    private suspend fun prepisSReferencemi(
+        client: ComfyClient,
+        s: cz.promptlab.h3video.data.AioScene,
+        zadani: String,
+    ): String {
+        val spec = client.objectInfo(H3RefWriteBuilder.NODE_CLASS)
+            ?: throw ComfyException(
+                "universal writer chybi",
+                "Server neumí reference v přepisovači — aktualizuj balík " +
+                    "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+            )
+        val req = spec.getJSONObject("input").getJSONObject("required")
+        fun volby(klic: String): List<String> {
+            val pole = req.optJSONArray(klic)?.optJSONArray(0) ?: return emptyList()
+            return (0 until pole.length()).map { pole.getString(it) }
+        }
+        val captioner = H3RefWriteBuilder.vyberOdblokovany(
+            volby("caption_model"), H3RefWriteBuilder.CAPTIONER_ODVAZANY,
+        ) ?: throw ComfyException(
+            "zadny captioner",
+            "Přepisovač nemá čím fotky přečíst — chybí vidoucí GGUF s projektorem.",
+        )
+        val writer = H3RefWriteBuilder.vyberOdblokovany(
+            volby("writer_model"), H3RefWriteBuilder.WRITER_ODVAZANY,
+        ) ?: throw ComfyException(
+            "zadny writer",
+            "Přepisovač nemá čím psát — nahraj GGUF do models/LLM.",
+        )
+        val rozliseni = volby("resolution").let { en ->
+            en.firstOrNull { it == _params.value.aspect.label }
+                ?: en.firstOrNull { it == "16:9" } ?: en.firstOrNull() ?: "16:9"
+        }
+        val jmena = s.refsWithImage.mapIndexedNotNull { i, slot ->
+            slot.image?.let { client.uploadImage(it.readBytes(), "rw_ref${i + 1}.png") }
+        }
+        val wf = H3RefWriteBuilder.build(
+            zadani = "$zadani. Do not add any on-screen text or captions unless explicitly requested.",
+            obrazky = jmena,
+            sekundy = (s.frames / 24.0).coerceIn(2.0, 60.0),
+            pomer = rozliseni,
+            captioner = captioner,
+            writer = writer,
+            seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+        )
+        return spustPrepisAPockej(client, wf, H3RefWriteBuilder.N_PREVIEW)
+    }
+
     fun vylepsiAioPrompt() {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _aio.value
@@ -2245,6 +2303,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
                     val client = ComfyClient(settings.serverUrl)
+                    // Režim Reference má vlastní cestu: starý přepisovač zná
+                    // jen T2VA/I2VA/FL2VA/L2VA a reference neumí vůbec.
+                    if (s.mode == AioMode.REFERENCE && s.refsWithImage.isNotEmpty()) {
+                        return@runCatching prepisSReferencemi(client, s, zadani)
+                    }
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
                         ?: throw ComfyException(
                             "rewriter chybi",
