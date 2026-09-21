@@ -380,7 +380,7 @@ object Slovnik {
         "Sdílet video" to "Share the video",
         "Pokračuj s obrázkem" to "Continue with this image",
         "Rozhýbat — video z obrázku" to "Animate — video from the image",
-        "Upravit (Krea 2 — popiš změnu)" to "Edit (Krea 2 — describe the change)",
+        "Upravit (Qwen Image 2.1 — popiš změnu)" to "Edit (Krea 2 — describe the change)",
         "Zvětšit (SeedVR2 gigapixel)" to "Upscale (SeedVR2 gigapixel)",
         "Generovat další" to "Generate another",
         "Nepovedlo se" to "It did not work",
@@ -609,6 +609,12 @@ object Slovnik {
         "✨ Vylepšit prompt" to "✨ Improve the prompt",
         "✨ Vylepšit zadání" to "✨ Improve the instruction",
         "✨ Vylepšit (Qwen)" to "✨ Improve (Qwen)",
+        "Qwen se podívá i na fotky, ale odvážnější zadání sám zjemní. " +
+            "Odvázaný nepřepisuje nic, zato fotku nevidí — píše jen z toho, " +
+            "co napíšeš ty." to
+            "Qwen also looks at the photos but softens bolder requests on its own. " +
+            "The unfiltered one rewrites nothing, but it cannot see the photo — " +
+            "it writes only from what you type.",
         "hotovo za pár sekund" to "done in seconds",
         "nic neodmítá" to "refuses nothing",
         "poslouchá líp, trvá dýl" to "follows better, takes longer",

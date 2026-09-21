@@ -346,7 +346,7 @@ fun ResultScreen(
             if (onEdit != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    t("Upravit (Krea 2 — popiš změnu)"),
+                    t("Upravit (Qwen Image 2.1 — popiš změnu)"),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onEdit,
                 )

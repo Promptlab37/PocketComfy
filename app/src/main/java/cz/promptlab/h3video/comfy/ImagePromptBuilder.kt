@@ -48,6 +48,41 @@ Keep every detail the user asked for and add only what makes the scene concrete.
 Never swap the subject for a different one and never refuse."""
 
     /**
+     * Návod pro **úpravu fotky**, ne pro nový obrázek.
+     *
+     * Qwenův vlastní přepisovač (PE-I2I) je na to vycvičený líp a hlavně vidí
+     * fotku — jenže odvážnější zadání potichu zjemní (ověřeno 21. 9. 2026).
+     * Tenhle jede na odblokovaném modelu z `models/LLM`, takže nepřepisuje nic,
+     * ale **fotku nevidí** (uzel má `mmproj` vypnutý). Píše tedy jen z toho,
+     * co napsal uživatel, a nesmí si domýšlet, co je na obrázku.
+     */
+    private const val SYSTEM_UPRAVA =
+        """You turn a short, vague photo-editing request into one precise English
+editing instruction for an image-editing model. Reply with the instruction only:
+no preamble, no quotes around the answer, no explanation, no list.
+
+You are NOT looking at the photo. Never invent what is in it — no hair colour,
+no clothing, no background, no pose that the user did not mention. Refer to
+what is there in general terms ("the subject", "the background") unless the
+user named it.
+
+The instruction must:
+- start with the change itself, in the imperative ("Replace…", "Remove…",
+  "Add…", "Change…"),
+- say explicitly what must stay the same: pose, framing, identity and facial
+  features, lighting direction and the rest of the scene, unless the user
+  asked to change them,
+- describe the new element concretely — material, colour, fit, how it sits in
+  the scene and how it is lit, so it matches the existing photo,
+- keep any reference markers the user used (<image2>, <image3>, …) exactly as
+  written, and keep their meaning,
+- stay under about 120 words and be one flowing instruction, not bullet points.
+
+Keep every detail the user asked for and add only what makes the change
+concrete. Never swap the requested change for a different one, never soften or
+sanitise it, and never refuse."""
+
+    /**
      * Návod pro překlad. Schválně nic nevylepšuje: kdo si prompt napsal sám,
      * chce ho anglicky, ne přepsaný. Model tedy nesmí nic přidat ani ubrat.
      */
@@ -72,6 +107,13 @@ Rules:
      */
     fun build(zadani: String, model: String, seed: Long): JSONObject =
         graf(zadani, model, seed, SYSTEM, maxTokens = 400, teplota = 0.65)
+
+    /**
+     * Vylepšení zadání na kartě **Úprava obrázku**. Kratší strop než u popisu
+     * scény: pokyn k úpravě má být jedna věta, ne odstavec.
+     */
+    fun buildUprava(zadani: String, model: String, seed: Long): JSONObject =
+        graf(zadani, model, seed, SYSTEM_UPRAVA, maxTokens = 300, teplota = 0.5)
 
     /**
      * Překlad zadání do angličtiny — bez vylepšování. Nižší teplota a víc

@@ -2055,6 +2055,63 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * ✨ Vylepšit zadání na kartě **Úprava obrázku** odvázaně.
+     *
+     * Qwenův přepisovač (PE-I2I) vidí fotky a je na model vycvičený, ale
+     * odvážnější zadání potichu zjemní. Tenhle jede na odblokovaném modelu
+     * z `models/LLM` a nepřepisuje nic — **fotku ale nevidí**, takže píše jen
+     * z toho, co napsal uživatel.
+     */
+    fun vylepsiUpravuOdvazane() {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val zadani = _edit.value.prompt.trim()
+        if (zadani.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(
+                t("Nejdřív napiš aspoň pár slov o tom, co chceš."),
+                PraceNaPromptu.VYLEPSENI,
+            )
+            return
+        }
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
+                        ?: throw ComfyException(
+                            "llama uzel chybi",
+                            "Server nemá uzly llama.cpp — bez nich prompt vylepšit nejde.",
+                        )
+                    val nabidka = spec.getJSONObject("input").getJSONObject("required")
+                        .getJSONArray("model").getJSONArray(0)
+                    val model = ImagePromptBuilder.vyberModel(
+                        (0 until nabidka.length()).map { nabidka.getString(it) }
+                    ) ?: throw ComfyException(
+                        "zadny model",
+                        "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
+                    )
+                    val wf = ImagePromptBuilder.buildUprava(
+                        zadani = zadani,
+                        model = model,
+                        seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                    )
+                    spustPrepisAPockej(client, wf, ImagePromptBuilder.N_PREVIEW)
+                }
+            }
+            vysledek.onSuccess { text ->
+                _rewriteOriginal.value = zadani
+                _edit.value = _edit.value.copy(prompt = ImagePromptBuilder.ocisti(text))
+                _rewriteState.value = RewriteState.Idle
+            }.onFailure { e ->
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    PraceNaPromptu.VYLEPSENI,
+                )
+            }
+        }
+    }
+
+    /**
      * ✨ Vylepšit zadání přes **vlastní přepisovač Qwenu** k modelu
      * Qwen Image 2.1. Qwen k němu vydal dva: PE-I2I pro úpravy (dostane
      * i fotky, které se upravují) a PE-T2I pro text→obrázek.
@@ -2924,7 +2981,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val thumb = withContext(Dispatchers.IO) {
                 ImageUtils.importToApp(getApplication(), Uri.fromFile(zdroj), target)
             } ?: return@launch
-            updateEdit { it.copy(source = target, thumb = thumb) }
+            // Pokračování z hotového obrázku jede na Qwen Image 2.1: je to
+            // tentýž model, co obrázek vyrobil, a na úpravy je silnější než
+            // Krea 2, která tu byla do 3.70.
+            updateEdit { it.copy(source = target, thumb = thumb, motor = cz.promptlab.h3video.data.EditMotor.QWEN21) }
             setMode(Mode.EDIT)
             selectTab(Tab.CREATE)
         }

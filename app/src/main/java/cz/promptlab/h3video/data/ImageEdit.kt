@@ -116,7 +116,11 @@ enum class EditZamer(
 
 data class ImageEditScene(
     /** Čím se to počítá. Výchozí zůstává Krea 2, na kterou je karta zvyklá. */
-    val motor: EditMotor = EditMotor.KREA2,
+    /**
+     * Výchozí motor je Qwen Image 2.1 — jeden model na generování i úpravy,
+     * drží identitu a text v obraze. Do 3.70 tu byla Krea 2, na úpravy slabší.
+     */
+    val motor: EditMotor = EditMotor.QWEN21,
     /** Upravovaná fotka. */
     val source: File? = null,
     val thumb: Bitmap? = null,

@@ -1,5 +1,6 @@
 package cz.promptlab.h3video
 
+import cz.promptlab.h3video.comfy.ImagePromptBuilder
 import cz.promptlab.h3video.comfy.Qwen21PeBuilder
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -150,5 +151,28 @@ class Qwen21PeBuilderTest {
         )!!
         assertTrue(v.prompt.contains("AHOJ}"))
         assertEquals(2048 to 2048, v.rozmer)
+    }
+
+    /**
+     * Odvázaný vylepšovač pro kartu Úprava obrázku. Jede na jiném uzlu než
+     * Qwenův přepisovač a musí psát POKYN K ÚPRAVĚ, ne popis nové scény.
+     */
+    @Test
+    fun `odvazany vylepsovac uprav pise pokyn, ne popis sceny`() {
+        val wf = ImagePromptBuilder.buildUprava("sundej ji bundu", "model.gguf", 3L)
+        val llm = wf.getJSONObject(ImagePromptBuilder.N_LLM).getJSONObject("inputs")
+        val system = llm.getString("system_prompt")
+        assertEquals("sundej ji bundu", llm.getString("custom_prompt"))
+        // Pokyn k uprave, ne popis obrazku.
+        assertTrue(system.contains("editing instruction"))
+        // Nevidi fotku, takze si nesmi domyslet, co na ni je.
+        assertTrue(system.contains("NOT looking at the photo"))
+        // Znacky referenci musi prezit.
+        assertTrue(system.contains("<image2>"))
+        // A hlavne: nesmi nic zjemnovat — to je duvod, proc vedle Qwena existuje.
+        assertTrue(system.contains("never soften or"))
+        assertTrue(system.contains("sanitise it, and never refuse"))
+        // Model se po prepisu uklidi z VRAM, hned potom se generuje.
+        assertTrue(llm.getBoolean("force_offload"))
     }
 }

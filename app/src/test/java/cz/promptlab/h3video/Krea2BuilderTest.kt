@@ -31,7 +31,10 @@ class Krea2BuilderTest {
     private fun JSONObject.classOf(node: String): String =
         getJSONObject(node).getString("class_type")
 
+    // Motor se ukotvuje vyslovne: vychozi volba karty se od 3.71 zmenila na
+    // Qwen Image 2.1 a test Krey se o ni opirat nesmi.
     private fun scena() = ImageEditScene(
+        motor = cz.promptlab.h3video.data.EditMotor.KREA2,
         source = File("foto.jpg"),
         prompt = "dej jí červenou bundu",
         aspect = Aspect.SQUARE_1_1,

@@ -63,6 +63,7 @@ import kotlin.math.roundToInt
  * Jediná karta, která nevyrábí video. Vezme fotku a upraví ji podle věty;
  * obličej z předlohy má zůstat.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun ImageEditSection(vm: MainViewModel) {
     val scene by vm.edit.collectAsStateWithLifecycle()
@@ -155,19 +156,33 @@ fun ImageEditSection(vm: MainViewModel) {
                 val bezi = (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Busy)
                     ?.druh == cz.promptlab.h3video.MainViewModel.PraceNaPromptu.VYLEPSENI
                 Spacer(Modifier.height(10.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
+                // Dva přepisovače, protože každý umí něco jiného:
+                //  - Qwenův PE-I2I vidí fotky a je na model vycvičený, ale
+                //    odvážnější zadání potichu zjemní (ověřeno 21. 9. 2026),
+                //  - odvázaný nepřepisuje nic, zato fotku nevidí a píše jen
+                //    z toho, co napsal uživatel.
+                val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
+                androidx.compose.foundation.layout.FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
                     OutlineButton(
-                        if (bezi) t("Přepisuji…") else t("✨ Vylepšit zadání"),
+                        if (bezi) t("Přepisuji…") else t("✨ Vylepšit (Qwen)"),
                         color = Cyan,
                     ) { if (!bezi) vm.vylepsiQwen21Prompt(proUpravu = true) }
-                    if (bezi) {
-                        Spacer(Modifier.width(10.dp))
+                    OutlineButton(
+                        if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
+                        color = cz.promptlab.h3video.ui.theme.Amber,
+                    ) { if (!bezi) vm.vylepsiUpravuOdvazane() }
+                }
+                if (bezi) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         androidx.compose.material3.CircularProgressIndicator(
                             Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp,
                         )
-                        // Model píše nejdřív dlouhou rozvahu, takže bez počtu
-                        // napsaných slov to vypadá zaseklé i po minutách.
+                        // Bez počtu napsaných slov to vypadá zaseklé.
                         postup?.let { (kolik, _) ->
                             Spacer(Modifier.width(10.dp))
                             Text(
@@ -177,6 +192,13 @@ fun ImageEditSection(vm: MainViewModel) {
                         }
                     }
                 }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    t("Qwen se podívá i na fotky, ale odvážnější zadání sám zjemní. " +
+                        "Odvázaný nepřepisuje nic, zato fotku nevidí — píše jen z toho, " +
+                        "co napíšeš ty."),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow,
+                )
                 (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Fail)
                     ?.takeIf {
                         it.druh == cz.promptlab.h3video.MainViewModel.PraceNaPromptu.VYLEPSENI
