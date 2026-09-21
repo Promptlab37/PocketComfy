@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -146,6 +147,34 @@ fun ImageEditSection(vm: MainViewModel) {
                 minHeight = 110.dp,
                 onClear = { vm.setEditPrompt("") },
             )
+            // Qwen 2.1 má vlastní přepisovač od Qwenu (PE-I2I): dostane i fotky,
+            // které se upravují, a z vágního pokynu složí přesný. Česky napsané
+            // zadání zvládne — popis pak napíše anglicky, jak to model chce.
+            if (scene.motor == EditMotor.QWEN21) {
+                val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
+                val bezi = stavPrepisu is cz.promptlab.h3video.MainViewModel.RewriteState.Busy
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    OutlineButton(
+                        if (bezi) t("Přepisuji…") else t("✨ Vylepšit zadání"),
+                        color = Cyan,
+                    ) { if (!bezi) vm.vylepsiQwen21Prompt(proUpravu = true) }
+                    if (bezi) {
+                        Spacer(Modifier.width(10.dp))
+                        androidx.compose.material3.CircularProgressIndicator(
+                            Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp,
+                        )
+                    }
+                }
+                (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Fail)?.let { chyba ->
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        chyba.message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = cz.promptlab.h3video.ui.theme.Amber,
+                    )
+                }
+            }
             Spacer(Modifier.height(10.dp))
             PrekladPromptu(vm, cz.promptlab.h3video.MainViewModel.PromptPole.UPRAVA)
         }

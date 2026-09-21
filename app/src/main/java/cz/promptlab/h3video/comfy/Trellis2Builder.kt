@@ -206,7 +206,10 @@ object Trellis2Builder {
                     .put("fov_x_degrees", 0.0)
                     .put("batch_size", 4)
                     .put("force_projection", true)
-                    .put("apply_mask", true),
+                    .put("apply_mask", true)
+                    // Přibylo v ComfyUI 0.37 a je povinné; 3 je výchozí hodnota
+                    // uzlu. MoGe-1/2 si ho nevšímá, MoGe-3 tím doostří hrany.
+                    .put("refine_steps", 3),
             ),
         )
         wf.put(

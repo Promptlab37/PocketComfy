@@ -900,8 +900,10 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     label = { it.label },
                     onSelect = { v -> vm.update { it.copy(aspect = v) } }
                 )
-                // ✨ Vylepšovač: pár slov (klidně česky) → plný prompt psaný
-                // podle pravidel Z-Image (souvislé věty, světlo, styl).
+                // ✨ Vylepšovač: pár slov (klidně česky) → plný prompt.
+                // U Z-Image ho píše obecný LLM podle pravidel Z-Image, u Qwen
+                // Image 2.1 jeho vlastní přepisovač PE-T2I od Qwenu — ten umí
+                // navíc doporučit poměr stran, tak se rovnou nastaví.
                 val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
                 val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
                 val bezi = stavPrepisu is MainViewModel.RewriteState.Busy
@@ -910,7 +912,15 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     OutlineButton(
                         if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
                         color = Cyan,
-                    ) { if (!bezi) vm.vylepsiObrazovyPrompt() }
+                    ) {
+                        if (!bezi) {
+                            if (T2iModel.zId(params.zimageModel) == T2iModel.QWEN21) {
+                                vm.vylepsiQwen21Prompt(proUpravu = false)
+                            } else {
+                                vm.vylepsiObrazovyPrompt()
+                            }
+                        }
+                    }
                     Spacer(Modifier.width(8.dp))
                     // Kdo si prompt napsal sám, nechce ho rozepsat — chce ho
                     // jen anglicky. To dělá druhé tlačítko.

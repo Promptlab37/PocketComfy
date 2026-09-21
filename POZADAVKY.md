@@ -47,12 +47,17 @@ Obrázek). Platí u nich ale minimální verze jádra: uzly **TRELLIS.2** a
 **YuE2** na kartě Hudba **až od 0.36.0**. Na starší verzi se nic neinstaluje,
 ComfyUI se aktualizuje.
 
-Karty **Úprava obrázku**, **Oprava fotky** a **Úhel kamery** používají Qwen
-Image 2.1 a jeho nové vestavěné uzly
-`TextEncodeQwenImage21` a `QwenImage21Cache`, které vyšly až **20. 9. 2026**.
-Stabilní ComfyUI 0.36.0 je ještě neobsahuje: je potřeba aktuální ComfyUI z
-tohoto data nebo novější (u Desktop/Cloud může být nutné počkat na další
-stabilní vydání). Žádný custom node se neinstaluje.
+Qwen Image 2.1 je **jeden model na generování i úpravy**, takže ho najdeš na
+čtyřech kartách: **Obrázek** (text→obrázek) a **Úprava obrázku**, **Oprava
+fotky** a **Úhel kamery** (úpravy). Stejně je na tom FLUX.2 Klein. Potřebuje
+vestavěné uzly `TextEncodeQwenImage21` a `QwenImage21Cache`, které přišly až
+v **ComfyUI 0.37.0** — na 0.36.0 a starším chybí. Žádný custom node se
+neinstaluje.
+
+Volitelně k němu patří **✨ Vylepšit zadání** — vlastní přepisovače promptu
+od Qwenu (`Qwen-Image-2.1-PE-I2I` a `-PE-T2I`) na vestavěném uzlu
+`TextGenerate` (taky od 0.37.0). Zadání zvládnou i česky. Bez jejich vah
+tlačítko jen ohlásí, že model chybí; zbytek karty funguje dál.
 
 Karta **Video ze zvuku** potřebuje balík
 [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) (uzly
@@ -101,8 +106,8 @@ po kartách, ať nestahuješ, co nepoužiješ.
 - `z_image_turbo_bf16.safetensors` (karta Obrázek)
 - `z_image_bf16.safetensors` (karta Obrázek — volba Z-Image Base, 11,5 GB),
   z [Comfy-Org/z_image](https://huggingface.co/Comfy-Org/z_image)
-- `qwen_image_2.1_int8_convrot.safetensors` (Úprava obrázku, Oprava fotky a
-  Úhel kamery — Qwen Image 2.1,
+- `qwen_image_2.1_int8_convrot.safetensors` (Obrázek, Úprava obrázku, Oprava
+  fotky a Úhel kamery — Qwen Image 2.1,
   7,3 GB), z [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
 - `flux1-Fill-Dev_FP8.safetensors` (Výměna tváře, Domalovat — volba Flux Fill)
 - `flux-2-klein-9b.safetensors` (Domalovat a karta Obrázek — volba FLUX.2 Klein;
@@ -129,9 +134,13 @@ v kterékoli z nich, stěhovat ho nemusíš.
   ta pred‑loha má enkodér zapsaný napevno, nvfp4 se u ní nepoužije
 - `qwen3vl_4b_fp8_scaled.safetensors` (Krea 2)
 - `qwen_3_4b.safetensors` (karta Obrázek — Z-Image Turbo i Base)
-- `qwen3vl_8b_int8_convrot.safetensors` (Úprava obrázku, Oprava fotky a Úhel
-  kamery — Qwen Image 2.1,
+- `qwen3vl_8b_int8_convrot.safetensors` (Obrázek, Úprava obrázku, Oprava fotky
+  a Úhel kamery — Qwen Image 2.1,
   9,4 GB), z [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
+- `qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors` (**nepovinné** —
+  ✨ Vylepšit zadání u úprav, 9,5 GB), z téhož repozitáře
+- `qwen3.5_9b_qwen_image_2.1_pe_t2i.int8_convrot.safetensors` (**nepovinné** —
+  ✨ Vylepšit zadání na kartě Obrázek, 9,5 GB), z téhož repozitáře
 - `clip_l.safetensors` + `t5xxl_fp16.safetensors` (Výměna tváře, Domalovat — Flux Fill)
 - `qwen_3_8b_fp8mixed.safetensors` (karta Obrázek a Domalovat — FLUX.2 Klein), z
   [Comfy-Org/vae-text-encorder-for-flux-klein-9b](https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b)
@@ -197,8 +206,14 @@ Qwen Image 2.1 není pod Apache 2.0. Váhy byly vydány pod
 **Qwen Research License Agreement** a bez zvláštní licence jsou povolené
 jen pro **nekomerční výzkum a vyhodnocování**. Pro komerční použití autoři
 vyžadují samostatnou licenci přes `model-business@notice.qwencloud.com`.
-Aplikace váhy nešíří ani nestahuje; uživatel je přebírá přímo z Hugging Face
-a musí podmínky přijmout sám. Text licence:
+Totéž platí pro oba přepisovače promptu `Qwen-Image-2.1-PE-I2I` a `-PE-T2I`.
+
+Aplikace **váhy nešíří ani nestahuje** — uživatel je přebírá přímo z Hugging
+Face a musí podmínky přijmout sám. Součástí aplikace jsou ale **systémové
+prompty** obou přepisovačů (`system_prompt.txt` z repozitářů autorů), bez
+kterých by modely nefungovaly. Licence jejich šíření pro nekomerční účely
+dovoluje; její plné znění je v repozitáři jako
+[`LICENSE-Qwen-Research.txt`](LICENSE-Qwen-Research.txt) a odkaz na originál:
 [QwenLM/Qwen-Image-2.1 LICENSE](https://github.com/QwenLM/Qwen-Image-2.1/blob/main/LICENSE).
 
 **SeedVR2** (karta Zvětšit): `seedvr2_ema_7b-Q4_K_M.gguf` a

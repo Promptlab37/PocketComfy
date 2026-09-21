@@ -68,8 +68,9 @@ class Ltx25BuilderTest {
         assertTrue("délka latentu se dosadila jako číslo: $delka", delka is org.json.JSONArray)
         assertEquals(Ltx25Builder.N_DELKA, (delka as org.json.JSONArray).getString(0))
 
-        // A ten výpočet je pořád `fps × délka_zvuku + 1`.
-        assertEquals("a * b + 1", wf.inputs(Ltx25Builder.N_DELKA).getString("expression"))
+        // A ten výpočet je pořád `fps × délka_zvuku`, zaokrouhlené nahoru na
+        // násobek osmi a plus jedna — LTX jinou délku latentu nebere.
+        assertEquals("ceil(a*b/8)*8+1", wf.inputs(Ltx25Builder.N_DELKA).getString("expression"))
         // Druhý činitel je druhý výstup načítače zvuku, tedy jeho délka.
         val b = wf.inputs(Ltx25Builder.N_DELKA).getJSONArray("values.b")
         assertEquals(Ltx25Builder.N_ZVUK, b.getString(0))
@@ -128,7 +129,7 @@ class Ltx25BuilderTest {
         assertFalse(wf.has(Ltx25Builder.N_ZVUK))
         // Délka jde do TÉHOŽ vzorce fps × délka + 1 jako u nahraného zvuku.
         assertEquals(6.0, wf.inputs(Ltx25Builder.N_SEKUNDY).getDouble("value"), 0.001)
-        assertEquals("a * b + 1", wf.inputs(Ltx25Builder.N_DELKA).getString("expression"))
+        assertEquals("ceil(a*b/8)*8+1", wf.inputs(Ltx25Builder.N_DELKA).getString("expression"))
         assertEquals(
             Ltx25Builder.N_SEKUNDY,
             wf.inputs(Ltx25Builder.N_DELKA).getJSONArray("values.b").getString(0),

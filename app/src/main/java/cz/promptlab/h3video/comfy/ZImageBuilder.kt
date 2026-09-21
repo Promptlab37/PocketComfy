@@ -75,6 +75,14 @@ enum class T2iModel(
         1f,
         "ernie-image-turbo-Q8_0.gguf",
     ),
+    QWEN21(
+        "qwen21", "Qwen Image 2.1",
+        "Tentýž model, co upravuje fotky. Zvládá text v obraze a průhledné pozadí.",
+        // 25 kroků a cfg 1 má oficiální předloha ComfyUI pro Qwen 2.1.
+        25,
+        1f,
+        "qwen_image_2.1_int8_convrot.safetensors",
+    ),
 
     /**
      * Cokoli dalšího z rodiny Z-Image, co je na serveru — finetune z CivitAI,
@@ -233,6 +241,21 @@ object ZImageBuilder {
     const val N_F2_SAVE = "60"
 
     /**
+     * Uzly šablony Qwen Image 2.1 pro text→obrázek
+     * (`res/raw/workflow_qwen21_t2i.json`).
+     *
+     * Je to **tentýž model**, který jede na kartě Úprava obrázku — Qwen 2.1
+     * umí generovat i upravovat jedním modelem. Liší se jen zapojení: tady
+     * jde do vzorkování prázdné plátno [N_Q21_LATENT], při úpravě latent
+     * z předlohy. Stejně je na tom FLUX.2 Klein, který je na obou kartách
+     * taky.
+     */
+    const val N_Q21_UNET = "1"
+    const val N_Q21_TEXT = "10"
+    const val N_Q21_LATENT = "15"
+    const val N_Q21_SAMPLER = "20"
+
+    /**
      * Kroky a cfg, se kterými se běh opravdu pošle.
      *
      * Uživatelovo nastavení má přednost před výchozím stavem modelu; nula
@@ -258,6 +281,7 @@ object ZImageBuilder {
     private fun rawFor(m: T2iModel): Int = when (m) {
         T2iModel.KLEIN -> R.raw.workflow_flux2_klein_t2i
         T2iModel.ERNIE -> R.raw.workflow_ernie_t2i
+        T2iModel.QWEN21 -> R.raw.workflow_qwen21_t2i
         else -> R.raw.workflow_zimage_t2i
     }
 
@@ -315,6 +339,8 @@ object ZImageBuilder {
                 wf, m, prompt, w, h, seed, nsfwLora, nsfwSila, loraFile, loraFile2, nsfwSila2,
                 vlastni, kroky, cfg,
             )
+        } else if (m == T2iModel.QWEN21) {
+            buildQwen21(wf, prompt, w, h, seed, kroky, cfg)
         } else {
             buildFlux2(wf, m, prompt, w, h, seed)
         }
@@ -496,6 +522,26 @@ object ZImageBuilder {
         return wf
     }
 
+    /**
+     * Qwen Image 2.1 pro text→obrázek.
+     *
+     * Bez předlohy nemá `TextEncodeQwenImage21` z čeho odvodit velikost, proto
+     * rozměr určuje prázdné plátno — přesně jako v oficiální předloze ComfyUI.
+     * Negativ zůstává prázdný: předloha jede na cfg 1, kde se neuplatní.
+     */
+    private fun buildQwen21(
+        wf: JSONObject, prompt: String, w: Int, h: Int, seed: Long, kroky: Int, cfg: Float,
+    ): JSONObject {
+        wf.inputs(N_Q21_TEXT).put("prompt", prompt)
+        wf.inputs(N_Q21_LATENT).put("width", w)
+        wf.inputs(N_Q21_LATENT).put("height", h)
+        val s = wf.inputs(N_Q21_SAMPLER)
+        s.put("seed", seed)
+        if (kroky > 0) s.put("steps", kroky)
+        if (cfg > 0f) s.put("cfg", cfg.toDouble())
+        return wf
+    }
+
     private fun JSONObject.inputs(node: String): JSONObject =
         getJSONObject(node).getJSONObject("inputs")
 
@@ -504,7 +550,8 @@ object ZImageBuilder {
         "ModelSamplingAuraFlow", "LoraLoaderModelOnly" -> Stage.MODELS
         "CLIPTextEncode", "ConditioningZeroOut", "EmptySD3LatentImage",
         "EmptyFlux2LatentImage", "Flux2Scheduler", "KSamplerSelect", "RandomNoise",
-        "CFGGuider" -> Stage.ENCODING
+        "CFGGuider", "TextEncodeQwenImage21", "EmptyLatentImage",
+        "QwenImage21Cache" -> Stage.ENCODING
         "KSampler", "SamplerCustomAdvanced" -> Stage.SAMPLING
         "VAEDecode", "SaveImage" -> Stage.MUXING
         else -> Stage.SAMPLING

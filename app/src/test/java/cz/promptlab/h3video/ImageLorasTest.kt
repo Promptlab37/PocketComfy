@@ -29,7 +29,12 @@ class ImageLorasTest {
 
     @Test fun allImageModelsRouteConsumersThroughBothLoras() {
         for (model in T2iModel.entries) {
-            val name = if (model.zRodinyZImage) "zimage" else if (model == T2iModel.KLEIN) "flux2_klein" else "ernie"
+            val name = when {
+                model.zRodinyZImage -> "zimage"
+                model == T2iModel.KLEIN -> "flux2_klein"
+                model == T2iModel.QWEN21 -> "qwen21"
+                else -> "ernie"
+            }
             val template = File("src/main/res/raw/workflow_${name}_t2i.json").readText()
             fun build(loras: List<EditLora>) = ZImageBuilder.build(template, "landscape", Aspect.LANDSCAPE_16_9, 42,
                 model = model.id, userLoras = loras)

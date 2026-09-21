@@ -201,7 +201,9 @@ class SablonyProtiServeruTest {
                 vstupy.optJSONObject("required")?.keys()?.forEach { jm ->
                     val ma = ins.has(jm) ||
                         ins.keys().asSequence().any { it.startsWith("$jm.") }
-                    if (!ma) chyby += "$kde · uzel $id ($cls): chybí povinný vstup „$jm\""
+                    if (!ma && !nepovinnyAutogrow(vstupy, jm)) {
+                        chyby += "$kde · uzel $id ($cls): chybí povinný vstup „$jm\""
+                    }
                 }
 
                 // 2) hodnoty musí sedět se schématem
@@ -240,4 +242,23 @@ class SablonyProtiServeruTest {
         }
         return chyby
     }
+
+    /**
+     * Autogrow vstup (`COMFY_AUTOGROW_V3`) se v `/object_info` hlásí mezi
+     * povinnými, ale ComfyUI ho při spuštění rozbalí na jednotlivé sloty
+     * `jmeno.slot_1…N` a **sám rodičovský klíč do grafu nepatří**. Když má
+     * šablona `min = 0`, jsou všechny sloty nepovinné a graf bez jediného
+     * obrázku je v pořádku — viz `Autogrow._expand_schema_for_dynamic`
+     * v `comfy_api/latest/_io.py`.
+     *
+     * Bez téhle výjimky by test hlásil chybu u `TextEncodeQwenImage21`
+     * v šabloně text→obrázek, kde se žádná předloha nepoužívá.
+     */
+    private fun nepovinnyAutogrow(vstupy: JSONObject, jmeno: String): Boolean {
+        val spec = vstupy.optJSONObject("required")?.optJSONArray(jmeno) ?: return false
+        if (spec.opt(0) != "COMFY_AUTOGROW_V3") return false
+        val sablona = spec.optJSONObject(1)?.optJSONObject("template") ?: return false
+        return sablona.optInt("min", 0) == 0
+    }
+
 }

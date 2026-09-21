@@ -12,6 +12,7 @@ import cz.promptlab.h3video.comfy.ComfyException
 import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.comfy.ImagePromptBuilder
 import cz.promptlab.h3video.comfy.PromptRewriteBuilder
+import cz.promptlab.h3video.comfy.Qwen21PeBuilder
 import cz.promptlab.h3video.comfy.ZImageBuilder
 import cz.promptlab.h3video.data.AioMode
 import cz.promptlab.h3video.data.AioScene
@@ -2000,6 +2001,90 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
+     * ✨ Vylepšit zadání přes **vlastní přepisovač Qwenu** k modelu
+     * Qwen Image 2.1. Qwen k němu vydal dva: PE-I2I pro úpravy (dostane
+     * i fotky, které se upravují) a PE-T2I pro text→obrázek.
+     *
+     * Zadání smí být česky — model si poradí s jakýmkoli jazykem a popis
+     * napíše anglicky, jak to Qwen Image 2.1 chce.
+     *
+     * @param proUpravu true = karta Úprava obrázku (PE-I2I s fotkami),
+     *   false = karta Obrázek (PE-T2I bez fotek)
+     */
+    fun vylepsiQwen21Prompt(proUpravu: Boolean) {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val zadani = (if (proUpravu) _edit.value.prompt else _params.value.prompt).trim()
+        if (zadani.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(
+                t("Nejdřív napiš aspoň pár slov o tom, co chceš.")
+            )
+            return
+        }
+        val fotky = if (proUpravu) _edit.value.uploadImages else emptyList<java.io.File>()
+        _rewriteState.value = RewriteState.Busy
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    if (client.objectInfo(Qwen21PeBuilder.NODE_CLASS) == null) throw ComfyException(
+                        "TextGenerate chybi",
+                        "Server je starší než ComfyUI 0.37 — chybí uzel na přepis zadání.",
+                    )
+                    val model =
+                        if (proUpravu) Qwen21PeBuilder.MODEL_I2I else Qwen21PeBuilder.MODEL_T2I
+                    val res = getApplication<android.app.Application>().resources
+                    val system = res.openRawResource(
+                        if (proUpravu) R.raw.qwen21_pe_system_i2i else R.raw.qwen21_pe_system_t2i
+                    ).bufferedReader().use { it.readText() }
+                    val jmena = fotky.map { f ->
+                        client.uploadImage(f.readBytes(), f.name)
+                    }
+                    val wf = Qwen21PeBuilder.build(
+                        system = system,
+                        zadani = zadani,
+                        model = model,
+                        obrazky = jmena,
+                        maxTokenu = if (proUpravu) Qwen21PeBuilder.MAX_TOKENU_I2I
+                        else Qwen21PeBuilder.MAX_TOKENU_T2I,
+                        seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                    )
+                    val syrove = spustPrepisAPockej(client, wf, Qwen21PeBuilder.N_PREVIEW)
+                    Qwen21PeBuilder.parse(syrove) ?: throw ComfyException(
+                        "prepis bez JSON",
+                        "Přepisovač nevrátil použitelný výsledek. Zkus to znovu.",
+                    )
+                }
+            }
+            vysledek.onSuccess { v ->
+                _rewriteOriginal.value = zadani
+                if (proUpravu) {
+                    _edit.value = _edit.value.copy(prompt = v.prompt)
+                } else {
+                    update { it.copy(prompt = v.prompt) }
+                    // Poměr stran, který si model sám zvolil, se rovnou nastaví —
+                    // je součástí jeho odpovědi, ne naší domněnky. Když ho dědí
+                    // z předlohy (ratio_follow), nechá se, co je vybrané.
+                    v.rozmer?.let { (w, h) -> nastavPomerPodleModelu(w, h) }
+                }
+                _rewriteState.value = RewriteState.Idle
+            }.onFailure { e ->
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl."
+                )
+            }
+        }
+    }
+
+    /** Nejbližší poměr stran karty k rozměru, který doporučil přepisovač. */
+    private fun nastavPomerPodleModelu(w: Int, h: Int) {
+        val cil = w.toFloat() / h.toFloat()
+        val nej = cz.promptlab.h3video.data.Aspect.entries.minByOrNull { a ->
+            kotlin.math.abs(a.w.toFloat() / a.h.toFloat() - cil)
+        } ?: return
+        update { it.copy(aspect = nej) }
+    }
+
+    /**
      * Pošle zadání karty All in One přepisovači na serveru (MiniMax-H3 Prompt
      * Rewriter 8B nad odblokovaným Qwen3-VL) a výsledný plný H3 prompt dosadí
      * zpět do pole. Česky napsané zadání přeloží a rozepíše sám; u režimu
@@ -2546,6 +2631,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         R.raw.workflow_h3_ultra,
                         R.raw.workflow_krea2_edit,
                         R.raw.workflow_qwen21_edit,
+                        R.raw.workflow_qwen21_t2i,
                         R.raw.workflow_seedvr2_upscale,
                         R.raw.workflow_zimage_t2i,
                         R.raw.workflow_h3_3step,

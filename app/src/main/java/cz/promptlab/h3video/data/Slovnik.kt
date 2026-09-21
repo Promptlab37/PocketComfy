@@ -607,6 +607,11 @@ object Slovnik {
         "Co z fotek držet (obličej, účes, oblečení) a co vynechat" to
             "What to keep from the photos (face, hair, clothes) and what to skip",
         "✨ Vylepšit prompt" to "✨ Improve the prompt",
+        "✨ Vylepšit zadání" to "✨ Improve the instruction",
+        "Server je starší než ComfyUI 0.37 — chybí uzel na přepis zadání." to
+            "The server is older than ComfyUI 0.37 — the rewriting node is missing.",
+        "Přepisovač nevrátil použitelný výsledek. Zkus to znovu." to
+            "The rewriter returned nothing usable. Try again.",
         "Přepisuji…" to "Rewriting…",
         "Podkresová hudba" to "Background music",
         "AI k videu vymyslí i soundtrack" to "The AI also invents a soundtrack",
