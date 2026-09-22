@@ -3401,16 +3401,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 onSuccess = { seznam ->
                     _longMmLatenty.value = seznam
                     _longMmLatentChyba.value = null
-                    // Přednost má nejnovější latent TOHOHLE řetězu — jméno
-                    // řetězu je v názvu souboru. Bez toho by po založení
-                    // nového řetězu zůstal vybraný latent toho starého.
+                    // VŽDYCKY nejnovější latent téhle scény. Nic se nepamatuje:
+                    // dřív se jednou vybraný latent držel, dokud nebyl „cizí",
+                    // takže třetí záběr pořád navazoval na `lod_00001` a lepil
+                    // se k prvnímu záběru (22. 9. 2026). Navazuje se na
+                    // poslední, a to znamená pokaždé přepočítat.
                     val muj = cz.promptlab.h3video.comfy.LongMmBuilder
                         .nazevLatentu(_longMm.value) + "_"
                     val vybrany = seznam.firstOrNull { it.startsWith(muj) }
                         ?: seznam.firstOrNull().orEmpty()
-                    if (_longMm.value.latent !in seznam ||
-                        (_longMm.value.latent.startsWith(muj).not() && vybrany.startsWith(muj))
-                    ) {
+                    if (_longMm.value.latent != vybrany) {
                         updateLongMm { it.copy(latent = vybrany) }
                     }
                 },
@@ -3666,8 +3666,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun predvyberLongMmZdroj() {
         val s = _longMm.value
+        // Vlastní soubor z telefonu je vědomá volba, ten se nepřebíjí.
         if (s.zdroj?.name?.startsWith("longmm_zdroj") == true && s.zdroj.exists()) return
-        val posledni = longMmPredchozi.value.firstOrNull() ?: return
+        val jmeno = cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(s)
+        // Poslední záběr TÉHLE scény. Fallback na úplně poslední je jen pro
+        // záznamy z verzí do 3.93, které jméno scény ještě nenesou.
+        val posledni = longMmPredchozi.value.firstOrNull { it.retez == jmeno }
+            ?: longMmPredchozi.value.firstOrNull { it.retez.isBlank() }
+            ?: return
         if (posledni.file(getApplication()) == s.zdroj) return
         setLongMmZdrojZGalerie(posledni)
     }

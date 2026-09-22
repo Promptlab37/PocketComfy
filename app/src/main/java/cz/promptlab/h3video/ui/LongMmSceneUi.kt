@@ -73,7 +73,9 @@ fun LongMmSection(vm: MainViewModel) {
 
     // Nabídka scén se plní ze serveru. Načítá se při přepnutí na navázání,
     // aby byl záběr dokončený před chvílí vidět bez restartu aplikace.
-    LaunchedEffect(scene.rezim, predchozi.size) {
+    // Přepočítává se i po doběhnutí záběru (přibude položka v galerii i latent)
+    // a po změně scény — jinak by v kartě zůstal vybraný ten předminulý.
+    LaunchedEffect(scene.rezim, predchozi.size, latenty.size, scene.nazev) {
         if (scene.rezim == LongMmRezim.NAVAZANI) {
             vm.loadLongMmLatenty()
             vm.predvyberLongMmZdroj()
