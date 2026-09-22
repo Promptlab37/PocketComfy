@@ -697,6 +697,17 @@ object Slovnik {
         "Napiš, co má na přilepeném místě být — třeba „celá postava, nohy v džínách“." to
             "Write what should be in the new space — e.g. “full figure, legs in jeans”.",
         "Rozšířit (dokreslit, co je mimo záběr)" to "Extend (paint in what is out of frame)",
+        "Rozšířit" to "Extend",
+        "Domalovat přemaluje začmárané místo, rozšíří dokreslí, co je mimo záběr." to
+            "Paint repaints the spot you scribble over; extend paints in what is out of frame.",
+        "Co má na přilepeném místě být (nepovinné)" to
+            "What should be in the new space (optional)",
+        "Můžeš nechat prázdné — model scénu dotáhne podle fotky" to
+            "Can stay empty — the model works the scene out from the photo",
+        "Zadání můžeš nechat prázdné — model scénu dotáhne podle fotky. " to
+            "You can leave the prompt empty — the model works the scene out from the photo. ",
+        "Napiš ho, jen když tam má být něco konkrétního." to
+            "Write one only when something specific belongs there.",
         // karta LTX 2.5 — přepisovač popisu a LoRA
         "✨ Vylepšit (LTX)" to "✨ Improve (LTX)",
         "Nejdřív napiš aspoň pár slov o tom, co má být vidět." to

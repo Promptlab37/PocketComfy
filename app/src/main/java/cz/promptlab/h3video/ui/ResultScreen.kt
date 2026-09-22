@@ -88,6 +88,8 @@ fun ResultScreen(
     onEdit: (() -> Unit)? = null,
     /** Rozšířit obrázek — poslat do karty Domalovat → Rozšířit (jen u obrázků). */
     onExtend: (() -> Unit)? = null,
+    /** Domalovat do masky — poslat do karty Domalovat (jen u obrázků). */
+    onInpaint: (() -> Unit)? = null,
     /** Rozhýbat obrázek — poslat do All in One → Z obrázku (jen u obrázků). */
     onAnimate: (() -> Unit)? = null,
     /** Zvětšit hotové video — poslat do All in One → Zvětšit (jen u videí). */
@@ -327,7 +329,7 @@ fun ResultScreen(
         // rozhýbat do videa, upravit, nebo zvětšit. Bez stahování a
         // znovunahrávání.
         if (item.isImage &&
-            (onAnimate != null || onEdit != null || onExtend != null ||
+            (onAnimate != null || onEdit != null || onExtend != null || onInpaint != null ||
                 onUpscale != null || onSharpen != null)
         ) {
             Spacer(Modifier.height(16.dp))
@@ -354,12 +356,31 @@ fun ResultScreen(
                     onClick = onEdit,
                 )
             }
-            if (onExtend != null) {
+            // Domalovat a Rozšířit jsou dvě úlohy jedné karty, tak stojí
+            // v jedné řádce vedle sebe — samostatné řádky by z rozcestníku
+            // udělaly seznam, ve kterém se nedá nic najít.
+            if (onInpaint != null || onExtend != null) {
                 Spacer(Modifier.height(8.dp))
-                OutlineButton(
-                    t("Rozšířit (dokreslit, co je mimo záběr)"),
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onExtend,
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (onInpaint != null) OutlineButton(
+                        t("Domalovat"),
+                        modifier = Modifier.weight(1f),
+                        onClick = onInpaint,
+                    )
+                    if (onExtend != null) OutlineButton(
+                        t("Rozšířit"),
+                        modifier = Modifier.weight(1f),
+                        onClick = onExtend,
+                    )
+                }
+                Text(
+                    t("Domalovat přemaluje začmárané místo, rozšíří dokreslí, co je mimo záběr."),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = TextLow,
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                 )
             }
             if (onUpscale != null) {

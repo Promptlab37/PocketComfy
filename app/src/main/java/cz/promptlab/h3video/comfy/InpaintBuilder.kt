@@ -111,8 +111,11 @@ object InpaintBuilder {
     /** Odvázaná LoRA se do grafu vkládá, jen když je vybraná (Klein). */
     const val N_LORA_KLEIN = "5"
 
-    /** Výřez kolem masky; u rozšíření navíc přilepí nové místo a označí ho. */
+    /** Výřez kolem masky; u rozšíření navíc přesah do fotky a prolnutí. */
     const val N_VYREZ = "20"
+
+    /** Přilepení místa a maska přidané plochy (jen u rozšíření). */
+    const val N_PLATNO = "15"
 
     /**
      * Strop rozšíření v procentech. Qwen ve své příručce doporučuje 30–50 %
@@ -220,34 +223,73 @@ object InpaintBuilder {
     fun zadaniRozsireni(prompt: String, smery: Set<Smer>): String {
         val text = prompt.trim()
         val kam = smeryVetou(smery)
-        val co = if (text.isEmpty()) "" else " Fill the new area with: $text."
+        // Bez zadání se model řídí jen tím, co na fotce vidí — má ji celou
+        // jako <image2>, takže scénu dotáhne sám. Věta ho k tomu musí
+        // vyloženě vyzvat, jinak je v pokusu nechat všechno být.
+        val co = if (text.isEmpty())
+            " Work out what continues there from what the photo already shows."
+        else " Fill the new area with: $text."
         return "Extend the picture in <image1> $kam and paint the empty area that " +
             "was added there. <image2> is the same photo in full, for context.$co " +
             "Continue the subject, the perspective, the lighting and the background " +
-            "across the seam so the added part looks like it was always in the frame. " +
-            "Everything already visible must stay exactly as it is."
+            "across the seam so the added part looks like it was always in the frame: " +
+            "bodies, edges, horizon and floor must line up exactly where they meet. " +
+            "Match the grain, focus and colour of the original."
     }
+
+    /**
+     * Kolik pixelů se přilepí na jednu stranu. Uzel bere celé pixely s krokem
+     * 8, ne procenta — proto se to počítá z rozměru fotky tady.
+     */
+    fun okrajPx(rozmer: Int, procent: Int, zvoleny: Boolean): Int =
+        if (!zvoleny || rozmer <= 0) 0
+        else ((rozmer * procent / 100) / 8) * 8
 
     fun buildRozsireni(
         ctx: Context, scene: InpaintScene, seed: Long, images: List<String>,
-    ): JSONObject = buildRozsireni(templateRozsireni(ctx), scene, seed, images)
+    ): JSONObject {
+        val (w, h) = rozmeryFotky(scene.source)
+        return buildRozsireni(templateRozsireni(ctx), scene, seed, images, w, h)
+    }
+
+    /** Rozměry fotky v pixelech; bez dekódování celé bitmapy do paměti. */
+    private fun rozmeryFotky(f: java.io.File?): Pair<Int, Int> {
+        if (f == null || !f.exists()) return 0 to 0
+        val opts = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeFile(f.absolutePath, opts)
+        return opts.outWidth to opts.outHeight
+    }
 
     /**
-     * [images] nese jen fotku — maska se u rozšíření neposílá, vyrobí si ji
-     * `InpaintCropImproved` z přilepeného místa.
+     * [images] nese jen fotku — maska přidané plochy vzniká v grafu
+     * (`ImagePadForOutpaint`), ne v telefonu.
+     *
+     * ### Proč přes `ImagePadForOutpaint` a ne přes `extend_for_outpainting`
+     *
+     * Do 3.78 se plátno přilepovalo přímo v `InpaintCropImproved`. Jenže ten
+     * uzel zpracuje masku (`mask_expand_pixels`, `mask_blend_pixels`) **dřív**,
+     * než přilepí nové místo, a to pak do masky zapíše natvrdo jedničky
+     * (`expanded_mask = torch.ones`). Bez namalované masky tedy prolnutí
+     * nemělo na čem pracovat a hranice zůstala jako nůž — přesně ten viditelný
+     * přechod, který uživatel nahlásil 22. 9. 2026.
+     *
+     * Teď plátno i masku vyrobí `ImagePadForOutpaint` (s `feathering = 0`,
+     * protože jeho změkčení je Pythonovská smyčka přes každý pixel) a výřez
+     * dostane masku už na vstupu — takže se na ni `mask_expand_pixels`
+     * i `mask_blend_pixels` normálně uplatní.
      */
     fun buildRozsireni(
         template: String, scene: InpaintScene, seed: Long, images: List<String>,
+        sirka: Int, vyska: Int,
     ): JSONObject {
         val wf = JSONObject(template)
         wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
         wf.inputs(N_TEXT).put("prompt", zadaniRozsireni(scene.prompt, scene.smery))
-        wf.inputs(N_VYREZ).apply {
-            put("extend_for_outpainting", true)
-            put("extend_up_factor", scene.faktor(Smer.NAHORU))
-            put("extend_down_factor", scene.faktor(Smer.DOLU))
-            put("extend_left_factor", scene.faktor(Smer.VLEVO))
-            put("extend_right_factor", scene.faktor(Smer.VPRAVO))
+        wf.inputs(N_PLATNO).apply {
+            put("top", okrajPx(vyska, scene.procent, Smer.NAHORU in scene.smery))
+            put("bottom", okrajPx(vyska, scene.procent, Smer.DOLU in scene.smery))
+            put("left", okrajPx(sirka, scene.procent, Smer.VLEVO in scene.smery))
+            put("right", okrajPx(sirka, scene.procent, Smer.VPRAVO in scene.smery))
         }
         wf.inputs(N_SAMPLER).put("seed", seed)
         // Přilepené místo je prázdné — dokreslovat tam není co, vzniká celé.

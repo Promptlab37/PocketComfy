@@ -3910,7 +3910,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Režim se přepne na rozšíření a **maska se zahodí** — patřila k jiné
      * fotce a na téhle by přemalovala něco náhodného.
      */
-    fun posliDoRozsireni(item: VideoItem) {
+    /** Poslat hotový obrázek do domalování do masky. Maska se zahodí — patřila k jiné fotce. */
+    fun posliDoDomalovani(item: VideoItem) = posliDoInpaintu(item, cz.promptlab.h3video.data.InpaintRezim.MASKA)
+
+    fun posliDoRozsireni(item: VideoItem) = posliDoInpaintu(item, cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT)
+
+    private fun posliDoInpaintu(item: VideoItem, rezim: cz.promptlab.h3video.data.InpaintRezim) {
         viewModelScope.launch {
             val zdroj = item.file(getApplication())
             val target = inpaintStore.sourceFile()
@@ -3921,8 +3926,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             updateInpaint {
                 it.copy(
                     source = target, thumb = thumb, mask = null,
-                    rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
-                    model = InpaintModel.QWEN21,
+                    rezim = rezim, model = InpaintModel.QWEN21,
                 )
             }
             setMode(Mode.INPAINT)

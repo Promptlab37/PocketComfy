@@ -192,12 +192,13 @@ fun InpaintSection(vm: MainViewModel) {
     }
 
     SectionCard(
-        title = if (masku) t("Co má na tom místě být") else t("Co má na přilepeném místě být"),
+        title = if (masku) t("Co má na tom místě být")
+        else t("Co má na přilepeném místě být (nepovinné)"),
         // Každý model čte zadání jinak: Flux Fill maluje do díry to, co
         // popíšeš, kdežto Klein bere zadání jako příkaz k úpravě — popis
         // typu „muž s břichem" pro něj znamená „nech to tak".
         subtitle = if (!masku)
-            t("Popiš, co v záběru chybí — „celá postava, nohy v džínách, chodník“")
+            t("Můžeš nechat prázdné — model scénu dotáhne podle fotky")
         else if (scene.model == InpaintModel.FILL)
             t("Popiš to jako výsledný obraz, ne jako příkaz")
         else t("Tenhle model poslouchá příkazy — napiš, co se s tím místem má stát")

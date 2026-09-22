@@ -360,6 +360,7 @@ class InpaintBuilderTest {
 
     private fun rozsir(
         smery: Set<cz.promptlab.h3video.data.Smer>, procent: Int = 50, prompt: String = "nohy",
+        sirka: Int = 1000, vyska: Int = 1000,
     ) = InpaintBuilder.buildRozsireni(
         rozsireni,
         InpaintScene(
@@ -367,66 +368,105 @@ class InpaintBuilderTest {
             rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
             smery = smery, procent = procent,
         ),
-        5L, listOf("foto.png"),
+        5L, listOf("foto.png"), sirka, vyska,
     )
 
     /**
-     * Faktor 1,0 znamená „v tomhle směru neměnit". Kdyby se dosadil i tam,
-     * kde uživatel směr nezvolil, fotka by se roztáhla do všech stran.
+     * Okraj se přilepuje v pixelech, ne v procentech — uzel bere INT s krokem 8.
+     * Nezvolené směry musí zůstat na nule, jinak se fotka roztáhne všude.
      */
-    @Test fun `rozsiruje se jen do zvolenych smeru`() {
-        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU), procent = 50)
-        val v = wf.inputs(InpaintBuilder.N_VYREZ)
-        assertTrue(v.getBoolean("extend_for_outpainting"))
-        assertEquals(1.5, v.getDouble("extend_down_factor"), 1e-6)
-        assertEquals(1.0, v.getDouble("extend_up_factor"), 1e-6)
-        assertEquals(1.0, v.getDouble("extend_left_factor"), 1e-6)
-        assertEquals(1.0, v.getDouble("extend_right_factor"), 1e-6)
+    @Test fun `okraje se pocitaji v pixelech jen do zvolenych smeru`() {
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU), procent = 50,
+            sirka = 1000, vyska = 800)
+        val p = wf.inputs(InpaintBuilder.N_PLATNO)
+        assertEquals(400, p.getInt("bottom"))
+        assertEquals(0, p.getInt("top"))
+        assertEquals(0, p.getInt("left"))
+        assertEquals(0, p.getInt("right"))
 
-        val oba = rozsir(
-            setOf(cz.promptlab.h3video.data.Smer.DOLU, cz.promptlab.h3video.data.Smer.VPRAVO),
-            procent = 30,
-        ).inputs(InpaintBuilder.N_VYREZ)
-        assertEquals(1.3, oba.getDouble("extend_down_factor"), 1e-6)
-        assertEquals(1.3, oba.getDouble("extend_right_factor"), 1e-6)
-        assertEquals(1.0, oba.getDouble("extend_up_factor"), 1e-6)
+        // Krok 8: 33 % z 1000 je 330 → zaokrouhlí se dolů na 328.
+        assertEquals(328, InpaintBuilder.okrajPx(1000, 33, true))
+        assertEquals(0, InpaintBuilder.okrajPx(1000, 33, false))
+        assertEquals(0, InpaintBuilder.okrajPx(0, 50, true))
     }
 
     /**
-     * Masku si uzel vyrobí z přilepeného místa sám. Kdyby do grafu šla ta
-     * namalovaná (zbylá z druhého režimu), přemalovala by i kus uvnitř fotky.
+     * Jádro opravy viditelného přechodu (3.79).
+     *
+     * `InpaintCropImproved` zpracuje masku **dřív**, než by sám přilepil nové
+     * místo, a to pak do masky zapíše natvrdo jedničky — prolnutí tedy nemělo
+     * na čem pracovat a hranice byla jako nůž. Proto plátno i masku dělá
+     * `ImagePadForOutpaint` a výřez ji dostane už na vstupu.
      */
-    @Test fun `rozsireni neposila zadnou masku`() {
+    @Test fun `maska pridaneho mista jde do vyrezu na vstup`() {
         val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
-        assertFalse(wf.inputs(InpaintBuilder.N_VYREZ).has("mask"))
-        assertFalse(wf.keys().asSequence().any {
-            wf.getJSONObject(it).getString("class_type") == "ImageToMask"
-        })
-        val scene = InpaintScene(
-            source = File("a.png"), mask = File("m.png"),
-            rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
+        val v = wf.inputs(InpaintBuilder.N_VYREZ)
+        assertFalse(
+            "vlastní rozšíření uzlu přepíše masku natvrdo a prolnutí zahodí",
+            v.getBoolean("extend_for_outpainting"),
         )
-        assertEquals(listOf(File("a.png")), scene.uploadImages)
+        assertEquals(InpaintBuilder.N_PLATNO, v.getJSONArray("image").getString(0))
+        assertEquals(InpaintBuilder.N_PLATNO, v.getJSONArray("mask").getString(0))
+        // Druhý výstup ImagePadForOutpaint je maska přilepené plochy.
+        assertEquals(1, v.getJSONArray("mask").getInt(1))
+        assertEquals("ImagePadForOutpaint",
+            wf.getJSONObject(InpaintBuilder.N_PLATNO).getString("class_type"))
+    }
+
+    /**
+     * Přesah a prolnutí. Bez `mask_expand_pixels` model nesmí sáhnout ani na
+     * pixel původní fotky a strukturu nemá kde protáhnout; bez
+     * `mask_blend_pixels` je vlepení natupo. Diskuze k outpaintingu
+     * doporučují prolnutí 40–80 px.
+     */
+    @Test fun `vyrez ma presah do fotky i prolnuti`() {
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
+        val v = wf.inputs(InpaintBuilder.N_VYREZ)
+        assertTrue("přesah do původní fotky", v.getInt("mask_expand_pixels") >= 32)
+        assertTrue("prolnutí 40–80 px", v.getInt("mask_blend_pixels") in 40..80)
+        // Prah by z náběhu masky ustřihl nejslabší část a udělal z něj schod.
+        assertEquals(0.0, v.getDouble("mask_hipass_filter"), 1e-9)
+        // Změkčení v ImagePadForOutpaint je Pythonovská smyčka přes každý
+        // pixel — na 2K obrázku by běžela sekundy. Dělá to výřez tenzorově.
+        assertEquals(0, wf.inputs(InpaintBuilder.N_PLATNO).getInt("feathering"))
+    }
+
+    /**
+     * Jednotné měřítko. Když se výřez zmenší na cílovou velikost a po
+     * generování zvětší zpět, dostane nová část jinou ostrost než původní
+     * fotka vedle ní — a to je vidět jako šev i při dokonalém prolnutí.
+     */
+    @Test fun `generuje se v jednom meritku`() {
+        val v = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU)).inputs(InpaintBuilder.N_VYREZ)
+        assertFalse(v.getBoolean("output_resize_to_target_size"))
+        assertTrue(v.getBoolean("preresize"))
+        assertEquals("ensure maximum resolution", v.getString("preresize_mode"))
+        assertEquals(2048, v.getInt("preresize_max_width"))
+        assertEquals(2048, v.getInt("preresize_max_height"))
     }
 
     /**
      * Fotka jde do grafu dvakrát: `<image1>` je přilepené plátno (určuje
      * velikost), `<image2>` je celá fotka jako kontext. Bez druhé by model
-     * kreslil nohy k tělu, které nevidí — vyříznut je totiž jen okolí masky.
+     * kreslil nohy k tělu, které nevidí — vyříznuto je jen okolí masky.
      */
     @Test fun `rozsireni vidi celou fotku jako druhou referenci`() {
         val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
         val text = wf.inputs(InpaintBuilder.N_TEXT)
-        assertEquals("InpaintCropImproved",
-            wf.getJSONObject(text.getJSONArray("images.image_1").getString(0))
-                .getString("class_type"))
+        assertEquals(InpaintBuilder.N_VYREZ, text.getJSONArray("images.image_1").getString(0))
         assertEquals(InpaintBuilder.N_IMAGE, text.getJSONArray("images.image_2").getString(0))
-        // Kontext musí pokrýt celou fotku, ne jen okolí přilepeného pruhu.
         assertTrue(wf.inputs(InpaintBuilder.N_VYREZ)
             .getDouble("context_from_mask_extend_factor") >= 5.0)
-        // Zaplnění děr by u rozšíření na víc stran označilo celou fotku.
         assertFalse(wf.inputs(InpaintBuilder.N_VYREZ).getBoolean("mask_fill_holes"))
         bezVisicichOdkazu(wf)
+    }
+
+    @Test fun `rozsireni neposila zadnou masku z telefonu`() {
+        val scene = InpaintScene(
+            source = File("a.png"), mask = File("m.png"),
+            rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
+        )
+        assertEquals(listOf(File("a.png")), scene.uploadImages)
     }
 
     @Test fun `pokyn nese smer a vede operace`() {
@@ -435,34 +475,43 @@ class InpaintBuilderTest {
         assertTrue(dolu.startsWith("Extend the picture in <image1> downward"))
         assertTrue(dolu.contains("nohy v džínách"))
         assertTrue(dolu.contains("<image2>"))
-        assertTrue(dolu.indexOf("downward") < dolu.indexOf("must stay exactly as it is"))
 
         assertEquals("downward and to the left", InpaintBuilder.smeryVetou(
             setOf(cz.promptlab.h3video.data.Smer.VLEVO, cz.promptlab.h3video.data.Smer.DOLU)))
         // Pořadí je dané enumem, ne pořadím klikání — jinak by se stejné
-        // zadání pokaždé přeložilo jinak a seed by přestal být opakovatelný.
+        // zadání pokaždé přeložilo jinak a seed přestal být opakovatelný.
         assertEquals(
             InpaintBuilder.smeryVetou(setOf(cz.promptlab.h3video.data.Smer.DOLU, cz.promptlab.h3video.data.Smer.VLEVO)),
             InpaintBuilder.smeryVetou(setOf(cz.promptlab.h3video.data.Smer.VLEVO, cz.promptlab.h3video.data.Smer.DOLU)),
         )
     }
 
-    @Test fun `karta nepusti rozsireni bez smeru ani bez zadani`() {
+    /** Zadání je u rozšíření nepovinné — model má celou fotku jako referenci. */
+    @Test fun `bez zadani se rozsireni spustit smi`() {
         val zaklad = InpaintScene(
             source = File("a.png"),
             rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
-            prompt = "nohy",
         )
         assertNull(cz.promptlab.h3video.data.inpaintProblem(zaklad))
-        // Bez štětce se u rozšíření startovat smí — masku dělá graf.
-        assertFalse(zaklad.maskPainted)
+        assertNull(cz.promptlab.h3video.data.inpaintProblem(zaklad.copy(prompt = "")))
+        // Směr ale chybět nesmí, to by se nepřilepilo nic.
         assertNotNull(cz.promptlab.h3video.data.inpaintProblem(zaklad.copy(smery = emptySet())))
-        assertNotNull(cz.promptlab.h3video.data.inpaintProblem(zaklad.copy(prompt = "")))
+        // Naopak u domalování zadání povinné zůstává.
+        assertNotNull(cz.promptlab.h3video.data.inpaintProblem(
+            InpaintScene(source = File("a.png"), mask = File("m.png"), prompt = "")))
+
+        val bezVety = InpaintBuilder.zadaniRozsireni("", setOf(cz.promptlab.h3video.data.Smer.DOLU))
+        assertTrue(bezVety.contains("Work out what continues there"))
+        assertFalse(bezVety.contains("Fill the new area with"))
     }
 
     @Test fun `rozsireni predloha nenese zadani predchoziho behu`() {
         val p = JSONObject(rozsireni)
         assertEquals("", p.inputs(InpaintBuilder.N_IMAGE).getString("image"))
         assertEquals("", p.inputs(InpaintBuilder.N_TEXT).getString("prompt"))
+        listOf("top", "bottom", "left", "right").forEach {
+            assertEquals(it, 0, p.inputs(InpaintBuilder.N_PLATNO).getInt(it))
+        }
     }
+
 }

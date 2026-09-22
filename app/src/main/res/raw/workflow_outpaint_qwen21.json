@@ -52,40 +52,61 @@
       "title": "Fotka"
     }
   },
-  "20": {
-    "class_type": "InpaintCropImproved",
+  "15": {
+    "class_type": "ImagePadForOutpaint",
     "inputs": {
       "image": [
         "10",
         0
       ],
+      "left": 0,
+      "top": 0,
+      "right": 0,
+      "bottom": 0,
+      "feathering": 0
+    },
+    "_meta": {
+      "title": "Přilepit místo a označit ho"
+    }
+  },
+  "20": {
+    "class_type": "InpaintCropImproved",
+    "inputs": {
+      "image": [
+        "15",
+        0
+      ],
+      "mask": [
+        "15",
+        1
+      ],
       "downscale_algorithm": "bilinear",
       "upscale_algorithm": "bicubic",
-      "preresize": false,
-      "preresize_mode": "ensure minimum resolution",
-      "preresize_min_width": 1024,
-      "preresize_min_height": 1024,
-      "preresize_max_width": 16384,
-      "preresize_max_height": 16384,
+      "preresize": true,
+      "preresize_mode": "ensure maximum resolution",
+      "preresize_min_width": 0,
+      "preresize_min_height": 0,
+      "preresize_max_width": 2048,
+      "preresize_max_height": 2048,
       "mask_fill_holes": false,
-      "mask_expand_pixels": 0,
+      "mask_expand_pixels": 48,
       "mask_invert": false,
-      "mask_blend_pixels": 24,
-      "mask_hipass_filter": 0.1,
-      "extend_for_outpainting": true,
+      "mask_blend_pixels": 64,
+      "mask_hipass_filter": 0.0,
+      "extend_for_outpainting": false,
       "extend_up_factor": 1.0,
-      "extend_down_factor": 1.5,
+      "extend_down_factor": 1.0,
       "extend_left_factor": 1.0,
       "extend_right_factor": 1.0,
       "context_from_mask_extend_factor": 20.0,
-      "output_resize_to_target_size": true,
+      "output_resize_to_target_size": false,
       "output_target_width": 1024,
       "output_target_height": 1024,
       "output_padding": "32",
       "device_mode": "cpu (compatible)"
     },
     "_meta": {
-      "title": "Přilepit místo a označit ho"
+      "title": "Výřez, přesah a prolnutí"
     }
   },
   "22": {

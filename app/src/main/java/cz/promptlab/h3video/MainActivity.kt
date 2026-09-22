@@ -439,6 +439,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             GenerationEngine.dismissResult()
                             vm.posliDoRozsireni(s.item)
                         },
+                        onInpaint = {
+                            GenerationEngine.dismissResult()
+                            vm.posliDoDomalovani(s.item)
+                        },
                         onAnimate = {
                             GenerationEngine.dismissResult()
                             vm.posliDoRozhybani(s.item)
@@ -506,6 +510,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onExtend = {
                         opened = null
                         vm.posliDoRozsireni(open)
+                    },
+                    onInpaint = {
+                        opened = null
+                        vm.posliDoDomalovani(open)
                     },
                     onAnimate = {
                         opened = null

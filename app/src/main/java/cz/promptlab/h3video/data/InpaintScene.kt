@@ -179,9 +179,9 @@ fun inpaintProblem(s: InpaintScene): String? = when {
         t("Začmárej prstem místo, které se má přemalovat.")
     !s.rezim.chceMasku && s.smery.isEmpty() ->
         t("Vyber aspoň jeden směr, kam se má fotka rozšířit.")
-    s.prompt.isBlank() -> if (s.rezim.chceMasku)
-        t("Napiš, co má na zamaskovaném místě být.")
-    else t("Napiš, co má na přilepeném místě být — třeba „celá postava, nohy v džínách“.")
+    // U rozšíření je zadání nepovinné: model má původní fotku v grafu jako
+    // druhou referenci, takže si scénu dotáhne i bez věty.
+    s.rezim.chceMasku && s.prompt.isBlank() -> t("Napiš, co má na zamaskovaném místě být.")
     else -> null
 }
 
@@ -193,6 +193,10 @@ fun inpaintHints(s: InpaintScene): List<String> {
         // takže se není čeho bát u tváří — ale je dobré to říct, protože
         // u ostatních modelů appky to takhle nefunguje.
         out += t("Původní fotka se nepřekresluje — model maluje jen to přilepené místo.")
+        if (s.prompt.isBlank()) {
+            out += t("Zadání můžeš nechat prázdné — model scénu dotáhne podle fotky. " +
+                "Napiš ho, jen když tam má být něco konkrétního.")
+        }
         if (s.procent > 60) {
             out += t("Nad 60 % už model nemá z čeho vycházet a scénu si vymýšlí. " +
                 "Spolehlivější je rozšířit dvakrát po menším kusu.")
