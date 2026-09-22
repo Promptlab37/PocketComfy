@@ -746,6 +746,7 @@ object Slovnik {
         "Týká se jen tohohle kusu, ne celku" to "Applies to this piece only, not the whole",
         "Název řetězu" to "Chain name",
         "Latenty se pod ním na serveru číslují" to "Latents are numbered under it on the server",
+        "Začít nový řetěz" to "Start a new chain",
         "kuchyne" to "kitchen",
         "Uloží se jako %s_00001, %s_00002 …" to "Saved as %s_00001, %s_00002 …",
         "Napiš, co se má v záběru dít." to "Write what should happen in the shot.",

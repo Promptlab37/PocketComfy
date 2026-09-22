@@ -237,6 +237,14 @@ fun LongMmSection(vm: MainViewModel) {
                     .format(vm.longMmNazevSouboru(), vm.longMmNazevSouboru()),
                 style = MaterialTheme.typography.bodySmall, color = TextLow,
             )
+            // Nový řetěz začíná čistou kartou. Latenty na serveru se nemažou —
+            // jsou jediná cesta, jak se k dřívější scéně ještě vrátit, a
+            // v nabídce nepřekážejí: řadí se od nejnovějšího a nesou v názvu
+            // jméno svého řetězu.
+            OutlineButton(
+                text = t("Začít nový řetěz"),
+                modifier = Modifier.fillMaxWidth(),
+            ) { vm.resetLongMm() }
         }
     }
 }

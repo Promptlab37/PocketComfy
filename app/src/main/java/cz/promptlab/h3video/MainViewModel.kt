@@ -3483,6 +3483,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Vyčistí kartu pro nový řetěz: zadání, reference, zdrojové video i volbu
+     * latentu. Na serveru se nemaže nic — latenty předchozích řetězů jsou
+     * jediná cesta, jak se k nim ještě vrátit, a v nabídce nepřekážejí,
+     * protože se řadí od nejnovějšího a nesou v názvu jméno svého řetězu.
+     */
+    fun resetLongMm() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                for (i in 0 until cz.promptlab.h3video.data.LongMmScene.MAX_REFERENCI) {
+                    runCatching { longMmStore.refFile(i).delete() }
+                }
+                _longMm.value.zdroj?.takeIf { it.name.startsWith("longmm_zdroj") }
+                    ?.let { f -> runCatching { f.delete() } }
+            }
+            updateLongMm { cz.promptlab.h3video.data.LongMmScene() }
+        }
+    }
+
     fun pickLongMmZdroj(uri: Uri?) {
         if (uri == null) return
         viewModelScope.launch {
