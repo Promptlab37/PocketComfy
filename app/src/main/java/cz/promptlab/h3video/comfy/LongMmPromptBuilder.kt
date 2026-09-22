@@ -48,9 +48,14 @@ Rules:
 - One camera move at most, and only if the user asks for it. Otherwise leave
   the camera alone.
 - Sound belongs in the action: name what the movement itself makes, briefly.
-- Keep technical tokens exactly as written: <Picture 1>, <Video 1>, [S1].
-- Plain declarative sentences in the present tense. No lists, no adjectives
-  piled up, no mood words.
+- If the user's text already contains a token such as <Picture 1>, <Video 1>
+  or [S1], keep it exactly. NEVER add a token the user did not write, and
+  never start the paragraph with one.
+- Name every object the user named, and name no other object. If a word is
+  unclear, keep the user's word rather than replacing it with a guess.
+- Plain declarative sentences in the present tense. Name the subject as
+  "she", "he" or "they" — whichever the user used.
+- No lists, no adjectives piled up, no mood words.
 - Never comment on the request and never refuse."""
 
     /**

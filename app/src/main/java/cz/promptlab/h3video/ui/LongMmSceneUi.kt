@@ -63,6 +63,7 @@ fun LongMmSection(vm: MainViewModel) {
     val latenty by vm.longMmLatenty.collectAsStateWithLifecycle()
     val latentChyba by vm.longMmLatentChyba.collectAsStateWithLifecycle()
     val predchozi by vm.longMmPredchozi.collectAsStateWithLifecycle()
+    val delky by vm.longMmDelky.collectAsStateWithLifecycle()
     val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val prepisujeSe = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
@@ -108,7 +109,7 @@ fun LongMmSection(vm: MainViewModel) {
                         // pro H3 mají klidně tři řádky a v nabídce se z nich
                         // stane nečitelná zeď. Soubor se jmenuje podle čísla
                         // úlohy, takže ten je na tom stejně.
-                        render = { popisekZaberu(it) },
+                        render = { popisekZaberu(it, delky[it.id]) },
                         onSelect = { vm.setLongMmZdrojZGalerie(it) },
                     )
                 }
@@ -247,10 +248,16 @@ fun LongMmSection(vm: MainViewModel) {
  * a soubor se jmenuje podle čísla úlohy (`68761ae4-…mp4`). Ani jedno se do
  * jednořádkové nabídky nehodí.
  */
-private fun popisekZaberu(item: cz.promptlab.h3video.data.VideoItem): String {
+private fun popisekZaberu(
+    item: cz.promptlab.h3video.data.VideoItem,
+    zmerena: Float?,
+): String {
     val kdy = java.text.SimpleDateFormat("d. M. HH:mm", java.util.Locale.getDefault())
         .format(java.util.Date(item.createdAt))
-    val delka = if (item.seconds > 0f) " · %.0f s".format(item.seconds) else ""
+    // Přednost má změřená délka. Uložená je u záznamů z verzí do 3.87 špatně
+    // (brala se z hlavního posuvníku appky) a zpětně ji opravit nejde jinak.
+    val sekundy = zmerena ?: item.seconds
+    val delka = if (sekundy > 0f) " · %.0f s".format(sekundy) else ""
     return kdy + delka
 }
 

@@ -3516,6 +3516,46 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
+    /**
+     * Skutečné délky předchozích záběrů, změřené ze souborů (id → sekundy).
+     *
+     * Do 3.87 se do historie ukládala délka z hlavního posuvníku appky, o kterém
+     * karty s vlastní délkou nevědí — u pětisekundového záběru tak v nabídce
+     * svítilo „12 s". Od 3.88 se ukládá správně, jenže starší záznamy si tu lež
+     * nesou dál. Změřit soubor je proto jediné, co platí i zpětně.
+     */
+    private val _longMmDelky = MutableStateFlow<Map<String, Float>>(emptyMap())
+    val longMmDelky: StateFlow<Map<String, Float>> = _longMmDelky.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            longMmPredchozi.collectLatest { seznam ->
+                val chybi = seznam.filterNot { it.id in _longMmDelky.value }
+                if (chybi.isEmpty()) return@collectLatest
+                val zmerene = withContext(Dispatchers.IO) {
+                    chybi.mapNotNull { item ->
+                        delkaVidea(item.file(getApplication()))?.let { item.id to it }
+                    }
+                }
+                if (zmerene.isNotEmpty()) _longMmDelky.value = _longMmDelky.value + zmerene
+            }
+        }
+    }
+
+    /** Délka videa ze souboru, nebo null když se přečíst nedá. */
+    private fun delkaVidea(file: java.io.File): Float? = runCatching {
+        if (!file.exists()) return null
+        val mmr = android.media.MediaMetadataRetriever()
+        try {
+            mmr.setDataSource(file.absolutePath)
+            mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull()?.takeIf { it > 0 }?.let { it / 1000f }
+        } finally {
+            // AutoCloseable má MediaMetadataRetriever až od API 29.
+            runCatching { mmr.release() }
+        }
+    }.getOrNull()
+
     /** Vybere hotový výsledek z Galerie aplikace jako zdroj navázání. */
     fun setLongMmZdrojZGalerie(item: VideoItem) {
         val soubor = item.file(getApplication())
