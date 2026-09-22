@@ -43,6 +43,7 @@ import cz.promptlab.h3video.data.LongMmRezim
 import cz.promptlab.h3video.data.LongMmRozliseni
 import cz.promptlab.h3video.data.LongMmScene
 import cz.promptlab.h3video.data.t
+import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.ui.theme.Cyan
 import cz.promptlab.h3video.ui.theme.Outline1
 import cz.promptlab.h3video.ui.theme.Surface2
@@ -63,15 +64,15 @@ fun LongMmSection(vm: MainViewModel) {
     val latenty by vm.longMmLatenty.collectAsStateWithLifecycle()
     val latentChyba by vm.longMmLatentChyba.collectAsStateWithLifecycle()
     val predchozi by vm.longMmPredchozi.collectAsStateWithLifecycle()
+    val sceny by vm.longMmSceny.collectAsStateWithLifecycle()
     val delky by vm.longMmDelky.collectAsStateWithLifecycle()
     val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val prepisujeSe = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
         MainViewModel.PraceNaPromptu.VYLEPSENI
 
-    // Nabídku latentů plní server. Načítá se při přepnutí na navázání, aby byl
-    // záběr dokončený před chvílí vidět bez restartu appky. Zároveň se předvybere
-    // poslední výsledek téhle karty, ať uživatel nemusí vybírat nic.
+    // Nabídka scén se plní ze serveru. Načítá se při přepnutí na navázání,
+    // aby byl záběr dokončený před chvílí vidět bez restartu aplikace.
     LaunchedEffect(scene.rezim, predchozi.size) {
         if (scene.rezim == LongMmRezim.NAVAZANI) {
             vm.loadLongMmLatenty()
@@ -89,54 +90,47 @@ fun LongMmSection(vm: MainViewModel) {
     }
 
     if (scene.rezim == LongMmRezim.NAVAZANI) {
+        // JEDNA volba, ne dvě. Video a latent bývaly dvě samostatná pole a
+        // dokázala se rozejít — 22. 9. 2026 se tak loď přilepila k ženě
+        // v kavárně. Scéna je proto jedna věc a appka si k ní dohledá obojí.
         SectionCard(
-            title = t("Na co se navazuje"),
-            subtitle = t("Poslední hotový celek téhle scény"),
+            title = t("Na kterou scénu se navazuje"),
+            subtitle = t("Naváže se na její poslední hotový záběr"),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                // Navazuje se skoro vždycky na to, co appka vyrobila před chvílí.
-                // Nabídka je proto z Galerie aplikace; do galerie telefonu se
-                // výsledky kopírují jen při zapnutém automatickém ukládání,
-                // takže systémový výběr by u většiny lidí ukázal prázdno.
-                val zTelefonu = scene.zdroj?.name?.startsWith("longmm_zdroj") == true
-                if (predchozi.isNotEmpty() && !zTelefonu) {
-                    Dropdown(
-                        label = t("Předchozí záběry téhle karty"),
-                        items = predchozi,
-                        selected = predchozi.firstOrNull { it.file(ctx) == scene.zdroj }
-                            ?: predchozi.first(),
-                        // Popiskem je čas a délka, ne zadání: přepsaná zadání
-                        // pro H3 mají klidně tři řádky a v nabídce se z nich
-                        // stane nečitelná zeď. Soubor se jmenuje podle čísla
-                        // úlohy, takže ten je na tom stejně.
-                        render = { popisekZaberu(it, delky[it.id]) },
-                        onSelect = { vm.setLongMmZdrojZGalerie(it) },
-                    )
-                }
-                ZdrojVideoRadek(vm, scene, zTelefonu)
-            }
-        }
-
-        SectionCard(
-            title = t("Latent předchozího záběru"),
-            subtitle = t("Odsud se pokračuje bez ztráty kvality"),
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                if (latenty.isEmpty()) {
+                if (sceny.isEmpty()) {
                     Text(
-                        latentChyba ?: t("Na serveru zatím žádný latent není. Začni prvním záběrem."),
+                        latentChyba ?: t("Na serveru zatím žádná scéna není. Začni prvním záběrem."),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (latentChyba != null) MaterialTheme.colorScheme.error else TextLow,
                     )
                 } else {
                     Dropdown(
                         label = t("Nejnovější je nahoře"),
-                        items = latenty,
-                        selected = scene.latent.ifBlank { latenty.first() },
+                        items = sceny,
+                        selected = sceny.firstOrNull { it == scene.nazev.trim() } ?: sceny.first(),
                         render = { it },
-                        onSelect = { vm.setLongMmLatent(it) },
+                        onSelect = { vm.vyberLongMmScenu(it) },
                     )
                 }
+                // Co přesně se použije. Bez toho se dá jen doufat.
+                val zaber = vm.longMmZaberSceny(scene.nazev.trim())
+                val zTelefonu = scene.zdroj?.name?.startsWith("longmm_zdroj") == true
+                Text(
+                    when {
+                        zTelefonu -> t("Naváže se na video z telefonu: %s").format(scene.zdroj?.name.orEmpty())
+                        zaber != null -> t("Naváže se na záběr z %s · %s")
+                            .format(cas(zaber.createdAt), delkaText(delky[zaber.id] ?: zaber.seconds))
+                        else -> t("K téhle scéně nemám v galerii žádný záběr — vyber video z telefonu.")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (zaber == null && !zTelefonu) Amber else TextLow,
+                )
+                if (scene.latent.isNotBlank()) Text(
+                    t("Latent: %s").format(scene.latent),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow,
+                )
+                ZdrojVideoRadek(vm, scene, zTelefonu)
                 OutlineButton(
                     text = t("Načíst znovu ze serveru"),
                     modifier = Modifier.fillMaxWidth(),
@@ -208,6 +202,9 @@ fun LongMmSection(vm: MainViewModel) {
                 color = Cyan,
                 modifier = Modifier.fillMaxWidth(),
             ) { if (!prepisujeSe) vm.vylepsiLongMmPrompt() }
+            // Překlad do angličtiny a hlavně „Vrátit původní" — po vylepšení
+            // se zadání přepíše a bez tohohle by se k němu člověk nedostal.
+            PrekladPromptu(vm, MainViewModel.PromptPole.LONGMM)
         }
     }
 
@@ -256,6 +253,13 @@ fun LongMmSection(vm: MainViewModel) {
  * a soubor se jmenuje podle čísla úlohy (`68761ae4-…mp4`). Ani jedno se do
  * jednořádkové nabídky nehodí.
  */
+private fun cas(millis: Long): String =
+    java.text.SimpleDateFormat("d. M. HH:mm", java.util.Locale.getDefault())
+        .format(java.util.Date(millis))
+
+private fun delkaText(sekundy: Float): String =
+    if (sekundy > 0f) "%.0f s".format(sekundy) else "?"
+
 private fun popisekZaberu(
     item: cz.promptlab.h3video.data.VideoItem,
     zmerena: Float?,

@@ -64,6 +64,7 @@ object HistoryCodec {
                     twoImages = o.optBoolean("two"), inGallery = o.optBoolean("gal"),
                     mode = o.optString("mode"), tookSeconds = o.optInt("took").coerceAtLeast(0),
                     title = o.optString("title").trim().take(120), favorite = o.optBoolean("favorite"),
+                    retez = o.optString("retez").trim().take(120),
                 )
             }.getOrNull()
             if (item != null && ids.add(item.id)) items += item else damaged = true
@@ -78,7 +79,8 @@ object HistoryCodec {
                 .put("at", item.createdAt).put("sec", item.seconds.toDouble()).put("res", item.resolution)
                 .put("seed", item.seed).put("two", item.twoImages).put("gal", item.inGallery)
                 .put("mode", item.mode).put("took", item.tookSeconds)
-                .put("title", item.title).put("favorite", item.favorite))
+                .put("title", item.title).put("favorite", item.favorite)
+                .put("retez", item.retez))
         }
     }.toString()
 }

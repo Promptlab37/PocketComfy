@@ -223,6 +223,30 @@ class LongMmBuilderTest {
         assertEquals("zaber", LongMmBuilder.nazevLatentu(scena(nazev = "?!/")))
     }
 
+    /**
+     * Latent a zdrojové video musí patřit k témuž řetězu. Když se rozejdou,
+     * slepovač přilepí nový záběr k cizímu videu — 22. 9. 2026 se takhle loď
+     * přilepila k ženě v kavárně.
+     */
+    @Test fun `latent z ciziho retezu karta nepusti`() {
+        assertNull(longMmProblem(scena(
+            rezim = LongMmRezim.NAVAZANI, nazev = "lod", latent = "lod_00002.h3latent.safetensors",
+        )))
+        assertNotNull(longMmProblem(scena(
+            rezim = LongMmRezim.NAVAZANI, nazev = "lod", latent = "kavarna_00001.h3latent.safetensors",
+        )))
+        // Podobný začátek nestačí, oddělovač musí sedět taky.
+        assertNotNull(longMmProblem(scena(
+            rezim = LongMmRezim.NAVAZANI, nazev = "lod", latent = "lodnice_00001.h3latent.safetensors",
+        )))
+        // Jméno se před porovnáním ořezává stejně jako při ukládání.
+        assertNull(longMmProblem(scena(
+            rezim = LongMmRezim.NAVAZANI, nazev = "moje loď", latent = "moje_loď_00001.h3latent.safetensors",
+        )))
+        // U prvního záběru se latent nevybírá, takže se ani neposuzuje.
+        assertNull(longMmProblem(scena(nazev = "lod", latent = "kavarna_00001.h3latent.safetensors")))
+    }
+
     @Test fun `karta rekne, co chybi`() {
         assertNotNull(longMmProblem(scena(prompt = "")))
         assertNotNull(longMmProblem(scena(nazev = "")))

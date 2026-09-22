@@ -252,6 +252,9 @@ object GenerationEngine {
     /** Běží Long MiniMax? Jeden záběr na běh, navazuje se přes uložený latent. */
     @Volatile private var longMmRun: Boolean = false
 
+    /** Jméno scény běžícího řetězu. Zapisuje se k výsledku, jinak prázdné. */
+    @Volatile private var longMmRetez: String = ""
+
     /**
      * Mapa „číslo uzlu → třída" z odeslaného grafu. U karty All in One se podle
      * ní poznávají fáze: čísla uzlů se mezi šablonami liší (uzel 3 je u SeedVR2
@@ -439,6 +442,8 @@ object GenerationEngine {
         ltxRun = ltxScene != null
         danceRun = danceScene != null
         longMmRun = longMmScene != null
+        longMmRetez = longMmScene
+            ?.let { cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(it) }.orEmpty()
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun && !swapRun &&
             !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun && !longMmRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
@@ -1642,6 +1647,9 @@ object GenerationEngine {
             // startedAt měřil jen to čekání, ne skutečné generování.
             tookSeconds = if (params != null && startedAt > 0)
                 ((createdAt - startedAt) / 1000L).toInt().coerceAtLeast(0) else 0,
+            // Ke které scéně výsledek patří. Jen Long MiniMax; podle toho se
+            // pak nabízí video, na které se má navazovat.
+            retez = longMmRetez,
         )
         history.add(item)
         settings.activePromptId = null

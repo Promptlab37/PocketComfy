@@ -51,6 +51,11 @@ Rules:
 - If the user's text already contains a token such as <Picture 1>, <Video 1>
   or [S1], keep it exactly. NEVER add a token the user did not write, and
   never start the paragraph with one.
+- Spoken lines go inside <d>[Language] line</d> and NOWHERE else. Keep the
+  line in the language the user wrote it in -- a Czech line stays Czech
+  inside <d>[Czech] ...</d> and is never translated. Mark who speaks with
+  (S1), (S2) in the order the people appear, and keep the same number for
+  the same person. Write no spoken line the user did not ask for.
 - Name every object the user named, and name no other object. If a word is
   unclear, keep the user's word rather than replacing it with a guess.
 - Plain declarative sentences in the present tense. Name the subject as

@@ -89,6 +89,18 @@ data class LongMmScene(
     /** Video, které se před během nahraje na server. */
     val uploadVideo: File? get() = zdroj.takeIf { rezim == LongMmRezim.NAVAZANI }
 
+    /**
+     * Patří vybraný latent k tomuhle řetězu? Uzel ho ukládá jako
+     * `<jméno>_00001.h3latent.safetensors`, takže jméno řetězu je v názvu.
+     */
+    val latentSediNaRetez: Boolean
+        get() {
+            val jmeno = nazev.trim().replace(' ', '_')
+                .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+                .ifBlank { "zaber" }
+            return latent.isBlank() || latent.startsWith(jmeno + "_")
+        }
+
     companion object {
         /** Víc referencí model neunese smysluplně a karta by se nafoukla. */
         const val MAX_REFERENCI = 4
@@ -119,6 +131,13 @@ fun longMmProblem(s: LongMmScene): String? = when {
         t("Vyber video, na které se má navázat.")
     s.rezim == LongMmRezim.NAVAZANI && s.latent.isBlank() ->
         t("Vyber latent záběru, ze kterého se pokračuje. Nabídku plní server.")
+    // Latent a zdrojové video musí patřit k témuž řetězu. Když se rozejdou,
+    // slepovač přilepí nový záběr k cizímu videu — 22. 9. 2026 se takhle loď
+    // přilepila k ženě v kavárně, protože v kartě viselo video ze starého
+    // řetězu a latent už byl z nového.
+    s.rezim == LongMmRezim.NAVAZANI && !s.latentSediNaRetez ->
+        t("Vybraný latent patří k jinému řetězu než „%s“. Vyber latent, který začíná tímhle jménem, nebo řetěz přejmenuj.")
+            .format(s.nazev.trim())
     else -> null
 }
 

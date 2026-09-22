@@ -1963,13 +1963,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // ------------------------------------------------ 🌐 překlad promptu (AI)
 
     /** Pole se zadáním, které umí překladač obsloužit. */
-    enum class PromptPole { OBRAZEK, AIO, UPRAVA, DOMALOVAT }
+    enum class PromptPole { OBRAZEK, AIO, UPRAVA, DOMALOVAT, LONGMM }
 
     private fun textPole(pole: PromptPole): String = when (pole) {
         PromptPole.OBRAZEK -> _params.value.prompt
         PromptPole.AIO -> _aio.value.prompt
         PromptPole.UPRAVA -> _edit.value.prompt
         PromptPole.DOMALOVAT -> _inpaint.value.prompt
+        PromptPole.LONGMM -> _longMm.value.prompt
     }
 
     private fun zapisPole(pole: PromptPole, text: String) = when (pole) {
@@ -1977,6 +1978,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         PromptPole.AIO -> setAioPrompt(text)
         PromptPole.UPRAVA -> setEditPrompt(text)
         PromptPole.DOMALOVAT -> setInpaintPrompt(text)
+        PromptPole.LONGMM -> setLongMmPrompt(text)
     }
 
     /** Vrátí zadání, jak vypadalo před přepisem nebo překladem. */
@@ -3399,11 +3401,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 onSuccess = { seznam ->
                     _longMmLatenty.value = seznam
                     _longMmLatentChyba.value = null
-                    // Nejnovější napoprvé sám, ať se v běžném případě nic
-                    // nevybírá. Dřívější volbu, která na serveru pořád je,
-                    // to nepřepíše.
-                    if (_longMm.value.latent !in seznam) {
-                        updateLongMm { it.copy(latent = seznam.firstOrNull().orEmpty()) }
+                    // Přednost má nejnovější latent TOHOHLE řetězu — jméno
+                    // řetězu je v názvu souboru. Bez toho by po založení
+                    // nového řetězu zůstal vybraný latent toho starého.
+                    val muj = cz.promptlab.h3video.comfy.LongMmBuilder
+                        .nazevLatentu(_longMm.value) + "_"
+                    val vybrany = seznam.firstOrNull { it.startsWith(muj) }
+                        ?: seznam.firstOrNull().orEmpty()
+                    if (_longMm.value.latent !in seznam ||
+                        (_longMm.value.latent.startsWith(muj).not() && vybrany.startsWith(muj))
+                    ) {
+                        updateLongMm { it.copy(latent = vybrany) }
                     }
                 },
                 onFailure = {
@@ -3597,6 +3605,48 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }.getOrNull()
 
+    /**
+     * Jména scén, na které se dá navázat — nejnovější první.
+     *
+     * Scéna je jedna věc: latent na serveru i hotové video v galerii nesou
+     * totéž jméno. Dvě samostatná pole (video zvlášť, latent zvlášť) se dokázala
+     * rozejít a slepovač pak přilepil nový záběr k cizímu videu — 22. 9. 2026
+     * se takhle loď přilepila k ženě v kavárně.
+     */
+    val longMmSceny: StateFlow<List<String>> = kotlinx.coroutines.flow.combine(
+        longMmLatenty, longMmPredchozi,
+    ) { latenty, zabery ->
+        val zLatentu = latenty.mapNotNull { jmenoRetezu(it) }
+        val zGalerie = zabery.mapNotNull { it.retez.takeIf { r -> r.isNotBlank() } }
+        (zLatentu + zGalerie).distinct()
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Z `lod_00002.h3latent.safetensors` udělá `lod`. */
+    private fun jmenoRetezu(soubor: String): String? =
+        Regex("""^(.+)_\d{5}\.h3latent""").find(soubor)?.groupValues?.get(1)
+
+    /** Hotový záběr té scény, na který se naváže. Null = v galerii žádný není. */
+    fun longMmZaberSceny(jmeno: String): VideoItem? =
+        longMmPredchozi.value.firstOrNull { it.retez == jmeno }
+
+    /**
+     * Vybere scénu: nastaví jméno, nejnovější latent té scény i hotové video,
+     * na které se naváže. Jedním klepnutím, aby se ty tři věci nemohly rozejít.
+     */
+    fun vyberLongMmScenu(jmeno: String) {
+        val latent = longMmLatenty.value.firstOrNull { jmenoRetezu(it) == jmeno }.orEmpty()
+        val zaber = longMmZaberSceny(jmeno)
+        updateLongMm { s ->
+            s.copy(
+                nazev = jmeno,
+                latent = latent,
+                zdroj = zaber?.file(getApplication()) ?: s.zdroj
+                    ?.takeIf { it.name.startsWith("longmm_zdroj") && it.exists() },
+                zdrojNahled = null,
+            )
+        }
+    }
+
     /** Vybere hotový výsledek z Galerie aplikace jako zdroj navázání. */
     fun setLongMmZdrojZGalerie(item: VideoItem) {
         val soubor = item.file(getApplication())
@@ -3605,13 +3655,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /**
-     * Napoprvé předvybere poslední záběr téhle karty, ať uživatel nemusí
-     * vybírat nic. Dřívější volbu, pokud soubor pořád existuje, to nepřepíše.
+     * Předvybere **poslední** záběr téhle karty.
+     *
+     * Dřív se doplnil jen tehdy, když žádný nastavený nebyl — jenže volba
+     * v kartě přežije zavření aplikace, takže po založení nového řetězu tam
+     * viselo video z toho starého. Latent byl z nového řetězu, video ze
+     * starého a slepovač je spojil dohromady: 22. 9. 2026 se tak loď přilepila
+     * k ženě v kavárně. Nechává se proto jen volba vlastního souboru
+     * z telefonu — ta je vědomá.
      */
     fun predvyberLongMmZdroj() {
         val s = _longMm.value
-        if (s.zdroj?.exists() == true) return
-        longMmPredchozi.value.firstOrNull()?.let { setLongMmZdrojZGalerie(it) }
+        if (s.zdroj?.name?.startsWith("longmm_zdroj") == true && s.zdroj.exists()) return
+        val posledni = longMmPredchozi.value.firstOrNull() ?: return
+        if (posledni.file(getApplication()) == s.zdroj) return
+        setLongMmZdrojZGalerie(posledni)
     }
 
     /**

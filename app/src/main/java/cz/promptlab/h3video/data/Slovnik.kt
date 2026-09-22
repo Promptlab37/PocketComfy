@@ -747,6 +747,17 @@ object Slovnik {
         "Název řetězu" to "Chain name",
         "Latenty se pod ním na serveru číslují" to "Latents are numbered under it on the server",
         "Začít nový řetěz" to "Start a new chain",
+        "Na kterou scénu se navazuje" to "Which scene to continue",
+        "Naváže se na její poslední hotový záběr" to "It continues from its latest finished shot",
+        "Na serveru zatím žádná scéna není. Začni prvním záběrem." to
+            "There is no scene on the server yet. Start with the first shot.",
+        "Naváže se na video z telefonu: %s" to "It will continue from a video off the phone: %s",
+        "Naváže se na záběr z %s · %s" to "It will continue from the shot of %s · %s",
+        "K téhle scéně nemám v galerii žádný záběr — vyber video z telefonu." to
+            "There is no shot of this scene in the gallery — pick a video off the phone.",
+        "Latent: %s" to "Latent: %s",
+        "Vybraný latent patří k jinému řetězu než „%s“. Vyber latent, který začíná tímhle jménem, nebo řetěz přejmenuj." to
+            "The chosen latent belongs to a chain other than “%s”. Pick a latent starting with that name, or rename the chain.",
         "kuchyne" to "kitchen",
         "Uloží se jako %s_00001, %s_00002 …" to "Saved as %s_00001, %s_00002 …",
         "Napiš, co se má v záběru dít." to "Write what should happen in the shot.",

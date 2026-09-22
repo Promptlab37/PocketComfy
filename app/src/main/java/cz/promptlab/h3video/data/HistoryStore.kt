@@ -21,6 +21,12 @@ data class VideoItem(
     /** Uživatelský název výstupu; původní zadání se nemění. */
     val title: String = "",
     val favorite: Boolean = false,
+    /**
+     * Jméno scény u karty Long MiniMax. Podle něj se pozná, ke kterému řetězu
+     * výsledek patří — bez toho by šlo navázat lodní latent na video z kavárny,
+     * což se 22. 9. 2026 stalo. U ostatních karet zůstává prázdné.
+     */
+    val retez: String = "",
 ) {
     val displayTitle: String
         get() = title.ifBlank { prompt.lineSequence().firstOrNull { it.isNotBlank() }?.trim()?.take(96) ?: fileName }
