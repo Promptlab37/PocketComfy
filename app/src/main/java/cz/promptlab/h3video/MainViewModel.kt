@@ -3542,6 +3542,28 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Jednorázová oprava uložených délek v galerii.
+     *
+     * Do 3.87 se ukládala délka z hlavního posuvníku aplikace, takže u karet
+     * s vlastní délkou ukazovala galerie něco jiného, než co video doopravdy
+     * hraje. Zpětně to jde napravit jen změřením souborů — běží jednou po
+     * startu, na pozadí, a zapíše se jen to, co se opravdu liší.
+     */
+    init {
+        viewModelScope.launch {
+            val zmerene = withContext(Dispatchers.IO) {
+                historyStore.all()
+                    .filterNot { it.isImage || it.isAudio || it.isModel3d }
+                    .mapNotNull { item -> delkaVidea(item.file(getApplication()))?.let { item.id to it } }
+                    .toMap()
+            }
+            if (zmerene.isNotEmpty() && withContext(Dispatchers.IO) { historyStore.opravDelky(zmerene) }) {
+                _history.value = historyStore.all()
+            }
+        }
+    }
+
     /** Délka videa ze souboru, nebo null když se přečíst nedá. */
     private fun delkaVidea(file: java.io.File): Float? = runCatching {
         if (!file.exists()) return null

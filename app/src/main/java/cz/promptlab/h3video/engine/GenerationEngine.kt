@@ -1507,6 +1507,12 @@ object GenerationEngine {
                         f.optString("type", "output"),
                     )
                     if (out.filename.isBlank()) continue
+                    // Ozvěna vstupu, ne výsledek. `LoadVideo` je v ComfyUI
+                    // výstupní uzel a hlásí zpátky soubor, který načetl —
+                    // s `type: "input"`. Pořadí klíčů v odpovědi není dané,
+                    // takže si appka u navazujícího záběru stahovala vlastní
+                    // nahrané video místo slepeného celku (22. 9. 2026).
+                    if (out.type != "output") continue
                     when {
                         isPicture(out.filename) -> pictures += out
                         isSound(out.filename) -> if (mainAudio == null) mainAudio = out

@@ -108,6 +108,30 @@ class HistoryStore(private val ctx: Context) {
         persist(allLocked().map { if (it.id == id) it.copy(favorite = !it.favorite) else it })
     }
 
+    /**
+     * Přepíše uloženou délku u záznamů, kde se rozešla se skutečností.
+     *
+     * Do 3.87 se ukládala délka z hlavního posuvníku aplikace, o kterém karty
+     * s vlastní délkou (Long MiniMax, Dance, LTX 2.5) nevědí — u pětisekundového
+     * videa tak v galerii svítilo „12,0 s". Správná hodnota jde získat jen
+     * změřením souboru, proto se stará oprava dělá jednou a natvrdo.
+     *
+     * @param zmerene id → délka v sekundách
+     * @return true, když se něco opravdu změnilo
+     */
+    fun opravDelky(zmerene: Map<String, Float>): Boolean = synchronized(lock) {
+        val list = allLocked()
+        var zmena = false
+        val novy = list.map { item ->
+            val skutecna = zmerene[item.id] ?: return@map item
+            // Desetina sekundy je zaokrouhlení, ne chyba.
+            if (kotlin.math.abs(item.seconds - skutecna) < 0.15f) item
+            else { zmena = true; item.copy(seconds = skutecna) }
+        }
+        if (zmena) persist(novy)
+        zmena
+    }
+
     /** Kolik místa zabírají kopie videí uvnitř aplikace. */
     fun totalBytes(): Long = all().sumOf { runCatching { it.file(ctx).length() }.getOrDefault(0L) }
 
