@@ -744,6 +744,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.MUSIC -> musicProblem(_music.value)
             Mode.LTXAUDIO -> ltxProblem(_ltx.value)
             Mode.DANCE -> cz.promptlab.h3video.data.danceProblem(_dance.value)
+            Mode.LONGMM -> cz.promptlab.h3video.data.longMmProblem(_longMm.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
             Mode.ANGLE -> angleProblem(_angle.value)
             Mode.FACESWAP -> faceSwapProblem(_swap.value)
@@ -785,7 +786,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private val vsechnySceny: List<StateFlow<Any?>> get() = listOf(
         _params, _scene, _timeline, _aio, _edit, _upscale, _music,
-        _restore, _angle, _swap, _inpaint, _long, _model3d, _ltx, _dance, _projekt,
+        _restore, _angle, _swap, _inpaint, _long, _model3d, _ltx, _dance, _longMm, _projekt,
         _aioAvailable,
     )
 
@@ -822,6 +823,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (p.mode == Mode.MUSIC) return musicHints(_music.value)
         if (p.mode == Mode.LTXAUDIO) return ltxHints(_ltx.value)
         if (p.mode == Mode.DANCE) return cz.promptlab.h3video.data.danceHints(_dance.value)
+        if (p.mode == Mode.LONGMM) return cz.promptlab.h3video.data.longMmHints(_longMm.value)
         if (p.mode == Mode.RESTORE) return emptyList()
         // Úhel kamery jede na vlastní předloze; upozornění k videu se ho netýkají.
         if (p.mode == Mode.ANGLE) return emptyList()
@@ -1101,6 +1103,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         ),
                         s.uploadImages,
                         danceScene = s,
+                    )
+                }
+            }
+
+            // Long MiniMax: jeden záběr na běh. Zdrojové video má vlastní cestu
+            // nahrávání, v seznamu obrázků jsou proto jen reference.
+            Mode.LONGMM -> {
+                val s = _longMm.value
+                QueuedRun(id, p.mode.title, s.prompt) {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = s.prompt,
+                            steps = cz.promptlab.h3video.comfy.LongMmBuilder.STEPS,
+                        ),
+                        s.uploadImages,
+                        longMmScene = s,
                     )
                 }
             }
@@ -2878,6 +2896,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         R.raw.workflow_ace_faceswap,
                         R.raw.workflow_inpaint_klein,
                         R.raw.workflow_inpaint_fill,
+                        // Long MiniMax stojí na cizím balíku, který si uživatel
+                        // musí doinstalovat — kontrola mu to má říct dřív, než
+                        // se o kartu pokusí.
+                        R.raw.workflow_longmm_start,
+                        R.raw.workflow_longmm_dalsi,
                     ).map { id ->
                         res.openRawResource(id).bufferedReader().use { it.readText() }
                     }
@@ -3306,6 +3329,146 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun clearDanceHudbu() = updateDance {
         it.hudba?.let { f -> runCatching { f.delete() } }
         it.copy(hudba = null, hudbaSekund = 0f)
+    }
+
+    // ------------------------------------------------------------ long minimax
+
+    private val longMmStore = cz.promptlab.h3video.data.LongMmStore(app)
+
+    private val _longMm = MutableStateFlow(cz.promptlab.h3video.data.LongMmScene())
+    val longMm: StateFlow<cz.promptlab.h3video.data.LongMmScene> = _longMm.asStateFlow()
+
+    /** Latenty, které server nabízí. Nejnovější je první. */
+    private val _longMmLatenty = MutableStateFlow<List<String>>(emptyList())
+    val longMmLatenty: StateFlow<List<String>> = _longMmLatenty.asStateFlow()
+
+    private val _longMmLatentChyba = MutableStateFlow<String?>(null)
+    val longMmLatentChyba: StateFlow<String?> = _longMmLatentChyba.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val obnovene = withContext(Dispatchers.IO) { longMmStore.load() }
+            if (obnovene == cz.promptlab.h3video.data.LongMmScene()) return@launch
+            // Náhledy se neukládají (jsou to bitmapy), dopočítají se z uložených
+            // souborů — jinak by karta po restartu vypadala jako bez referencí.
+            val refy = withContext(Dispatchers.IO) {
+                obnovene.reference.map { it.copy(nahled = ImageUtils.loadFileThumb(it.soubor)) }
+            }
+            _longMm.value = obnovene.copy(reference = refy)
+        }
+    }
+
+    private fun updateLongMm(
+        block: (cz.promptlab.h3video.data.LongMmScene) -> cz.promptlab.h3video.data.LongMmScene,
+    ) {
+        val next = block(_longMm.value)
+        _longMm.value = next
+        longMmStore.save(next)
+    }
+
+    fun setLongMmRezim(v: cz.promptlab.h3video.data.LongMmRezim) = updateLongMm { it.copy(rezim = v) }
+    fun setLongMmPrompt(v: String) = updateLongMm { it.copy(prompt = v) }
+    fun setLongMmNazev(v: String) = updateLongMm { it.copy(nazev = v) }
+    fun setLongMmLatent(v: String) = updateLongMm { it.copy(latent = v) }
+    fun setLongMmRozliseni(v: cz.promptlab.h3video.data.LongMmRozliseni) =
+        updateLongMm { it.copy(rozliseni = v) }
+    fun setLongMmPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateLongMm { it.copy(pomer = v) }
+    fun setLongMmSekundy(v: Int) = updateLongMm {
+        it.copy(sekundy = v.coerceIn(
+            cz.promptlab.h3video.data.LongMmScene.DELKY.first(),
+            cz.promptlab.h3video.data.LongMmScene.DELKY.last(),
+        ))
+    }
+
+    /** Jak se bude jmenovat uložený latent. Stejný ořez, jaký udělá uzel. */
+    fun longMmNazevSouboru(): String =
+        cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(_longMm.value)
+
+    /**
+     * Seznam uložených latentů ze serveru. Čte se při přepnutí na navázání a
+     * na vyžádání, takže záběr dokončený před chvílí je vidět bez restartu
+     * aplikace. Chyba se nesmí spolknout — bez ní by nabídka vypadala jako
+     * „nic tu není" i ve chvíli, kdy server jen neodpovídá.
+     */
+    fun loadLongMmLatenty() {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                runCatching { ComfyClient(settings.serverUrl).latentNames() }
+            }.fold(
+                onSuccess = { seznam ->
+                    _longMmLatenty.value = seznam
+                    _longMmLatentChyba.value = null
+                    // Nejnovější napoprvé sám, ať se v běžném případě nic
+                    // nevybírá. Dřívější volbu, která na serveru pořád je,
+                    // to nepřepíše.
+                    if (_longMm.value.latent !in seznam) {
+                        updateLongMm { it.copy(latent = seznam.firstOrNull().orEmpty()) }
+                    }
+                },
+                onFailure = {
+                    _longMmLatentChyba.value =
+                        t("Seznam latentů se nepodařilo načíst — server neodpovídá.")
+                },
+            )
+        }
+    }
+
+    fun pickLongMmRef(index: Int, uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val cil = longMmStore.refFile(index)
+            val nahled = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), uri, cil)
+            } ?: return@launch
+            updateLongMm { s ->
+                val novy = cz.promptlab.h3video.data.LongMmRef(cil, nahled)
+                val refy = s.reference.toMutableList()
+                if (index < refy.size) refy[index] = novy else refy.add(novy)
+                s.copy(reference = refy.take(cz.promptlab.h3video.data.LongMmScene.MAX_REFERENCI))
+            }
+        }
+    }
+
+    /**
+     * Odebrání reference. Soubory se přeukládají, protože se jmenují podle
+     * pořadí — po odebrání prostřední fotky by jinak zbylé ukazovaly na cizí
+     * soubor a v zadání by se rozešly se značkami `<Picture N>`.
+     */
+    fun removeLongMmRef(index: Int) {
+        viewModelScope.launch {
+            val zbyle = _longMm.value.reference.toMutableList()
+            if (index !in zbyle.indices) return@launch
+            zbyle.removeAt(index)
+            val presunute = withContext(Dispatchers.IO) {
+                zbyle.mapIndexed { i, ref ->
+                    val cil = longMmStore.refFile(i)
+                    if (ref.soubor.absolutePath != cil.absolutePath) {
+                        runCatching { ref.soubor.copyTo(cil, overwrite = true) }
+                        ref.copy(soubor = cil)
+                    } else ref
+                }
+            }
+            // Přebytečné soubory na konci už nikdo nedrží.
+            withContext(Dispatchers.IO) {
+                for (i in presunute.size until cz.promptlab.h3video.data.LongMmScene.MAX_REFERENCI) {
+                    runCatching { longMmStore.refFile(i).delete() }
+                }
+            }
+            updateLongMm { it.copy(reference = presunute) }
+        }
+    }
+
+    fun pickLongMmZdroj(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val file = importMedia(uri, "longmm_zdroj") ?: return@launch
+            updateLongMm { it.copy(zdroj = file) }
+        }
+    }
+
+    fun clearLongMmZdroj() = updateLongMm {
+        it.zdroj?.let { f -> runCatching { f.delete() } }
+        it.copy(zdroj = null, zdrojNahled = null)
     }
 
     fun setLtxLoraStrength(value: Float) {

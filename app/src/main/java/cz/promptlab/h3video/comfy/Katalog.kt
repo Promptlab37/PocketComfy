@@ -85,6 +85,11 @@ object Katalog {
         "https://github.com/seitanism/ComfyUI-H3-Motion-Context-MultiRef",
         "Dlouhé video"
     )
+    private val LATENTCHAIN = Balik(
+        "Minimax-H3-Latent-Continuation",
+        "https://github.com/SatoDive/Minimax-H3-Latent-Continuation",
+        "Long MiniMax"
+    )
     private val MASKVID = Balik(
         "MaskVidExperiments", "https://github.com/drozbay/MaskVidExperiments",
         "All in One → Přemalovat ve videu"
@@ -148,6 +153,17 @@ object Katalog {
         "MiniMaxH3GeneratedAVMaskedContext" to MULTIREF,
         "MiniMaxH3StartCanvasSelector" to MULTIREF,
         "MiniMaxH3CropTo32" to MULTIREF,
+        "MiniMaxH3Easy_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasyModelAdapter_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasyOutput_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasyMediaBridge_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasyContextSegments_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasySegmentRender_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasySegmentDecode_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasySaveLatent_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasyLoadLatent_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasyStitchContinuation_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasyVideoTailSlicer_SatoDive" to LATENTCHAIN,
         "MVEx_MaskCleanup" to MASKVID,
         "MVEx_SubjectCrop" to MASKVID,
         "MVEx_SubjectUncrop" to MASKVID,
@@ -364,6 +380,16 @@ object Katalog {
         "TaoMate-H3-3step-ComfyUI.safetensors" to Soubor(
             "models/loras/h3", "3 kroky",
             "$HF/TaoLiveAIGC/TaoMate-H3"
+        ),
+        // Long MiniMax jede na referenčních vahách a na autorově Turbo LoRA;
+        // základní model, enkodér i oba VAE sdílí s ostatními video kartami.
+        "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors" to Soubor(
+            "models/loras", "Long MiniMax",
+            "$HF/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors"
+        ),
+        "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors" to Soubor(
+            "models/text_encoders", "Long MiniMax",
+            "$HF/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"
         ),
         "minimax_h3_video_vae_fp16.safetensors" to Soubor("models/vae", "video karty"),
         "minimax_h3_audio_vae_fp32.safetensors" to Soubor("models/vae", "video karty"),

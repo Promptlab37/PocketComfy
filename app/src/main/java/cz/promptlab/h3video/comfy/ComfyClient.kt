@@ -260,6 +260,26 @@ class ComfyClient(baseUrl: String) {
         (0 until arr.length()).map { arr.getString(it) }
     }.getOrDefault(emptyList())
 
+    /**
+     * Uložené latenty karty Long MiniMax, **nejnovější první**.
+     *
+     * Seznam si drží sám uzel, který je načítá — čte složku `output/h3_latents`
+     * a řadí ji podle času změny. Appka ho proto nesmí sestavovat po svém:
+     * kdyby se pořadí nebo filtr někdy změnily, nabídka v kartě by ukazovala
+     * něco jiného než to, co uzel skutečně přijme.
+     *
+     * Když balík na serveru není, vrací prázdný seznam — to není chyba,
+     * jen na tom serveru ještě žádný řetěz nezačal.
+     */
+    fun latentNames(): List<String> = runCatching {
+        val spec = objectInfo("MiniMaxH3EasyLoadLatent_SatoDive") ?: return emptyList()
+        val arr = spec.getJSONObject("input").getJSONObject("required")
+            .getJSONArray("latent_file").getJSONArray(0)
+        // Dokud nic uloženého není, vrací uzel jedinou položku v závorce
+        // („(none saved yet)"). Není to název souboru a do nabídky nepatří.
+        (0 until arr.length()).map { arr.getString(it) }.filterNot { it.startsWith("(") }
+    }.getOrDefault(emptyList())
+
     // ------------------------------------------------------------- All in One
 
     /**

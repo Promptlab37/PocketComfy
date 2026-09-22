@@ -31,6 +31,8 @@ REM Karta Dlouhe video - navaznost useku na sebe.
 call :klon https://github.com/seitanism/ComfyUI-H3-Motion-Context-MultiRef
 REM Volitelne: rychly prvni zaber u Dlouheho videa.
 call :klon https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler
+REM Karta Long MiniMax - navazovani zaberu pres ulozeny latent.
+call :klon https://github.com/SatoDive/Minimax-H3-Latent-Continuation
 REM All in One, volba Premalovat ve videu.
 call :klon https://github.com/drozbay/MaskVidExperiments
 REM --- karta Zvetsit
@@ -81,6 +83,7 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors" "models\loras\minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors" "models\loras\minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors"
   echo   Pozn.: nabidku LoRA cte appka ze serveru - staci ty, ktere chces nabizet.
+  echo         ref2v_turbo je zaroven LoRA, na ktere jede karta Long MiniMax.
 )
 
 set /p ODP="All in One, Premalovat ve videu - SAM 3.1, cca 1,7 GB. Stahnout? [a/n] "

@@ -1,0 +1,286 @@
+{
+ "190": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "191": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors",
+   "type": "minimax",
+   "device": "default"
+  }
+ },
+ "192": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "minimax_h3_video_vae_fp16.safetensors"
+  }
+ },
+ "193": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+  }
+ },
+ "269": {
+  "class_type": "MiniMaxH3EasyModelAdapter_SatoDive",
+  "inputs": {
+   "text_encoder": [
+    "191",
+    0
+   ],
+   "video_vae": [
+    "192",
+    0
+   ],
+   "audio_vae": [
+    "193",
+    0
+   ],
+   "ref2va_model": [
+    "190",
+    0
+   ]
+  }
+ },
+ "214": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  }
+ },
+ "215": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  }
+ },
+ "216": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  }
+ },
+ "217": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  }
+ },
+ "280": {
+  "class_type": "MiniMaxH3EasyMediaBridge_SatoDive",
+  "inputs": {
+   "image_count": 1,
+   "video_count": 0,
+   "audio_count": 0,
+   "image_1": [
+    "214",
+    0
+   ],
+   "image_2": [
+    "215",
+    0
+   ],
+   "image_3": [
+    "216",
+    0
+   ],
+   "image_4": [
+    "217",
+    0
+   ]
+  }
+ },
+ "270": {
+  "class_type": "MiniMaxH3Easy_SatoDive",
+  "inputs": {
+   "h3_bundle": [
+    "269",
+    0
+   ],
+   "mode": "reference",
+   "prompt": "",
+   "resolution": "480P",
+   "aspect_ratio": "16:9",
+   "custom_ratio": "16:9",
+   "width": 1344,
+   "height": 768,
+   "seconds": 5.0,
+   "advanced": false,
+   "fps": 24.0,
+   "keyframe_role": "first",
+   "ref_image_size": "1k",
+   "reference_mention_mode": "index",
+   "prompt_optimizer_settings": false,
+   "prompt_optimizer_scene_guide": "none",
+   "enable_detail_daemon": false,
+   "detail_strength": 0.0,
+   "media": [
+    "280",
+    0
+   ]
+  }
+ },
+ "268": {
+  "class_type": "MiniMaxH3EasyOutput_SatoDive",
+  "inputs": {
+   "h3_context": [
+    "270",
+    1
+   ]
+  }
+ },
+ "18": {
+  "class_type": "MiniMaxH3MemoryEfficientSageAttentionPatch",
+  "inputs": {
+   "model": [
+    "270",
+    0
+   ]
+  }
+ },
+ "271": {
+  "class_type": "MiniMaxH3TurboLoRA",
+  "inputs": {
+   "model": [
+    "18",
+    0
+   ],
+   "lora_name": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+   "strength": 0.8,
+   "low_vram": false
+  }
+ },
+ "5": {
+  "class_type": "BasicScheduler",
+  "inputs": {
+   "model": [
+    "271",
+    0
+   ],
+   "scheduler": "simple",
+   "steps": 7,
+   "denoise": 1.0
+  }
+ },
+ "7": {
+  "class_type": "KSamplerSelect",
+  "inputs": {
+   "sampler_name": "euler"
+  }
+ },
+ "4": {
+  "class_type": "BasicGuider",
+  "inputs": {
+   "model": [
+    "271",
+    0
+   ],
+   "conditioning": [
+    "268",
+    0
+   ]
+  }
+ },
+ "6": {
+  "class_type": "RandomNoise",
+  "inputs": {
+   "noise_seed": 0
+  }
+ },
+ "8": {
+  "class_type": "SamplerCustomAdvanced",
+  "inputs": {
+   "noise": [
+    "6",
+    0
+   ],
+   "guider": [
+    "4",
+    0
+   ],
+   "sampler": [
+    "7",
+    0
+   ],
+   "sigmas": [
+    "5",
+    0
+   ],
+   "latent_image": [
+    "268",
+    1
+   ]
+  }
+ },
+ "9": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "8",
+    0
+   ],
+   "vae": [
+    "268",
+    2
+   ]
+  }
+ },
+ "10": {
+  "class_type": "VAEDecodeAudio",
+  "inputs": {
+   "samples": [
+    "8",
+    1
+   ],
+   "vae": [
+    "268",
+    3
+   ]
+  }
+ },
+ "11": {
+  "class_type": "CreateVideo",
+  "inputs": {
+   "images": [
+    "9",
+    0
+   ],
+   "audio": [
+    "10",
+    0
+   ],
+   "fps": [
+    "268",
+    4
+   ],
+   "bit_depth": 8
+  }
+ },
+ "254": {
+  "class_type": "SaveVideo",
+  "inputs": {
+   "video": [
+    "11",
+    0
+   ],
+   "filename_prefix": "PocketLongMM",
+   "format": "auto",
+   "codec": "auto"
+  }
+ },
+ "272": {
+  "class_type": "MiniMaxH3EasySaveLatent_SatoDive",
+  "inputs": {
+   "latent": [
+    "8",
+    0
+   ],
+   "filename_prefix": "zaber"
+  }
+ }
+}

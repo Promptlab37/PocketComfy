@@ -28,6 +28,7 @@ chybí u tebe).
 | [ComfyUI-DLSS5-Enhancer](https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer) | DLSS5Settings, DLSS5EnhanceImages/VideoFile | Zvětšit — metoda DLSS 5 (po instalaci ještě `install_runtime.py`) |
 | [ComfyUI-H3-Motion-Context-MultiRef](https://github.com/seitanism/ComfyUI-H3-Motion-Context-MultiRef) | MiniMaxH3StartMaskedContext, MiniMaxH3GeneratedAVMaskedContext, MiniMaxH3CropTo32 aj. | Dlouhé video |
 | [Comfyui_Minimax_h3_latent_Upscaler](https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler) | MinimaxH3LatentUpscaler3D | Dlouhé video — rychlý první záběr (volitelné) |
+| [Minimax-H3-Latent-Continuation](https://github.com/SatoDive/Minimax-H3-Latent-Continuation) | MiniMaxH3Easy_SatoDive, MiniMaxH3EasyContextSegments_SatoDive, Save/Load Latent, StitchContinuation aj. | Long MiniMax |
 | [MaskVidExperiments](https://github.com/drozbay/MaskVidExperiments) | MVEx_MaskCleanup, MVEx_SubjectCrop/Uncrop aj. | All in One → Přemalovat ve videu |
 | VideoHelperSuite / KJNodes* | VHS_VideoCombine, PathchSageAttentionKJ, INTConstant, ModelPreviewOverrideKJ, ImageConcanate, ResizeMask | video karty, živý náhled, Výměna tváře |
 | nody Krea 2 Edit* | Krea2EditModelPatch, Krea2EditGroundedEncode, SpectrumApplyMiniMaxH3, H3CacheBust | Úprava obrázku, video karty |
@@ -37,6 +38,14 @@ chybí u tebe).
 | Impact Pack* | ImpactGaussianBlurMask | Výměna tváře |
 | ComfyUI-GGUF | UnetLoaderGGUF | Obrázek — jen volitelný alternativní model ve formátu GGUF |
 | [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | MiniMaxH3PromptWriter8B | tlačítko **✨ Vylepšit prompt** (volitelné, viz níž) |
+
+Karta **Long MiniMax** navazuje záběry jedné scény přes **uložený latent**.
+Navazovat přes hotové video znamená dekódovat a zase zakódovat, a ten okruh
+obraz pokaždé o kus ztmaví; chyba se v řetězu sčítá. Balík proto latent
+hotového záběru uloží do `output/h3_latents` a další běh z něj začne.
+Modely navíc karta nepotřebuje žádné: jede na `minimax_h3_fl2va`, obou VAE
+a enkodéru jako ostatní video karty, plus na LoRA
+`minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors`.
 
 Karty **Obrázek** (Z-Image), **Hudba**, **Úhel kamery** a **3D model** jedou
 jen na vestavěných uzlech ComfyUI — žádný custom balík nepotřebují

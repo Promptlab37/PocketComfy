@@ -168,6 +168,9 @@ data class GenParams(
             Mode.LTXAUDIO -> 1
             // Dance: jedna fotka tanečníka. Hudba má vlastní cestu, ne obrázkovou.
             Mode.DANCE -> 1
+            // Long MiniMax: reference prvního záběru. Zdrojové video se při
+            // navazování nahrává vlastní cestou, ne jako obrázek.
+            Mode.LONGMM -> LongMmScene.MAX_REFERENCI
             // Úhel kamery: jedna fotka, ze které se objekt otočí.
             Mode.ANGLE -> 1
             // 3D model: jedna fotka předmětu.

@@ -253,6 +253,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
     val inpaintScene by vm.inpaint.collectAsStateWithLifecycle()
     val longScene by vm.long.collectAsStateWithLifecycle()
     val model3dScene by vm.model3d.collectAsStateWithLifecycle()
+    val longMmScene by vm.longMm.collectAsStateWithLifecycle()
     // Dostupnost AIO balíku doráží asynchronně – bez ní v klíčích by hláška
     // „server nemá balík" zůstala viset i po úspěšné kontrole (a naopak).
     val aioAvailable by vm.aioAvailable.collectAsStateWithLifecycle()
@@ -365,6 +366,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // ------------------------------------------------------------ dance
         if (mode == Mode.DANCE) {
             DanceSection(vm)
+        }
+
+        // ------------------------------------------------------ long minimax
+        if (mode == Mode.LONGMM) {
+            LongMmSection(vm)
         }
 
         // ----------------------------------------------------- oprava fotky
@@ -778,6 +784,9 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 // 3D model není video — tlačítko to nesmí slibovat.
                 mode == Mode.MODEL3D -> t("Postavit 3D model")
                 mode == Mode.LONG -> t("Vygenerovat dlouhé video")
+                mode == Mode.LONGMM ->
+                    if (longMmScene.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI)
+                        t("Vygenerovat první záběr") else t("Navázat další záběr")
                 else -> t("Vygenerovat video")
             },
             enabled = !blocked,

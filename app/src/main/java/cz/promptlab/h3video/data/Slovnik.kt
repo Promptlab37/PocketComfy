@@ -704,6 +704,60 @@ object Slovnik {
             "Write what should be in the new space — e.g. “full figure, legs in jeans”.",
         "Rozšířit (dokreslit, co je mimo záběr)" to "Extend (paint in what is out of frame)",
         "Rozšířit" to "Extend",
+        // karta Long MiniMax (navazující záběry přes latent)
+        "Long MM" to "Long MM",
+        "Záběr po záběru na jednu scénu, navazuje se přes latent" to
+            "One shot at a time on a single scene, chained through the latent",
+        "Navázat" to "Continue",
+        "Založí nový řetěz a uloží jeho latent" to "Starts a new chain and saves its latent",
+        "Přidá další kus k hotovému videu" to "Adds another piece to the finished video",
+        "Na co se navazuje" to "What it continues from",
+        "Poslední hotový celek téhle scény" to "The latest finished whole of this scene",
+        "Latent předchozího záběru" to "The previous shot's latent",
+        "Odsud se pokračuje bez ztráty kvality" to "This is where it picks up with no quality loss",
+        "Na serveru zatím žádný latent není. Začni prvním záběrem." to
+            "There is no latent on the server yet. Start with the first shot.",
+        "Nejnovější je nahoře" to "Newest first",
+        "Načíst znovu ze serveru" to "Reload from the server",
+        "Seznam latentů se nepodařilo načíst — server neodpovídá." to
+            "The latent list could not be loaded — the server is not responding.",
+        "Podoba" to "Likeness",
+        "Fotky, podle kterých model drží postavy a místo (nepovinné)" to
+            "Photos the model keeps the characters and the place from (optional)",
+        "Plátno" to "Canvas",
+        "Pro celý řetěz se volí jen teď" to "Chosen once here, for the whole chain",
+        "480p — rychlejší" to "480p — faster",
+        "720p — jemnější, výrazně déle" to "720p — finer, considerably longer",
+        "Na šířku" to "Landscape",
+        "Na výšku" to "Portrait",
+        "Čtverec" to "Square",
+        "Co se má dít" to "What should happen",
+        "Popis prvního záběru" to "A description of the first shot",
+        "Popis toho, co se stane dál" to "A description of what happens next",
+        "Muž z <Picture 1> stojí u okna a otočí se do místnosti." to
+            "The man from <Picture 1> stands at the window and turns into the room.",
+        "Přejde ke stolu a posadí se." to "He walks to the table and sits down.",
+        "Délka záběru" to "Shot length",
+        "Týká se jen tohohle kusu, ne celku" to "Applies to this piece only, not the whole",
+        "Název řetězu" to "Chain name",
+        "Latenty se pod ním na serveru číslují" to "Latents are numbered under it on the server",
+        "kuchyne" to "kitchen",
+        "Uloží se jako %s_00001, %s_00002 …" to "Saved as %s_00001, %s_00002 …",
+        "Napiš, co se má v záběru dít." to "Write what should happen in the shot.",
+        "Pojmenuj řetěz — podle toho se latenty na serveru číslují." to
+            "Name the chain — latents are numbered by it on the server.",
+        "Vyber latent záběru, ze kterého se pokračuje. Nabídku plní server." to
+            "Pick the shot's latent to continue from. The server fills the list.",
+        "Až záběr doběhne, zůstane na serveru jeho latent. Z něj se v režimu Navázat pokračuje bez ztráty kvality." to
+            "Once the shot finishes, its latent stays on the server. Continue mode picks up from it with no quality loss.",
+        "Na fotky se v zadání odkazuje značkami <Picture 1>, <Picture 2>… Bez zmínky si jich model nemusí všimnout." to
+            "Refer to the photos in the prompt as <Picture 1>, <Picture 2>… Unmentioned, the model may ignore them.",
+        "Rozlišení i poměr musí zůstat stejné jako u prvního záběru. Latent se nedá přepočítat na jiné plátno." to
+            "Resolution and aspect must stay as they were in the first shot. A latent cannot be resized.",
+        "Výsledkem je celé video od začátku, ne jen přidaný kus — příště navazuj na něj." to
+            "The result is the whole video from the start, not just the added piece — continue from it next time.",
+        "Vygenerovat první záběr" to "Generate the first shot",
+        "Navázat další záběr" to "Continue with another shot",
         // karta Dance (Wan-Dancer)
         "Dance" to "Dance",
         "Z fotky a hudby video, kde ten člověk tančí do rytmu" to

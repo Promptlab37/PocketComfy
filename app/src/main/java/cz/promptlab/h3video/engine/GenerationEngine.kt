@@ -249,6 +249,9 @@ object GenerationEngine {
     @Volatile private var ltxRun: Boolean = false
     @Volatile private var danceRun: Boolean = false
 
+    /** Běží Long MiniMax? Jeden záběr na běh, navazuje se přes uložený latent. */
+    @Volatile private var longMmRun: Boolean = false
+
     /**
      * Mapa „číslo uzlu → třída" z odeslaného grafu. U karty All in One se podle
      * ní poznávají fáze: čísla uzlů se mezi šablonami liší (uzel 3 je u SeedVR2
@@ -264,6 +267,7 @@ object GenerationEngine {
         longRun -> LongVideoBuilder.stageForClass(nodeClasses[node])
         model3dRun -> Trellis2Builder.stageForClass(nodeClasses[node])
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.stageForClass(nodeClasses[node])
+        longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.stageForClass(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.stageForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.stageForClass(nodeClasses[node])
             else AceMusicBuilder.stageForClass(nodeClasses[node])
@@ -287,6 +291,7 @@ object GenerationEngine {
         longRun -> LongVideoBuilder.rangeForClass(nodeClasses[node])
         model3dRun -> Trellis2Builder.rangeForClass(nodeClasses[node])
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.rangeForClass(nodeClasses[node])
+        longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.rangeForClass(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.rangeForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.rangeForClass(nodeClasses[node])
             else AceMusicBuilder.rangeForClass(nodeClasses[node])
@@ -316,6 +321,7 @@ object GenerationEngine {
         longRun -> LongVideoBuilder.reportsSteps(nodeClasses[node])
         model3dRun -> Trellis2Builder.reportsSteps(nodeClasses[node])
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.reportsSteps(nodeClasses[node])
+        longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.reportsSteps(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.reportsSteps(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.reportsSteps(nodeClasses[node])
             else AceMusicBuilder.reportsSteps(nodeClasses[node])
@@ -410,6 +416,8 @@ object GenerationEngine {
         ltxScene: cz.promptlab.h3video.data.LtxScene? = null,
         /** Dance: Wan-Dancer, fotka + hudba, choreografii si model vymyslí sám. */
         danceScene: cz.promptlab.h3video.data.DanceScene? = null,
+        /** Long MiniMax: jeden záběr na běh, navazuje se přes uložený latent. */
+        longMmScene: cz.promptlab.h3video.data.LongMmScene? = null,
     ) {
         if (isRunning) return
         job?.cancel()
@@ -430,8 +438,9 @@ object GenerationEngine {
         model3dRun = model3dScene != null
         ltxRun = ltxScene != null
         danceRun = danceScene != null
+        longMmRun = longMmScene != null
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun && !swapRun &&
-            !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun &&
+            !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun && !longMmRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
         settings.activeEdit = editRun
@@ -461,6 +470,8 @@ object GenerationEngine {
                 else "")
         } else if (danceScene != null) {
             "Dance · " + danceScene.styl.title + " · " + danceScene.sekundy + " s"
+        } else if (longMmScene != null) {
+            "Long MiniMax · " + longMmScene.rezim.title + " · " + longMmScene.sekundy + " s"
         } else if (musicScene != null) {
             "Hudba · " + musicScene.motor.title + " · " + musicScene.delka + " s"
         } else if (t2i) {
@@ -485,7 +496,7 @@ object GenerationEngine {
                     params, images, talkAudios, timelineScene, aioScene, editScene,
                     upscaleScene, t2i, musicScene, restoreScene, angleScene, swapScene,
                     inpaintScene,
-                    longScene, model3dScene, ltxScene, danceScene,
+                    longScene, model3dScene, ltxScene, danceScene, longMmScene,
                 )
             }
                 .onFailure { e ->
@@ -676,6 +687,7 @@ object GenerationEngine {
         model3dScene: cz.promptlab.h3video.data.Model3dScene? = null,
         ltxScene: cz.promptlab.h3video.data.LtxScene? = null,
         danceScene: cz.promptlab.h3video.data.DanceScene? = null,
+        longMmScene: cz.promptlab.h3video.data.LongMmScene? = null,
     ) {
         val client = ComfyClient(settings.serverUrl)
 
@@ -707,6 +719,8 @@ object GenerationEngine {
                 ltxScene != null ||
                 // Dance: 14B model má ve fp8 17 GB, tedy víc než celá karta.
                 danceScene != null ||
+                // Long MiniMax jede na stejných vahách jako dlouhé video.
+                longMmScene != null ||
                 musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2,
         )
 
@@ -722,6 +736,7 @@ object GenerationEngine {
             swapScene != null -> null      // dtto
             inpaintScene != null -> null   // dtto
             longScene != null -> null      // dtto — graf staví appka
+            longMmScene != null -> null    // dtto
             model3dScene != null -> null   // dtto
             ltxScene != null -> null       // dtto
             aioScene != null -> aioScene.sablona
@@ -753,7 +768,8 @@ object GenerationEngine {
 
         // Referenční video a zvuk (jen reference → video). Streamem, do kořene input
         // složky – VHS_LoadVideo i LoadAudio čtou právě odtud.
-        val videoName = (aioScene?.uploadVideo ?: longScene?.uploadVideo)
+        val videoName = (aioScene?.uploadVideo ?: longScene?.uploadVideo
+            ?: longMmScene?.uploadVideo)
             ?.let { uploadMediaWithRetry(client, it, 0.05f) }
         // Předloha pro předělání skladby (YuE2 + SheetSage2). Do kořene input
         // složky, odtud ji uzel LoadAudio nabízí.
@@ -832,6 +848,18 @@ object GenerationEngine {
                     effective.aspect, seed,
                     rychlaPozornost = effective.sageAttention,
                     lory = effective.extraLoras,
+                )
+
+            // Long MiniMax: jeden záběr na běh. První zakládá řetěz a uloží
+            // latent, každý další z toho latentu pokračuje a výsledek se
+            // rovnou slepí se zdrojovým videem do jednoho celku.
+            longMmScene != null ->
+                if (longMmScene.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI)
+                    cz.promptlab.h3video.comfy.LongMmBuilder.buildPrvni(
+                        app, longMmScene, seed, names,
+                    )
+                else cz.promptlab.h3video.comfy.LongMmBuilder.buildDalsi(
+                    app, longMmScene, seed, videoName.orEmpty(),
                 )
 
             // Dance: Wan-Dancer z APK. Fotka + hudba, choreografii si model
@@ -965,6 +993,8 @@ object GenerationEngine {
             cz.promptlab.h3video.comfy.Ltx25Builder.nodeClasses(workflow)
         if (danceScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.DanceBuilder.nodeClasses(workflow)
+        if (longMmScene != null) nodeClasses =
+            cz.promptlab.h3video.comfy.LongMmBuilder.nodeClasses(workflow)
 
         val promptId = UUID.randomUUID().toString().lowercase()
         // Značka do logu: od téhle chvíle patří hlášky uzlů našemu běhu.

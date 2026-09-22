@@ -203,6 +203,18 @@ enum class Mode(
         titleCs = "Dance",
         shortCs = "Dance",
         detailCs = "Z fotky a hudby video, kde ten člověk tančí do rytmu"
+    ),
+
+    /**
+     * Navazující záběry přes latent (balík Minimax-H3-Latent-Continuation).
+     * Jeden záběr = jeden běh: latent hotového kusu zůstane na serveru a další
+     * běh z něj začne, takže mezi záběry nic neztmavne a paměť neroste s délkou
+     * výsledku. Opak karty Dlouhé video, která počítá všechny úseky najednou.
+     */
+    LONGMM(
+        titleCs = "Long MiniMax",
+        shortCs = "Long MM",
+        detailCs = "Záběr po záběru na jednu scénu, navazuje se přes latent"
     );
 
     /** Název karty v jazyce rozhraní (překlad až při čtení). */
@@ -216,7 +228,7 @@ enum class Mode(
     /** Vyrábí tahle karta video? Obrázkové karty vrací PNG, Hudba MP3. */
     val isVideo: Boolean
         get() = this == ALLINONE || this == TALK || this == TIMELINE ||
-            this == LONG || this == LTXAUDIO || this == DANCE
+            this == LONG || this == LTXAUDIO || this == DANCE || this == LONGMM
 }
 
 /**
@@ -282,6 +294,9 @@ fun ovladaProKartu(
     // poměr stran si karta volí sama vlastním přepínačem.
     Mode.LTXAUDIO -> Ovlada.NIC
     Mode.DANCE -> Ovlada.NIC
+    // Long MiniMax: kroky, vzorkovač i Turbo LoRA jsou autorovy a plátno si
+    // karta volí sama (a v navázání ho zamyká, protože latent se přepočítat nedá).
+    Mode.LONGMM -> Ovlada.NIC
     Mode.LONG -> Ovlada(rozliseni = !dlouheNavazuje)
     else -> Ovlada()
 }
