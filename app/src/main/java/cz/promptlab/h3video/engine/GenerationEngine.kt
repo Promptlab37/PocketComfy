@@ -247,6 +247,7 @@ object GenerationEngine {
 
     /** Běží Video ze zvuku (LTX 2.5)? Délku si graf počítá z nahraného zvuku. */
     @Volatile private var ltxRun: Boolean = false
+    @Volatile private var danceRun: Boolean = false
 
     /**
      * Mapa „číslo uzlu → třída" z odeslaného grafu. U karty All in One se podle
@@ -262,6 +263,7 @@ object GenerationEngine {
         inpaintRun -> InpaintBuilder.stageForClass(nodeClasses[node])
         longRun -> LongVideoBuilder.stageForClass(nodeClasses[node])
         model3dRun -> Trellis2Builder.stageForClass(nodeClasses[node])
+        danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.stageForClass(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.stageForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.stageForClass(nodeClasses[node])
             else AceMusicBuilder.stageForClass(nodeClasses[node])
@@ -284,6 +286,7 @@ object GenerationEngine {
         inpaintRun -> InpaintBuilder.rangeForClass(nodeClasses[node])
         longRun -> LongVideoBuilder.rangeForClass(nodeClasses[node])
         model3dRun -> Trellis2Builder.rangeForClass(nodeClasses[node])
+        danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.rangeForClass(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.rangeForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.rangeForClass(nodeClasses[node])
             else AceMusicBuilder.rangeForClass(nodeClasses[node])
@@ -312,6 +315,7 @@ object GenerationEngine {
         inpaintRun -> InpaintBuilder.reportsSteps(nodeClasses[node])
         longRun -> LongVideoBuilder.reportsSteps(nodeClasses[node])
         model3dRun -> Trellis2Builder.reportsSteps(nodeClasses[node])
+        danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.reportsSteps(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.reportsSteps(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.reportsSteps(nodeClasses[node])
             else AceMusicBuilder.reportsSteps(nodeClasses[node])
@@ -404,6 +408,8 @@ object GenerationEngine {
         model3dScene: cz.promptlab.h3video.data.Model3dScene? = null,
         /** Video ze zvuku: LTX 2.5, vlastní workflow z APK, délku určuje zvuk. */
         ltxScene: cz.promptlab.h3video.data.LtxScene? = null,
+        /** Dance: Wan-Dancer, fotka + hudba, choreografii si model vymyslí sám. */
+        danceScene: cz.promptlab.h3video.data.DanceScene? = null,
     ) {
         if (isRunning) return
         job?.cancel()
@@ -423,8 +429,9 @@ object GenerationEngine {
         longRun = longScene != null
         model3dRun = model3dScene != null
         ltxRun = ltxScene != null
+        danceRun = danceScene != null
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun && !swapRun &&
-            !inpaintRun && !longRun && !model3dRun && !ltxRun &&
+            !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
         settings.activeEdit = editRun
@@ -452,6 +459,8 @@ object GenerationEngine {
                 (if (ltxScene.snimku > 0)
                     " · %.1f s".format(ltxScene.snimku / cz.promptlab.h3video.data.LtxScene.FPS.toFloat())
                 else "")
+        } else if (danceScene != null) {
+            "Dance · " + danceScene.styl.title + " · " + danceScene.sekundy + " s"
         } else if (musicScene != null) {
             "Hudba · " + musicScene.motor.title + " · " + musicScene.delka + " s"
         } else if (t2i) {
@@ -476,7 +485,7 @@ object GenerationEngine {
                     params, images, talkAudios, timelineScene, aioScene, editScene,
                     upscaleScene, t2i, musicScene, restoreScene, angleScene, swapScene,
                     inpaintScene,
-                    longScene, model3dScene, ltxScene,
+                    longScene, model3dScene, ltxScene, danceScene,
                 )
             }
                 .onFailure { e ->
@@ -666,6 +675,7 @@ object GenerationEngine {
         longScene: cz.promptlab.h3video.data.LongScene? = null,
         model3dScene: cz.promptlab.h3video.data.Model3dScene? = null,
         ltxScene: cz.promptlab.h3video.data.LtxScene? = null,
+        danceScene: cz.promptlab.h3video.data.DanceScene? = null,
     ) {
         val client = ComfyClient(settings.serverUrl)
 
@@ -695,6 +705,8 @@ object GenerationEngine {
                 // LTX 2.5: 22B transformer a 12B enkodér textu se na 16GB
                 // kartu nevejdou naráz, takže se uklízí vždycky.
                 ltxScene != null ||
+                // Dance: 14B model má ve fp8 17 GB, tedy víc než celá karta.
+                danceScene != null ||
                 musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2,
         )
 
@@ -752,6 +764,10 @@ object GenerationEngine {
         // ho tady by znamenalo přesně tu useknutou větu, kvůli které karta vznikla.
         val ltxZvuk = ltxScene
             ?.takeIf { it.rezim == cz.promptlab.h3video.data.LtxRezim.ZVUK }?.zvuk
+            ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
+        // Dance: hudba jde na server celá. Ořez na zvolenou délku dělá až
+        // uzel v grafu, aby se počet úseků a délka hudby nemohly rozejít.
+        val danceHudba = danceScene?.hudba
             ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
         // Namluvené repliky (dialogy). Pořadí je závazné – podle něj se
         // v promptu číslují značky <Audio N>.
@@ -816,6 +832,13 @@ object GenerationEngine {
                     effective.aspect, seed,
                     rychlaPozornost = effective.sageAttention,
                     lory = effective.extraLoras,
+                )
+
+            // Dance: Wan-Dancer z APK. Fotka + hudba, choreografii si model
+            // vymyslí sám podle rytmu.
+            danceScene != null ->
+                cz.promptlab.h3video.comfy.DanceBuilder.build(
+                    app, danceScene, seed, names.firstOrNull().orEmpty(), danceHudba,
                 )
 
             // Video ze zvuku: LTX 2.5 z APK. Délka se NEDOSAZUJE — počet
@@ -940,6 +963,8 @@ object GenerationEngine {
         if (model3dScene != null) nodeClasses = Trellis2Builder.nodeClasses(workflow)
         if (ltxScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.Ltx25Builder.nodeClasses(workflow)
+        if (danceScene != null) nodeClasses =
+            cz.promptlab.h3video.comfy.DanceBuilder.nodeClasses(workflow)
 
         val promptId = UUID.randomUUID().toString().lowercase()
         // Značka do logu: od téhle chvíle patří hlášky uzlů našemu běhu.

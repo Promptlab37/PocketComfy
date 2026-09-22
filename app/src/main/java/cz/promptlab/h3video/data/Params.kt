@@ -166,6 +166,8 @@ data class GenParams(
             Mode.RESTORE -> 1
             // Video ze zvuku: jedna fotka, ze které video začne.
             Mode.LTXAUDIO -> 1
+            // Dance: jedna fotka tanečníka. Hudba má vlastní cestu, ne obrázkovou.
+            Mode.DANCE -> 1
             // Úhel kamery: jedna fotka, ze které se objekt otočí.
             Mode.ANGLE -> 1
             // 3D model: jedna fotka předmětu.

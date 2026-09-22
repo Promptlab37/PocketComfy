@@ -362,6 +362,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             LtxSection(vm)
         }
 
+        // ------------------------------------------------------------ dance
+        if (mode == Mode.DANCE) {
+            DanceSection(vm)
+        }
+
         // ----------------------------------------------------- oprava fotky
         if (mode == Mode.RESTORE) {
             RestoreSection(vm)

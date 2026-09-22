@@ -236,6 +236,32 @@ object Katalog {
             "models/vae", "Obrázek",
             "$HF/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors"
         ),
+        // Karta Dance — Wan-Dancer 14B. Dvě fáze: globální model rozvrhne
+        // pohyb, lokální ho dopiluje. Obojí je samostatný soubor.
+        "wan2.2_dancer_14b_global_fp8_scaled.safetensors" to Soubor(
+            "models/diffusion_models", "Dance — Wan-Dancer, 1. fáze (17,1 GB)",
+            "$HF/Comfy-Org/Wan-Dancer/resolve/main/diffusion_models/wan2.2_dancer_14b_global_fp8_scaled.safetensors"
+        ),
+        "wan2.2_dancer_14b_local_fp8_scaled.safetensors" to Soubor(
+            "models/diffusion_models", "Dance — Wan-Dancer, 2. fáze (17,1 GB)",
+            "$HF/Comfy-Org/Wan-Dancer/resolve/main/diffusion_models/wan2.2_dancer_14b_local_fp8_scaled.safetensors"
+        ),
+        "umt5_xxl_fp16.safetensors" to Soubor(
+            "models/text_encoders", "Dance — textový enkodér Wan (11,4 GB)",
+            "$HF/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors"
+        ),
+        "Wan2_1_VAE_bf16.safetensors" to Soubor(
+            "models/vae", "Dance — VAE Wan 2.1",
+            "$HF/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors"
+        ),
+        "clip_vision_h.safetensors" to Soubor(
+            "models/clip_vision", "Dance — obrazový enkodér (1,2 GB)",
+            "$HF/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
+        ),
+        "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors" to Soubor(
+            "models/loras", "Dance — zrychlení na 6 kroků (bez ní 25 kroků a cfg 5)",
+            "$HF/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
+        ),
         "qwen_image_vae.safetensors" to Soubor(
             "models/vae", "Úprava obrázku — Krea 2",
             "$HF/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors"

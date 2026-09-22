@@ -743,6 +743,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 if (p.prompt.isBlank()) t("Napiš, co se má ve videu dít.") else null
             Mode.MUSIC -> musicProblem(_music.value)
             Mode.LTXAUDIO -> ltxProblem(_ltx.value)
+            Mode.DANCE -> cz.promptlab.h3video.data.danceProblem(_dance.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
             Mode.ANGLE -> angleProblem(_angle.value)
             Mode.FACESWAP -> faceSwapProblem(_swap.value)
@@ -784,7 +785,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private val vsechnySceny: List<StateFlow<Any?>> get() = listOf(
         _params, _scene, _timeline, _aio, _edit, _upscale, _music,
-        _restore, _angle, _swap, _inpaint, _long, _model3d, _ltx, _projekt, _aioAvailable,
+        _restore, _angle, _swap, _inpaint, _long, _model3d, _ltx, _dance, _projekt,
+        _aioAvailable,
     )
 
     /**
@@ -819,6 +821,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (p.mode == Mode.IMAGE) return emptyList()
         if (p.mode == Mode.MUSIC) return musicHints(_music.value)
         if (p.mode == Mode.LTXAUDIO) return ltxHints(_ltx.value)
+        if (p.mode == Mode.DANCE) return cz.promptlab.h3video.data.danceHints(_dance.value)
         if (p.mode == Mode.RESTORE) return emptyList()
         // Úhel kamery jede na vlastní předloze; upozornění k videu se ho netýkají.
         if (p.mode == Mode.ANGLE) return emptyList()
@@ -1082,6 +1085,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         ),
                         s.uploadImages,
                         swapScene = s,
+                    )
+                }
+            }
+
+            // Dance: do fronty jde popis tance. Hudba se nenahrává jako
+            // obrázek — má vlastní cestu, proto je seznam jen s fotkou.
+            Mode.DANCE -> {
+                val s = _dance.value
+                QueuedRun(id, p.mode.title, s.styl.title) {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = s.popis,
+                            steps = cz.promptlab.h3video.comfy.DanceBuilder.STEPS,
+                        ),
+                        s.uploadImages,
+                        danceScene = s,
                     )
                 }
             }
@@ -3195,6 +3214,98 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 ),
             )
         }
+    }
+
+    // ------------------------------------------------------------------ dance
+
+    private val danceStore = cz.promptlab.h3video.data.DanceStore(app)
+
+    private val _dance = MutableStateFlow(cz.promptlab.h3video.data.DanceScene())
+    val dance: StateFlow<cz.promptlab.h3video.data.DanceScene> = _dance.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val obnovene = withContext(Dispatchers.IO) { danceStore.load() }
+            if (obnovene == cz.promptlab.h3video.data.DanceScene()) return@launch
+            // Náhled se neukládá (je to bitmapa), dopočítá se z uloženého
+            // souboru — jinak by karta po restartu vypadala jako bez fotky.
+            val nahled = obnovene.fotka?.let {
+                withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(it) }
+            }
+            _dance.value = obnovene.copy(nahled = nahled)
+        }
+    }
+
+    private fun updateDance(block: (cz.promptlab.h3video.data.DanceScene) -> cz.promptlab.h3video.data.DanceScene) {
+        val next = block(_dance.value)
+        _dance.value = next
+        danceStore.save(next)
+    }
+
+    fun setDanceKvalita(v: cz.promptlab.h3video.data.DanceKvalita) = updateDance { it.copy(kvalita = v) }
+    fun setDanceStyl(v: cz.promptlab.h3video.data.DanceStyl) = updateDance { it.copy(styl = v) }
+    fun setDanceRozsah(v: cz.promptlab.h3video.data.DanceRozsah) = updateDance { it.copy(rozsah = v) }
+    fun setDancePopis(v: String) = updateDance { it.copy(popis = v) }
+    fun setDanceSekundy(v: Int) = updateDance {
+        it.copy(sekundy = v.coerceIn(
+            cz.promptlab.h3video.data.DanceScene.DELKY.first(),
+            cz.promptlab.h3video.data.DanceScene.DELKY.last(),
+        ))
+    }
+
+    fun pickDanceFotku(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val cil = danceStore.fotkaFile()
+            val nahled = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), uri, cil)
+            } ?: return@launch
+            updateDance { it.copy(fotka = cil, nahled = nahled) }
+        }
+    }
+
+    fun clearDanceFotku() = updateDance {
+        it.fotka?.let { f -> runCatching { f.delete() } }
+        it.copy(fotka = null, nahled = null)
+    }
+
+    private val _danceHudbaChyba = MutableStateFlow<String?>(null)
+    val danceHudbaChyba: StateFlow<String?> = _danceHudbaChyba.asStateFlow()
+
+    fun pickDanceHudbu(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val soubor = withContext(Dispatchers.IO) {
+                runCatching {
+                    val app = getApplication<Application>()
+                    val jmeno = nazevSouboru(uri) ?: "hudba.mp3"
+                    val cil = java.io.File(app.filesDir, "dance_hudba_" + bezpecnyNazev(jmeno))
+                    app.filesDir.listFiles()
+                        ?.filter { it.name.startsWith("dance_hudba_") && it != cil }
+                        ?.forEach { it.delete() }
+                    app.contentResolver.openInputStream(uri)!!
+                        .use { vstup -> cil.outputStream().use { vstup.copyTo(it) } }
+                    cil.takeIf { it.length() > 0 }
+                }.getOrNull()
+            } ?: run {
+                _danceHudbaChyba.value = t("Hudbu se nepodařilo načíst. Zkus jiný soubor.")
+                return@launch
+            }
+            val sekund = withContext(Dispatchers.IO) { delkaZvuku(soubor) }
+            if (sekund <= 0f) {
+                soubor.delete()
+                _danceHudbaChyba.value =
+                    t("Z toho souboru nejde přečíst délka zvuku. Zkus MP3 nebo WAV.")
+                return@launch
+            }
+            _danceHudbaChyba.value = null
+            updateDance { it.copy(hudba = soubor, hudbaSekund = sekund) }
+        }
+    }
+
+    fun clearDanceHudbu() = updateDance {
+        it.hudba?.let { f -> runCatching { f.delete() } }
+        it.copy(hudba = null, hudbaSekund = 0f)
     }
 
     fun setLtxLoraStrength(value: Float) {

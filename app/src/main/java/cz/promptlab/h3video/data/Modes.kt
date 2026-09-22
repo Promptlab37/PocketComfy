@@ -192,6 +192,17 @@ enum class Mode(
         titleCs = "LTX 2.5",
         shortCs = "LTX",
         detailCs = "Video ze zadání, z fotky nebo na hotový zvuk — s nativním zvukem"
+    ),
+
+    /**
+     * Wan-Dancer 14B: z fotky člověka a hudby video, kde tančí do rytmu.
+     * Choreografii si model vymýšlí sám podle rytmu — vzorové video s tancem
+     * se sem nedává, ten model ho ani nepřijímá.
+     */
+    DANCE(
+        titleCs = "Dance",
+        shortCs = "Dance",
+        detailCs = "Z fotky a hudby video, kde ten člověk tančí do rytmu"
     );
 
     /** Název karty v jazyce rozhraní (překlad až při čtení). */
@@ -205,7 +216,7 @@ enum class Mode(
     /** Vyrábí tahle karta video? Obrázkové karty vrací PNG, Hudba MP3. */
     val isVideo: Boolean
         get() = this == ALLINONE || this == TALK || this == TIMELINE ||
-            this == LONG || this == LTXAUDIO
+            this == LONG || this == LTXAUDIO || this == DANCE
 }
 
 /**
@@ -270,6 +281,7 @@ fun ovladaProKartu(
     // Video ze zvuku: kroky, sigmy i plátno jsou z předlohy LTX 2.5,
     // poměr stran si karta volí sama vlastním přepínačem.
     Mode.LTXAUDIO -> Ovlada.NIC
+    Mode.DANCE -> Ovlada.NIC
     Mode.LONG -> Ovlada(rozliseni = !dlouheNavazuje)
     else -> Ovlada()
 }

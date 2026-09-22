@@ -526,6 +526,12 @@ object Slovnik {
         "Změněno oproti workflow" to "Changed from the workflow",
         "Vrátit hodnoty z workflow" to "Restore the workflow values",
         "Rozlišení" to "Resolution",
+        "Pět sekund v %d × %d trvalo při měření %s. " to
+            "Five seconds at %d × %d took %s when measured. ",
+        "Vyšší rozlišení i delší video čas úměrně násobí." to
+            "Higher resolution and longer video multiply that time.",
+        "22 minut" to "22 minutes",
+        "kolem hodiny" to "about an hour",
         "Megapixely × poměr stran, zaokrouhleno na násobek 32" to
             "Megapixels × aspect ratio, rounded to a multiple of 32",
         "Maximální detail" to "Maximum detail",
@@ -698,6 +704,55 @@ object Slovnik {
             "Write what should be in the new space — e.g. “full figure, legs in jeans”.",
         "Rozšířit (dokreslit, co je mimo záběr)" to "Extend (paint in what is out of frame)",
         "Rozšířit" to "Extend",
+        // karta Dance (Wan-Dancer)
+        "Dance" to "Dance",
+        "Z fotky a hudby video, kde ten člověk tančí do rytmu" to
+            "A photo plus music becomes a video of that person dancing to the beat",
+        "Kdo bude tančit" to "Who is dancing",
+        "Fotka člověka — z ní se bere podoba" to "A photo of a person — their look comes from it",
+        "Fotka tanečníka" to "The dancer's photo",
+        "Hudba" to "Music",
+        "Na tuhle skladbu se bude tančit" to "The track to dance to",
+        "Vybrat hudbu" to "Pick music",
+        "Vybrat jinou" to "Pick another",
+        "Odebrat hudbu" to "Remove the music",
+        "Délka skladby %.1f s" to "Track length %.1f s",
+        "Hudbu se nepodařilo načíst. Zkus jiný soubor." to
+            "The music could not be loaded. Try another file.",
+        "Rozlišení" to "Resolution",
+        "Vyšší je 2,25× víc bodů a úměrně déle trvá" to
+            "The higher one is 2.25× the pixels and takes proportionally longer",
+        "480 × 832 — rychlejší" to "480 × 832 — faster",
+        "720 × 1280 — jako v předloze" to "720 × 1280 — as in the template",
+        "Druh tance" to "Kind of dance",
+        "Podle toho se řídí styl pohybu" to "This drives the style of movement",
+        "Latina" to "Latin",
+        "Street dance" to "Street dance",
+        "K-pop" to "K-pop",
+        "Klasický tanec" to "Classical dance",
+        "Step" to "Tap",
+        "Rozsah pohybu" to "How big the moves are",
+        "Jak velká gesta má dělat" to "How large the gestures should be",
+        "Drobné pohyby" to "Small moves",
+        "Střední" to "Medium",
+        "Výrazné" to "Bold",
+        "Maximální" to "Maximum",
+        "Video vzniká po pětisekundových úsecích" to "The video is made in five-second segments",
+        "%d úseků · %d snímků při %d fps" to "%d segments · %d frames at %d fps",
+        "Doplnění zadání (nepovinné)" to "Extra detail (optional)",
+        "Prostředí nebo oblečení, když na nich záleží" to
+            "The setting or the clothes, when they matter",
+        "na pódiu s barevnými světly" to "on a stage with coloured lights",
+        "Vyber fotku člověka, který má tančit." to "Pick a photo of the person who should dance.",
+        "Vyber hudbu, na kterou se bude tančit." to "Pick the music to dance to.",
+        "Hudba je kratší než zvolená délka videa. Zkrať video nebo vyber delší skladbu." to
+            "The music is shorter than the chosen video length. Shorten the video or pick a longer track.",
+        "Pohyb si model vymyslí sám podle rytmu. Video se vzorovým tancem se sem nedává." to
+            "The model invents the movement from the beat. A reference dance video is not used here.",
+        "Zvolená délka je %d úseků po %d s a každý se počítá zvlášť. " to
+            "The chosen length is %d segments of %d s, each computed separately. ",
+        "Napoprvé zkus jeden, ať víš, jak dlouho to u tebe trvá." to
+            "Try one first, to see how long it takes on your machine.",
         "Objekt je čelem dolů, k tobě. Kam táhneš kameru, odtud se bude koukat." to
             "The subject faces down, towards you. Wherever you drag the camera is where it will look from.",
         "Táhni kamerou od podhledu po nadhled" to

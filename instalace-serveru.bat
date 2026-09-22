@@ -200,6 +200,30 @@ REM  Schopnost zmenit pohled je v LoRA multiple-angles a ta je trenovana
 REM  na 2511 - na Qwen Image 2.1 nesedi, je to jina architektura.
 REM  Proto se tu stahuje i zakladni model, ne jen LoRA.
 REM ------------------------------------------------------------------
+REM ------------------------------------------------------------------
+REM  Karta Dance - Wan-Dancer 14B. Z fotky cloveka a hudby video, kde
+REM  ten clovek tanci do rytmu. Choreografii si model vymysli sam podle
+REM  rytmu; vzorove video s tancem se nikam nedava.
+REM  Bezi ve dvou fazich: globalni model rozvrhne pohyb, lokalni ho
+REM  dopili na 30 fps. Kazda faze je samostatny soubor po 17,1 GB.
+REM ------------------------------------------------------------------
+set /p ODP="Karta Dance - Wan-Dancer 14B, cca 34,2 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/Wan-Dancer/resolve/main/diffusion_models/wan2.2_dancer_14b_global_fp8_scaled.safetensors" "models\diffusion_models\wan2.2_dancer_14b_global_fp8_scaled.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/Wan-Dancer/resolve/main/diffusion_models/wan2.2_dancer_14b_local_fp8_scaled.safetensors" "models\diffusion_models\wan2.2_dancer_14b_local_fp8_scaled.safetensors"
+  echo   Pozn.: model vzorkuje 149 snimku najednou a ma 17 GB, tedy vic nez cela
+  echo         16GB karta. Beh proto trva dlouho a preleva se do RAM.
+)
+
+set /p ODP="Karta Dance - spolecne modely Wan, cca 13 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors" "models\text_encoders\umt5_xxl_fp16.safetensors"
+  call :stahni "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors" "models\vae\Wan2_1_VAE_bf16.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors" "models\clip_vision\clip_vision_h.safetensors"
+  call :stahni "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors" "models\loras\lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
+  echo   Pozn.: bez LoRA lightx2v jede karta na 25 kroku a cfg 5 misto 6 kroku.
+)
+
 set /p ODP="Karta Uhel kamery - Qwen Image Edit 2511 + LoRA, cca 31 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/drbaph/Qwen-Image-Edit-2511-FP8/resolve/main/qwen_image_edit_2511_fp8_e4m3fn.safetensors" "models\diffusion_models\qwen_image_edit_2511_fp8_e4m3fn.safetensors"
