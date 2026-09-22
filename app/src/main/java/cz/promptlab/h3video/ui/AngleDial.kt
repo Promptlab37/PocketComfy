@@ -22,6 +22,7 @@ import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cz.promptlab.h3video.comfy.AngleBuilder
@@ -67,8 +68,9 @@ fun PudorysKamery(
                     val stred = Offset(size.width / 2f, size.height / 2f)
                     val polomer = minOf(size.width, size.height) / 2f - with(hustota) { 26.dp.toPx() }
                     val d = p - stred
-                    // 0° dole, roste po směru hodinových ručiček (osa y míří dolů)
-                    val stupne = Math.toDegrees(atan2(d.y, d.x).toDouble()).toFloat() - 90f
+                    // Opak [bodNaKruhu]: x = sin, y = cos. 0° je dole (zepředu)
+                    // a roste doprava, stejně jako azimut v uzlu.
+                    val stupne = Math.toDegrees(atan2(d.x, d.y).toDouble()).toFloat()
                     val pomer = (hypot(d.x, d.y) / polomer).coerceIn(0f, 1.2f)
                     onZmena(AngleBuilder.smerZUhlu(stupne), AngleBuilder.odstupZPomeru(pomer))
                 }
@@ -79,13 +81,13 @@ fun PudorysKamery(
                     val stred = Offset(size.width / 2f, size.height / 2f)
                     val polomer = minOf(size.width, size.height) / 2f - with(hustota) { 26.dp.toPx() }
                     val d = p - stred
-                    val stupne = Math.toDegrees(atan2(d.y, d.x).toDouble()).toFloat() - 90f
+                    val stupne = Math.toDegrees(atan2(d.x, d.y).toDouble()).toFloat()
                     val pomer = (hypot(d.x, d.y) / polomer).coerceIn(0f, 1.2f)
                     onZmena(AngleBuilder.smerZUhlu(stupne), AngleBuilder.odstupZPomeru(pomer))
                 }
             }
     ) {
-        Canvas(Modifier.fillMaxWidth().aspectRatio(1f)) {
+        Canvas(Modifier.fillMaxWidth().aspectRatio(1f).clipToBounds()) {
             val stred = center
             val polomer = minOf(size.width, size.height) / 2f - 26.dp.toPx()
 
@@ -147,7 +149,7 @@ fun BokorysKamery(vyska: Int, onZmena: (Int) -> Unit) {
     Box(
         Modifier
             .fillMaxWidth()
-            .height(150.dp)
+            .height(170.dp)
             .pointerInput(Unit) {
                 fun zPozice(p: Offset) {
                     val zaklad = Offset(
@@ -173,9 +175,15 @@ fun BokorysKamery(vyska: Int, onZmena: (Int) -> Unit) {
                 }
             }
     ) {
-        Canvas(Modifier.fillMaxWidth().height(150.dp)) {
+        Canvas(Modifier.fillMaxWidth().height(170.dp).clipToBounds()) {
             val zaklad = Offset(44.dp.toPx(), size.height - 44.dp.toPx())
-            val delka = size.width - 96.dp.toPx()
+            // Délka ramene se musí vejít i NA VÝŠKU. Do 3.80 se počítala jen
+            // ze šířky, takže nadhled (60°) vystřelil rameno o stovky pixelů
+            // nad plátno — a kreslilo se přes půdorys nad ním.
+            val nejvyssi = AngleBuilder.VYSKA_STUPNE.max()
+            val stropVys = (zaklad.y - 46.dp.toPx()) /
+                sin(Math.toRadians(nejvyssi.toDouble())).toFloat()
+            val delka = minOf(size.width - 96.dp.toPx(), stropVys)
 
             // obzor
             drawLine(
@@ -217,11 +225,20 @@ fun BokorysKamery(vyska: Int, onZmena: (Int) -> Unit) {
 
 // ------------------------------------------------------------------ kreslení
 
+/**
+ * Bod na půdorysu pro úhel ve stupních (0° = zepředu, roste doprava).
+ *
+ * Souřadnice sedí na `QwenMultiangleCameraNode`, který počítá
+ * `cam_x = sin(az)`, `cam_z = cos(az)` — tedy **90° = kamera napravo**, což
+ * uzel pojmenovává `right side view`. Do 3.80 tady bylo `cos` a `sin`
+ * prohozené, takže byl celý ovladač zrcadlově obrácený: „zprava" se kreslilo
+ * vlevo a kdo táhl doleva, dostal pravý bok. Hlídá to `AngleDialTest`.
+ */
 private fun bodNaKruhu(stred: Offset, polomer: Float, stupne: Float): Offset {
-    val rad = Math.toRadians((stupne + 90f).toDouble())
+    val rad = Math.toRadians(stupne.toDouble())
     return Offset(
-        stred.x + polomer * cos(rad).toFloat(),
-        stred.y + polomer * sin(rad).toFloat(),
+        stred.x + polomer * sin(rad).toFloat(),
+        stred.y + polomer * cos(rad).toFloat(),
     )
 }
 

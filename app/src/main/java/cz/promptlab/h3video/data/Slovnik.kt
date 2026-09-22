@@ -698,6 +698,10 @@ object Slovnik {
             "Write what should be in the new space — e.g. “full figure, legs in jeans”.",
         "Rozšířit (dokreslit, co je mimo záběr)" to "Extend (paint in what is out of frame)",
         "Rozšířit" to "Extend",
+        "Objekt je čelem dolů, k tobě. Kam táhneš kameru, odtud se bude koukat." to
+            "The subject faces down, towards you. Wherever you drag the camera is where it will look from.",
+        "Táhni kamerou od podhledu po nadhled" to
+            "Drag the camera from below eye level to above it",
         "Domalovat přemaluje začmárané místo, rozšíří dokreslí, co je mimo záběr." to
             "Paint repaints the spot you scribble over; extend paints in what is out of frame.",
         "Co má na přilepeném místě být (nepovinné)" to

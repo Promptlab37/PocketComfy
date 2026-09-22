@@ -112,15 +112,19 @@ fun AngleSection(vm: MainViewModel) {
 
             Spacer(Modifier.height(4.dp))
             Text(
-                t("Objekt je čelem dolů, k tobě. Pohled zprava je proto vlevo — je to jeho pravá strana, ne tvoje."),
+                t("Objekt je čelem dolů, k tobě. Kam táhneš kameru, odtud se bude koukat."),
                 style = MaterialTheme.typography.bodySmall, color = TextLow
             )
+        }
+    }
 
-            Spacer(Modifier.height(16.dp))
-            Text(
-                t("Jak vysoko"),
-                style = MaterialTheme.typography.labelMedium, color = TextLow
-            )
+    // Výška má vlastní kartu: v jednom sloupci se oba nákresy zrakově
+    // slévaly a nebylo poznat, který ovladač je který.
+    SectionCard(
+        title = t("Jak vysoko"),
+        subtitle = t("Táhni kamerou od podhledu po nadhled")
+    ) {
+        Column {
             BokorysKamery(scene.vyska) { v -> vm.updateAngle { it.copy(vyska = v) } }
 
             Spacer(Modifier.height(8.dp))
