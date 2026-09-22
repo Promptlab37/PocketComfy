@@ -245,6 +245,26 @@ object InpaintBuilder {
         if (!zvoleny || rozmer <= 0) 0
         else ((rozmer * procent / 100) / 8) * 8
 
+    /**
+     * Jak hluboko do původní fotky smí model přepisovat — „rozjezd", na kterém
+     * protáhne tvary přes hranici.
+     *
+     * Ve 3.79 byl 48 px a bylo to málo: změřeno na hotovém běhu, že barevný
+     * skok přes šev je 0,83 (uvnitř fotky je běžně 2,5) a ostrost nad a pod
+     * švem je 7,96 / 8,01 — tedy **prolnutí ani ostrost problém nebyly**.
+     * Vidět byl nesouhlas obsahu: model dokresloval na doraz k hranici a
+     * neměl kde navázat tělo, obzor ani podlahu.
+     *
+     * Počítá se z toho, kolik se přilepuje — u velkého rozšíření je potřeba
+     * větší rozjezd než u malého. Strop drží cenu: každý pixel navíc je kus
+     * fotky, který se přepočítá znovu.
+     */
+    fun presahPx(nejvetsiOkraj: Int): Int =
+        (nejvetsiOkraj / 3).coerceIn(PRESAH_MIN, PRESAH_MAX)
+
+    const val PRESAH_MIN = 128
+    const val PRESAH_MAX = 512
+
     fun buildRozsireni(
         ctx: Context, scene: InpaintScene, seed: Long, images: List<String>,
     ): JSONObject {
@@ -285,12 +305,19 @@ object InpaintBuilder {
         val wf = JSONObject(template)
         wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
         wf.inputs(N_TEXT).put("prompt", zadaniRozsireni(scene.prompt, scene.smery))
+        val okraje = listOf(
+            okrajPx(vyska, scene.procent, Smer.NAHORU in scene.smery),
+            okrajPx(vyska, scene.procent, Smer.DOLU in scene.smery),
+            okrajPx(sirka, scene.procent, Smer.VLEVO in scene.smery),
+            okrajPx(sirka, scene.procent, Smer.VPRAVO in scene.smery),
+        )
         wf.inputs(N_PLATNO).apply {
-            put("top", okrajPx(vyska, scene.procent, Smer.NAHORU in scene.smery))
-            put("bottom", okrajPx(vyska, scene.procent, Smer.DOLU in scene.smery))
-            put("left", okrajPx(sirka, scene.procent, Smer.VLEVO in scene.smery))
-            put("right", okrajPx(sirka, scene.procent, Smer.VPRAVO in scene.smery))
+            put("top", okraje[0])
+            put("bottom", okraje[1])
+            put("left", okraje[2])
+            put("right", okraje[3])
         }
+        wf.inputs(N_VYREZ).put("mask_expand_pixels", presahPx(okraje.max()))
         wf.inputs(N_SAMPLER).put("seed", seed)
         // Přilepené místo je prázdné — dokreslovat tam není co, vzniká celé.
         wf.inputs(N_SAMPLER).put("denoise", 1.0)

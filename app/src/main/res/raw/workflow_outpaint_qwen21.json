@@ -43,6 +43,18 @@
       "title": "Sdílená KV cache"
     }
   },
+  "5": {
+    "class_type": "DifferentialDiffusion",
+    "inputs": {
+      "model": [
+        "4",
+        0
+      ]
+    },
+    "_meta": {
+      "title": "Měkká maska (rozvrh místo hranice)"
+    }
+  },
   "10": {
     "class_type": "LoadImage",
     "inputs": {
@@ -178,7 +190,7 @@
       "scheduler": "simple",
       "denoise": 1.0,
       "model": [
-        "4",
+        "5",
         0
       ],
       "positive": [

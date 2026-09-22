@@ -422,7 +422,7 @@ class InpaintBuilderTest {
     @Test fun `vyrez ma presah do fotky i prolnuti`() {
         val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
         val v = wf.inputs(InpaintBuilder.N_VYREZ)
-        assertTrue("přesah do původní fotky", v.getInt("mask_expand_pixels") >= 32)
+        assertTrue("přesah do původní fotky", v.getInt("mask_expand_pixels") >= InpaintBuilder.PRESAH_MIN)
         assertTrue("prolnutí 40–80 px", v.getInt("mask_blend_pixels") in 40..80)
         // Prah by z náběhu masky ustřihl nejslabší část a udělal z něj schod.
         assertEquals(0.0, v.getDouble("mask_hipass_filter"), 1e-9)
@@ -514,4 +514,53 @@ class InpaintBuilderTest {
         }
     }
 
+
+    /**
+     * Rozjezd se škáluje podle toho, kolik se přilepuje.
+     *
+     * Ve 3.79 byl napevno 48 px. Měření hotového běhu ukázalo, že prolnutí
+     * ani ostrost problém nebyly (barevný skok přes šev 0,83 při běžné
+     * variaci 2,5 uvnitř fotky; ostrost 7,96 nad a 8,01 pod švem) — vidět
+     * byl nesouhlas obsahu, na který model neměl kde navázat.
+     */
+    @Test fun `presah roste s velikosti rozsireni`() {
+        assertEquals(InpaintBuilder.PRESAH_MIN, InpaintBuilder.presahPx(0))
+        assertEquals(InpaintBuilder.PRESAH_MIN, InpaintBuilder.presahPx(300))
+        assertEquals(272, InpaintBuilder.presahPx(816))
+        assertEquals(InpaintBuilder.PRESAH_MAX, InpaintBuilder.presahPx(9000))
+        assertTrue(InpaintBuilder.PRESAH_MIN > 48)
+
+        // Do grafu jde přesah spočítaný z NEJVĚTŠÍHO okraje, ne z prvního.
+        val wf = rozsir(
+            setOf(cz.promptlab.h3video.data.Smer.VPRAVO),
+            procent = 100, sirka = 1200, vyska = 400,
+        )
+        assertEquals(1200, wf.inputs(InpaintBuilder.N_PLATNO).getInt("right"))
+        assertEquals(
+            InpaintBuilder.presahPx(1200),
+            wf.inputs(InpaintBuilder.N_VYREZ).getInt("mask_expand_pixels"),
+        )
+    }
+
+    /**
+     * Měkká maska. Bez ní je `SetLatentNoiseMask` tvrdé „tady přepisuj, tady
+     * ne" — a protože VAE Qwenu 2.1 zmenšuje 16×, pixelové změkčení masky se
+     * do latentu promítne jen jako pár buněk a vzorkovač dostane ostrou hranu.
+     * `DifferentialDiffusion` z masky udělá **rozvrh**: čím nižší hodnota, tím
+     * později se místo odemkne k přepisu, takže přechod vzniká průběhem difuze.
+     *
+     * Změřeno na stejné fotce a stejném zadání (22. 9. 2026): sloupců, kde je
+     * svislý skok přes šev víc než 4× vyšší než okolní textura, kleslo
+     * **ze 118 na 30** a nejsilnější skok z 34,9 na 22,0.
+     */
+    @Test fun `model jde do sampleru pres mekkou masku`() {
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
+        val zdroj = wf.inputs(InpaintBuilder.N_SAMPLER).getJSONArray("model").getString(0)
+        assertEquals("DifferentialDiffusion", wf.getJSONObject(zdroj).getString("class_type"))
+        // A ta měkká maska musí viset na cache modelu, ne naopak.
+        assertEquals("QwenImage21Cache", wf.getJSONObject(
+            wf.inputs(zdroj).getJSONArray("model").getString(0)).getString("class_type"))
+        // Náběh 160 px měřením nic nepřinesl (30 -> 28), zůstává 64.
+        assertEquals(64, wf.inputs(InpaintBuilder.N_VYREZ).getInt("mask_blend_pixels"))
+    }
 }
