@@ -41,6 +41,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.promptlab.h3video.MainViewModel
 import cz.promptlab.h3video.data.InpaintModel
+import androidx.compose.foundation.layout.FlowRow
+import cz.promptlab.h3video.comfy.InpaintBuilder
+import cz.promptlab.h3video.data.InpaintRezim
+import cz.promptlab.h3video.data.Smer
 import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.ui.theme.Cyan
 import cz.promptlab.h3video.ui.theme.Ok
@@ -57,6 +61,7 @@ import kotlinx.coroutines.withContext
  * Model přepíše jen to pod maskou, zbytek fotky zůstane bajt po bajtu stejný
  * (uzly Inpaint Crop & Stitch vyřežou okolí masky a hotový kus vlepí zpět).
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun InpaintSection(vm: MainViewModel) {
     val scene by vm.inpaint.collectAsStateWithLifecycle()
@@ -67,10 +72,28 @@ fun InpaintSection(vm: MainViewModel) {
     ) { uri -> vm.pickInpaintImage(uri) }
 
     var maluje by remember { mutableStateOf(false) }
+    val masku = scene.rezim.chceMasku
+
+    SectionCard(title = t("Co se dělá"), subtitle = t("Dvě úlohy nad stejnou fotkou")) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillRow(
+                items = InpaintRezim.entries.toList(),
+                selected = scene.rezim,
+                label = { it.title },
+                onSelect = { vm.setInpaintRezim(it) },
+            )
+            Text(
+                scene.rezim.detail,
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+            )
+        }
+    }
 
     SectionCard(
-        title = t("Fotka, do které se maluje"),
-        subtitle = if (scene.maskPainted)
+        title = if (masku) t("Fotka, do které se maluje") else t("Fotka, která se rozšíří"),
+        subtitle = if (!masku)
+            t("Štětec tady není potřeba — nové místo si graf označí sám")
+        else if (scene.maskPainted)
             t("Maska je namalovaná — klepnutím na štětec ji předěláš")
         else t("Vyber fotku a pak prstem začmárej místo, které se má přemalovat")
     ) {
@@ -82,11 +105,12 @@ fun InpaintSection(vm: MainViewModel) {
                 .background(Surface2)
                 .border(
                     1.dp,
-                    if (scene.maskPainted) Ok.copy(alpha = .5f) else Outline1,
+                    if (masku && scene.maskPainted) Ok.copy(alpha = .5f) else Outline1,
                     RoundedCornerShape(14.dp)
                 )
                 .clickable {
-                    if (scene.source == null) pick.launch(imageOnly) else maluje = true
+                    if (scene.source == null) pick.launch(imageOnly)
+                    else if (masku) maluje = true
                 }
         ) {
             val thumb = scene.thumb
@@ -101,7 +125,10 @@ fun InpaintSection(vm: MainViewModel) {
                     Modifier.align(Alignment.TopEnd).padding(6.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Box(
+                    // Štětec se u rozšíření vůbec neukazuje: masku vyrábí
+                    // uzel výřezu z přilepeného místa a namalovaná by do
+                    // grafu ani nešla.
+                    if (masku) Box(
                         Modifier
                             .size(28.dp)
                             .clip(RoundedCornerShape(8.dp))
@@ -135,12 +162,43 @@ fun InpaintSection(vm: MainViewModel) {
         }
     }
 
+    if (!masku) SectionCard(
+        title = t("Kam a o kolik"),
+        subtitle = t("Qwen doporučuje 30–50 % plochy navíc na jeden směr"),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Smer.entries.forEach { smer ->
+                    val zvoleny = smer in scene.smery
+                    OutlineButton(
+                        (if (zvoleny) "✓ " else "") + smer.title,
+                        color = if (zvoleny) Cyan else TextMid,
+                    ) { vm.prepniInpaintSmer(smer) }
+                }
+            }
+            LabeledSlider(
+                label = t("O kolik"),
+                value = "%d %%".format(scene.procent),
+                position = scene.procent.toFloat(),
+                range = 10f..InpaintBuilder.ROZSIRENI_MAX.toFloat(),
+                onChange = { vm.setInpaintProcent(it.roundToInt()) },
+                note = t("Počítá se z rozměru fotky a platí pro každý zvolený směr zvlášť."),
+            )
+        }
+    }
+
     SectionCard(
-        title = t("Co má na tom místě být"),
+        title = if (masku) t("Co má na tom místě být") else t("Co má na přilepeném místě být"),
         // Každý model čte zadání jinak: Flux Fill maluje do díry to, co
         // popíšeš, kdežto Klein bere zadání jako příkaz k úpravě — popis
         // typu „muž s břichem" pro něj znamená „nech to tak".
-        subtitle = if (scene.model == InpaintModel.FILL)
+        subtitle = if (!masku)
+            t("Popiš, co v záběru chybí — „celá postava, nohy v džínách, chodník“")
+        else if (scene.model == InpaintModel.FILL)
             t("Popiš to jako výsledný obraz, ne jako příkaz")
         else t("Tenhle model poslouchá příkazy — napiš, co se s tím místem má stát")
     ) {
@@ -148,7 +206,9 @@ fun InpaintSection(vm: MainViewModel) {
             DarkTextField(
                 value = scene.prompt,
                 onValueChange = { vm.setInpaintPrompt(it) },
-                placeholder = if (scene.model == InpaintModel.FILL)
+                placeholder = if (!masku)
+                    t("celá postava, nohy v džínách a botách, dlážděný chodník")
+                else if (scene.model == InpaintModel.FILL)
                     t("dřevěná lavička pod stromem, dopolední světlo")
                 else t("posaď ho na dřevěnou lavičku pod stromem"),
                 minHeight = 100.dp,
@@ -165,7 +225,19 @@ fun InpaintSection(vm: MainViewModel) {
     val vsechnyLory by vm.inpaintLoras.collectAsStateWithLifecycle()
     val lory = vm.inpaintLoraNabidka(scene.model, vsechnyLory)
 
-    SkladaciSekce(
+    // U rozšíření se model nevybírá: vlastní předlohu má jen Qwen 2.1
+    // a nabízet volbu, kterou graf zahodí, je horší než ji skrýt.
+    if (!masku) SectionCard(
+        title = t("Čím se rozšiřuje"),
+        subtitle = t("Qwen Image 2.1 — rozšíření obrazu má v příručce jako vlastní úlohu"),
+    ) {
+        Text(
+            t("Původní fotka se vlepí zpátky nezměněná, model maluje jen to nové místo."),
+            style = MaterialTheme.typography.bodySmall, color = TextLow,
+        )
+    }
+
+    if (masku) SkladaciSekce(
         title = t("Model a doladění"),
         souhrn = scene.model.title +
             // U Qwenu LoRA neexistuje — uložená volba z jiného modelu by

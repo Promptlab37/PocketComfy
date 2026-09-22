@@ -11,6 +11,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -30,6 +31,8 @@ class InpaintBuilderTest {
         File("src/main/res/raw/workflow_inpaint_fill.json").readText()
     private val qwen: String =
         File("src/main/res/raw/workflow_inpaint_qwen21.json").readText()
+    private val rozsireni: String =
+        File("src/main/res/raw/workflow_outpaint_qwen21.json").readText()
 
     private fun JSONObject.inputs(node: String): JSONObject =
         getJSONObject(node).getJSONObject("inputs")
@@ -351,5 +354,115 @@ class InpaintBuilderTest {
                 InpaintBuilder.stageForClass(cls) != Stage.MODELS || cls.contains("Loader") ||
                     cls == "QwenImage21Cache")
         }
+    }
+
+    // --------------------------------------------------- rozšíření obrázku
+
+    private fun rozsir(
+        smery: Set<cz.promptlab.h3video.data.Smer>, procent: Int = 50, prompt: String = "nohy",
+    ) = InpaintBuilder.buildRozsireni(
+        rozsireni,
+        InpaintScene(
+            prompt = prompt, model = InpaintModel.QWEN21,
+            rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
+            smery = smery, procent = procent,
+        ),
+        5L, listOf("foto.png"),
+    )
+
+    /**
+     * Faktor 1,0 znamená „v tomhle směru neměnit". Kdyby se dosadil i tam,
+     * kde uživatel směr nezvolil, fotka by se roztáhla do všech stran.
+     */
+    @Test fun `rozsiruje se jen do zvolenych smeru`() {
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU), procent = 50)
+        val v = wf.inputs(InpaintBuilder.N_VYREZ)
+        assertTrue(v.getBoolean("extend_for_outpainting"))
+        assertEquals(1.5, v.getDouble("extend_down_factor"), 1e-6)
+        assertEquals(1.0, v.getDouble("extend_up_factor"), 1e-6)
+        assertEquals(1.0, v.getDouble("extend_left_factor"), 1e-6)
+        assertEquals(1.0, v.getDouble("extend_right_factor"), 1e-6)
+
+        val oba = rozsir(
+            setOf(cz.promptlab.h3video.data.Smer.DOLU, cz.promptlab.h3video.data.Smer.VPRAVO),
+            procent = 30,
+        ).inputs(InpaintBuilder.N_VYREZ)
+        assertEquals(1.3, oba.getDouble("extend_down_factor"), 1e-6)
+        assertEquals(1.3, oba.getDouble("extend_right_factor"), 1e-6)
+        assertEquals(1.0, oba.getDouble("extend_up_factor"), 1e-6)
+    }
+
+    /**
+     * Masku si uzel vyrobí z přilepeného místa sám. Kdyby do grafu šla ta
+     * namalovaná (zbylá z druhého režimu), přemalovala by i kus uvnitř fotky.
+     */
+    @Test fun `rozsireni neposila zadnou masku`() {
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
+        assertFalse(wf.inputs(InpaintBuilder.N_VYREZ).has("mask"))
+        assertFalse(wf.keys().asSequence().any {
+            wf.getJSONObject(it).getString("class_type") == "ImageToMask"
+        })
+        val scene = InpaintScene(
+            source = File("a.png"), mask = File("m.png"),
+            rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
+        )
+        assertEquals(listOf(File("a.png")), scene.uploadImages)
+    }
+
+    /**
+     * Fotka jde do grafu dvakrát: `<image1>` je přilepené plátno (určuje
+     * velikost), `<image2>` je celá fotka jako kontext. Bez druhé by model
+     * kreslil nohy k tělu, které nevidí — vyříznut je totiž jen okolí masky.
+     */
+    @Test fun `rozsireni vidi celou fotku jako druhou referenci`() {
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
+        val text = wf.inputs(InpaintBuilder.N_TEXT)
+        assertEquals("InpaintCropImproved",
+            wf.getJSONObject(text.getJSONArray("images.image_1").getString(0))
+                .getString("class_type"))
+        assertEquals(InpaintBuilder.N_IMAGE, text.getJSONArray("images.image_2").getString(0))
+        // Kontext musí pokrýt celou fotku, ne jen okolí přilepeného pruhu.
+        assertTrue(wf.inputs(InpaintBuilder.N_VYREZ)
+            .getDouble("context_from_mask_extend_factor") >= 5.0)
+        // Zaplnění děr by u rozšíření na víc stran označilo celou fotku.
+        assertFalse(wf.inputs(InpaintBuilder.N_VYREZ).getBoolean("mask_fill_holes"))
+        bezVisicichOdkazu(wf)
+    }
+
+    @Test fun `pokyn nese smer a vede operace`() {
+        val dolu = InpaintBuilder.zadaniRozsireni("nohy v džínách",
+            setOf(cz.promptlab.h3video.data.Smer.DOLU))
+        assertTrue(dolu.startsWith("Extend the picture in <image1> downward"))
+        assertTrue(dolu.contains("nohy v džínách"))
+        assertTrue(dolu.contains("<image2>"))
+        assertTrue(dolu.indexOf("downward") < dolu.indexOf("must stay exactly as it is"))
+
+        assertEquals("downward and to the left", InpaintBuilder.smeryVetou(
+            setOf(cz.promptlab.h3video.data.Smer.VLEVO, cz.promptlab.h3video.data.Smer.DOLU)))
+        // Pořadí je dané enumem, ne pořadím klikání — jinak by se stejné
+        // zadání pokaždé přeložilo jinak a seed by přestal být opakovatelný.
+        assertEquals(
+            InpaintBuilder.smeryVetou(setOf(cz.promptlab.h3video.data.Smer.DOLU, cz.promptlab.h3video.data.Smer.VLEVO)),
+            InpaintBuilder.smeryVetou(setOf(cz.promptlab.h3video.data.Smer.VLEVO, cz.promptlab.h3video.data.Smer.DOLU)),
+        )
+    }
+
+    @Test fun `karta nepusti rozsireni bez smeru ani bez zadani`() {
+        val zaklad = InpaintScene(
+            source = File("a.png"),
+            rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
+            prompt = "nohy",
+        )
+        assertNull(cz.promptlab.h3video.data.inpaintProblem(zaklad))
+        // Bez štětce se u rozšíření startovat smí — masku dělá graf.
+        assertFalse(zaklad.maskPainted)
+        assertNotNull(cz.promptlab.h3video.data.inpaintProblem(zaklad.copy(smery = emptySet())))
+        assertNotNull(cz.promptlab.h3video.data.inpaintProblem(zaklad.copy(prompt = "")))
+    }
+
+    @Test fun `rozsireni predloha nenese zadani predchoziho behu`() {
+        val p = JSONObject(rozsireni)
+        assertEquals("", p.inputs(InpaintBuilder.N_IMAGE).getString("image"))
+        assertEquals("", p.inputs(InpaintBuilder.N_TEXT).getString("prompt"))
     }
 }

@@ -86,6 +86,8 @@ fun ResultScreen(
     onSharpen: (() -> Unit)? = null,
     /** Poslat hotový obrázek rovnou do karty Úprava obrázku (jen u obrázků). */
     onEdit: (() -> Unit)? = null,
+    /** Rozšířit obrázek — poslat do karty Domalovat → Rozšířit (jen u obrázků). */
+    onExtend: (() -> Unit)? = null,
     /** Rozhýbat obrázek — poslat do All in One → Z obrázku (jen u obrázků). */
     onAnimate: (() -> Unit)? = null,
     /** Zvětšit hotové video — poslat do All in One → Zvětšit (jen u videí). */
@@ -325,7 +327,8 @@ fun ResultScreen(
         // rozhýbat do videa, upravit, nebo zvětšit. Bez stahování a
         // znovunahrávání.
         if (item.isImage &&
-            (onAnimate != null || onEdit != null || onUpscale != null || onSharpen != null)
+            (onAnimate != null || onEdit != null || onExtend != null ||
+                onUpscale != null || onSharpen != null)
         ) {
             Spacer(Modifier.height(16.dp))
             Text(
@@ -349,6 +352,14 @@ fun ResultScreen(
                     t("Upravit (Qwen Image 2.1 — popiš změnu)"),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onEdit,
+                )
+            }
+            if (onExtend != null) {
+                Spacer(Modifier.height(8.dp))
+                OutlineButton(
+                    t("Rozšířit (dokreslit, co je mimo záběr)"),
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = onExtend,
                 )
             }
             if (onUpscale != null) {

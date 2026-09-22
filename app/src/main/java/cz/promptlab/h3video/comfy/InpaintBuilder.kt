@@ -3,6 +3,9 @@ package cz.promptlab.h3video.comfy
 import android.content.Context
 import cz.promptlab.h3video.R
 import cz.promptlab.h3video.data.InpaintModel
+import cz.promptlab.h3video.data.InpaintRezim
+import cz.promptlab.h3video.data.InpaintScene
+import cz.promptlab.h3video.data.Smer
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -94,8 +97,29 @@ object InpaintBuilder {
         ctx.resources.openRawResource(res).bufferedReader().use { it.readText() }
     }
 
+    private var cachedRozsireni: String? = null
+
+    /**
+     * Předloha rozšíření. Je to tentýž graf jako inpaint přes Qwen 2.1, jen
+     * bez načítače masky — tu si `InpaintCropImproved` vyrobí z přilepeného
+     * místa sám — a s fotkou podruhé jako `<image2>`.
+     */
+    private fun templateRozsireni(ctx: Context): String = cachedRozsireni
+        ?: ctx.resources.openRawResource(R.raw.workflow_outpaint_qwen21)
+            .bufferedReader().use { it.readText() }.also { cachedRozsireni = it }
+
     /** Odvázaná LoRA se do grafu vkládá, jen když je vybraná (Klein). */
     const val N_LORA_KLEIN = "5"
+
+    /** Výřez kolem masky; u rozšíření navíc přilepí nové místo a označí ho. */
+    const val N_VYREZ = "20"
+
+    /**
+     * Strop rozšíření v procentech. Qwen ve své příručce doporučuje 30–50 %
+     * plochy navíc; nad 100 % už model nemá z čeho vycházet a scénu si
+     * vymýšlí od nuly, což s původní fotkou přestane ladit.
+     */
+    const val ROZSIRENI_MAX = 100
 
     fun build(
         ctx: Context, model: InpaintModel, prompt: String, seed: Long, images: List<String>,
@@ -161,6 +185,73 @@ object InpaintBuilder {
                 )
             }
         }
+        return wf
+    }
+
+    /**
+     * Slovo pro směr tak, jak ho model čte. Qwen má outpainting ve své
+     * příručce popsaný právě přes směr rozšíření (扩图 / 延伸画面).
+     */
+    fun smerSlovem(smer: Smer): String = when (smer) {
+        Smer.DOLU -> "downward"
+        Smer.NAHORU -> "upward"
+        Smer.VLEVO -> "to the left"
+        Smer.VPRAVO -> "to the right"
+    }
+
+    /** Směry v pořadí enumu, spojené do „downward and to the left". */
+    fun smeryVetou(smery: Set<Smer>): String {
+        val slova = Smer.entries.filter { it in smery }.map { smerSlovem(it) }
+        return when (slova.size) {
+            0 -> ""
+            1 -> slova[0]
+            else -> slova.dropLast(1).joinToString(", ") + " and " + slova.last()
+        }
+    }
+
+    /**
+     * Pokyn k rozšíření.
+     *
+     * Vede **operace se směrem**, ne popis výsledku — u Qwenu je to stejný
+     * případ jako u karty Úhel kamery: název úlohy bez pokynu skončí tím, že
+     * model nechá skoro všechno být. `<image2>` je ta samá fotka celá, aby
+     * měl v kontextu celou postavu; velikost plátna určuje jen `<image1>`.
+     */
+    fun zadaniRozsireni(prompt: String, smery: Set<Smer>): String {
+        val text = prompt.trim()
+        val kam = smeryVetou(smery)
+        val co = if (text.isEmpty()) "" else " Fill the new area with: $text."
+        return "Extend the picture in <image1> $kam and paint the empty area that " +
+            "was added there. <image2> is the same photo in full, for context.$co " +
+            "Continue the subject, the perspective, the lighting and the background " +
+            "across the seam so the added part looks like it was always in the frame. " +
+            "Everything already visible must stay exactly as it is."
+    }
+
+    fun buildRozsireni(
+        ctx: Context, scene: InpaintScene, seed: Long, images: List<String>,
+    ): JSONObject = buildRozsireni(templateRozsireni(ctx), scene, seed, images)
+
+    /**
+     * [images] nese jen fotku — maska se u rozšíření neposílá, vyrobí si ji
+     * `InpaintCropImproved` z přilepeného místa.
+     */
+    fun buildRozsireni(
+        template: String, scene: InpaintScene, seed: Long, images: List<String>,
+    ): JSONObject {
+        val wf = JSONObject(template)
+        wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
+        wf.inputs(N_TEXT).put("prompt", zadaniRozsireni(scene.prompt, scene.smery))
+        wf.inputs(N_VYREZ).apply {
+            put("extend_for_outpainting", true)
+            put("extend_up_factor", scene.faktor(Smer.NAHORU))
+            put("extend_down_factor", scene.faktor(Smer.DOLU))
+            put("extend_left_factor", scene.faktor(Smer.VLEVO))
+            put("extend_right_factor", scene.faktor(Smer.VPRAVO))
+        }
+        wf.inputs(N_SAMPLER).put("seed", seed)
+        // Přilepené místo je prázdné — dokreslovat tam není co, vzniká celé.
+        wf.inputs(N_SAMPLER).put("denoise", 1.0)
         return wf
     }
 

@@ -1092,7 +1092,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     GenerationEngine.start(
                         p.copy(
                             prompt = s.prompt,
-                            steps = cz.promptlab.h3video.comfy.InpaintBuilder.stepsFor(s.model),
+                            // Rozšíření jede vždycky přes Qwen 2.1 — vlastní
+                            // předlohu mají jen ty, a je to 25 kroků.
+                            steps = if (s.rezim.chceMasku)
+                                cz.promptlab.h3video.comfy.InpaintBuilder.stepsFor(s.model)
+                            else cz.promptlab.h3video.comfy.InpaintBuilder.QWEN21_STEPS,
                         ),
                         s.uploadImages,
                         inpaintScene = s,
@@ -3882,6 +3886,49 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setInpaintLora(lora: String) = updateInpaint { it.copy(lora = lora) }
     fun setInpaintLoraSila(v: Float) = updateInpaint { it.copy(loraSila = v) }
     fun setInpaintSila(v: Float) = updateInpaint { it.copy(sila = v) }
+
+    /**
+     * Přepnutí režimu karty Domalovat. Maska se **nemaže** — po návratu
+     * k domalování ji uživatel najde tak, jak ji nechal.
+     */
+    fun setInpaintRezim(rezim: cz.promptlab.h3video.data.InpaintRezim) =
+        updateInpaint { it.copy(rezim = rezim) }
+
+    /** Přepnutí jednoho směru rozšíření; víc směrů zároveň je v pořádku. */
+    fun prepniInpaintSmer(smer: cz.promptlab.h3video.data.Smer) = updateInpaint {
+        it.copy(smery = if (smer in it.smery) it.smery - smer else it.smery + smer)
+    }
+
+    fun setInpaintProcent(v: Int) = updateInpaint {
+        it.copy(procent = v.coerceIn(10, cz.promptlab.h3video.comfy.InpaintBuilder.ROZSIRENI_MAX))
+    }
+
+    /**
+     * Poslat hotový obrázek rovnou do rozšíření. Zkratka z obrazovky výsledku:
+     * jinak by se musel stáhnout do telefonu a nahrát zpátky.
+     *
+     * Režim se přepne na rozšíření a **maska se zahodí** — patřila k jiné
+     * fotce a na téhle by přemalovala něco náhodného.
+     */
+    fun posliDoRozsireni(item: VideoItem) {
+        viewModelScope.launch {
+            val zdroj = item.file(getApplication())
+            val target = inpaintStore.sourceFile()
+            val thumb = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), Uri.fromFile(zdroj), target)
+            } ?: return@launch
+            withContext(Dispatchers.IO) { runCatching { inpaintStore.maskFile().delete() } }
+            updateInpaint {
+                it.copy(
+                    source = target, thumb = thumb, mask = null,
+                    rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
+                    model = InpaintModel.QWEN21,
+                )
+            }
+            setMode(Mode.INPAINT)
+            selectTab(Tab.CREATE)
+        }
+    }
 
     /**
      * Nabídka LoRA pro domalování, čtená ze serveru. Filtruje se podle rodiny

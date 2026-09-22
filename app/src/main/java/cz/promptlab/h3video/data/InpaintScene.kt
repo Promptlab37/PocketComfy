@@ -51,6 +51,45 @@ enum class InpaintModel(
 }
 
 /**
+ * Co karta dělá. Obojí je tentýž graf — mění se jen to, odkud vznikne maska.
+ */
+enum class InpaintRezim(
+    private val titleCs: String,
+    private val detailCs: String,
+) {
+    /** Maska je to, co uživatel začmáral prstem. */
+    MASKA(
+        titleCs = "Domalovat do masky",
+        detailCs = "Začmáráš místo a model ho přemaluje podle věty",
+    ),
+
+    /**
+     * Maska vzniká sama: `InpaintCropImproved` s `extend_for_outpainting`
+     * přilepí k fotce nové místo a označí ho. Štětec se proto nepoužívá.
+     */
+    ROZSIRIT(
+        titleCs = "Rozšířit obrázek",
+        detailCs = "Přilepí k fotce nové místo a domaluje, co tam chybí",
+    );
+
+    val title: String get() = t(titleCs)
+    val detail: String get() = t(detailCs)
+
+    /** Maluje se štětcem? U rozšíření ne — masku vyrobí graf. */
+    val chceMasku: Boolean get() = this == MASKA
+}
+
+/** Kam se fotka rozšiřuje. Víc směrů zároveň je v pořádku. */
+enum class Smer(private val titleCs: String) {
+    DOLU("Dolů"),
+    NAHORU("Nahoru"),
+    VLEVO("Vlevo"),
+    VPRAVO("Vpravo");
+
+    val title: String get() = t(titleCs)
+}
+
+/**
  * Karta **Domalovat** (inpainting) — zamaskovaná část fotky se přemaluje
  * podle věty, zbytek zůstane netknutý.
  *
@@ -81,11 +120,32 @@ data class InpaintScene(
      * na dolaďování detailu je 0,5–0,7 obvykle lepší než plný přepis.
      */
     val sila: Float = 1.0f,
+    /** Co se dělá — domalování do masky, nebo rozšíření plátna. */
+    val rezim: InpaintRezim = InpaintRezim.MASKA,
+    /** Směry rozšíření. Prázdné = nic, karta pak nepustí start. */
+    val smery: Set<Smer> = setOf(Smer.DOLU),
+    /**
+     * O kolik procent plochy se v každém zvoleném směru přidá. Qwen ve své
+     * příručce doporučuje 30–50 %, proto je výchozí 50 a strop 100:
+     * nad tím už model nemá z čeho vycházet a dokresluje si scénu od nuly.
+     */
+    val procent: Int = 50,
 ) {
     val maskPainted: Boolean get() = mask != null
 
-    /** Pořadí je závazné — stavitel čte [fotka, maska]. */
-    val uploadImages: List<File> get() = listOfNotNull(source, mask)
+    /**
+     * Pořadí je závazné — stavitel čte [fotka, maska].
+     *
+     * U rozšíření se maska neposílá vůbec: `InpaintCropImproved` ji má jako
+     * nepovinný vstup a bez ní si ji z přilepeného místa vyrobí sám. Poslat
+     * tam starou masku z druhého režimu by přemalovalo i místo uvnitř fotky.
+     */
+    val uploadImages: List<File> get() =
+        if (rezim.chceMasku) listOfNotNull(source, mask) else listOfNotNull(source)
+
+    /** Faktor pro daný směr tak, jak ho čte uzel: 1,0 = neměnit. */
+    fun faktor(smer: Smer): Double =
+        if (smer in smery) 1.0 + procent / 100.0 else 1.0
 }
 
 /**
@@ -112,15 +172,37 @@ fun loryProModel(model: InpaintModel, vse: List<String>): List<String> {
 
 /** Co kartě chybí, než se dá spustit. */
 fun inpaintProblem(s: InpaintScene): String? = when {
-    s.source == null -> t("Vyber fotku, do které se má domalovávat.")
-    !s.maskPainted -> t("Začmárej prstem místo, které se má přemalovat.")
-    s.prompt.isBlank() -> t("Napiš, co má na zamaskovaném místě být.")
+    s.source == null -> if (s.rezim.chceMasku)
+        t("Vyber fotku, do které se má domalovávat.")
+    else t("Vyber fotku, kterou chceš rozšířit.")
+    s.rezim.chceMasku && !s.maskPainted ->
+        t("Začmárej prstem místo, které se má přemalovat.")
+    !s.rezim.chceMasku && s.smery.isEmpty() ->
+        t("Vyber aspoň jeden směr, kam se má fotka rozšířit.")
+    s.prompt.isBlank() -> if (s.rezim.chceMasku)
+        t("Napiš, co má na zamaskovaném místě být.")
+    else t("Napiš, co má na přilepeném místě být — třeba „celá postava, nohy v džínách“.")
     else -> null
 }
 
 /** Upozornění, která nebrání spuštění. */
 fun inpaintHints(s: InpaintScene): List<String> {
     val out = mutableListOf<String>()
+    if (!s.rezim.chceMasku) {
+        // Původní fotka se vlepí zpátky nezměněná (InpaintStitchImproved),
+        // takže se není čeho bát u tváří — ale je dobré to říct, protože
+        // u ostatních modelů appky to takhle nefunguje.
+        out += t("Původní fotka se nepřekresluje — model maluje jen to přilepené místo.")
+        if (s.procent > 60) {
+            out += t("Nad 60 % už model nemá z čeho vycházet a scénu si vymýšlí. " +
+                "Spolehlivější je rozšířit dvakrát po menším kusu.")
+        }
+        if (s.smery.size > 2) {
+            out += t("Čím víc směrů naráz, tím víc si model domýšlí. " +
+                "Po jednom směru to bývá přesnější.")
+        }
+        return out
+    }
     if (s.maskPainted) {
         out += t("Popiš celé místo i s okolím („muž v černé bundě na lavičce“), " +
             "ne jen samotnou věc — model píše obraz, ne příkaz.")
@@ -181,6 +263,15 @@ class InpaintStore(private val ctx: Context) {
             lora = ulozene?.optString("lora").orEmpty(),
             loraSila = (ulozene?.optDouble("loraSila", 0.9) ?: 0.9).toFloat(),
             sila = (ulozene?.optDouble("sila", 1.0) ?: 1.0).toFloat(),
+            rezim = runCatching { InpaintRezim.valueOf(ulozene?.optString("rezim").orEmpty()) }
+                .getOrDefault(InpaintRezim.MASKA),
+            smery = ulozene?.optJSONArray("smery")?.let { pole ->
+                (0 until pole.length()).mapNotNull { i ->
+                    runCatching { Smer.valueOf(pole.getString(i)) }.getOrNull()
+                }.toSet()
+            } ?: setOf(Smer.DOLU),
+            procent = (ulozene?.optInt("procent", 50) ?: 50)
+                .coerceIn(10, cz.promptlab.h3video.comfy.InpaintBuilder.ROZSIRENI_MAX),
         )
     }
 
@@ -193,6 +284,9 @@ class InpaintStore(private val ctx: Context) {
                 .put("lora", s.lora)
                 .put("loraSila", s.loraSila.toDouble())
                 .put("sila", s.sila.toDouble())
+                .put("rezim", s.rezim.name)
+                .put("smery", org.json.JSONArray(s.smery.map { it.name }))
+                .put("procent", s.procent)
                 .toString()
         ).apply()
     }

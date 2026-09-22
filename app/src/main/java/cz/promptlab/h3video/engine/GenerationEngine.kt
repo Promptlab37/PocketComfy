@@ -871,6 +871,11 @@ object GenerationEngine {
             // Domalování do masky: Flux Fill, Klein 9B nebo Qwen Image 2.1
             // podle volby karty. Qwen LoRA nemá — uložená volba z jiného
             // modelu se do jeho grafu nesmí dostat.
+            // Rozšíření plátna je vlastní předloha: masku si vyrobí uzel
+            // výřezu z přilepeného místa, takže žádná nejde ze karty.
+            inpaintScene != null && !inpaintScene.rezim.chceMasku ->
+                InpaintBuilder.buildRozsireni(app, inpaintScene, seed, names)
+
             inpaintScene != null ->
                 InpaintBuilder.build(
                     app, inpaintScene.model, inpaintScene.prompt, seed, names,

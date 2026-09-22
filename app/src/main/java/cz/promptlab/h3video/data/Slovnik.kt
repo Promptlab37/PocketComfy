@@ -651,6 +651,52 @@ object Slovnik {
         "Přepisovač nevrátil použitelný výsledek. Zkus to znovu." to
             "The rewriter returned nothing usable. Try again.",
         "Přepisuji…" to "Rewriting…",
+        // karta Domalovat — režim rozšíření obrázku
+        "Domalovat do masky" to "Paint into a mask",
+        "Rozšířit obrázek" to "Extend the image",
+        "Začmáráš místo a model ho přemaluje podle věty" to
+            "You scribble over a spot and the model repaints it from your sentence",
+        "Přilepí k fotce nové místo a domaluje, co tam chybí" to
+            "Adds new space next to the photo and paints in what is missing",
+        "Dvě úlohy nad stejnou fotkou" to "Two jobs on the same photo",
+        "Fotka, která se rozšíří" to "The photo to extend",
+        "Štětec tady není potřeba — nové místo si graf označí sám" to
+            "No brush needed here — the graph marks the new space itself",
+        "Kam a o kolik" to "Where and how much",
+        "Qwen doporučuje 30–50 % plochy navíc na jeden směr" to
+            "Qwen recommends 30–50% extra space per direction",
+        "Dolů" to "Down",
+        "Nahoru" to "Up",
+        "Vlevo" to "Left",
+        "Vpravo" to "Right",
+        "O kolik" to "How much",
+        "Počítá se z rozměru fotky a platí pro každý zvolený směr zvlášť." to
+            "Measured from the photo's size, and applied to each chosen direction separately.",
+        "Co má na přilepeném místě být" to "What should be in the new space",
+        "Popiš, co v záběru chybí — „celá postava, nohy v džínách, chodník“" to
+            "Describe what the frame is missing — “full figure, legs in jeans, pavement”",
+        "celá postava, nohy v džínách a botách, dlážděný chodník" to
+            "full figure, legs in jeans and boots, paved footpath",
+        "Čím se rozšiřuje" to "What does the extending",
+        "Qwen Image 2.1 — rozšíření obrazu má v příručce jako vlastní úlohu" to
+            "Qwen Image 2.1 — its guide lists outpainting as a task of its own",
+        "Původní fotka se vlepí zpátky nezměněná, model maluje jen to nové místo." to
+            "The original photo is stitched back unchanged; the model paints only the new space.",
+        "Původní fotka se nepřekresluje — model maluje jen to přilepené místo." to
+            "The original photo is not repainted — the model paints only the added space.",
+        "Nad 60 % už model nemá z čeho vycházet a scénu si vymýšlí. " to
+            "Above 60% the model has little to go on and invents the scene. ",
+        "Spolehlivější je rozšířit dvakrát po menším kusu." to
+            "Extending twice by a smaller amount is more reliable.",
+        "Čím víc směrů naráz, tím víc si model domýšlí. " to
+            "The more directions at once, the more the model makes up. ",
+        "Po jednom směru to bývá přesnější." to "One direction at a time is usually more accurate.",
+        "Vyber fotku, kterou chceš rozšířit." to "Pick the photo you want to extend.",
+        "Vyber aspoň jeden směr, kam se má fotka rozšířit." to
+            "Pick at least one direction to extend the photo into.",
+        "Napiš, co má na přilepeném místě být — třeba „celá postava, nohy v džínách“." to
+            "Write what should be in the new space — e.g. “full figure, legs in jeans”.",
+        "Rozšířit (dokreslit, co je mimo záběr)" to "Extend (paint in what is out of frame)",
         // karta LTX 2.5 — přepisovač popisu a LoRA
         "✨ Vylepšit (LTX)" to "✨ Improve (LTX)",
         "Nejdřív napiš aspoň pár slov o tom, co má být vidět." to
