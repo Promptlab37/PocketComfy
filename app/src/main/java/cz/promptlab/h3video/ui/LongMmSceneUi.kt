@@ -97,17 +97,22 @@ fun LongMmSection(vm: MainViewModel) {
                 // Nabídka je proto z Galerie aplikace; do galerie telefonu se
                 // výsledky kopírují jen při zapnutém automatickém ukládání,
                 // takže systémový výběr by u většiny lidí ukázal prázdno.
-                if (predchozi.isNotEmpty()) {
+                val zTelefonu = scene.zdroj?.name?.startsWith("longmm_zdroj") == true
+                if (predchozi.isNotEmpty() && !zTelefonu) {
                     Dropdown(
                         label = t("Předchozí záběry téhle karty"),
                         items = predchozi,
                         selected = predchozi.firstOrNull { it.file(ctx) == scene.zdroj }
                             ?: predchozi.first(),
-                        render = { it.displayTitle },
+                        // Popiskem je čas a délka, ne zadání: přepsaná zadání
+                        // pro H3 mají klidně tři řádky a v nabídce se z nich
+                        // stane nečitelná zeď. Soubor se jmenuje podle čísla
+                        // úlohy, takže ten je na tom stejně.
+                        render = { popisekZaberu(it) },
                         onSelect = { vm.setLongMmZdrojZGalerie(it) },
                     )
                 }
-                ZdrojVideoRadek(vm, scene)
+                ZdrojVideoRadek(vm, scene, zTelefonu)
             }
         }
 
@@ -235,8 +240,31 @@ fun LongMmSection(vm: MainViewModel) {
     }
 }
 
+/**
+ * Krátký popisek hotového záběru do nabídky: čas a délka.
+ *
+ * Ne zadání a ne název souboru — přepsané zadání pro H3 má klidně tři řádky
+ * a soubor se jmenuje podle čísla úlohy (`68761ae4-…mp4`). Ani jedno se do
+ * jednořádkové nabídky nehodí.
+ */
+private fun popisekZaberu(item: cz.promptlab.h3video.data.VideoItem): String {
+    val kdy = java.text.SimpleDateFormat("d. M. HH:mm", java.util.Locale.getDefault())
+        .format(java.util.Date(item.createdAt))
+    val delka = if (item.seconds > 0f) " · %.0f s".format(item.seconds) else ""
+    return kdy + delka
+}
+
+/**
+ * Výběr videa z telefonu. Když se navazuje na hotový záběr z Galerie aplikace,
+ * je tohle jen druhá možnost — proto se tu v tu chvíli neukazuje žádný název
+ * souboru: ten by byl stejně jen číslo úlohy.
+ */
 @Composable
-private fun ZdrojVideoRadek(vm: MainViewModel, scene: cz.promptlab.h3video.data.LongMmScene) {
+private fun ZdrojVideoRadek(
+    vm: MainViewModel,
+    scene: cz.promptlab.h3video.data.LongMmScene,
+    zTelefonu: Boolean,
+) {
     val pick = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri -> vm.pickLongMmZdroj(uri) }
@@ -252,15 +280,15 @@ private fun ZdrojVideoRadek(vm: MainViewModel, scene: cz.promptlab.h3video.data.
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Default.Movie, null, Modifier.size(22.dp), if (scene.zdroj != null) Cyan else TextMid)
+        Icon(Icons.Default.Movie, null, Modifier.size(22.dp), if (zTelefonu) Cyan else TextMid)
         Spacer(Modifier.width(12.dp))
         Text(
-            scene.zdroj?.name ?: t("Vybrat video z galerie"),
+            if (zTelefonu) scene.zdroj?.name.orEmpty() else t("Vybrat video z telefonu"),
             style = MaterialTheme.typography.bodyMedium,
-            color = if (scene.zdroj != null) TextMid else TextLow,
+            color = if (zTelefonu) TextMid else TextLow,
             modifier = Modifier.weight(1f),
         )
-        if (scene.zdroj != null) {
+        if (zTelefonu) {
             Icon(
                 Icons.Default.Close, t("Odebrat"),
                 Modifier

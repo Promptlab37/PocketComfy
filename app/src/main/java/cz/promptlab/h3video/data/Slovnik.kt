@@ -719,6 +719,7 @@ object Slovnik {
             "There is no latent on the server yet. Start with the first shot.",
         "Nejnovější je nahoře" to "Newest first",
         "Předchozí záběry téhle karty" to "Earlier shots from this card",
+        "Vybrat video z telefonu" to "Pick a video from the phone",
         "✨ Vylepšit zadání" to "✨ Improve the prompt",
         "Nejdřív napiš aspoň pár slov o tom, co se má dít." to
             "Write at least a few words about what should happen first.",
