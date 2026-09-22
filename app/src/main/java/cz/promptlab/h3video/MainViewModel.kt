@@ -3414,6 +3414,30 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Zadání dalšího taktu děje. Jede na odblokovaném modelu z `models/LLM`
+     * s vlastním systémovým promptem — viz [LongMmPromptBuilder].
+     */
+    private suspend fun prepisNavazani(client: ComfyClient, zadani: String): String {
+        val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS) ?: throw ComfyException(
+            "llama uzel chybi",
+            "Server nemá uzly llama.cpp — bez nich se zadání navázání přepsat nedá.",
+        )
+        val nabidka = spec.getJSONObject("input").getJSONObject("required")
+            .getJSONArray("model").getJSONArray(0)
+            .let { a -> (0 until a.length()).map { a.getString(it) } }
+        val model = ImagePromptBuilder.vyberModel(nabidka) ?: throw ComfyException(
+            "zadny model",
+            "V models/LLM není žádný jazykový model, kterým by se zadání přepsalo.",
+        )
+        val wf = cz.promptlab.h3video.comfy.LongMmPromptBuilder.build(
+            zadani = zadani,
+            model = model,
+            seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+        )
+        return spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.LongMmPromptBuilder.N_PREVIEW)
+    }
+
     fun pickLongMmRef(index: Int, uri: Uri?) {
         if (uri == null) return
         viewModelScope.launch {
@@ -3534,6 +3558,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 runCatching {
                     val client = ComfyClient(settings.serverUrl)
                     uklidPredPrepisem(client)
+                    // Navázání má vlastní cestu. Oficiální přepisovač píše
+                    // VŽDYCKY samostatný klip i s kulisami, oblečením a světlem
+                    // — a ty scénu drží latent, ne prompt. Z „vyjde z kavárny"
+                    // tak 22. 9. 2026 vznikla moderní kancelář a žena dál pila
+                    // kafe, protože model ten cizí popis zahodil.
+                    if (s.rezim == cz.promptlab.h3video.data.LongMmRezim.NAVAZANI) {
+                        return@runCatching prepisNavazani(client, zadani)
+                    }
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
                         ?: throw ComfyException(
                             "rewriter chybi",
