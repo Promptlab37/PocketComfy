@@ -72,6 +72,17 @@ object LongMmBuilder {
     /** Kroky vzorkování — podle nich se počítá ukazatel průběhu. */
     const val STEPS = 7
 
+    /**
+     * Největší seed, který uzel navázání přijme.
+     *
+     * `MiniMaxH3EasySegmentRender` má seed omezený na 32 bitů, zatímco
+     * `RandomNoise` u prvního záběru snese 64. Appka losuje do 10^15, takže
+     * první záběr prošel a navázání spadlo na
+     * „Value … bigger than max of 4294967295". Seed se proto zbytkem po dělení
+     * složí do povoleného rozsahu — stejné zadání tak pořád dává stejný seed.
+     */
+    const val SEED_MAX = 4_294_967_295L
+
     private var cachePrvni: String? = null
     private var cacheDalsi: String? = null
 
@@ -132,7 +143,7 @@ object LongMmBuilder {
         val wf = JSONObject(sablona)
         wf.inputs(N_ZDROJ).put("file", zdroj)
         wf.inputs(N_LATENT_NACTI).put("latent_file", scene.latent)
-        wf.inputs(N_SEED_DALSI).put("seed", seed)
+        wf.inputs(N_SEED_DALSI).put("seed", seedProNavazani(seed))
         wf.inputs(N_LATENT_ULOZ_DALSI).put("filename_prefix", nazevLatentu(scene))
 
         val usek = wf.inputs(N_USEK)
@@ -149,6 +160,9 @@ object LongMmBuilder {
         wf.inputs(N_SLEPENI).put("overlap_frames", LongMmScene.KONTEXT_SNIMKU)
         return wf
     }
+
+    /** Seed složený do rozsahu, který uzel navázání přijme. Viz [SEED_MAX]. */
+    fun seedProNavazani(seed: Long): Long = Math.floorMod(seed, SEED_MAX + 1L)
 
     /**
      * Na kolik úseků se zadání rozpadne. Uzel dělí text na samostatných

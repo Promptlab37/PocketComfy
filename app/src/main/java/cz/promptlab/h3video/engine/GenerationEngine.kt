@@ -1619,7 +1619,13 @@ object GenerationEngine {
             seconds = when {
                 jenObrazek -> 0f
                 zvuk -> params?.seconds?.toFloat() ?: 0f
-                else -> params?.realSeconds ?: 0f
+                // Skutečná délka hotového souboru. Dřív se brala z hlavního
+                // posuvníku appky, jenže karty, které si délku řídí samy
+                // (Long MiniMax, Dance, LTX), o něm nevědí — v galerii pak
+                // u pětisekundového záběru svítilo „12 s". A u navázání by
+                // ani vlastní volba karty nesedla: výsledkem je celý slepený
+                // celek, ne jen přidaný kus.
+                else -> delkaVidea(target) ?: params?.realSeconds ?: 0f
             },
             resolution = params?.resolution?.label ?: label,
             seed = params?.seed ?: 0L,
@@ -1694,6 +1700,22 @@ object GenerationEngine {
             })
         }.getOrNull()
     }
+
+    /**
+     * Délka videa ze souboru, nebo null když se přečíst nedá (poškozený
+     * soubor, neznámý kontejner). Volající pak sáhne po odhadu ze zadání.
+     */
+    private fun delkaVidea(file: File): Float? = runCatching {
+        val mmr = android.media.MediaMetadataRetriever()
+        try {
+            mmr.setDataSource(file.absolutePath)
+            mmr.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+                ?.toLongOrNull()?.takeIf { it > 0 }?.let { it / 1000f }
+        } finally {
+            // AutoCloseable má MediaMetadataRetriever až od API 29.
+            runCatching { mmr.release() }
+        }
+    }.getOrNull()
 
     private fun closeSocket() {
         runCatching { socket?.close(1000, null) }

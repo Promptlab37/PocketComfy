@@ -129,6 +129,32 @@ class LongMmBuilderTest {
     }
 
     /**
+     * `MiniMaxH3EasySegmentRender` bere seed jen do 32 bitů, zatímco
+     * `RandomNoise` u prvního záběru snese 64. Appka losuje do 10^15, takže
+     * první záběr prošel a navázání spadlo na „Value … bigger than max of
+     * 4294967295" (22. 9. 2026, verze 3.87).
+     */
+    @Test fun `seed navazani se vejde do rozsahu uzlu`() {
+        val seedy = listOf(0L, 1L, 4_294_967_295L, 4_294_967_296L, 999_999_999_999_999L)
+        for (seed in seedy) {
+            val v = wf(seed).inputs(LongMmBuilder.N_SEED_DALSI).getLong("seed")
+            assertTrue("seed $seed -> $v mimo rozsah", v in 0L..LongMmBuilder.SEED_MAX)
+        }
+        // Malý seed se nesmí měnit — jinak by opakování se stejným seedem
+        // vracelo něco jiného, než co uživatel viděl minule.
+        assertEquals(12345L, wf(12345L).inputs(LongMmBuilder.N_SEED_DALSI).getLong("seed"))
+        // A stejné zadání musí dát pořád stejný seed.
+        assertEquals(
+            wf(999_999_999_999_999L).inputs(LongMmBuilder.N_SEED_DALSI).getLong("seed"),
+            wf(999_999_999_999_999L).inputs(LongMmBuilder.N_SEED_DALSI).getLong("seed"),
+        )
+    }
+
+    private fun wf(seed: Long) = LongMmBuilder.buildDalsi(
+        dalsi, scena(rezim = LongMmRezim.NAVAZANI), seed, "celek.mp4",
+    )
+
+    /**
      * Uzel porovnává počet délek s počtem částí zadání a při nesouladu celý
      * běh odmítne. Zadání se dělí na samostatných řádcích s `---`.
      */
