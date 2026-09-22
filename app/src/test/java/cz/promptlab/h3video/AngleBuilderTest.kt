@@ -2,138 +2,233 @@ package cz.promptlab.h3video
 
 import cz.promptlab.h3video.comfy.AngleBuilder
 import cz.promptlab.h3video.comfy.Stage
+import cz.promptlab.h3video.data.AngleScene
+import cz.promptlab.h3video.data.angleProblem
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** Úhel kamery používá přímo Qwen Image 2.1, bez starého 2511 LoRA řetězu. */
+/**
+ * Karta **Úhel kamery** jede na uživatelově workflow s LoRA `multiple-angles`.
+ *
+ * Testy hlídají hlavně dvě věci, na kterých by karta tiše selhala:
+ *  - **tvar zadání** — LoRA je natrénovaná na `<sks> {azimut} {výška} {odstup}`
+ *    v tomhle pořadí a s těmihle anglickými slovy; jakákoli změna slovníku
+ *    znamená, že se pózy neprojeví a model fotku jen lehce překreslí,
+ *  - **vyladěné hodnoty předlohy** zůstávají netknuté (dosazuje se jen fotka,
+ *    seed, zadání a síla LoRA).
+ */
 class AngleBuilderTest {
-    private val sablona = File("src/main/res/raw/workflow_qwen21_edit.json").readText()
+
+    private val sablona: String =
+        File("src/main/res/raw/workflow_qwen_angle.json").readText()
 
     private fun JSONObject.inputs(node: String): JSONObject =
         getJSONObject(node).getJSONObject("inputs")
 
     private fun bezVisicichOdkazu(wf: JSONObject) {
-        val ids = wf.keys().asSequence().toSet()
-        wf.keys().forEach { id ->
-            val inputs = wf.inputs(id)
-            inputs.keys().forEach { key ->
-                val value = inputs.opt(key)
-                if (value is JSONArray && value.length() == 2 && value.opt(0) is String) {
-                    assertTrue("uzel $id → ${value.getString(0)}", value.getString(0) in ids)
+        wf.keys().asSequence().toList().forEach { id ->
+            val ins = wf.getJSONObject(id).getJSONObject("inputs")
+            ins.keys().asSequence().toList().forEach { k ->
+                val v = ins.opt(k)
+                if (v is JSONArray && v.length() == 2 && v.opt(0) is String) {
+                    assertTrue("uzel $id → ${v.getString(0)}", wf.has(v.getString(0)))
                 }
             }
         }
     }
 
-    @Test fun `geometrie ovladace zustava obousmerna`() {
-        for (smer in AngleBuilder.AZIMUTY.indices) {
-            assertEquals(smer, AngleBuilder.smerZUhlu(AngleBuilder.uhelProSmer(smer)))
-        }
-        for (vyska in AngleBuilder.VYSKY.indices) {
-            assertEquals(vyska, AngleBuilder.vyskaZUhlu(AngleBuilder.uhelProVysku(vyska)))
-        }
-        for (odstup in AngleBuilder.ODSTUPY.indices) {
-            assertEquals(odstup, AngleBuilder.odstupZPomeru(AngleBuilder.pomerProOdstup(odstup)))
-        }
-        assertEquals(96, AngleBuilder.POZ)
+    // --------------------------------------------------------------- zadání
+
+    @Test
+    fun `zadani ma tvar, na kterem je LoRA trenovana`() {
+        assertEquals(
+            "<sks> front view eye-level shot medium shot",
+            AngleBuilder.prompt(0, 1, 1),
+        )
+        assertEquals(
+            "<sks> right side view high-angle shot close-up",
+            AngleBuilder.prompt(2, 3, 0),
+        )
+        assertEquals(
+            "<sks> back-left quarter view low-angle shot wide shot",
+            AngleBuilder.prompt(5, 0, 2),
+        )
     }
 
-    @Test fun `prompt je prirozeny pokyn pro qwen 21 bez stareho spoustece`() {
-        val prompt = AngleBuilder.prompt(2, 3, 0)
-        assertTrue(prompt.contains("<image1>"))
-        assertTrue(prompt.contains("right side view"))
-        assertTrue(prompt.contains("high-angle shot"))
-        assertTrue(prompt.contains("close-up"))
-        assertFalse(prompt.contains("<sks>"))
+    @Test
+    fun `slovnik odpovida uzlu QwenMultiangleCameraNode`() {
+        // Pořadí směrů je pořadí úhlů 0°, 45°, … 315° v uzlu balíčku.
+        assertEquals(
+            listOf(
+                "front view", "front-right quarter view", "right side view",
+                "back-right quarter view", "back view", "back-left quarter view",
+                "left side view", "front-left quarter view",
+            ),
+            AngleBuilder.AZIMUTY.map { it.first },
+        )
+        assertEquals(
+            listOf("low-angle shot", "eye-level shot", "elevated shot", "high-angle shot"),
+            AngleBuilder.VYSKY.map { it.first },
+        )
+        assertEquals(
+            listOf("close-up", "medium shot", "wide shot"),
+            AngleBuilder.ODSTUPY.map { it.first },
+        )
+        assertEquals(
+            AngleBuilder.POZ,
+            AngleBuilder.AZIMUTY.size * AngleBuilder.VYSKY.size * AngleBuilder.ODSTUPY.size,
+        )
     }
 
-    /**
-     * Qwen 2.1 rozumí změně pohledu jako **otočení o stupně** — samotný název
-     * pohledu bral jako slabý pokyn a fotku nechal skoro beze změny. Hlídá se
-     * proto, že v pokynu stupně a strana opravdu jsou.
-     */
-    @Test fun `pokyn nese otoceni ve stupnich a spravnou stranu`() {
-        assertEquals(0 to "right", AngleBuilder.otoceni(0))
-        assertEquals(90 to "right", AngleBuilder.otoceni(2))
-        assertEquals(180 to "right", AngleBuilder.otoceni(4))
-        // 225° se říká „o 135 doleva", ne „na 225" — kratší cesta kolem objektu.
-        assertEquals(135 to "left", AngleBuilder.otoceni(5))
-        assertEquals(90 to "left", AngleBuilder.otoceni(6))
-        assertEquals(45 to "left", AngleBuilder.otoceni(7))
-
-        val zleva = AngleBuilder.prompt(6, 1, 1)
-        assertTrue(zleva, zleva.contains("90 degrees to the left"))
-        assertTrue(zleva.contains("left side view"))
-
-        val zezadu = AngleBuilder.prompt(4, 1, 1)
-        assertTrue(zezadu, zezadu.contains("180 degrees"))
-
-        // Zepředu se neotáčí o nic — „orbit 0 degrees" by byl nesmysl.
-        val zepredu = AngleBuilder.prompt(0, 1, 1)
-        assertFalse(zepredu.contains("0 degrees"))
-        assertTrue(zepredu.contains("Keep the camera in front"))
-    }
-
-    /**
-     * Zachování nesmí pokyn přehlušit: oficiální systémový prompt Qwenu varuje
-     * před *under-editing*, kdy se žádaná změna provede jen naznačeně. Proto
-     * vede operace a věta o otočení stojí před větou o zachování.
-     */
-    @Test fun `operace vede pred zachovanim`() {
-        val p = AngleBuilder.prompt(6, 1, 1)
-        assertTrue(p.indexOf("degrees to the left") < p.indexOf("Keep the same subject"))
-        assertTrue(p.contains("not a crop"))
-    }
-
-    @Test fun `vyska je vzdy i ve stupnich`() {
-        assertTrue(AngleBuilder.vyskaPopis(0).contains("30 degrees below eye level"))
-        assertTrue(AngleBuilder.vyskaPopis(1).contains("at eye level"))
-        assertTrue(AngleBuilder.vyskaPopis(2).contains("30 degrees above eye level"))
-        assertTrue(AngleBuilder.vyskaPopis(3).contains("60 degrees above eye level"))
-        // Slovník uzlu zůstává v závorce — je to slovo, na kterém je model učený.
-        AngleBuilder.VYSKY.indices.forEach {
-            assertTrue(AngleBuilder.vyskaPopis(it).contains(AngleBuilder.VYSKY[it].first))
+    @Test
+    fun `spoustec je v kazde poze`() {
+        for (a in AngleBuilder.AZIMUTY.indices) {
+            for (v in AngleBuilder.VYSKY.indices) {
+                for (o in AngleBuilder.ODSTUPY.indices) {
+                    assertTrue(AngleBuilder.prompt(a, v, o).startsWith(AngleBuilder.SPOUSTEC + " "))
+                }
+            }
         }
     }
 
-    @Test fun `graf dosadi fotku seed prompt a oficialni vzorkovani`() {
-        val wf = AngleBuilder.build(sablona, 42L, listOf("clovek.png"), 2, 3, 0)
+    @Test
+    fun `mimo rozsah se sroluje, misto aby to spadlo`() {
+        assertEquals(AngleBuilder.prompt(0, 0, 0), AngleBuilder.prompt(-3, -1, -9))
+        assertEquals(AngleBuilder.prompt(7, 3, 2), AngleBuilder.prompt(99, 99, 99))
+    }
+
+    // ---------------------------------------------------- geometrie ovladače
+
+    @Test
+    fun `smer tam a zpatky sedi`() {
+        AngleBuilder.AZIMUTY.indices.forEach { i ->
+            assertEquals(i, AngleBuilder.smerZUhlu(AngleBuilder.uhelProSmer(i)))
+        }
+    }
+
+    @Test
+    fun `uhel se zaokrouhli na nejblizsi smer a obtoci dokola`() {
+        assertEquals(0, AngleBuilder.smerZUhlu(10f))     // blizko 0
+        assertEquals(1, AngleBuilder.smerZUhlu(40f))     // blizko 45
+        assertEquals(0, AngleBuilder.smerZUhlu(360f))    // cely kruh
+        assertEquals(7, AngleBuilder.smerZUhlu(-45f))    // zaporny uhel
+        assertEquals(6, AngleBuilder.smerZUhlu(-90f))
+    }
+
+    @Test
+    fun `vyska tam a zpatky sedi a mimo rozsah se orizne`() {
+        AngleBuilder.VYSKY.indices.forEach { i ->
+            assertEquals(i, AngleBuilder.vyskaZUhlu(AngleBuilder.uhelProVysku(i)))
+        }
+        assertEquals(0, AngleBuilder.vyskaZUhlu(-90f))   // pod podhledem
+        assertEquals(3, AngleBuilder.vyskaZUhlu(120f))   // nad nadhledem
+        assertEquals(1, AngleBuilder.vyskaZUhlu(5f))     // skoro v urovni oci
+    }
+
+    @Test
+    fun `odstup tam a zpatky sedi, blizko je detail`() {
+        AngleBuilder.ODSTUPY.indices.forEach { i ->
+            assertEquals(i, AngleBuilder.odstupZPomeru(AngleBuilder.pomerProOdstup(i)))
+        }
+        assertEquals(0, AngleBuilder.odstupZPomeru(0f))    // u objektu = detail
+        assertEquals(2, AngleBuilder.odstupZPomeru(1.5f))  // za krajem = celek
+    }
+
+    @Test
+    fun `kazda poloha ovladace vede na natrenovanou pozu`() {
+        // Projít celý půdorys po pěti stupních a všechny poloměry — nikde
+        // nesmí vzniknout kombinace, kterou LoRA nezná.
+        var kolik = 0
+        for (stupne in 0 until 360 step 5) {
+            for (p in 0..20) {
+                val smer = AngleBuilder.smerZUhlu(stupne.toFloat())
+                val odstup = AngleBuilder.odstupZPomeru(p / 10f)
+                assertTrue(smer in AngleBuilder.AZIMUTY.indices)
+                assertTrue(odstup in AngleBuilder.ODSTUPY.indices)
+                assertTrue(AngleBuilder.prompt(smer, 1, odstup).startsWith(AngleBuilder.SPOUSTEC))
+                kolik++
+            }
+        }
+        assertTrue(kolik > 1000)
+    }
+
+    // ----------------------------------------------------------------- graf
+
+    @Test
+    fun `dosadi se fotka, seed, zadani a sila`() {
+        val wf = AngleBuilder.build(sablona, 42L, listOf("clovek.png"), 2, 3, 0, 0.8f)
         assertEquals("clovek.png", wf.inputs(AngleBuilder.N_IMAGE).getString("image"))
         assertEquals(42L, wf.inputs(AngleBuilder.N_SAMPLER).getLong("seed"))
         assertEquals(
-            AngleBuilder.prompt(2, 3, 0),
+            "<sks> right side view high-angle shot close-up",
             wf.inputs(AngleBuilder.N_PROMPT).getString("prompt"),
         )
-        val sampler = wf.inputs(AngleBuilder.N_SAMPLER)
-        assertEquals(25, sampler.getInt("steps"))
-        assertEquals(1.0, sampler.getDouble("cfg"), 1e-6)
-        assertEquals("euler", sampler.getString("sampler_name"))
-        assertEquals("simple", sampler.getString("scheduler"))
-        assertEquals("H3AngleQwen21", wf.inputs(AngleBuilder.N_SAVE).getString("filename_prefix"))
+        assertEquals(0.8, wf.inputs(AngleBuilder.N_LORA_UHLY).getDouble("strength_model"), 1e-6)
         bezVisicichOdkazu(wf)
     }
 
-    @Test fun `graf obsahuje pouze novy qwen model a zadnou lora`() {
+    @Test
+    fun `vyladene hodnoty predlohy zustavaji`() {
         val wf = AngleBuilder.build(sablona, 1L, listOf("a.png"), 0, 1, 1)
-        assertEquals(
-            "qwen_image_2.1_int8_convrot.safetensors",
-            wf.inputs("1").getString("unet_name"),
-        )
-        assertFalse(wf.toString().contains("2511"))
-        assertFalse(wf.keys().asSequence().any {
-            wf.getJSONObject(it).optString("class_type") == "LoraLoaderModelOnly"
-        })
+        val s = wf.inputs(AngleBuilder.N_SAMPLER)
+        assertEquals(AngleBuilder.STEPS, s.getInt("steps"))
+        assertEquals(1.0, s.getDouble("cfg"), 1e-6)
+        assertEquals("euler", s.getString("sampler_name"))
+        assertEquals("simple", s.getString("scheduler"))
+        assertEquals(1.0, s.getDouble("denoise"), 1e-6)
+        // Shift a CFGNorm z předlohy — obojí se nesmí přepsat.
+        assertEquals(3.1, wf.inputs("94").getDouble("shift"), 1e-6)
+        assertEquals(1.0, wf.inputs("98").getDouble("strength"), 1e-6)
     }
 
-    @Test fun `vsechny tridy predlohy maji fazi`() {
+    @Test
+    fun `zaporne zadani zustava prazdne`() {
+        val wf = AngleBuilder.build(sablona, 1L, listOf("a.png"), 0, 1, 1)
+        assertEquals("", wf.inputs(AngleBuilder.N_PROMPT_ZAPORNY).getString("prompt"))
+    }
+
+    @Test
+    fun `predloha nese obe LoRA a editacni vahy`() {
         val wf = JSONObject(sablona)
-        wf.keys().forEach { id ->
+        val lory = wf.keys().asSequence().toList().mapNotNull { id ->
+            wf.getJSONObject(id).takeIf { it.getString("class_type") == "LoraLoaderModelOnly" }
+                ?.getJSONObject("inputs")?.getString("lora_name")
+        }
+        assertTrue(lory.any { it.contains("multiple-angles") })
+        assertTrue(lory.any { it.contains("Lightning") })
+        assertTrue(
+            wf.inputs("108").getString("unet_name").contains("qwen_image_edit_2511")
+        )
+    }
+
+    // ---------------------------------------------------------------- karta
+
+    @Test
+    fun `bez fotky karta rekne, co chybi`() {
+        assertNotNull(angleProblem(AngleScene()))
+        assertNull(angleProblem(AngleScene(source = File("a.png"))))
+    }
+
+    @Test
+    fun `popis do historie je lidsky, ne spoustec`() {
+        val s = AngleScene(azimut = 2, vyska = 3, odstup = 0)
+        assertTrue(!s.popis.contains("<sks>"))
+        assertTrue(s.zadani.startsWith("<sks>"))
+    }
+
+    @Test
+    fun `faze pokryvaji vsechny uzly predlohy`() {
+        val wf = JSONObject(sablona)
+        wf.keys().asSequence().toList().forEach { id ->
             val cls = wf.getJSONObject(id).getString("class_type")
+            // Nic nesmí propadnout na výchozí větev jako neznámé — kdyby ano,
+            // pásek fází by u téhle karty stál na místě.
             assertTrue(
                 "uzel $cls nemá fázi",
                 AngleBuilder.stageForClass(cls) != Stage.SAMPLING || cls == "KSampler",

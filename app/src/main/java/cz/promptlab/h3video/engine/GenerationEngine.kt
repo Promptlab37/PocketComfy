@@ -832,7 +832,10 @@ object GenerationEngine {
                     Yue2MusicBuilder.build(app, musicScene, seed, hudbaPredloha)
                 else AceMusicBuilder.build(app, musicScene, seed)
 
-            // Úhel kamery: nativní editace pohledu přes Qwen Image 2.1.
+            // Úhel kamery: Qwen Image Edit 2511 s LoRA multiple-angles.
+            // Schopnost změnit pohled je v TÉ LORA, ne v základním modelu —
+            // migrace karty na Qwen 2.1 ve 3.64 ji proto tiše vypnula
+            // (2.1 má jinou architekturu a LoRA na ni nesedí).
             angleScene != null ->
                 AngleBuilder.build(
                     app, seed, names,

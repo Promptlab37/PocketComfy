@@ -240,6 +240,26 @@ object Katalog {
             "models/vae", "Úprava obrázku — Krea 2",
             "$HF/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors"
         ),
+        // Karta Úhel kamery. Schopnost změnit pohled je v LoRA
+        // `multiple-angles`, ne v základním modelu — a ta je trénovaná na
+        // Qwen Image Edit 2511, na Qwen Image 2.1 nesedí (jiná architektura).
+        // Proto tahle jediná karta zůstává na 2511.
+        "qwen_image_edit_2511_fp8_e4m3fn.safetensors" to Soubor(
+            "models/diffusion_models", "Úhel kamery — Qwen Image Edit 2511 (20,4 GB)",
+            "$HF/drbaph/Qwen-Image-Edit-2511-FP8/resolve/main/qwen_image_edit_2511_fp8_e4m3fn.safetensors"
+        ),
+        "qwen-image-edit-2511-multiple-angles-lora.safetensors" to Soubor(
+            "models/loras", "Úhel kamery — 96 póz z jedné fotky (bez ní se pohled nezmění)",
+            "$HF/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA/resolve/main/qwen-image-edit-2511-multiple-angles-lora.safetensors"
+        ),
+        "Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors" to Soubor(
+            "models/loras", "Úhel kamery — zrychlení na 8 kroků",
+            "$HF/lightx2v/Qwen-Image-Edit-2511-Lightning/resolve/main/Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors"
+        ),
+        "qwen_2.5_vl_7b_fp8_scaled.safetensors" to Soubor(
+            "models/text_encoders", "Úhel kamery — textový enkodér k 2511",
+            "$HF/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
+        ),
         "qwen_image_2.1_int8_convrot.safetensors" to Soubor(
             "models/diffusion_models", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (7,3 GB)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_int8_convrot.safetensors"

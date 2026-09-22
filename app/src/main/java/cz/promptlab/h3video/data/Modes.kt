@@ -98,7 +98,8 @@ enum class Mode(
     ),
 
     /**
-     * Tentýž objekt z jiného místa přes Qwen Image 2.1. Uživatel nic nepíše —
+     * Tentýž objekt z jiného místa přes Qwen Image Edit 2511 s LoRA
+     * `multiple-angles`. Uživatel nic nepíše —
      * ovladače nastaví, odkud se
      * kamera dívá (8 směrů), jak vysoko (4) a jak daleko (3), a z toho se
      * složí přesný přirozený pokyn pro nový pohled.

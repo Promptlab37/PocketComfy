@@ -8,7 +8,12 @@ import java.io.File
 
 /**
  * Karta **Úhel kamery** — z jedné fotky tentýž objekt z jiného místa
- * pomocí nativní editace Qwen Image 2.1.
+ * pomocí Qwen Image Edit 2511 s LoRA `multiple-angles`.
+ *
+ * Tahle karta je jediná, která zůstává na 2511: schopnost změnit pohled je
+ * v té LoRA, ne v základním modelu, a na Qwen Image 2.1 nesedí (jiná
+ * architektura). Migrace na 2.1 ve 3.64 kartu tiše vypnula — graf běžel,
+ * ale pohled se neměnil.
  *
  * Uživatel nezadává text: nastaví, odkud se má kamera dívat, jak vysoko
  * a jak daleko. Z toho se složí přesný přirozený pokyn pro model — viz
