@@ -296,7 +296,14 @@ private fun AssetThumbnail(item: VideoItem, modifier: Modifier = Modifier) {
                     item.isModel3d -> cz.promptlab.h3video.util.ImageUtils.nahled3d(ctx, item.file(ctx))
                         .takeIf { it.isFile && it.length() > 0 }?.let { cz.promptlab.h3video.util.ImageUtils.loadFileThumb(it) }
                     item.isImage -> cz.promptlab.h3video.util.ImageUtils.loadFileThumb(item.file(ctx))
-                    else -> frameOf(item.file(ctx))
+                    // Navazující záběr je CELEK od začátku, takže první snímek
+                    // je pořád ten z prvního běhu — všechny články řetězu by
+                    // v galerii vypadaly jako jedna a ta samá položka. Náhled
+                    // se u nich proto bere z konce, kde je to nové.
+                    else -> frameOf(
+                        item.file(ctx),
+                        zKonce = item.mode == cz.promptlab.h3video.data.Mode.LONGMM.name,
+                    )
                 }
             }.getOrNull()
         }
@@ -356,13 +363,18 @@ private fun formatStorage(bytes: Long): String = when {
     else -> "%.1f KB".format(bytes / 1024.0)
 }
 
-private fun frameOf(file: File): Bitmap? = runCatching {
+private fun frameOf(file: File, zKonce: Boolean = false): Bitmap? = runCatching {
     val retriever = MediaMetadataRetriever()
     try {
         retriever.setDataSource(file.absolutePath)
+        // Kousek před koncem, ne úplně poslední snímek: ten bývá tmavý dojezd.
+        val kdy = if (!zKonce) 0L else retriever
+            .extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+            ?.toLongOrNull()?.takeIf { it > 0 }
+            ?.let { (it - 400L).coerceAtLeast(0L) * 1000L } ?: 0L
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1)
-            retriever.getScaledFrameAtTime(0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, 400, 400)
-        else retriever.getFrameAtTime(0)?.let { original ->
+            retriever.getScaledFrameAtTime(kdy, MediaMetadataRetriever.OPTION_CLOSEST_SYNC, 400, 400)
+        else retriever.getFrameAtTime(kdy)?.let { original ->
             val scale = minOf(1f, 400f / maxOf(original.width, original.height))
             Bitmap.createScaledBitmap(original, (original.width * scale).toInt().coerceAtLeast(1),
                 (original.height * scale).toInt().coerceAtLeast(1), true).also { if (it !== original) original.recycle() }
