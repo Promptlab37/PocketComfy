@@ -62,11 +62,20 @@ fun LongMmSection(vm: MainViewModel) {
     val scene by vm.longMm.collectAsStateWithLifecycle()
     val latenty by vm.longMmLatenty.collectAsStateWithLifecycle()
     val latentChyba by vm.longMmLatentChyba.collectAsStateWithLifecycle()
+    val predchozi by vm.longMmPredchozi.collectAsStateWithLifecycle()
+    val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val prepisujeSe = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
+        MainViewModel.PraceNaPromptu.VYLEPSENI
 
-    // Nabídku plní server. Načítá se při otevření karty i při přepnutí na
-    // navázání, aby byl záběr dokončený před chvílí vidět bez restartu appky.
-    LaunchedEffect(scene.rezim) {
-        if (scene.rezim == LongMmRezim.NAVAZANI) vm.loadLongMmLatenty()
+    // Nabídku latentů plní server. Načítá se při přepnutí na navázání, aby byl
+    // záběr dokončený před chvílí vidět bez restartu appky. Zároveň se předvybere
+    // poslední výsledek téhle karty, ať uživatel nemusí vybírat nic.
+    LaunchedEffect(scene.rezim, predchozi.size) {
+        if (scene.rezim == LongMmRezim.NAVAZANI) {
+            vm.loadLongMmLatenty()
+            vm.predvyberLongMmZdroj()
+        }
     }
 
     SectionCard(title = t("Co se dělá"), subtitle = scene.rezim.popis) {
@@ -83,7 +92,23 @@ fun LongMmSection(vm: MainViewModel) {
             title = t("Na co se navazuje"),
             subtitle = t("Poslední hotový celek téhle scény"),
         ) {
-            ZdrojVideoRadek(vm, scene)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                // Navazuje se skoro vždycky na to, co appka vyrobila před chvílí.
+                // Nabídka je proto z Galerie aplikace; do galerie telefonu se
+                // výsledky kopírují jen při zapnutém automatickém ukládání,
+                // takže systémový výběr by u většiny lidí ukázal prázdno.
+                if (predchozi.isNotEmpty()) {
+                    Dropdown(
+                        label = t("Předchozí záběry téhle karty"),
+                        items = predchozi,
+                        selected = predchozi.firstOrNull { it.file(ctx) == scene.zdroj }
+                            ?: predchozi.first(),
+                        render = { it.displayTitle },
+                        onSelect = { vm.setLongMmZdrojZGalerie(it) },
+                    )
+                }
+                ZdrojVideoRadek(vm, scene)
+            }
         }
 
         SectionCard(
@@ -159,15 +184,25 @@ fun LongMmSection(vm: MainViewModel) {
         subtitle = if (scene.rezim == LongMmRezim.PRVNI) t("Popis prvního záběru")
         else t("Popis toho, co se stane dál"),
     ) {
-        DarkTextField(
-            value = scene.prompt,
-            onValueChange = { vm.setLongMmPrompt(it) },
-            placeholder = if (scene.rezim == LongMmRezim.PRVNI)
-                t("Muž z <Picture 1> stojí u okna a otočí se do místnosti.")
-            else t("Přejde ke stolu a posadí se."),
-            minHeight = 110.dp,
-            onClear = { vm.setLongMmPrompt("") },
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            DarkTextField(
+                value = scene.prompt,
+                onValueChange = { vm.setLongMmPrompt(it) },
+                placeholder = if (scene.rezim == LongMmRezim.PRVNI)
+                    t("Muž z <Picture 1> stojí u okna a otočí se do místnosti.")
+                else t("Přejde ke stolu a posadí se."),
+                minHeight = 110.dp,
+                onClear = { vm.setLongMmPrompt("") },
+            )
+            // Tentýž přepisovač, na kterém jede All in One: psací příručky
+            // MiniMaxu zná, takže z pár českých slov udělá zadání v tvaru,
+            // na který je H3 trénovaný.
+            OutlineButton(
+                text = if (prepisujeSe) t("Přepisuji…") else t("✨ Vylepšit zadání"),
+                color = Cyan,
+                modifier = Modifier.fillMaxWidth(),
+            ) { if (!prepisujeSe) vm.vylepsiLongMmPrompt() }
+        }
     }
 
     SectionCard(title = t("Délka záběru"), subtitle = t("Týká se jen tohohle kusu, ne celku")) {

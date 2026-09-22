@@ -718,6 +718,10 @@ object Slovnik {
         "Na serveru zatím žádný latent není. Začni prvním záběrem." to
             "There is no latent on the server yet. Start with the first shot.",
         "Nejnovější je nahoře" to "Newest first",
+        "Předchozí záběry téhle karty" to "Earlier shots from this card",
+        "✨ Vylepšit zadání" to "✨ Improve the prompt",
+        "Nejdřív napiš aspoň pár slov o tom, co se má dít." to
+            "Write at least a few words about what should happen first.",
         "Načíst znovu ze serveru" to "Reload from the server",
         "Seznam latentů se nepodařilo načíst — server neodpovídá." to
             "The latent list could not be loaded — the server is not responding.",

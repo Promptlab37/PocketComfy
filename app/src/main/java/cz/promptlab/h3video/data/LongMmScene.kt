@@ -94,7 +94,7 @@ data class LongMmScene(
         const val MAX_REFERENCI = 4
 
         /** Délky záběru. Autorova předloha jede na 5 s, navázání na 10 s. */
-        val DELKY = listOf(3, 5, 8, 10, 15)
+        val DELKY = listOf(3, 5, 7, 10, 15)
 
         /**
          * Kolik sekund konce předchozího videa jde do modelu jako vodítko.

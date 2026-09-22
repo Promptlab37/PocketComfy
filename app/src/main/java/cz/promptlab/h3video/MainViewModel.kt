@@ -112,6 +112,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -3466,9 +3467,123 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun clearLongMmZdroj() = updateLongMm {
-        it.zdroj?.let { f -> runCatching { f.delete() } }
-        it.copy(zdroj = null, zdrojNahled = null)
+    /**
+     * Odebere zdrojové video. Maže se jen dovezená kopie z telefonu — zdrojem
+     * bývá i hotový výsledek z Galerie aplikace a ten by se smazáním ztratil.
+     */
+    fun clearLongMmZdroj() = updateLongMm { s ->
+        s.zdroj?.takeIf { it.name.startsWith("longmm_zdroj") }
+            ?.let { f -> runCatching { f.delete() } }
+        s.copy(zdroj = null, zdrojNahled = null)
+    }
+
+    /**
+     * Předchozí výsledky téhle karty, nejnovější první.
+     *
+     * Navazuje se skoro vždycky na to, co appka vyrobila před chvílí — a to
+     * leží v Galerii aplikace, ne v galerii telefonu (tam se kopíruje jen při
+     * zapnutém automatickém ukládání). Výběr přes systémový dialog by tedy
+     * u většiny lidí nabídl prázdno.
+     */
+    val longMmPredchozi: StateFlow<List<VideoItem>> = _history
+        .map { seznam ->
+            seznam.filter { it.mode == Mode.LONGMM.name && !it.isImage }
+                .sortedByDescending { it.createdAt }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /** Vybere hotový výsledek z Galerie aplikace jako zdroj navázání. */
+    fun setLongMmZdrojZGalerie(item: VideoItem) {
+        val soubor = item.file(getApplication())
+        if (!soubor.exists()) return
+        updateLongMm { it.copy(zdroj = soubor, zdrojNahled = null) }
+    }
+
+    /**
+     * Napoprvé předvybere poslední záběr téhle karty, ať uživatel nemusí
+     * vybírat nic. Dřívější volbu, pokud soubor pořád existuje, to nepřepíše.
+     */
+    fun predvyberLongMmZdroj() {
+        val s = _longMm.value
+        if (s.zdroj?.exists() == true) return
+        longMmPredchozi.value.firstOrNull()?.let { setLongMmZdrojZGalerie(it) }
+    }
+
+    /**
+     * ✨ Vylepšit zadání — oficiální přepisovač MiniMaxu (`MiniMaxH3PromptWriter8B`).
+     *
+     * Je to tentýž uzel, na kterém jede All in One: psací příručky MiniMaxu zná,
+     * takže z pár slov (klidně česky) udělá zadání v tvaru, na který je H3
+     * trénovaný. Když je na kartě fotka, jede úloha `I2VA` (z obrázku), jinak
+     * `T2VA` — u navázání se fotka nepřikládá, kontext nese latent.
+     */
+    fun vylepsiLongMmPrompt() {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val s = _longMm.value
+        val zadani = s.prompt.trim()
+        if (zadani.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(
+                t("Nejdřív napiš aspoň pár slov o tom, co se má dít."),
+                PraceNaPromptu.VYLEPSENI,
+            )
+            return
+        }
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    uklidPredPrepisem(client)
+                    val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
+                        ?: throw ComfyException(
+                            "rewriter chybi",
+                            "Server nemá balík Prompt Rewriter — nainstaluj " +
+                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+                        )
+                    val req = spec.getJSONObject("input").getJSONObject("required")
+                    val nabidka = req.getJSONArray("model").getJSONArray(0)
+                    val model = PromptRewriteBuilder.vyberModel(
+                        (0 until nabidka.length()).map { nabidka.getString(it) }
+                    ) ?: throw ComfyException(
+                        "zadny model",
+                        "Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM.",
+                    )
+                    val fotka = s.reference.firstOrNull()?.soubor?.takeIf { it.exists() }
+                        ?.takeIf { s.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI }
+                    val nahrana = fotka?.let { client.uploadImage(it.readBytes(), "rw_longmm.png") }
+                    val rozliseniEnum = req.getJSONArray("resolution").getJSONArray(0)
+                    val pomer = (0 until rozliseniEnum.length()).map { rozliseniEnum.getString(it) }
+                        .let { en ->
+                            en.firstOrNull { it == s.pomer.kod } ?: en.firstOrNull { it == "16:9" }
+                                ?: en.first()
+                        }
+                    val durCfg = req.getJSONArray("duration").optJSONObject(1)
+                    val delka = s.sekundy
+                        .coerceIn(durCfg?.optInt("min", 2) ?: 2, durCfg?.optInt("max", 60) ?: 60)
+                    val wf = PromptRewriteBuilder.build(
+                        prompt = zadani +
+                            ". Do not add any on-screen text or captions unless explicitly requested.",
+                        model = model,
+                        task = if (nahrana != null) "I2VA" else "T2VA",
+                        resolution = pomer,
+                        durationSec = delka,
+                        seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                        firstImage = nahrana,
+                    )
+                    spustPrepisAPockej(client, wf, PromptRewriteBuilder.N_PREVIEW)
+                }
+            }
+            vysledek.onSuccess { text ->
+                _rewriteOriginal.value = zadani
+                updateLongMm { it.copy(prompt = ImagePromptBuilder.ocisti(text)) }
+                _rewriteState.value = RewriteState.Idle
+            }.onFailure { e ->
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    PraceNaPromptu.VYLEPSENI,
+                )
+            }
+        }
     }
 
     fun setLtxLoraStrength(value: Float) {
