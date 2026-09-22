@@ -217,9 +217,12 @@ fun LongMmSection(vm: MainViewModel) {
         )
     }
 
-    SectionCard(
-        title = t("Název řetězu"),
-        subtitle = t("Latenty se pod ním na serveru číslují"),
+    // Jméno se zadává jen tam, kde řetěz vzniká. Při navazování ho určuje
+    // vybraná scéna — psát ho podruhé by znamenalo, že se dá rozejít s tím,
+    // co je vybrané nahoře.
+    if (scene.rezim == LongMmRezim.PRVNI) SectionCard(
+        title = t("Název scény"),
+        subtitle = t("Podle něj se pak navazuje a číslují se latenty"),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             DarkTextField(

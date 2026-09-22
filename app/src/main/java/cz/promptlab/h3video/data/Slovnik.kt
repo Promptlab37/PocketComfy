@@ -748,6 +748,9 @@ object Slovnik {
         "Latenty se pod ním na serveru číslují" to "Latents are numbered under it on the server",
         "Začít nový řetěz" to "Start a new chain",
         "Na kterou scénu se navazuje" to "Which scene to continue",
+        "Název scény" to "Scene name",
+        "Podle něj se pak navazuje a číslují se latenty" to
+            "Continuing goes by it, and latents are numbered under it",
         "Naváže se na její poslední hotový záběr" to "It continues from its latest finished shot",
         "Na serveru zatím žádná scéna není. Začni prvním záběrem." to
             "There is no scene on the server yet. Start with the first shot.",
