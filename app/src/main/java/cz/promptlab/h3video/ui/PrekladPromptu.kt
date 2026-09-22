@@ -75,9 +75,4 @@ fun PrekladPromptu(
         Spacer(Modifier.height(4.dp))
         Text(it.message, style = MaterialTheme.typography.bodySmall, color = Danger)
     }
-    Spacer(Modifier.height(4.dp))
-    Text(
-        t("Napiš zadání česky a nech ho přeložit — obsah zůstane, jen bude anglicky."),
-        style = MaterialTheme.typography.bodySmall, color = TextLow
-    )
 }

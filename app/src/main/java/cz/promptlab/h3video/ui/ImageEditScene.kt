@@ -192,12 +192,6 @@ fun ImageEditSection(vm: MainViewModel) {
                         }
                     }
                 }
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    t("Oba se dívají na tvoje fotky. Qwen je na model vycvičený, " +
-                        "ale odvážnější zadání sám zjemní — odvázaný nepřepisuje nic."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
-                )
                 (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Fail)
                     ?.takeIf {
                         it.druh == cz.promptlab.h3video.MainViewModel.PraceNaPromptu.VYLEPSENI

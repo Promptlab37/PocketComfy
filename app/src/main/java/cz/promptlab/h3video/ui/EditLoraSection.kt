@@ -126,7 +126,7 @@ private fun ModelLoraSection(
                 color = Amber, style = MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.height(6.dp))
-        Text(t("LoRA se přidá k vybranému modelu. Síla 0 ji vypne. Nabídka zahrnuje i necenzurované LoRA pro tento model."),
+        Text(t("Síla 0 LoRA vypne."),
             color = TextLow, style = MaterialTheme.typography.bodySmall)
     }
 

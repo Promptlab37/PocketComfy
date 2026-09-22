@@ -237,15 +237,6 @@ fun LtxSection(vm: MainViewModel) {
                     }
                 }
             }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                if (scene.rezim == LtxRezim.ZVUK)
-                    t("Oba napíšou dlouhý popis záběru i s pohybem kamery. " +
-                        "Zvuk máš svůj, takže ho nevymýšlejí — popíšou, co je z něj vidět.")
-                else t("Oba napíšou dlouhý popis záběru: velikost záběru, pohyb " +
-                    "kamery a zvuk vpletený do děje. Odvázaný nic nezjemňuje."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-            )
             (stavPrepisu as? MainViewModel.RewriteState.Fail)
                 ?.takeIf { it.druh == MainViewModel.PraceNaPromptu.VYLEPSENI }
                 ?.let { chyba ->

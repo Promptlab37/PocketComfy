@@ -226,18 +226,7 @@ fun InpaintSection(vm: MainViewModel) {
     val vsechnyLory by vm.inpaintLoras.collectAsStateWithLifecycle()
     val lory = vm.inpaintLoraNabidka(scene.model, vsechnyLory)
 
-    // U rozšíření se model nevybírá: vlastní předlohu má jen Qwen 2.1
-    // a nabízet volbu, kterou graf zahodí, je horší než ji skrýt.
-    if (!masku) SectionCard(
-        title = t("Čím se rozšiřuje"),
-        subtitle = t("Qwen Image 2.1 — rozšíření obrazu má v příručce jako vlastní úlohu"),
-    ) {
-        Text(
-            t("Původní fotka se vlepí zpátky nezměněná, model maluje jen to nové místo."),
-            style = MaterialTheme.typography.bodySmall, color = TextLow,
-        )
-    }
-
+    // U rozšíření se model nevybírá — vlastní předlohu má jen Qwen 2.1.
     if (masku) SkladaciSekce(
         title = t("Model a doladění"),
         souhrn = scene.model.title +

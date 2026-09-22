@@ -376,12 +376,6 @@ fun ResultScreen(
                         onClick = onExtend,
                     )
                 }
-                Text(
-                    t("Domalovat přemaluje začmárané místo, rozšíří dokreslí, co je mimo záběr."),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextLow,
-                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                )
             }
             if (onUpscale != null) {
                 Spacer(Modifier.height(8.dp))

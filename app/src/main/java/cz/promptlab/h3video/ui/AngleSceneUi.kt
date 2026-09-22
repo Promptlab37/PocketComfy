@@ -110,11 +110,6 @@ fun AngleSection(vm: MainViewModel) {
                 vm.updateAngle { it.copy(azimut = smer, odstup = odstup) }
             }
 
-            Spacer(Modifier.height(4.dp))
-            Text(
-                t("Objekt je čelem dolů, k tobě. Kam táhneš kameru, odtud se bude koukat."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
         }
     }
 
