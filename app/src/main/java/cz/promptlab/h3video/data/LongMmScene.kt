@@ -122,8 +122,14 @@ data class LongMmScene(
         /** Víc referencí model neunese smysluplně a karta by se nafoukla. */
         const val MAX_REFERENCI = 4
 
-        /** Délky záběru. Autorova předloha jede na 5 s, navázání na 10 s. */
-        val DELKY = listOf(3, 5, 7, 10, 15)
+        /**
+         * Meze délky jednoho záběru. Nejsou vymyšlené — uzel má v sobě
+         * `MIN_SECONDS 0.2` a `MAX_SECONDS 30`, a delší úsek prostě odmítne.
+         * Spodní hranici drží appka na dvou sekundách, pod tím nemá záběr
+         * co ukázat. Autorova předloha jede na 5 s, navázání na 10 s.
+         */
+        const val MIN_S = 2
+        const val MAX_S = 30
 
         /**
          * Kolik sekund konce předchozího videa jde do modelu jako vodítko.

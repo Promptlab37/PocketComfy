@@ -3382,8 +3382,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setLongMmPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateLongMm { it.copy(pomer = v) }
     fun setLongMmSekundy(v: Int) = updateLongMm {
         it.copy(sekundy = v.coerceIn(
-            cz.promptlab.h3video.data.LongMmScene.DELKY.first(),
-            cz.promptlab.h3video.data.LongMmScene.DELKY.last(),
+            cz.promptlab.h3video.data.LongMmScene.MIN_S,
+            cz.promptlab.h3video.data.LongMmScene.MAX_S,
         ))
     }
 

@@ -231,12 +231,21 @@ fun LongMmSection(vm: MainViewModel) {
     }
 
     SectionCard(title = t("Délka záběru"), subtitle = t("Týká se jen tohohle kusu, ne celku")) {
-        PillRow(
-            items = LongMmScene.DELKY,
-            selected = scene.sekundy,
-            label = { "$it s" },
-            onSelect = { vm.setLongMmSekundy(it) },
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            androidx.compose.material3.Slider(
+                value = scene.sekundy.toFloat(),
+                onValueChange = { vm.setLongMmSekundy(Math.round(it)) },
+                valueRange = LongMmScene.MIN_S.toFloat()..LongMmScene.MAX_S.toFloat(),
+                steps = LongMmScene.MAX_S - LongMmScene.MIN_S - 1,
+                modifier = Modifier.weight(1f),
+                colors = sliderColors(),
+            )
+            Text(
+                "%d s".format(scene.sekundy),
+                style = MaterialTheme.typography.labelMedium, color = TextMid,
+                modifier = Modifier.width(44.dp).padding(start = 10.dp),
+            )
+        }
     }
 
     // Jméno se zadává jen tam, kde řetěz vzniká. Při navazování ho určuje
