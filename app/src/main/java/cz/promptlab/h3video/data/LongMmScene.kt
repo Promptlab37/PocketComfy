@@ -93,11 +93,11 @@ data class LongMmScene(
 /**
      * Nechat v grafu uzel `MiniMaxH3MemoryEfficientSageAttentionPatch`.
      *
-     * Autor ho v obou předlohách má a je aktivní. Uživatel ho 23. 9. 2026
-     * chtěl zkusit vypnout, protože má podezření, že mu kazí obraz —
-     * vypnutý se z řetězu vyřadí a model jde rovnou dál.
+     * Autor ho v obou předlohách má a je aktivní, proto je zapnutý i tady.
+     * Vypnutý se z řetězu vyřadí a model jde rovnou dál — 23. 9. 2026 to
+     * uživatel zkusil a běh bez něj trval neúnosně dlouho.
      */
-    val sage: Boolean = false,
+    val sage: Boolean = true,
     /** Realistická LoRA `h3-realism-people-t2v-i2v-r2v`. */
     val realismus: Boolean = false,
     val realismusSila: Float = 0.7f,
@@ -231,7 +231,7 @@ class LongMmStore(private val ctx: Context) {
             zdroj = j.optString("zdroj").takeIf { it.isNotBlank() }
                 ?.let { File(it) }?.takeIf { it.exists() },
             latent = j.optString("latent"),
-            sage = j.optBoolean("sage"),
+            sage = j.optBoolean("sage", true),
             referenceVNavazani = j.optBoolean("referenceVNavazani"),
             realismus = j.optBoolean("realismus"),
             realismusSila = j.optDouble("realismusSila", 0.7).toFloat().coerceIn(0f, 1.5f),
