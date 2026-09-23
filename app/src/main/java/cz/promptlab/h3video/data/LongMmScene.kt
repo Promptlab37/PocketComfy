@@ -159,10 +159,11 @@ fun longMmProblem(s: LongMmScene): String? = when {
 fun longMmHints(s: LongMmScene): List<String> = buildList {
     if (s.rezim == LongMmRezim.PRVNI) {
         add(t("Až záběr doběhne, zůstane na serveru jeho latent. Z něj se v režimu Navázat pokračuje bez ztráty kvality."))
-        // Plátno se volí jen tady a platí pro celý řetěz, takže cenu je
-        // potřeba říct dřív, než se scéna založí.
+        // Jen to číslo, které si člověk z hlavy nespočítá. Že plátno platí
+        // pro celou scénu, stojí u volby samotné — opakovat to je vysvětlivka
+        // navíc a ta jen zabírá místo.
         if (s.rozliseni != LongMmRozliseni.R480) {
-            add(t("%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá. Rozlišení navíc platí pro celou scénu — změnit ho pak už nejde.")
+            add(t("%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá.")
                 .format(s.rozliseni.title, s.rozliseni.nasobekPlochy))
         }
         if (s.reference.isNotEmpty()) {

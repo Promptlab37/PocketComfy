@@ -734,8 +734,8 @@ object Slovnik {
         "480p" to "480p",
         "640p" to "640p",
         "720p" to "720p",
-        "%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá. Rozlišení navíc platí pro celou scénu — změnit ho pak už nejde." to
-            "%s has %.2f× the pixels of 480p and takes proportionally longer. Resolution also applies to the whole scene — it cannot be changed later.",
+        "%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá." to
+            "%s has %.2f× the pixels of 480p and takes proportionally longer.",
         "Na šířku" to "Landscape",
         "Na výšku" to "Portrait",
         "Čtverec" to "Square",
