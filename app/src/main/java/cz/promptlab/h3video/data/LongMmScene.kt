@@ -24,10 +24,24 @@ enum class LongMmRezim(private val titleCs: String, private val popisCs: String)
  * záběr. Karta to proto při navazování zamkne a jen ukáže, na čem řetěz jede.
  */
 enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
-    R480("480P", "480p — rychlejší"),
-    R720("720P", "720p — jemnější, výrazně déle");
+    R480("480P", "480p"),
+    // Prostřední stupeň. Uzel nabízí i 540P, ale 640 je blíž půlce mezi
+    // krajními volbami — jak kratší hranou (600), tak plochou.
+    R640("640P", "640p"),
+    R720("720P", "720p");
 
     val title: String get() = t(titleCs)
+
+    /**
+     * Kolikrát víc bodů než nejnižší stupeň. Uzel bere rozlišení jako **rozpočet
+     * plochy**, ne jako pevný rozměr — „480P" znamená kratší hranu 480 a poměr
+     * stran si tu plochu jen přerozdělí. Čas běhu roste zhruba s plochou.
+     */
+    val nasobekPlochy: Float get() = when (this) {
+        R480 -> 1f
+        R640 -> 1.78f
+        R720 -> 2.25f
+    }
 }
 
 /** Poměr stran. Plátno se z něj a z rozlišení dopočítá až v grafu. */
@@ -145,6 +159,12 @@ fun longMmProblem(s: LongMmScene): String? = when {
 fun longMmHints(s: LongMmScene): List<String> = buildList {
     if (s.rezim == LongMmRezim.PRVNI) {
         add(t("Až záběr doběhne, zůstane na serveru jeho latent. Z něj se v režimu Navázat pokračuje bez ztráty kvality."))
+        // Plátno se volí jen tady a platí pro celý řetěz, takže cenu je
+        // potřeba říct dřív, než se scéna založí.
+        if (s.rozliseni != LongMmRozliseni.R480) {
+            add(t("%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá. Rozlišení navíc platí pro celou scénu — změnit ho pak už nejde.")
+                .format(s.rozliseni.title, s.rozliseni.nasobekPlochy))
+        }
         if (s.reference.isNotEmpty()) {
             add(t("Na fotky se v zadání odkazuje značkami <Picture 1>, <Picture 2>… Bez zmínky si jich model nemusí všimnout."))
         }

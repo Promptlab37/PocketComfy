@@ -731,8 +731,11 @@ object Slovnik {
             "Photos the model keeps the characters and the place from (optional)",
         "Plátno" to "Canvas",
         "Pro celý řetěz se volí jen teď" to "Chosen once here, for the whole chain",
-        "480p — rychlejší" to "480p — faster",
-        "720p — jemnější, výrazně déle" to "720p — finer, considerably longer",
+        "480p" to "480p",
+        "640p" to "640p",
+        "720p" to "720p",
+        "%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá. Rozlišení navíc platí pro celou scénu — změnit ho pak už nejde." to
+            "%s has %.2f× the pixels of 480p and takes proportionally longer. Resolution also applies to the whole scene — it cannot be changed later.",
         "Na šířku" to "Landscape",
         "Na výšku" to "Portrait",
         "Čtverec" to "Square",
