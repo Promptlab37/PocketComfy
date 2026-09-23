@@ -351,9 +351,15 @@ object LongMmBuilder {
      */
     private fun zapojSestavu(wf: JSONObject, scene: LongMmScene, lora: String, kroky: String) {
         wf.inputs(N_UNET).put("unet_name", scene.model.unet)
+        wf.inputs(kroky).put("steps", scene.kroky)
+        // Nulová síla znamená „bez LoRA". Nechat ji v grafu s nulou by model
+        // stejně obalilo — uzel se proto z řetězu vyřadí a jede holý model.
+        if (scene.silaLory <= 0f) {
+            premostiUzel(wf, lora, "model")
+            return
+        }
         wf.inputs(lora).put("lora_name", scene.model.lora)
         wf.inputs(lora).put("strength", scene.silaLory.toDouble())
-        wf.inputs(kroky).put("steps", scene.kroky)
     }
 
     /**

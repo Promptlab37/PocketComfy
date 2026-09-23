@@ -764,6 +764,7 @@ object Slovnik {
         "Tři kroky dole, zvětšení latentu, dva nahoře" to
             "Three steps low, the latent upscaled, two steps high",
         "Kroky" to "Steps",
+        "bez" to "none",
         "Síla LoRA" to "LoRA strength",
         "Autor ji má zapnutou, vypnutá jde model rovnou dál" to
             "The author keeps it on; switched off the model passes straight through",

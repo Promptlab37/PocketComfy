@@ -106,13 +106,19 @@ enum class LongMmModel(
     ),
 
     /**
-     * Eros Max s vlastní LoRA. Eros LoRA **není zrychlovací**, takže na málo
-     * krocích nemá co dohnat — osm je jen výchozí hodnota, ne změřené optimum.
+     * Eros Max s vlastní LoRA. **Žádná zrychlovací LoRA se k němu nepřidává** —
+     * Eros LoRA je konceptová, ne turbo, takže málo kroků nemá co dohnat.
+     * Proto deset kroků místo sedmi.
+     *
+     * Síla 0,5 je z popisu modelu na CivitAI: *„Other concept Loras will also
+     * load on top more readily, usually needing lower strength 0.2-0.6."*
+     * Eros LoRA na Eros checkpointu je přesně ten případ. Posuvníkem se dá
+     * změnit; nula LoRA z grafu úplně vyřadí a jede jen model.
      */
     EROS(
         unet = "10Eros_Max_h3_fl2va_pruned_int8_convrot.safetensors",
         lora = "10Eros_Max_H3_test2_pruned_r128.safetensors",
-        silaPrvni = 0.8f, silaDalsi = 0.8f, kroky = 8,
+        silaPrvni = 0.5f, silaDalsi = 0.5f, kroky = 10,
         titleCs = "Eros Max",
         popisCs = "Eros model i Eros LoRA",
     ),

@@ -276,11 +276,28 @@ fun LongMmSection(vm: MainViewModel) {
                     modifier = Modifier.width(26.dp),
                 )
             }
-            SilaLory(
-                hodnota = scene.silaLory,
-                popisek = "Síla LoRA",
-                onZmena = { vm.setLongMmLoraSila(it) },
-            )
+            // Vlastní posuvník, ne sdílený: ten jede od 0,5 a tady je potřeba
+            // dosáhnout i na nulu (= bez LoRA) a na rozsah 0,2–0,6, který
+            // u konceptových LoRA doporučuje autor modelu Eros.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    t("Síla LoRA"),
+                    style = MaterialTheme.typography.labelMedium, color = TextLow,
+                )
+                androidx.compose.material3.Slider(
+                    value = scene.silaLory,
+                    onValueChange = { vm.setLongMmLoraSila(Math.round(it * 20f) / 20f) },
+                    valueRange = 0f..1.2f,
+                    steps = 23,
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    colors = sliderColors(),
+                )
+                Text(
+                    if (scene.silaLory <= 0f) t("bez") else "%.2f".format(scene.silaLory),
+                    style = MaterialTheme.typography.labelMedium, color = TextMid,
+                    modifier = Modifier.width(38.dp),
+                )
+            }
         }
     }
 

@@ -445,6 +445,32 @@ class LongMmBuilderTest {
         }
     }
 
+    /**
+     * Nulová síla znamená „bez LoRA" — uzel musí z grafu zmizet a řetěz se
+     * spojit. Nechat ho tam s nulou by model stejně obalilo.
+     */
+    @Test fun `nulova sila lory uzel vyradi`() {
+        for (navazani in listOf(false, true)) {
+            val sc = scena(rezim = if (navazani) LongMmRezim.NAVAZANI else LongMmRezim.PRVNI)
+                .copy(model = cz.promptlab.h3video.data.LongMmModel.EROS, loraSila = 0f)
+            val wf = if (navazani) LongMmBuilder.buildDalsi(dalsi, sc, 1L, "c.mp4")
+            else LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+            val uzel = if (navazani) LongMmBuilder.N_TURBO_DALSI else LongMmBuilder.N_TURBO
+            assertFalse("LoRA uzel měl zmizet", wf.has(uzel))
+            zkontrolujOdkazy(wf)
+        }
+    }
+
+    /** Eros jede na deseti krocích a bez zrychlovací LoRA. */
+    @Test fun `eros ma deset kroku`() {
+        val m = cz.promptlab.h3video.data.LongMmModel.EROS
+        assertEquals(10, m.kroky)
+        assertFalse(m.dvojiPruchod)
+        // Síla z popisu modelu: konceptové LoRA na něm chtějí 0,2 až 0,6.
+        assertTrue(m.silaPrvni in 0.2f..0.6f)
+        assertTrue(m.silaDalsi in 0.2f..0.6f)
+    }
+
     @Test fun `karta rekne, co chybi`() {
         assertNotNull(longMmProblem(scena(prompt = "")))
         assertNotNull(longMmProblem(scena(nazev = "")))
