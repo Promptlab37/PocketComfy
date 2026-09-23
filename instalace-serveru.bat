@@ -74,6 +74,7 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/diffusion_models/minimax_h3_ref2va_pruned_int8_convrot.safetensors" "models\diffusion_models\minimax_h3_ref2va_pruned_int8_convrot.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors" "models\text_encoders\qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_fp16.safetensors" "models\vae\minimax_h3_video_vae_fp16.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_int8_convrot.safetensors" "models\vae\minimax_h3_video_vae_int8_convrot.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_audio_vae_fp32.safetensors" "models\vae\minimax_h3_audio_vae_fp32.safetensors"
 )
 
