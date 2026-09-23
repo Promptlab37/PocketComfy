@@ -168,7 +168,7 @@
     0
    ],
    "scheduler": "simple",
-   "steps": 7,
+   "steps": 8,
    "denoise": 1.0
   }
  },

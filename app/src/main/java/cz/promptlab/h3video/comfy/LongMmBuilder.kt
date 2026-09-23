@@ -39,9 +39,9 @@ import org.json.JSONObject
  *    i samotný přidaný kus; appka bere jako výsledek první video, které najde,
  *    a dvě uložená by se jí pletla.
  *
- * Vzorkovací nastavení jsou autorova beze změny: 7 kroků, plánovač `simple`,
+ * Vzorkovací nastavení jsou autorova až na počet kroků: plánovač `simple`,
  * `euler` u prvního záběru a `res_multistep` u navázání, Turbo LoRA 0,8
- * respektive 0,75.
+ * respektive 0,75. Kroků má autor sedm, karta jede od 23. 9. 2026 na osmi.
  */
 object LongMmBuilder {
 
@@ -79,8 +79,12 @@ object LongMmBuilder {
     /** Soubor realistické LoRA. Stejný základ (`minimax-h3-fl2va`) jako turbo. */
     const val LORA_REALISMUS = "h3-realism-people-t2v-i2v-r2v.safetensors"
 
-    /** Kroky vzorkování — podle nich se počítá ukazatel průběhu. */
-    const val STEPS = 7
+    /**
+     * Kroky vzorkování — podle nich se počítá ukazatel průběhu.
+     * Autor má v obou předlohách sedm; od 23. 9. 2026 jede karta na osmi
+     * na přání uživatele.
+     */
+    const val STEPS = 8
 
     /**
      * Největší seed, který uzel navázání přijme.
