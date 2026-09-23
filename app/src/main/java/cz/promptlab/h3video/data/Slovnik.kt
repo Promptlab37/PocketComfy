@@ -734,6 +734,7 @@ object Slovnik {
         "480p" to "480p",
         "640p" to "640p",
         "720p" to "720p",
+        "768p · 1 MP" to "768p · 1 MP",
         "%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá." to
             "%s has %.2f× the pixels of 480p and takes proportionally longer.",
         "Na šířku" to "Landscape",

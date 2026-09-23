@@ -28,7 +28,13 @@ enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
     // Prostřední stupeň. Uzel nabízí i 540P, ale 640 je blíž půlce mezi
     // krajními volbami — jak kratší hranou (600), tak plochou.
     R640("640P", "640p"),
-    R720("720P", "720p");
+    R720("720P", "720p"),
+    /**
+     * Přesně **1 megapixel** — v balíku je rozlišení rozpočet plochy a tenhle
+     * stupeň je v jeho tabulce zapsaný jako 1.0 MP. Čtyřkrokový FastVideo je
+     * dokumentovaný právě na čtyři kroky a 1 MP.
+     */
+    R768("768P", "768p · 1 MP");
 
     val title: String get() = t(titleCs)
 
@@ -41,6 +47,7 @@ enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
         R480 -> 1f
         R640 -> 1.78f
         R720 -> 2.25f
+        R768 -> 2.5f
     }
 }
 
