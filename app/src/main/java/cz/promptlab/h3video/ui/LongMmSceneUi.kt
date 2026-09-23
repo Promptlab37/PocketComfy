@@ -177,19 +177,35 @@ fun LongMmSection(vm: MainViewModel) {
             title = t("Podoba"),
             subtitle = t("Fotky, podle kterých model drží postavy a místo (nepovinné)"),
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                scene.reference.forEachIndexed { i, ref ->
-                    RefDlazdicka(
-                        thumb = ref.nahled,
-                        onPick = { uri -> vm.pickLongMmRef(i, uri) },
-                        onRemove = { vm.removeLongMmRef(i) },
-                    )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    scene.reference.forEachIndexed { i, ref ->
+                        RefDlazdicka(
+                            thumb = ref.nahled,
+                            onPick = { uri -> vm.pickLongMmRef(i, uri) },
+                            onRemove = { vm.removeLongMmRef(i) },
+                        )
+                    }
+                    if (scene.reference.size < LongMmScene.MAX_REFERENCI) {
+                        RefDlazdicka(
+                            thumb = null,
+                            onPick = { uri -> vm.pickLongMmRef(scene.reference.size, uri) },
+                            onRemove = {},
+                        )
+                    }
                 }
-                if (scene.reference.size < LongMmScene.MAX_REFERENCI) {
-                    RefDlazdicka(
-                        thumb = null,
-                        onPick = { uri -> vm.pickLongMmRef(scene.reference.size, uri) },
-                        onRemove = {},
+                // Rozhoduje se o tom ve chvíli, kdy se ta fotka vkládá — mít
+                // volbu jen v režimu Navázat znamenalo, že ji tady nikdo nenašel.
+                if (scene.reference.isNotEmpty()) {
+                    Text(
+                        t("Posílat je i do navazujících záběrů"),
+                        style = MaterialTheme.typography.labelMedium, color = TextLow,
+                    )
+                    PillRow(
+                        items = listOf(false, true),
+                        selected = scene.referenceVNavazani,
+                        label = { if (it) t("Zapnuto") else t("Vypnuto") },
+                        onSelect = { vm.setLongMmReferenceVNavazani(it) },
                     )
                 }
             }

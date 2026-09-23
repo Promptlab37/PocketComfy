@@ -754,6 +754,7 @@ object Slovnik {
         "Název scény" to "Scene name",
         "Realističtější podání" to "More realistic rendering",
         "Držet podobu z fotek" to "Hold the likeness from the photos",
+        "Posílat je i do navazujících záběrů" to "Send them into continuing shots too",
         "Odchylka od autora — ten reference do navázání neposílá" to
             "A departure from the author — he sends no references into a continuation",
         "LoRA h3-realism-people, navrch k rychlostní" to
