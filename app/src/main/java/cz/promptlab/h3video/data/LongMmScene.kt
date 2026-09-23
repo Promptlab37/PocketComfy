@@ -75,6 +75,19 @@ enum class LongMmModel(
     /** Výchozí počet kroků. Přenastavit jde posuvníkem. */
     val kroky: Int,
     /**
+     * Uzel, kterým se LoRA načítá. Není to kosmetika — rozhoduje formát klíčů:
+     *
+     *  - `MiniMaxH3TurboLoRA` umí `lora_A` / `lora_B` (tak je uložená turbo,
+     *    TaoMate i realistická) a navíc si poradí s prořezaným kvantovaným
+     *    základem,
+     *  - `LoraLoaderModelOnly` je standardní načítač ComfyUI a umí
+     *    `lora_down` / `lora_up` plus přímé rozdíly `.diff` a `.diff_b` —
+     *    tak je uložená Eros LoRA.
+     *
+     * Záměna skončí hláškou typu „'diffusion_model.blocks.0.adaln_proj.linear.lora_A.weight'".
+     */
+    val nacitac: String = "MiniMaxH3TurboLoRA",
+    /**
      * Kolik z těch kroků se počítá až ve zvoleném rozlišení. 0 = jeden
      * průchod. Kladné číslo zapne dvouprůchodové zapojení: zbytek kroků
      * proběhne dole, latent se zvětší a tady se dotáhne.
@@ -119,6 +132,7 @@ enum class LongMmModel(
         unet = "10Eros_Max_h3_fl2va_pruned_int8_convrot.safetensors",
         lora = "10Eros_Max_H3_test2_pruned_r128.safetensors",
         silaPrvni = 0.5f, silaDalsi = 0.5f, kroky = 10,
+        nacitac = "LoraLoaderModelOnly",
         titleCs = "Eros Max",
         popisCs = "Eros model i Eros LoRA",
     ),

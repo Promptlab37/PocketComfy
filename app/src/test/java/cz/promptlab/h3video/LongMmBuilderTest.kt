@@ -357,8 +357,12 @@ class LongMmBuilderTest {
             assertEquals(m.unet, prvniWf.inputs(LongMmBuilder.N_UNET).getString("unet_name"))
             assertEquals(m.lora, prvniWf.inputs(LongMmBuilder.N_TURBO).getString("lora_name"))
             assertEquals(
+                m.nacitac,
+                prvniWf.getJSONObject(LongMmBuilder.N_TURBO).getString("class_type"),
+            )
+            assertEquals(
                 m.silaPrvni.toDouble(),
-                prvniWf.inputs(LongMmBuilder.N_TURBO).getDouble("strength"), 0.001,
+                prvniWf.inputs(LongMmBuilder.N_TURBO).getDouble(poleSily(m)), 0.001,
             )
             assertEquals(m.kroky, prvniWf.inputs(LongMmBuilder.N_KROKY).getInt("steps"))
             zkontrolujOdkazy(prvniWf)
@@ -372,18 +376,29 @@ class LongMmBuilderTest {
             assertEquals(m.lora, dalsiWf.inputs(LongMmBuilder.N_TURBO_DALSI).getString("lora_name"))
             assertEquals(
                 m.silaDalsi.toDouble(),
-                dalsiWf.inputs(LongMmBuilder.N_TURBO_DALSI).getDouble("strength"), 0.001,
+                dalsiWf.inputs(LongMmBuilder.N_TURBO_DALSI).getDouble(poleSily(m)), 0.001,
             )
             assertEquals(m.kroky, dalsiWf.inputs(LongMmBuilder.N_KROKY_DALSI).getInt("steps"))
             zkontrolujOdkazy(dalsiWf)
         }
     }
 
+    /**
+     * Každý načítač má jiné jméno pro sílu — standardní ComfyUI uzel
+     * `strength_model`, uzel balíku `strength`.
+     */
+    private fun poleSily(m: cz.promptlab.h3video.data.LongMmModel): String =
+        if (m.nacitac == "LoraLoaderModelOnly") "strength_model" else "strength"
+
     /** Vlastní síla LoRA přebije tu ze sestavy; záporná znamená „vezmi ze sestavy". */
     @Test fun `vlastni sila lory prebije sestavu`() {
         val sc = scena().copy(model = cz.promptlab.h3video.data.LongMmModel.TURBO, loraSila = 0.45f)
         val wf = LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
         assertEquals(0.45, wf.inputs(LongMmBuilder.N_TURBO).getDouble("strength"), 0.001)
+        assertEquals(
+            "MiniMaxH3TurboLoRA",
+            wf.getJSONObject(LongMmBuilder.N_TURBO).getString("class_type"),
+        )
 
         val vychozi = scena().copy(loraSila = -1f)
         val wf2 = LongMmBuilder.buildPrvni(prvni, vychozi, 1L, emptyList())
@@ -469,6 +484,9 @@ class LongMmBuilderTest {
         // Síla z popisu modelu: konceptové LoRA na něm chtějí 0,2 až 0,6.
         assertTrue(m.silaPrvni in 0.2f..0.6f)
         assertTrue(m.silaDalsi in 0.2f..0.6f)
+        // Eros LoRA má klíče `lora_down`/`lora_up` a přímé rozdíly, takže ji
+        // uzel balíku načíst neumí — musí jít standardním načítačem ComfyUI.
+        assertEquals("LoraLoaderModelOnly", m.nacitac)
     }
 
     @Test fun `karta rekne, co chybi`() {

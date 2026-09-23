@@ -358,8 +358,28 @@ object LongMmBuilder {
             premostiUzel(wf, lora, "model")
             return
         }
-        wf.inputs(lora).put("lora_name", scene.model.lora)
-        wf.inputs(lora).put("strength", scene.silaLory.toDouble())
+        // Uzel se vymění celý, ne jen hodnoty: každý načítač má jiná jména
+        // vstupů i jiný formát klíčů, který umí přečíst.
+        val vstup = wf.inputs(lora).getJSONArray("model")
+        wf.put(
+            lora,
+            JSONObject()
+                .put("class_type", scene.model.nacitac)
+                .put(
+                    "inputs",
+                    JSONObject()
+                        .put("model", vstup)
+                        .put("lora_name", scene.model.lora)
+                        .also { ins ->
+                            if (scene.model.nacitac == "LoraLoaderModelOnly") {
+                                ins.put("strength_model", scene.silaLory.toDouble())
+                            } else {
+                                ins.put("strength", scene.silaLory.toDouble())
+                                ins.put("low_vram", false)
+                            }
+                        },
+                ),
+        )
     }
 
     /**
