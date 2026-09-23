@@ -250,6 +250,18 @@ fun LongMmSection(vm: MainViewModel) {
     }
 
     SectionCard(
+        title = t("Zrychlovací pozornost (Sage)"),
+        subtitle = t("Autor ji má zapnutou, vypnutá jde model rovnou dál"),
+    ) {
+        PillRow(
+            items = listOf(false, true),
+            selected = scene.sage,
+            label = { if (it) t("Zapnuto") else t("Vypnuto") },
+            onSelect = { vm.setLongMmSage(it) },
+        )
+    }
+
+    SectionCard(
         title = t("Co se má dít"),
         subtitle = if (scene.rezim == LongMmRezim.PRVNI) t("Popis prvního záběru")
         else t("Popis toho, co se stane dál"),

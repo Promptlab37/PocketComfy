@@ -70,6 +70,12 @@ object LongMmBuilder {
     /** Slepení zdroje s novým kusem do jednoho celku. */
     const val N_SLEPENI = "335"
 
+    /**
+     * Zrychlovací záplata pozornosti. Autor ji má v obou předlohách aktivní;
+     * v kartě jde vypnout — pak se z řetězu vyřadí a model jde rovnou dál.
+     */
+    const val N_SAGE = "18"
+
     /** Turbo LoRA, na kterou se realistická věší. */
     const val N_TURBO = "271"
     const val N_TURBO_DALSI = "339"
@@ -127,6 +133,7 @@ object LongMmBuilder {
         zadani.put("seconds", scene.sekundy.toDouble())
         wf.inputs(N_SEED).put("noise_seed", seed)
         wf.inputs(N_LATENT_ULOZ).put("filename_prefix", nazevLatentu(scene))
+        if (!scene.sage) premostiUzel(wf, N_SAGE, "model")
         zapojRealismus(wf, scene, N_TURBO)
 
         val pouzite = reference.take(LongMmScene.MAX_REFERENCI)
@@ -207,6 +214,7 @@ object LongMmBuilder {
         // sednout na počet částí zadání. Uzel jinak celý běh odmítne.
         usek.put("segment_seconds", List(useku(prompt)) { scene.sekundy }.joinToString(","))
 
+        if (!scene.sage) premostiUzel(wf, N_SAGE, "model")
         zapojRealismus(wf, scene, N_TURBO_DALSI)
         if (scene.referenceVNavazani) zapojReference(wf, reference, N_USEK)
         wf.inputs(N_VODITKO).put("seconds", LongMmScene.VODITKO_S)
@@ -244,6 +252,27 @@ object LongMmBuilder {
             val odkaz = ins.optJSONArray("model") ?: return@forEach
             if (odkaz.optString(0) == poTurbu) ins.put("model", naRealismus)
         }
+    }
+
+    /**
+     * Vyřadí uzel z řetězu: kdo bral jeho výstup, dostane rovnou to, co bral
+     * on sám na vstupu [propust]. Uzel pak z grafu zmizí.
+     *
+     * Dělá to tedy totéž, co přemostění (Ctrl+B) v okně ComfyUI — jen bez
+     * uzlu, který by v API grafu musel zůstat viset.
+     */
+    private fun premostiUzel(wf: JSONObject, uzel: String, propust: String) {
+        val zdroj = wf.optJSONObject(uzel)?.optJSONObject("inputs")?.optJSONArray(propust)
+            ?: return
+        wf.keys().asSequence().toList().forEach { id ->
+            if (id == uzel) return@forEach
+            val ins = wf.getJSONObject(id).getJSONObject("inputs")
+            ins.keys().asSequence().toList().forEach { pole ->
+                val v = ins.optJSONArray(pole) ?: return@forEach
+                if (v.optString(0) == uzel) ins.put(pole, zdroj)
+            }
+        }
+        wf.remove(uzel)
     }
 
     /** Seed složený do rozsahu, který uzel navázání přijme. Viz [SEED_MAX]. */

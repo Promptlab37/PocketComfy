@@ -753,6 +753,9 @@ object Slovnik {
         "Na kterou scénu se navazuje" to "Which scene to continue",
         "Název scény" to "Scene name",
         "Realističtější podání" to "More realistic rendering",
+        "Zrychlovací pozornost (Sage)" to "Speed-up attention (Sage)",
+        "Autor ji má zapnutou, vypnutá jde model rovnou dál" to
+            "The author keeps it on; switched off the model passes straight through",
         "Držet podobu z fotek" to "Hold the likeness from the photos",
         "Posílat je i do navazujících záběrů" to "Send them into continuing shots too",
         "Odchylka od autora — ten reference do navázání neposílá" to

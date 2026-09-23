@@ -313,6 +313,38 @@ class LongMmBuilderTest {
         zkontrolujOdkazy(zapnuto)
     }
 
+    /**
+     * Vypnutá záplata pozornosti musí z grafu zmizet a ten, kdo od ní bral
+     * model, musí dostat rovnou její zdroj. Odkaz na smazaný uzel server
+     * odmítne ještě před vzorkováním.
+     */
+    @Test fun `vypnuta sage zmizi a retez se spoji`() {
+        for (navazani in listOf(false, true)) {
+            fun graf(sage: Boolean): JSONObject {
+                val sc = scena(rezim = if (navazani) LongMmRezim.NAVAZANI else LongMmRezim.PRVNI)
+                    .copy(sage = sage)
+                return if (navazani) LongMmBuilder.buildDalsi(dalsi, sc, 1L, "c.mp4")
+                else LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+            }
+            val turbo = if (navazani) LongMmBuilder.N_TURBO_DALSI else LongMmBuilder.N_TURBO
+
+            val zapnuto = graf(true)
+            assertTrue(zapnuto.has(LongMmBuilder.N_SAGE))
+            val zdroj = zapnuto.inputs(LongMmBuilder.N_SAGE).getJSONArray("model").getString(0)
+            assertEquals(
+                LongMmBuilder.N_SAGE,
+                zapnuto.inputs(turbo).getJSONArray("model").getString(0),
+            )
+            zkontrolujOdkazy(zapnuto)
+
+            val vypnuto = graf(false)
+            assertFalse(vypnuto.has(LongMmBuilder.N_SAGE))
+            // Turbo teď bere model rovnou z toho, co krmilo záplatu.
+            assertEquals(zdroj, vypnuto.inputs(turbo).getJSONArray("model").getString(0))
+            zkontrolujOdkazy(vypnuto)
+        }
+    }
+
     @Test fun `karta rekne, co chybi`() {
         assertNotNull(longMmProblem(scena(prompt = "")))
         assertNotNull(longMmProblem(scena(nazev = "")))
