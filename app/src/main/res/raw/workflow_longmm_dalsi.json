@@ -152,7 +152,7 @@
   "class_type": "MiniMaxH3TurboLoRA",
   "inputs": {
    "model": [
-    "18",
+    "400",
     0
    ],
    "lora_name": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
@@ -271,6 +271,16 @@
     0
    ],
    "filename_prefix": "zaber"
+  }
+ },
+ "400": {
+  "class_type": "ModelAttentionBackend",
+  "inputs": {
+   "model": [
+    "18",
+    0
+   ],
+   "attention": "comfy kitchen attention"
   }
  }
 }

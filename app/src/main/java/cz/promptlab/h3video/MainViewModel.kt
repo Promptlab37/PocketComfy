@@ -3390,7 +3390,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (v.isFinite()) updateLongMm { it.copy(loraSila = v.coerceIn(0f, 1.5f)) }
     }
 
-    fun setLongMmSage(v: Boolean) = updateLongMm { it.copy(sage = v) }
+    fun setLongMmPozornost(v: cz.promptlab.h3video.data.LongMmPozornost) =
+        updateLongMm { it.copy(pozornost = v) }
     fun setLongMmRealismus(v: Boolean) = updateLongMm { it.copy(realismus = v) }
     fun setLongMmRealismusSila(v: Float) {
         if (v.isFinite()) updateLongMm { it.copy(realismusSila = v.coerceIn(0f, 1.5f)) }

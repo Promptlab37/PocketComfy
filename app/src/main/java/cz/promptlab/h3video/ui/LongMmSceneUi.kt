@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.promptlab.h3video.MainViewModel
 import cz.promptlab.h3video.data.LongMmPomer
+import cz.promptlab.h3video.data.LongMmPozornost
 import cz.promptlab.h3video.data.LongMmRezim
 import cz.promptlab.h3video.data.LongMmRozliseni
 import cz.promptlab.h3video.data.LongMmScene
@@ -144,14 +145,14 @@ fun LongMmSection(vm: MainViewModel) {
     }
 
     SectionCard(
-        title = t("Zrychlovací pozornost (Sage)"),
-        subtitle = t("Autor ji má zapnutou, vypnutá jde model rovnou dál"),
+        title = t("Zrychlovací pozornost"),
+        subtitle = scene.pozornost.popis,
     ) {
         PillRow(
-            items = listOf(false, true),
-            selected = scene.sage,
-            label = { if (it) t("Zapnuto") else t("Vypnuto") },
-            onSelect = { vm.setLongMmSage(it) },
+            items = LongMmPozornost.entries.toList(),
+            selected = scene.pozornost,
+            label = { it.title },
+            onSelect = { vm.setLongMmPozornost(it) },
         )
     }
 

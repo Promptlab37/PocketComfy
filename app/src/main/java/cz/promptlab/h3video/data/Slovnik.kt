@@ -754,7 +754,16 @@ object Slovnik {
         "Na kterou scénu se navazuje" to "Which scene to continue",
         "Název scény" to "Scene name",
         "Realističtější podání" to "More realistic rendering",
-        "Zrychlovací pozornost (Sage)" to "Speed-up attention (Sage)",
+        "Zrychlovací pozornost" to "Speed-up attention",
+        "Sage" to "Sage",
+        "Zapojení autora balíku. Přesné, ale běh trvá déle" to
+            "The pack author's wiring. Accurate, but the run takes longer",
+        "Comfy Kitchen INT8" to "Comfy Kitchen INT8",
+        "Jako kolega. Kvantovaná pozornost přímo z jádra ComfyUI" to
+            "Same as the colleague. Quantised attention straight from the ComfyUI core",
+        "Nechat na serveru" to "Leave it to the server",
+        "Nic se nepřidá, platí globální nastavení ComfyUI" to
+            "Nothing is added, ComfyUI's global setting applies",
         "Turbo" to "Turbo",
         "Zapojení autora balíku, beze změny" to "The pack author's wiring, unchanged",
         "FastVideo VSA" to "FastVideo VSA",

@@ -4,6 +4,7 @@ import cz.promptlab.h3video.comfy.LongMmBuilder
 import cz.promptlab.h3video.comfy.Stage
 import cz.promptlab.h3video.data.LongMmPomer
 import cz.promptlab.h3video.data.LongMmRef
+import cz.promptlab.h3video.data.LongMmPozornost
 import cz.promptlab.h3video.data.LongMmRezim
 import cz.promptlab.h3video.data.LongMmRozliseni
 import cz.promptlab.h3video.data.LongMmScene
@@ -314,34 +315,52 @@ class LongMmBuilderTest {
     }
 
     /**
-     * Vypnutá záplata pozornosti musí z grafu zmizet a ten, kdo od ní bral
-     * model, musí dostat rovnou její zdroj. Odkaz na smazaný uzel server
-     * odmítne ještě před vzorkováním.
+     * Do řetězu smí jít **jen ta** pozornost, kterou si uživatel zvolil.
+     * Nevybraná musí z grafu zmizet a ten, kdo od ní bral model, musí dostat
+     * rovnou její zdroj — odkaz na smazaný uzel server odmítne ještě před
+     * vzorkováním. Volba „nechat na serveru" vyhodí obě.
      */
-    @Test fun `vypnuta sage zmizi a retez se spoji`() {
+    @Test fun `v grafu zustane jen zvolena pozornost`() {
         for (navazani in listOf(false, true)) {
-            fun graf(sage: Boolean): JSONObject {
+            fun graf(p: LongMmPozornost): JSONObject {
                 val sc = scena(rezim = if (navazani) LongMmRezim.NAVAZANI else LongMmRezim.PRVNI)
-                    .copy(sage = sage)
+                    .copy(pozornost = p)
                 return if (navazani) LongMmBuilder.buildDalsi(dalsi, sc, 1L, "c.mp4")
                 else LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
             }
             val turbo = if (navazani) LongMmBuilder.N_TURBO_DALSI else LongMmBuilder.N_TURBO
+            val S = LongMmBuilder.N_SAGE
+            val K = LongMmBuilder.N_POZORNOST
 
-            val zapnuto = graf(true)
-            assertTrue(zapnuto.has(LongMmBuilder.N_SAGE))
-            val zdroj = zapnuto.inputs(LongMmBuilder.N_SAGE).getJSONArray("model").getString(0)
+            // Zdroj, který v předloze krmí první uzel v řetězu pozornosti.
+            val zdroj = graf(LongMmPozornost.SAGE).inputs(S).getJSONArray("model").getString(0)
+
+            val sage = graf(LongMmPozornost.SAGE)
+            assertTrue(sage.has(S))
+            assertFalse(sage.has(K))
+            assertEquals(S, sage.inputs(turbo).getJSONArray("model").getString(0))
+            zkontrolujOdkazy(sage)
+
+            val kitchen = graf(LongMmPozornost.KITCHEN)
+            assertFalse(kitchen.has(S))
+            assertTrue(kitchen.has(K))
             assertEquals(
-                LongMmBuilder.N_SAGE,
-                zapnuto.inputs(turbo).getJSONArray("model").getString(0),
+                "ModelAttentionBackend",
+                kitchen.getJSONObject(K).getString("class_type"),
             )
-            zkontrolujOdkazy(zapnuto)
+            // Přesně ta hodnota, kterou uzel nabízí; jiná by skončila
+            // hláškou „není v nabídce".
+            assertEquals("comfy kitchen attention", kitchen.inputs(K).getString("attention"))
+            // Sage byla přemostěna, takže uzel pozornosti visí rovnou na zdroji.
+            assertEquals(zdroj, kitchen.inputs(K).getJSONArray("model").getString(0))
+            assertEquals(K, kitchen.inputs(turbo).getJSONArray("model").getString(0))
+            zkontrolujOdkazy(kitchen)
 
-            val vypnuto = graf(false)
-            assertFalse(vypnuto.has(LongMmBuilder.N_SAGE))
-            // Turbo teď bere model rovnou z toho, co krmilo záplatu.
-            assertEquals(zdroj, vypnuto.inputs(turbo).getJSONArray("model").getString(0))
-            zkontrolujOdkazy(vypnuto)
+            val server = graf(LongMmPozornost.SERVER)
+            assertFalse(server.has(S))
+            assertFalse(server.has(K))
+            assertEquals(zdroj, server.inputs(turbo).getJSONArray("model").getString(0))
+            zkontrolujOdkazy(server)
         }
     }
 

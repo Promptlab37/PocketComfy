@@ -61,6 +61,38 @@ enum class LongMmPomer(val kod: String, private val titleCs: String) {
 }
 
 /**
+ * Které zapojení pozornosti se vloží do řetězu modelu.
+ *
+ * Zdroj: kolegův workflow „Ultra Speed Singularity" (23. 9. 2026) — Sage uzel
+ * má **přemostěný** a místo něj vede model přes uzel pozornosti přepnutý na
+ * `comfy kitchen (int8)`. Ten jeho uzel je obal z balíku ComfyUI-OrbitSheets;
+ * totéž umí **vestavěný** `ModelAttentionBackend` z jádra ComfyUI
+ * (`comfy_extras/nodes_model_advanced.py:374`), takže se nic neinstaluje.
+ *
+ * Volba [SERVER] do grafu nepřidá nic. Pozor: server se spouští s přepínačem
+ * `--use-sage-attention`, takže „nic v grafu" neznamená žádnou zrychlovací
+ * pozornost — znamená to tu, kterou má server globálně.
+ */
+enum class LongMmPozornost(private val titleCs: String, private val popisCs: String) {
+    /** Autorovo zapojení: `MiniMaxH3MemoryEfficientSageAttentionPatch`. */
+    SAGE("Sage", "Zapojení autora balíku. Přesné, ale běh trvá déle"),
+
+    /**
+     * `ModelAttentionBackend` s volbou `comfy kitchen attention` —
+     * kvantovaná INT8 pozornost z jádra ComfyUI. Uzel ji do nabídky přidá
+     * jen tam, kde ji grafická karta zvládne; na tomhle serveru v nabídce je.
+     * Jádro ji značí jako experimentální.
+     */
+    KITCHEN("Comfy Kitchen INT8", "Jako kolega. Kvantovaná pozornost přímo z jádra ComfyUI"),
+
+    /** Do grafu se nepřidá žádný uzel pozornosti. */
+    SERVER("Nechat na serveru", "Nic se nepřidá, platí globální nastavení ComfyUI");
+
+    val title: String get() = t(titleCs)
+    val popis: String get() = t(popisCs)
+}
+
+/**
  * Sestava modelu a zrychlovací LoRA pro kartu Long MiniMax.
  *
  * Autorovo zapojení je [TURBO] a je výchozí. Zbylé dvě si vyžádal uživatel;
@@ -213,13 +245,11 @@ data class LongMmScene(
     /** Síla zrychlovací LoRA; záporná hodnota = vzít tu ze sestavy. */
     val loraSila: Float = -1f,
     /**
-     * Nechat v grafu uzel `MiniMaxH3MemoryEfficientSageAttentionPatch`.
+     * Které zapojení pozornosti jde do řetězu. Viz [LongMmPozornost].
      *
-     * Autor ho v obou předlohách má a je aktivní, proto je zapnutý i tady.
-     * Vypnutý se z řetězu vyřadí a model jde rovnou dál — 23. 9. 2026 to
-     * uživatel zkusil a běh bez něj trval neúnosně dlouho.
+     * Výchozí je autorovo (Sage) — v obou jeho předlohách je aktivní.
      */
-    val sage: Boolean = true,
+    val pozornost: LongMmPozornost = LongMmPozornost.SAGE,
     /** Realistická LoRA `h3-realism-people-t2v-i2v-r2v`. */
     val realismus: Boolean = false,
     val realismusSila: Float = 0.7f,
@@ -367,7 +397,12 @@ class LongMmStore(private val ctx: Context) {
             kroky = j.optInt("kroky", LongMmModel.TURBO.kroky)
                 .coerceIn(LongMmScene.MIN_KROKU, LongMmScene.MAX_KROKU),
             loraSila = j.optDouble("loraSila", -1.0).toFloat(),
-            sage = j.optBoolean("sage", true),
+            // Starší uložená scéna měla jen boolean `sage`; ať se po
+            // aktualizaci nikomu volba nepřeklopí sama.
+            pozornost = j.optString("pozornost").takeIf { it.isNotBlank() }
+                ?.let { runCatching { LongMmPozornost.valueOf(it) }.getOrNull() }
+                ?: if (j.optBoolean("sage", true)) LongMmPozornost.SAGE
+                else LongMmPozornost.SERVER,
             referenceVNavazani = j.optBoolean("referenceVNavazani"),
             realismus = j.optBoolean("realismus"),
             realismusSila = j.optDouble("realismusSila", 0.7).toFloat().coerceIn(0f, 1.5f),
@@ -392,7 +427,7 @@ class LongMmStore(private val ctx: Context) {
                 .put("model", s.model.name)
                 .put("kroky", s.kroky)
                 .put("loraSila", s.loraSila.toDouble())
-                .put("sage", s.sage)
+                .put("pozornost", s.pozornost.name)
                 .put("referenceVNavazani", s.referenceVNavazani)
                 .put("realismus", s.realismus)
                 .put("realismusSila", s.realismusSila.toDouble())

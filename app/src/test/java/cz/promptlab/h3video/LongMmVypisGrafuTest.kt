@@ -4,6 +4,7 @@ import cz.promptlab.h3video.comfy.LongMmBuilder
 import cz.promptlab.h3video.data.LongMmModel
 import cz.promptlab.h3video.data.LongMmPomer
 import cz.promptlab.h3video.data.LongMmRef
+import cz.promptlab.h3video.data.LongMmPozornost
 import cz.promptlab.h3video.data.LongMmRezim
 import cz.promptlab.h3video.data.LongMmRozliseni
 import cz.promptlab.h3video.data.LongMmScene
@@ -33,13 +34,13 @@ class LongMmVypisGrafuTest {
 
         var pocet = 0
         for (model in LongMmModel.entries) {
-            for (sage in listOf(true, false)) {
+            for (pozornost in LongMmPozornost.entries) {
                 for (realismus in listOf(false, true)) {
                     for (referenceVNavazani in listOf(false, true)) {
                         val zaklad = LongMmScene(
                             prompt = "žena u okna",
                             sekundy = 7,
-                            rozliseni = LongMmRozliseni.R640,
+                            rozliseni = LongMmRozliseni.R768,
                             pomer = LongMmPomer.NAVYSKU,
                             nazev = "kontrola",
                             latent = "kontrola_00003.h3latent.safetensors",
@@ -47,13 +48,13 @@ class LongMmVypisGrafuTest {
                             reference = listOf(LongMmRef(File("a.png")), LongMmRef(File("b.png"))),
                             model = model,
                             kroky = model.kroky,
-                            sage = sage,
+                            pozornost = pozornost,
                             realismus = realismus,
                             referenceVNavazani = referenceVNavazani,
                         )
                         val jmeno = listOf(
                             model.name.lowercase(),
-                            if (sage) "sage" else "bezsage",
+                            pozornost.name.lowercase(),
                             if (realismus) "real" else "bezreal",
                             if (referenceVNavazani) "refy" else "bezrefu",
                         ).joinToString("-")

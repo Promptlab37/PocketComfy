@@ -2,6 +2,7 @@ package cz.promptlab.h3video.comfy
 
 import android.content.Context
 import cz.promptlab.h3video.R
+import cz.promptlab.h3video.data.LongMmPozornost
 import cz.promptlab.h3video.data.LongMmScene
 import org.json.JSONArray
 import org.json.JSONObject
@@ -87,6 +88,12 @@ object LongMmBuilder {
      */
     const val N_SAGE = "18"
 
+    /**
+     * Vestavěný `ModelAttentionBackend`. V předloze je zařazený **za** Sage,
+     * takže podle volby stačí přemostit jeden z nich, druhý, nebo oba.
+     */
+    const val N_POZORNOST = "400"
+
     /** Turbo LoRA, na kterou se realistická věší. */
     const val N_TURBO = "271"
     const val N_TURBO_DALSI = "339"
@@ -164,7 +171,7 @@ object LongMmBuilder {
             sampler = "7", sigmy = N_KROKY,
             beruModel = listOf("4"), beruKontext = listOf(N_VYSTUP), beruSigmy = listOf("8"),
         )
-        if (!scene.sage) premostiUzel(wf, N_SAGE, "model")
+        zapojPozornost(wf, scene)
         zapojRealismus(wf, scene, N_TURBO)
 
         val pouzite = reference.take(LongMmScene.MAX_REFERENCI)
@@ -253,7 +260,7 @@ object LongMmBuilder {
             beruModel = listOf(N_SEED_DALSI), beruKontext = listOf(N_SEED_DALSI, N_SLEPENI),
             beruSigmy = listOf(N_SEED_DALSI),
         )
-        if (!scene.sage) premostiUzel(wf, N_SAGE, "model")
+        zapojPozornost(wf, scene)
         zapojRealismus(wf, scene, N_TURBO_DALSI)
         if (scene.referenceVNavazani) zapojReference(wf, reference, N_USEK)
         wf.inputs(N_VODITKO).put("seconds", LongMmScene.VODITKO_S)
@@ -387,6 +394,24 @@ object LongMmBuilder {
     }
 
     /**
+     * Nechá v řetězu jen to zapojení pozornosti, které si uživatel zvolil.
+     *
+     * Předloha má za sebou oba uzly (Sage → `ModelAttentionBackend`), takže
+     * se vždy přemostí ty nevybrané. Volba [LongMmPozornost.SERVER] vyhodí
+     * oba a nechá platit globální nastavení serveru.
+     */
+    private fun zapojPozornost(wf: JSONObject, scene: LongMmScene) {
+        when (scene.pozornost) {
+            LongMmPozornost.SAGE -> premostiUzel(wf, N_POZORNOST, "model")
+            LongMmPozornost.KITCHEN -> premostiUzel(wf, N_SAGE, "model")
+            LongMmPozornost.SERVER -> {
+                premostiUzel(wf, N_POZORNOST, "model")
+                premostiUzel(wf, N_SAGE, "model")
+            }
+        }
+    }
+
+    /**
      * Vyřadí uzel z řetězu: kdo bral jeho výstup, dostane rovnou to, co bral
      * on sám na vstupu [propust]. Uzel pak z grafu zmizí.
      *
@@ -436,6 +461,7 @@ object LongMmBuilder {
         "UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3TurboLoRA",
         "MiniMaxH3EasyModelAdapter_SatoDive",
         "MiniMaxH3MemoryEfficientSageAttentionPatch" -> Stage.MODELS
+        "ModelAttentionBackend" -> Stage.MODELS
         "LoadImage", "LoadVideo", "GetVideoComponents",
         "MiniMaxH3EasyMediaBridge_SatoDive",
         "MiniMaxH3EasyVideoTailSlicer_SatoDive",
