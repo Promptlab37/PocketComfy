@@ -76,6 +76,26 @@ class LongMmVypisGrafuTest {
                 }
             }
         }
+        // Každá dvojice rozlišení dvou průchodů: nízké se odvozuje z cíle,
+        // takže kontrola proti serveru musí vidět všechny kombinace.
+        for (r in LongMmRozliseni.entries) {
+            val sc = LongMmScene(
+                prompt = "žena u okna", sekundy = 5, rozliseni = r,
+                nazev = "kontrola", latent = "kontrola_00003.h3latent.safetensors",
+                zdroj = File("celek.mp4"),
+                model = LongMmModel.TRIPLUSDVA, kroky = LongMmModel.TRIPLUSDVA.kroky,
+            )
+            File(cil, "prvni-dvapruchody-${r.kod}.json").writeText(
+                LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList()).toString(1)
+            )
+            File(cil, "dalsi-dvapruchody-${r.kod}.json").writeText(
+                LongMmBuilder.buildDalsi(
+                    dalsi, sc.copy(rezim = LongMmRezim.NAVAZANI), 1L, "celek.mp4", emptyList(),
+                ).toString(1)
+            )
+            pocet += 2
+        }
+
         // Bez referencí — jiná větev stavitele, taky musí projít kontrolou.
         File(cil, "prvni-bezreferenci.json").writeText(
             LongMmBuilder.buildPrvni(

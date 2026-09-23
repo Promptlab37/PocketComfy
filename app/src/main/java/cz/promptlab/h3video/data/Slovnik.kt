@@ -754,6 +754,9 @@ object Slovnik {
         "Na kterou scénu se navazuje" to "Which scene to continue",
         "Název scény" to "Scene name",
         "Realističtější podání" to "More realistic rendering",
+        "540p · 0,5 MP" to "540p · 0.5 MP",
+        "Dva průchody nad 0,5 MP dělají artefakty a rozsypanou barvu — ověřeno na 768p. Kolega dotahuje na 540p." to
+            "Two passes above 0.5 MP produce artefacts and scattered colour — verified at 768p. My colleague refines at 540p.",
         "Kroky nahoře" to "Steps at the top",
         "Dole se scéna postaví, nahoře se doostří. Málo kroků nahoře = rozmazané barvy." to
             "The scene is built at the low resolution and sharpened at the top. Too few steps at the top leaves blurred colours.",

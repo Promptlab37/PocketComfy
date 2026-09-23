@@ -25,8 +25,13 @@ enum class LongMmRezim(private val titleCs: String, private val popisCs: String)
  */
 enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
     R480("480P", "480p"),
-    // Prostřední stupeň. Uzel nabízí i 540P, ale 640 je blíž půlce mezi
-    // krajními volbami — jak kratší hranou (600), tak plochou.
+    /**
+     * **0,5 MP.** Na tomhle stupni dotahuje dva průchody kolega (23. 9. 2026:
+     * „0.2 základ a refine 0.5, protože 0.75 nepřidá tolik kvality co stojí
+     * času"). V tabulce balíku je 360P = 0,2 MP a 540P = 0,5 MP, takže jeho
+     * dvojice je přesně R540 s prvním průchodem na 360P.
+     */
+    R540("540P", "540p · 0,5 MP"),
     R640("640P", "640p"),
     R720("720P", "720p"),
     /**
@@ -39,12 +44,41 @@ enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
     val title: String get() = t(titleCs)
 
     /**
+     * Rozlišení **prvního** průchodu u dvouprůchodových sestav.
+     *
+     * Nesmí to být pevná hodnota. Skok mezi průchody se drží kolem
+     * **2–2,5násobku plochy**; při pětinásobku (360P → 768P) zůstala po
+     * roztažení latentu barevná kaše (23. 9. 2026). Kolega jede 0,2 → 0,5 MP,
+     * tedy 360P → 540P, což je přesně 2,5×; stejný poměr drží i ostatní
+     * dvojice tady. Hodnoty musí být z autorovy nabídky
+     * (`_LOW_RES_CHOICES`: 360P, 416P, 480P, 540P, 640P).
+     */
+    /**
+     * Dává tenhle stupeň u dvou průchodů použitelný obraz?
+     *
+     * Ne podle úvahy, podle pokusů: 768P (1 MP) dopadlo dvakrát artefakty
+     * a rozsypanou barvou — poprvé s prvním průchodem na 360P, podruhé na
+     * 480P, tedy i s rozumným poměrem. Kolega dotahuje na **0,5 MP** a výš
+     * podle něj nejde: „0.75 nepřidá tolik kvality co stojí času."
+     */
+    val zvladneDvaPruchody: Boolean get() = this <= R540
+
+    val nizkeProDvaPruchody: String get() = when (this) {
+        R480 -> "360P"   // 0,4 ← 0,2 MP = 2,0×
+        R540 -> "360P"   // 0,5 ← 0,2 MP = 2,5×  (dvojice kolegy)
+        R640 -> "416P"   // 0,7 ← 0,3 MP = 2,3×
+        R720 -> "480P"   // 0,9 ← 0,4 MP = 2,25×
+        R768 -> "480P"   // 1,0 ← 0,4 MP = 2,5×
+    }
+
+    /**
      * Kolikrát víc bodů než nejnižší stupeň. Uzel bere rozlišení jako **rozpočet
      * plochy**, ne jako pevný rozměr — „480P" znamená kratší hranu 480 a poměr
      * stran si tu plochu jen přerozdělí. Čas běhu roste zhruba s plochou.
      */
     val nasobekPlochy: Float get() = when (this) {
         R480 -> 1f
+        R540 -> 1.25f
         R640 -> 1.78f
         R720 -> 2.25f
         R768 -> 2.5f
@@ -371,6 +405,9 @@ fun longMmHints(s: LongMmScene): List<String> = buildList {
         if (s.rozliseni != LongMmRozliseni.R480) {
             add(t("%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá.")
                 .format(s.rozliseni.title, s.rozliseni.nasobekPlochy))
+        }
+        if (s.model.dvojiPruchod && !s.rozliseni.zvladneDvaPruchody) {
+            add(t("Dva průchody nad 0,5 MP dělají artefakty a rozsypanou barvu — ověřeno na 768p. Kolega dotahuje na 540p."))
         }
         if (s.reference.isNotEmpty()) {
             add(t("Na fotky se v zadání odkazuje značkami <Picture 1>, <Picture 2>… Bez zmínky si jich model nemusí všimnout."))

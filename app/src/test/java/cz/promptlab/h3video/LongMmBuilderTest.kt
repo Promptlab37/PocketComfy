@@ -8,6 +8,7 @@ import cz.promptlab.h3video.data.LongMmPozornost
 import cz.promptlab.h3video.data.LongMmRezim
 import cz.promptlab.h3video.data.LongMmRozliseni
 import cz.promptlab.h3video.data.LongMmScene
+import cz.promptlab.h3video.data.longMmHints
 import cz.promptlab.h3video.data.longMmProblem
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
@@ -441,10 +442,11 @@ class LongMmBuilderTest {
         )
         val pu = a.inputs(LongMmBuilder.N_DVA_PRUCHODY)
         assertEquals(m.krokyNahore, pu.getInt("high_res_steps"))
-        // Autorova výchozí hodnota. S 360P byl skok na 1 MP pětinásobek
-        // plochy a dva kroky nahoře na něj nestačily.
-        assertEquals("480P", LongMmBuilder.NIZKE_ROZLISENI)
-        assertEquals(LongMmBuilder.NIZKE_ROZLISENI, pu.getString("low_res_resolution"))
+
+        assertEquals(
+            scena().rozliseni.nizkeProDvaPruchody,
+            pu.getString("low_res_resolution"),
+        )
         assertEquals(LongMmBuilder.UPSCALER, pu.getString("latent_upscale_model"))
         // NE "latent_upscale_model" — ta cesta je v balíku rozbitá a běh
         // spadne až po prvním průchodu. Viz komentář v LongMmBuilderu.
@@ -597,5 +599,68 @@ class LongMmBuilderTest {
         assertEquals(prvni.second, druhy.first)
         assertEquals(0.88f, druhy.second)
         assertTrue(prvni.second > prvni.first && druhy.second > druhy.first)
+    }
+
+    /**
+     * Skok mezi průchody se musí držet kolem 2–2,5násobku plochy. Při pěti-
+     * násobku (360P → 768P) zůstala po roztažení latentu barevná kaše, a
+     * pevné 480P by zas u cíle 480P dva průchody úplně zrušilo.
+     *
+     * Hodnoty jsou megapixely z tabulky balíku (`RESOLUTION_MEGAPIXELS`).
+     */
+    @Test fun `skok mezi pruchody zustava v rozumnem pomeru`() {
+        val mp = mapOf(
+            "360P" to 0.2, "416P" to 0.3, "480P" to 0.4,
+            "540P" to 0.5, "640P" to 0.7, "720P" to 0.9, "768P" to 1.0,
+        )
+        // Autorova nabídka pro nízké rozlišení, nic jiného uzel nepřijme.
+        val povolene = setOf("360P", "416P", "480P", "540P", "640P")
+        for (r in LongMmRozliseni.entries) {
+            val nizke = r.nizkeProDvaPruchody
+            assertTrue("$r -> $nizke neni v nabidce uzlu", nizke in povolene)
+            val pomer = mp.getValue(r.kod) / mp.getValue(nizke)
+            assertTrue("$r: skok $pomer x je moc", pomer <= 2.6)
+            assertTrue("$r: skok $pomer x je maly", pomer >= 1.9)
+        }
+        // Dvojice, kterou jede kolega: 0,2 -> 0,5 MP.
+        assertEquals("360P", LongMmRozliseni.R540.nizkeProDvaPruchody)
+        assertEquals(0.5, mp.getValue(LongMmRozliseni.R540.kod), 1e-9)
+    }
+
+    /**
+     * Strop pro dva průchody je 0,5 MP. Není to úvaha: 768P dopadlo artefakty
+     * a rozsypanou barvou dvakrát po sobě — s prvním průchodem na 360P
+     * i na 480P (23. 9. 2026). Kolega dotahuje na 0,5 MP a výš nejde.
+     */
+    @Test fun `dva pruchody maji strop na pul megapixelu`() {
+        assertTrue(LongMmRozliseni.R480.zvladneDvaPruchody)
+        assertTrue(LongMmRozliseni.R540.zvladneDvaPruchody)
+        assertFalse(LongMmRozliseni.R640.zvladneDvaPruchody)
+        assertFalse(LongMmRozliseni.R720.zvladneDvaPruchody)
+        assertFalse(LongMmRozliseni.R768.zvladneDvaPruchody)
+
+        // Nad stropem to karta musí říct, pod ním mlčet.
+        val nad = longMmHints(
+            scena().copy(
+                model = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA,
+                rozliseni = LongMmRozliseni.R768,
+            )
+        )
+        assertTrue(nad.any { it.contains("artefakty") || it.contains("artefacts") })
+        val pod = longMmHints(
+            scena().copy(
+                model = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA,
+                rozliseni = LongMmRozliseni.R540,
+            )
+        )
+        assertFalse(pod.any { it.contains("artefakty") || it.contains("artefacts") })
+        // Jednoprůchodová sestava na 768P se nevaruje, tam to jde.
+        val jeden = longMmHints(
+            scena().copy(
+                model = cz.promptlab.h3video.data.LongMmModel.TURBO,
+                rozliseni = LongMmRozliseni.R768,
+            )
+        )
+        assertFalse(jeden.any { it.contains("artefakty") || it.contains("artefacts") })
     }
 }

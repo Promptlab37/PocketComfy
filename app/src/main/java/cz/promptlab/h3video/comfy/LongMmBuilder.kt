@@ -3,6 +3,7 @@ package cz.promptlab.h3video.comfy
 import android.content.Context
 import cz.promptlab.h3video.R
 import cz.promptlab.h3video.data.LongMmPozornost
+import cz.promptlab.h3video.data.LongMmRozliseni
 import cz.promptlab.h3video.data.LongMmScene
 import org.json.JSONArray
 import org.json.JSONObject
@@ -112,14 +113,11 @@ object LongMmBuilder {
      * zhruba tenhle stupeň.
      */
     /**
-     * Rozlišení prvního průchodu u dvouprůchodových sestav.
-     *
-     * **Autorova výchozí hodnota.** Dřív tu bylo 360P: první průchod běžel na
-     * 0,2 MP a latent se pak roztahoval na 1 MP, tedy **pětinásobek plochy**.
-     * Na takový skok dva kroky nahoře nestačily a 23. 9. 2026 z toho vyšla
-     * barevná kaše. 480P je 0,4 MP, skok je poloviční.
+     * Rozlišení prvního průchodu už není konstanta — odvozuje se z cíle,
+     * viz [LongMmRozliseni.nizkeProDvaPruchody]. Pevná hodnota tu byla past:
+     * s 360P proti cíli 768P byl skok pětinásobek plochy a vyšla z toho
+     * barevná kaše, a s pevným 480P by u cíle 480P dva průchody zmizely.
      */
-    const val NIZKE_ROZLISENI = "480P"
 
     /** Soubor realistické LoRA. Stejný základ (`minimax-h3-fl2va`) jako turbo. */
     const val LORA_REALISMUS = "h3-realism-people-t2v-i2v-r2v.safetensors"
@@ -343,7 +341,7 @@ object LongMmBuilder {
                         .put("sampler", JSONArray().put(sampler).put(0))
                         .put("sigmas", JSONArray().put(sigmy).put(0))
                         .put("seed", seedProNavazani(seed))
-                        .put("low_res_resolution", NIZKE_ROZLISENI)
+                        .put("low_res_resolution", scene.rozliseni.nizkeProDvaPruchody)
                         .put("high_res_steps", scene.krokyNahoreEfektivni)
                         .put("high_res_resolution", scene.rozliseni.kod)
                         // Autorova výchozí metoda. Volba `latent_upscale_model`

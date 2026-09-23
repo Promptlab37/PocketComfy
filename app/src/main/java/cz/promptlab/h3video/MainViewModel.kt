@@ -3376,8 +3376,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setLongMmReferenceVNavazani(v: Boolean) =
         updateLongMm { it.copy(referenceVNavazani = v) }
     /** Přepnutí sestavy nastaví i její výchozí kroky a sílu LoRA. */
-    fun setLongMmModel(v: cz.promptlab.h3video.data.LongMmModel) =
-        updateLongMm { it.copy(model = v, kroky = v.kroky, loraSila = -1f) }
+    /**
+     * Přepnutí sestavy. Dvouprůchodová se rovnou postaví na dvojici, která
+     * je ověřená (0,2 → 0,5 MP) — u 768p z ní dvakrát vyšly artefakty.
+     * U prvního záběru jen; v řetězu je plátno zamčené latentem.
+     */
+    fun setLongMmModel(v: cz.promptlab.h3video.data.LongMmModel) = updateLongMm {
+        val rozliseni = if (
+            v.dvojiPruchod &&
+            it.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI &&
+            !it.rozliseni.zvladneDvaPruchody
+        ) cz.promptlab.h3video.data.LongMmRozliseni.R540 else it.rozliseni
+        it.copy(model = v, kroky = v.kroky, loraSila = -1f, rozliseni = rozliseni)
+    }
 
     fun setLongMmKroky(v: Int) = updateLongMm {
         it.copy(kroky = v.coerceIn(
