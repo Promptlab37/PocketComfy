@@ -111,7 +111,15 @@ object LongMmBuilder {
      * Rozlišení prvního průchodu. Karta 3 kroky jede dole na 0,2 MPx, což je
      * zhruba tenhle stupeň.
      */
-    const val NIZKE_ROZLISENI = "360P"
+    /**
+     * Rozlišení prvního průchodu u dvouprůchodových sestav.
+     *
+     * **Autorova výchozí hodnota.** Dřív tu bylo 360P: první průchod běžel na
+     * 0,2 MP a latent se pak roztahoval na 1 MP, tedy **pětinásobek plochy**.
+     * Na takový skok dva kroky nahoře nestačily a 23. 9. 2026 z toho vyšla
+     * barevná kaše. 480P je 0,4 MP, skok je poloviční.
+     */
+    const val NIZKE_ROZLISENI = "480P"
 
     /** Soubor realistické LoRA. Stejný základ (`minimax-h3-fl2va`) jako turbo. */
     const val LORA_REALISMUS = "h3-realism-people-t2v-i2v-r2v.safetensors"
@@ -336,7 +344,7 @@ object LongMmBuilder {
                         .put("sigmas", JSONArray().put(sigmy).put(0))
                         .put("seed", seedProNavazani(seed))
                         .put("low_res_resolution", NIZKE_ROZLISENI)
-                        .put("high_res_steps", scene.model.krokyNahore)
+                        .put("high_res_steps", scene.krokyNahoreEfektivni)
                         .put("high_res_resolution", scene.rozliseni.kod)
                         // Autorova výchozí metoda. Volba `latent_upscale_model`
                         // vypadá lákavě (vyhrazený 3D zvětšovač latentu), ale
@@ -480,20 +488,42 @@ object LongMmBuilder {
         "MiniMaxH3Easy_SatoDive", "MiniMaxH3EasyContextSegments_SatoDive",
         "MiniMaxH3EasyOutput_SatoDive", "BasicGuider", "BasicScheduler",
         "KSamplerSelect", "RandomNoise" -> Stage.ENCODING
-        "SamplerCustomAdvanced", "MiniMaxH3EasySegmentRender_SatoDive" -> Stage.SAMPLING
+        // Dvouprůchodový uzel si PRVNÍ průchod vzorkuje sám uvnitř — a je to
+        // ta delší půlka běhu. Dokud spadal do „else", hlásil fázi skládání,
+        // takže karta ukázala 98 % hned po startu a zpátky na 55 % teprve až
+        // začal druhý průchod (23. 9. 2026).
+        "SamplerCustomAdvanced", "MiniMaxH3EasySegmentRender_SatoDive",
+        "MiniMaxH3EasyProgressiveUpscale_SatoDive" -> Stage.SAMPLING
         else -> Stage.MUXING
     }
 
-    fun rangeForClass(cls: String?): Pair<Float, Float> = when (stageForClass(cls)) {
-        Stage.MODELS -> 0.00f to 0.10f
-        Stage.REFERENCES -> 0.10f to 0.16f
-        Stage.ENCODING -> 0.16f to 0.22f
-        Stage.SAMPLING -> 0.22f to 0.88f
-        else -> 0.88f to 1.00f
-    }
+    /**
+     * Rozsah procent pro uzel.
+     *
+     * [dvaPruchody] říká, jestli je v grafu dvouprůchodový uzel. Pak se pásmo
+     * vzorkování dělí na dva kusy, aby ukazatel nešel zpátky: první průchod
+     * doběhne do 62 % a druhý na nich naváže. U jednoho průchodu si celé
+     * pásmo bere vzorkovač sám.
+     */
+    fun rangeForClass(cls: String?, dvaPruchody: Boolean = false): Pair<Float, Float> =
+        when (stageForClass(cls)) {
+            Stage.MODELS -> 0.00f to 0.10f
+            Stage.REFERENCES -> 0.10f to 0.16f
+            Stage.ENCODING -> 0.16f to 0.22f
+            Stage.SAMPLING -> when {
+                !dvaPruchody -> 0.22f to 0.88f
+                cls == "MiniMaxH3EasyProgressiveUpscale_SatoDive" -> 0.22f to 0.62f
+                else -> 0.62f to 0.88f
+            }
+            else -> 0.88f to 1.00f
+        }
 
     fun reportsSteps(cls: String?): Boolean =
-        cls == "SamplerCustomAdvanced" || cls == "MiniMaxH3EasySegmentRender_SatoDive"
+        cls == "SamplerCustomAdvanced" ||
+            cls == "MiniMaxH3EasySegmentRender_SatoDive" ||
+            // Bez tohohle neběželo během prvního průchodu počítadlo kroků
+            // vůbec — karta čtyři minuty psala „počítám" a 0 kroků.
+            cls == "MiniMaxH3EasyProgressiveUpscale_SatoDive"
 
     fun nodeClasses(wf: JSONObject): Map<String, String> =
         wf.keys().asSequence().mapNotNull { id ->

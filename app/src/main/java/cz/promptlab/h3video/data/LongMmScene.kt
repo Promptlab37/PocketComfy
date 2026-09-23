@@ -245,6 +245,16 @@ data class LongMmScene(
     /** Síla zrychlovací LoRA; záporná hodnota = vzít tu ze sestavy. */
     val loraSila: Float = -1f,
     /**
+     * Kolik z [kroky] proběhne až v cílovém rozlišení (dvouprůchodové sestavy).
+     * Záporná hodnota = vzít počet ze sestavy.
+     *
+     * Rozhoduje to o výsledku víc než cokoli jiného: první průchod běží dole,
+     * latent se pak roztáhne a **tyhle** kroky mají obraz dotáhnout. Když jich
+     * je málo, zůstane po roztažení rozmazaná barevná kaše. Autor uzlu má
+     * výchozí 6; naše sestava „3 + 2" jich dává 2, proto to jde nastavit.
+     */
+    val krokyNahore: Int = -1,
+    /**
      * Které zapojení pozornosti jde do řetězu. Viz [LongMmPozornost].
      *
      * Výchozí je autorovo (Sage) — v obou jeho předlohách je aktivní.
@@ -272,6 +282,14 @@ data class LongMmScene(
 ) {
     /** Pořadí je závazné — stavitel čte reference v tomhle pořadí. */
     val uploadImages: List<File> get() = reference.map { it.soubor }
+
+    /**
+     * Kolik kroků poběží nahoře. Uživatelova volba má přednost, jinak sestava.
+     * Uzel stejně přijme nejvýš [kroky] − 1, proto se to sem rovnou vejde.
+     */
+    val krokyNahoreEfektivni: Int
+        get() = (if (krokyNahore > 0) krokyNahore else model.krokyNahore)
+            .coerceIn(1, (kroky - 1).coerceAtLeast(1))
 
     /** Síla zrychlovací LoRA pro tenhle běh — buď vlastní, nebo ze sestavy. */
     val silaLory: Float
@@ -397,6 +415,7 @@ class LongMmStore(private val ctx: Context) {
             kroky = j.optInt("kroky", LongMmModel.TURBO.kroky)
                 .coerceIn(LongMmScene.MIN_KROKU, LongMmScene.MAX_KROKU),
             loraSila = j.optDouble("loraSila", -1.0).toFloat(),
+            krokyNahore = j.optInt("krokyNahore", -1),
             // Starší uložená scéna měla jen boolean `sage`; ať se po
             // aktualizaci nikomu volba nepřeklopí sama.
             pozornost = j.optString("pozornost").takeIf { it.isNotBlank() }
@@ -427,6 +446,7 @@ class LongMmStore(private val ctx: Context) {
                 .put("model", s.model.name)
                 .put("kroky", s.kroky)
                 .put("loraSila", s.loraSila.toDouble())
+                .put("krokyNahore", s.krokyNahore)
                 .put("pozornost", s.pozornost.name)
                 .put("referenceVNavazani", s.referenceVNavazani)
                 .put("realismus", s.realismus)

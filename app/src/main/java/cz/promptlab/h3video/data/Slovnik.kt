@@ -754,6 +754,9 @@ object Slovnik {
         "Na kterou scénu se navazuje" to "Which scene to continue",
         "Název scény" to "Scene name",
         "Realističtější podání" to "More realistic rendering",
+        "Kroky nahoře" to "Steps at the top",
+        "Dole se scéna postaví, nahoře se doostří. Málo kroků nahoře = rozmazané barvy." to
+            "The scene is built at the low resolution and sharpened at the top. Too few steps at the top leaves blurred colours.",
         "Zrychlovací pozornost" to "Speed-up attention",
         "Sage" to "Sage",
         "Zapojení autora balíku. Přesné, ale běh trvá déle" to

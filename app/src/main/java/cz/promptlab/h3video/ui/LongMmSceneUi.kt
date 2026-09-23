@@ -119,6 +119,35 @@ fun LongMmSection(vm: MainViewModel) {
                     modifier = Modifier.width(26.dp),
                 )
             }
+            // Dvouprůchodové sestavy: kolik z těch kroků se počítá nahoře.
+            // Rozhoduje to o výsledku nejvíc — po roztažení latentu ho mají
+            // dotáhnout právě tyhle kroky. Autor uzlu má výchozí 6.
+            if (scene.model.dvojiPruchod) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        t("Kroky nahoře"),
+                        style = MaterialTheme.typography.labelMedium, color = TextLow,
+                    )
+                    val strop = (scene.kroky - 1).coerceAtLeast(1)
+                    androidx.compose.material3.Slider(
+                        value = scene.krokyNahoreEfektivni.toFloat(),
+                        onValueChange = { vm.setLongMmKrokyNahore(Math.round(it)) },
+                        valueRange = 1f..strop.toFloat(),
+                        steps = (strop - 2).coerceAtLeast(0),
+                        modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                        colors = sliderColors(),
+                    )
+                    Text(
+                        "${scene.kroky - scene.krokyNahoreEfektivni} + ${scene.krokyNahoreEfektivni}",
+                        style = MaterialTheme.typography.labelMedium, color = TextMid,
+                        modifier = Modifier.width(46.dp),
+                    )
+                }
+                Text(
+                    t("Dole se scéna postaví, nahoře se doostří. Málo kroků nahoře = rozmazané barvy."),
+                    style = MaterialTheme.typography.bodySmall, color = TextLow,
+                )
+            }
             // Vlastní posuvník, ne sdílený: ten jede od 0,5 a tady je potřeba
             // dosáhnout i na nulu (= bez LoRA) a na rozsah 0,2–0,6, který
             // u konceptových LoRA doporučuje autor modelu Eros.

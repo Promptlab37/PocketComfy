@@ -3390,6 +3390,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (v.isFinite()) updateLongMm { it.copy(loraSila = v.coerceIn(0f, 1.5f)) }
     }
 
+    /** Kolik kroků poběží v cílovém rozlišení (jen dvouprůchodové sestavy). */
+    fun setLongMmKrokyNahore(v: Int) = updateLongMm { it.copy(krokyNahore = v) }
+
     fun setLongMmPozornost(v: cz.promptlab.h3video.data.LongMmPozornost) =
         updateLongMm { it.copy(pozornost = v) }
     fun setLongMmRealismus(v: Boolean) = updateLongMm { it.copy(realismus = v) }

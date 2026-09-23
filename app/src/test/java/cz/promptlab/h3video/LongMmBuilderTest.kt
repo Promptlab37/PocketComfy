@@ -441,6 +441,9 @@ class LongMmBuilderTest {
         )
         val pu = a.inputs(LongMmBuilder.N_DVA_PRUCHODY)
         assertEquals(m.krokyNahore, pu.getInt("high_res_steps"))
+        // Autorova výchozí hodnota. S 360P byl skok na 1 MP pětinásobek
+        // plochy a dva kroky nahoře na něj nestačily.
+        assertEquals("480P", LongMmBuilder.NIZKE_ROZLISENI)
         assertEquals(LongMmBuilder.NIZKE_ROZLISENI, pu.getString("low_res_resolution"))
         assertEquals(LongMmBuilder.UPSCALER, pu.getString("latent_upscale_model"))
         // NE "latent_upscale_model" — ta cesta je v balíku rozbitá a běh
@@ -548,5 +551,51 @@ class LongMmBuilderTest {
                 }
             }
         }
+    }
+
+    /**
+     * Kolik kroků jede nahoře si musí jít nastavit z karty — je to číslo,
+     * které o výsledku dvou průchodů rozhoduje nejvíc. Bez něj šlo posuvníkem
+     * měnit jen celkový počet a poměr zůstával napevno na 2.
+     */
+    @Test fun `kroky nahore jdou prenastavit a drzi se v mezich`() {
+        val m = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
+        fun hrs(kroky: Int, nahore: Int): Int = LongMmBuilder.buildPrvni(
+            prvni,
+            scena().copy(model = m, kroky = kroky, krokyNahore = nahore),
+            1L, emptyList(),
+        ).inputs(LongMmBuilder.N_DVA_PRUCHODY).getInt("high_res_steps")
+
+        // Vlastní volba se propíše.
+        assertEquals(4, hrs(kroky = 8, nahore = 4))
+        assertEquals(1, hrs(kroky = 8, nahore = 1))
+        // Záporná = vzít ze sestavy.
+        assertEquals(m.krokyNahore, hrs(kroky = m.kroky, nahore = -1))
+        // Uzel dělí rozvrh na total-1 nejvýš; víc by stejně zahodil.
+        assertEquals(4, hrs(kroky = 5, nahore = 9))
+        // A aspoň jeden krok nahoře musí zůstat.
+        assertEquals(1, hrs(kroky = 2, nahore = 0))
+    }
+
+    /**
+     * Dvouprůchodový uzel si první průchod vzorkuje sám. Dokud patřil do
+     * „ostatní", hlásila karta fázi skládání — tedy 98 % hned po startu —
+     * a počítadlo kroků během celého prvního průchodu stálo (23. 9. 2026).
+     */
+    @Test fun `dvoupruchodovy uzel patri do vzorkovani a hlasi kroky`() {
+        val U = "MiniMaxH3EasyProgressiveUpscale_SatoDive"
+        assertEquals(Stage.SAMPLING, LongMmBuilder.stageForClass(U))
+        assertTrue(LongMmBuilder.reportsSteps(U))
+
+        // Jeden průchod: vzorkovač si bere celé pásmo.
+        assertEquals(0.22f to 0.88f, LongMmBuilder.rangeForClass("SamplerCustomAdvanced"))
+        // Dva průchody: pásmo se dělí a NEPŘEKRÝVÁ se, jinak by ukazatel
+        // po prvním průchodu skočil zpátky.
+        val prvni = LongMmBuilder.rangeForClass(U, dvaPruchody = true)
+        val druhy = LongMmBuilder.rangeForClass("SamplerCustomAdvanced", dvaPruchody = true)
+        assertEquals(0.22f, prvni.first)
+        assertEquals(prvni.second, druhy.first)
+        assertEquals(0.88f, druhy.second)
+        assertTrue(prvni.second > prvni.first && druhy.second > druhy.first)
     }
 }
