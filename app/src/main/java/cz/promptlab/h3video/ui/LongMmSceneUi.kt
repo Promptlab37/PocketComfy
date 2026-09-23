@@ -91,6 +91,71 @@ fun LongMmSection(vm: MainViewModel) {
         )
     }
 
+    SectionCard(title = t("Model"), subtitle = scene.model.popis) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            PillRow(
+                items = cz.promptlab.h3video.data.LongMmModel.entries.toList(),
+                selected = scene.model,
+                label = { it.title },
+                onSelect = { vm.setLongMmModel(it) },
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    t("Kroky"),
+                    style = MaterialTheme.typography.labelMedium, color = TextLow,
+                )
+                androidx.compose.material3.Slider(
+                    value = scene.kroky.toFloat(),
+                    onValueChange = { vm.setLongMmKroky(Math.round(it)) },
+                    valueRange = LongMmScene.MIN_KROKU.toFloat()..LongMmScene.MAX_KROKU.toFloat(),
+                    steps = LongMmScene.MAX_KROKU - LongMmScene.MIN_KROKU - 1,
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    colors = sliderColors(),
+                )
+                Text(
+                    "${scene.kroky}",
+                    style = MaterialTheme.typography.labelMedium, color = TextMid,
+                    modifier = Modifier.width(26.dp),
+                )
+            }
+            // Vlastní posuvník, ne sdílený: ten jede od 0,5 a tady je potřeba
+            // dosáhnout i na nulu (= bez LoRA) a na rozsah 0,2–0,6, který
+            // u konceptových LoRA doporučuje autor modelu Eros.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    t("Síla LoRA"),
+                    style = MaterialTheme.typography.labelMedium, color = TextLow,
+                )
+                androidx.compose.material3.Slider(
+                    value = scene.silaLory,
+                    onValueChange = { vm.setLongMmLoraSila(Math.round(it * 20f) / 20f) },
+                    valueRange = 0f..1.2f,
+                    steps = 23,
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    colors = sliderColors(),
+                )
+                Text(
+                    if (scene.silaLory <= 0f) t("bez") else "%.2f".format(scene.silaLory),
+                    style = MaterialTheme.typography.labelMedium, color = TextMid,
+                    modifier = Modifier.width(38.dp),
+                )
+            }
+        }
+    }
+
+    SectionCard(
+        title = t("Zrychlovací pozornost (Sage)"),
+        subtitle = t("Autor ji má zapnutou, vypnutá jde model rovnou dál"),
+    ) {
+        PillRow(
+            items = listOf(false, true),
+            selected = scene.sage,
+            label = { if (it) t("Zapnuto") else t("Vypnuto") },
+            onSelect = { vm.setLongMmSage(it) },
+        )
+    }
+
+
     if (scene.rezim == LongMmRezim.NAVAZANI) {
         // JEDNA volba, ne dvě. Video a latent bývaly dvě samostatná pole a
         // dokázala se rozejít — 22. 9. 2026 se tak loď přilepila k ženě
@@ -247,70 +312,6 @@ fun LongMmSection(vm: MainViewModel) {
                 )
             }
         }
-    }
-
-    SectionCard(title = t("Model"), subtitle = scene.model.popis) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            PillRow(
-                items = cz.promptlab.h3video.data.LongMmModel.entries.toList(),
-                selected = scene.model,
-                label = { it.title },
-                onSelect = { vm.setLongMmModel(it) },
-            )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    t("Kroky"),
-                    style = MaterialTheme.typography.labelMedium, color = TextLow,
-                )
-                androidx.compose.material3.Slider(
-                    value = scene.kroky.toFloat(),
-                    onValueChange = { vm.setLongMmKroky(Math.round(it)) },
-                    valueRange = LongMmScene.MIN_KROKU.toFloat()..LongMmScene.MAX_KROKU.toFloat(),
-                    steps = LongMmScene.MAX_KROKU - LongMmScene.MIN_KROKU - 1,
-                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                    colors = sliderColors(),
-                )
-                Text(
-                    "${scene.kroky}",
-                    style = MaterialTheme.typography.labelMedium, color = TextMid,
-                    modifier = Modifier.width(26.dp),
-                )
-            }
-            // Vlastní posuvník, ne sdílený: ten jede od 0,5 a tady je potřeba
-            // dosáhnout i na nulu (= bez LoRA) a na rozsah 0,2–0,6, který
-            // u konceptových LoRA doporučuje autor modelu Eros.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    t("Síla LoRA"),
-                    style = MaterialTheme.typography.labelMedium, color = TextLow,
-                )
-                androidx.compose.material3.Slider(
-                    value = scene.silaLory,
-                    onValueChange = { vm.setLongMmLoraSila(Math.round(it * 20f) / 20f) },
-                    valueRange = 0f..1.2f,
-                    steps = 23,
-                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                    colors = sliderColors(),
-                )
-                Text(
-                    if (scene.silaLory <= 0f) t("bez") else "%.2f".format(scene.silaLory),
-                    style = MaterialTheme.typography.labelMedium, color = TextMid,
-                    modifier = Modifier.width(38.dp),
-                )
-            }
-        }
-    }
-
-    SectionCard(
-        title = t("Zrychlovací pozornost (Sage)"),
-        subtitle = t("Autor ji má zapnutou, vypnutá jde model rovnou dál"),
-    ) {
-        PillRow(
-            items = listOf(false, true),
-            selected = scene.sage,
-            label = { if (it) t("Zapnuto") else t("Vypnuto") },
-            onSelect = { vm.setLongMmSage(it) },
-        )
     }
 
     SectionCard(
