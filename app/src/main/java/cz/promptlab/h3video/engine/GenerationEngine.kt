@@ -295,9 +295,10 @@ object GenerationEngine {
         model3dRun -> Trellis2Builder.rangeForClass(nodeClasses[node])
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.rangeForClass(nodeClasses[node])
         // Dva průchody mají vlastní dělení pásma, jinak by ukazatel skákal zpět.
-        longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.rangeForClass(
-            nodeClasses[node],
-            dvaPruchody = nodeClasses.containsValue("MiniMaxH3EasyProgressiveUpscale_SatoDive"),
+        // Rozlišují se podle ID uzlu — oba jsou `SamplerCustomAdvanced`.
+        longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.rangeForNode(
+            node, nodeClasses[node],
+            dvaPruchody = cz.promptlab.h3video.comfy.LongMmBuilder.maDvaPruchody(nodeClasses),
         )
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.rangeForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.rangeForClass(nodeClasses[node])

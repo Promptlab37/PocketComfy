@@ -119,32 +119,12 @@ fun LongMmSection(vm: MainViewModel) {
                     modifier = Modifier.width(26.dp),
                 )
             }
-            // Dvouprůchodové sestavy: kolik z těch kroků se počítá nahoře.
-            // Rozhoduje to o výsledku nejvíc — po roztažení latentu ho mají
-            // dotáhnout právě tyhle kroky. Autor uzlu má výchozí 6.
+            // Dvouprůchodová sestava: počet kroků platí pro průchod DOLE.
+            // Zjemnění nahoře má pevné, odladěné sigmy (dva kroky) — stejně
+            // jako karta „3 kroky", odkud je celé zapojení převzaté.
             if (scene.model.dvojiPruchod) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        t("Kroky nahoře"),
-                        style = MaterialTheme.typography.labelMedium, color = TextLow,
-                    )
-                    val strop = (scene.kroky - 1).coerceAtLeast(1)
-                    androidx.compose.material3.Slider(
-                        value = scene.krokyNahoreEfektivni.toFloat(),
-                        onValueChange = { vm.setLongMmKrokyNahore(Math.round(it)) },
-                        valueRange = 1f..strop.toFloat(),
-                        steps = (strop - 2).coerceAtLeast(0),
-                        modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                        colors = sliderColors(),
-                    )
-                    Text(
-                        "${scene.kroky - scene.krokyNahoreEfektivni} + ${scene.krokyNahoreEfektivni}",
-                        style = MaterialTheme.typography.labelMedium, color = TextMid,
-                        modifier = Modifier.width(46.dp),
-                    )
-                }
                 Text(
-                    t("Dole se scéna postaví, nahoře se doostří. Málo kroků nahoře = rozmazané barvy."),
+                    t("Kroky platí pro průchod dole. Nahoře se vždy přidají dva kroky zjemnění s pevným nastavením."),
                     style = MaterialTheme.typography.bodySmall, color = TextLow,
                 )
             }

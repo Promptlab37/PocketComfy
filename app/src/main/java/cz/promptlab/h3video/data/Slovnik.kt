@@ -757,9 +757,8 @@ object Slovnik {
         "540p · 0,5 MP" to "540p · 0.5 MP",
         "Dva průchody nad 0,5 MP dělají artefakty a rozsypanou barvu — ověřeno na 768p. Kolega dotahuje na 540p." to
             "Two passes above 0.5 MP produce artefacts and scattered colour — verified at 768p. My colleague refines at 540p.",
-        "Kroky nahoře" to "Steps at the top",
-        "Dole se scéna postaví, nahoře se doostří. Málo kroků nahoře = rozmazané barvy." to
-            "The scene is built at the low resolution and sharpened at the top. Too few steps at the top leaves blurred colours.",
+        "Kroky platí pro průchod dole. Nahoře se vždy přidají dva kroky zjemnění s pevným nastavením." to
+            "Steps apply to the lower pass. Two refinement steps with fixed settings are always added on top.",
         "Zrychlovací pozornost" to "Speed-up attention",
         "Sage" to "Sage",
         "Zapojení autora balíku. Přesné, ale běh trvá déle" to

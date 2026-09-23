@@ -2,6 +2,7 @@ package cz.promptlab.h3video.comfy
 
 import android.content.Context
 import cz.promptlab.h3video.R
+import cz.promptlab.h3video.data.LongMmPomer
 import cz.promptlab.h3video.data.LongMmPozornost
 import cz.promptlab.h3video.data.LongMmRozliseni
 import cz.promptlab.h3video.data.LongMmScene
@@ -103,6 +104,34 @@ object LongMmBuilder {
     /** Doplněný dvouprůchodový uzel balíku. */
     const val N_DVA_PRUCHODY = "282"
 
+    // Uzly dvoupruchodove sestavy. Cisla lezi mimo obe predlohy.
+    const val N_SHIFT = "500"
+    const val N_NIZKE_ZADANI = "501"
+    const val N_NIZKY_VYSTUP = "502"
+    const val N_NIZKY_GUIDER = "503"
+    const val N_PRUCHOD1 = "504"
+    const val N_ROZDELENI = "505"
+    const val N_ZVETSENI = "506"
+    const val N_SLOZENI = "507"
+    const val N_SIGMY_ZJEMNENI = "508"
+
+    /**
+     * Sigmy zjemnovaciho pruchodu - **odladena cisla z karty "3 kroky",
+     * nemenit.** Tam u nich stoji: "Cisla sigm ani posun se nemeni; jine
+     * hodnoty davaji mekky, mlecny obraz."
+     *
+     * Podstatne je, ze druhy pruchod zacina vysoko (0,9035) a udela dva
+     * poradne kroky. Uzel `MiniMaxH3EasyProgressiveUpscale_SatoDive` to
+     * takhle neumi: rozdeli jediny rozvrh a druhemu pruchodu preda jeho
+     * konec, tedy sigmy skoro na nule - po roztazeni latentu uz nema cim
+     * obraz opravit. Proto z nej 23. 9. 2026 dvakrat vysla barevna kase.
+     */
+    const val SIGMY_ZJEMNENI = "0.9035, 0.3158, 0.0000"
+
+    /** Posun sigm z karty "3 kroky". Taky odladeny, taky se nemeni. */
+    const val SHIFT_VIDEO = 12.0
+    const val SHIFT_AUDIO = 3.0
+
     /**
      * Zvětšovač latentu mezi průchody. Tentýž, na kterém jede karta 3 kroky.
      */
@@ -171,12 +200,6 @@ object LongMmBuilder {
         wf.inputs(N_SEED).put("noise_seed", seed)
         wf.inputs(N_LATENT_ULOZ).put("filename_prefix", nazevLatentu(scene))
         zapojSestavu(wf, scene, N_TURBO, N_KROKY)
-        zapojDvaPruchody(
-            wf, scene, seed,
-            model = N_TURBO, kontext = N_ZADANI, kontextSlot = 1,
-            sampler = "7", sigmy = N_KROKY,
-            beruModel = listOf("4"), beruKontext = listOf(N_VYSTUP), beruSigmy = listOf("8"),
-        )
         zapojPozornost(wf, scene)
         zapojRealismus(wf, scene, N_TURBO)
 
@@ -200,6 +223,9 @@ object LongMmBuilder {
                 }
             }
         }
+        // Az uplne nakonec: kopie zadani pro nizky pruchod musi mit
+        // i reference, ktere se dosazuji vyse.
+        zapojDvaPruchody(wf, scene)
         return wf
     }
 
@@ -259,18 +285,12 @@ object LongMmBuilder {
         usek.put("segment_seconds", List(useku(prompt)) { scene.sekundy }.joinToString(","))
 
         zapojSestavu(wf, scene, N_TURBO_DALSI, N_KROKY_DALSI)
-        zapojDvaPruchody(
-            wf, scene, seed,
-            model = N_TURBO_DALSI, kontext = N_USEK, kontextSlot = 1,
-            sampler = "294", sigmy = N_KROKY_DALSI,
-            beruModel = listOf(N_SEED_DALSI), beruKontext = listOf(N_SEED_DALSI, N_SLEPENI),
-            beruSigmy = listOf(N_SEED_DALSI),
-        )
         zapojPozornost(wf, scene)
         zapojRealismus(wf, scene, N_TURBO_DALSI)
         if (scene.referenceVNavazani) zapojReference(wf, reference, N_USEK)
         wf.inputs(N_VODITKO).put("seconds", LongMmScene.VODITKO_S)
         wf.inputs(N_SLEPENI).put("overlap_frames", LongMmScene.KONTEXT_SNIMKU)
+        zapojShiftNavazani(wf, scene)
         return wf
     }
 
@@ -314,62 +334,165 @@ object LongMmBuilder {
      * částečně — kdo by zůstal na staré cestě, vzorkoval by v jiném rozlišení
      * než zbytek grafu.
      */
-    private fun zapojDvaPruchody(
-        wf: JSONObject,
-        scene: LongMmScene,
-        seed: Long,
-        model: String,
-        kontext: String,
-        kontextSlot: Int,
-        sampler: String,
-        sigmy: String,
-        beruModel: List<String>,
-        beruKontext: List<String>,
-        beruSigmy: List<String>,
-    ) {
-        if (!scene.model.dvojiPruchod) return
+    private fun uzel(trida: String, vstupy: JSONObject): JSONObject =
+        JSONObject().put("class_type", trida).put("inputs", vstupy)
+
+    private fun odkaz(id: String, slot: Int = 0): JSONArray =
+        JSONArray().put(id).put(slot)
+
+    /**
+     * Rozmery platna tak, jak si je spocita sam balik.
+     *
+     * Rozliseni je u nej **rozpocet plochy**: `total = MP x 1024^2`,
+     * `scale = sqrt(total / (w*h))` a vysledek se zarovna na nasobek 32
+     * (`_align_canvas_dimension`, `nodes.py:2966`). Pro 16:9 z toho vyjde
+     * 608x352 na 360P a 960x544 na 540P - presne dvojice, na ktere jede
+     * funkcni karta "3 kroky".
+     */
+    fun rozmery(rozliseni: LongMmRozliseni, pomer: LongMmPomer): Pair<Int, Int> {
+        val casti = pomer.kod.split(":")
+        val rw = casti[0].toInt()
+        val rh = casti[1].toInt()
+        val celkem = rozliseni.megapixely * 1024.0 * 1024.0
+        val scale = Math.sqrt(celkem / (rw * rh))
+        fun zarovnej(v: Double): Int = Math.max(32, (Math.round(v / 32.0) * 32L).toInt())
+        return zarovnej(rw * scale) to zarovnej(rh * scale)
+    }
+
+    /**
+     * Vlozi posun sigm pred [spotrebitele] a prepoji je na nej.
+     *
+     * Vola se az po LoRA, realismu i pozornosti, takze si zdroj bere z toho,
+     * co v tu chvili krmi prvni uzel ze seznamu - na poradi zaplat pred nim
+     * tedy nezalezi.
+     */
+    private fun vlozShift(wf: JSONObject, spotrebitele: List<String>) {
+        val zdroj = wf.optJSONObject(spotrebitele.first())
+            ?.optJSONObject("inputs")?.optJSONArray("model") ?: return
         wf.put(
-            N_DVA_PRUCHODY,
-            JSONObject()
-                .put("class_type", "MiniMaxH3EasyProgressiveUpscale_SatoDive")
-                .put(
-                    "inputs",
-                    JSONObject()
-                        .put("enabled", true)
-                        .put("model", JSONArray().put(model).put(0))
-                        .put("h3_context", JSONArray().put(kontext).put(kontextSlot))
-                        .put("sampler", JSONArray().put(sampler).put(0))
-                        .put("sigmas", JSONArray().put(sigmy).put(0))
-                        .put("seed", seedProNavazani(seed))
-                        .put("low_res_resolution", scene.rozliseni.nizkeProDvaPruchody)
-                        .put("high_res_steps", scene.krokyNahoreEfektivni)
-                        .put("high_res_resolution", scene.rozliseni.kod)
-                        // Autorova výchozí metoda. Volba `latent_upscale_model`
-                        // vypadá lákavě (vyhrazený 3D zvětšovač latentu), ale
-                        // je v balíku **rozbitá**: `nodes.py:8387` volá
-                        // `MiniMaxH3EasyLatentUpscaler3D.execute()` ještě starým
-                        // tvarem — místo `mode` a `align` jí podá rozměry a
-                        // `enable_chunking` nepředá vůbec. Běh spadne až na
-                        // konci, po dokončeném prvním průchodu, hláškou
-                        // „missing 1 required positional argument:
-                        // 'enable_chunking'". Ověřeno 23. 9. 2026 na nejnovějším
-                        // commitu autora (4142527) — nahoře je to stejně.
-                        // Schématem se to nechytí, je to chyba uvnitř uzlu.
-                        .put("upscale_method", "bislerp")
-                        .put("latent_upscale_model", UPSCALER)
-                        .put("latent_upscale_device", "cuda")
-                        .put("latent_upscale_precision", "fp16"),
-                ),
+            N_SHIFT,
+            uzel(
+                "MiniMaxH3SigmaShift",
+                JSONObject()
+                    .put("model", zdroj)
+                    .put("shift_video", SHIFT_VIDEO)
+                    .put("shift_audio", SHIFT_AUDIO),
+            ),
         )
-        fun prepoj(uzly: List<String>, pole: String, slot: Int) {
-            uzly.forEach { id ->
-                val ins = wf.optJSONObject(id)?.optJSONObject("inputs") ?: return@forEach
-                if (ins.has(pole)) ins.put(pole, JSONArray().put(N_DVA_PRUCHODY).put(slot))
-            }
+        spotrebitele.forEach { id ->
+            val ins = wf.optJSONObject(id)?.optJSONObject("inputs")
+            if (ins != null && ins.has("model")) ins.put("model", odkaz(N_SHIFT))
         }
-        prepoj(beruModel, "model", 0)
-        prepoj(beruKontext, "h3_context", 1)
-        prepoj(beruSigmy, "sigmas", 2)
+    }
+
+    /**
+     * Dva pruchody u **prvniho zaberu** - zapojeni jedna ku jedne podle
+     * karty "3 kroky", ktera tenhle postup v appce davno umi.
+     *
+     *  1. cely rozvrh kroku dole (360P), latent dojede na nulu,
+     *  2. latent se rozdeli na obraz a zvuk, obraz zvetsi **uceny 3D model**
+     *     na cilove rozmery a zase slozi,
+     *  3. dva kroky zjemneni nahore z pevnych sigm [SIGMY_ZJEMNENI].
+     *
+     * Vola se az **na konci** stavby, aby kopie zadani mela i reference.
+     */
+    private fun zapojDvaPruchody(wf: JSONObject, scene: LongMmScene) {
+        if (!scene.model.dvojiPruchod) return
+
+        // Bez posunu sigm je obraz mekky - viz ThreeStepBuilder.
+        vlozShift(wf, listOf("4", N_KROKY))
+        // Rozvrh si bere neposunuty model, stejne jako predloha karty "3 kroky".
+        wf.inputs(N_KROKY).put("model", odkaz(N_UNET))
+
+        // Druhy kontext na nizkem rozliseni: kopie zadani i s referencemi.
+        val nizke = JSONObject(wf.getJSONObject(N_ZADANI).toString())
+        nizke.getJSONObject("inputs").put("resolution", scene.rozliseni.nizkeProDvaPruchody)
+        wf.put(N_NIZKE_ZADANI, nizke)
+        wf.put(
+            N_NIZKY_VYSTUP,
+            uzel(
+                "MiniMaxH3EasyOutput_SatoDive",
+                JSONObject().put("h3_context", odkaz(N_NIZKE_ZADANI, 1)),
+            ),
+        )
+        wf.put(
+            N_NIZKY_GUIDER,
+            uzel(
+                "BasicGuider",
+                JSONObject()
+                    .put("model", odkaz(N_SHIFT))
+                    .put("conditioning", odkaz(N_NIZKY_VYSTUP, 0)),
+            ),
+        )
+
+        // PRVNI PRUCHOD: cely rozvrh, latent dojede az na nulu.
+        wf.put(
+            N_PRUCHOD1,
+            uzel(
+                "SamplerCustomAdvanced",
+                JSONObject()
+                    .put("noise", odkaz(N_SEED))
+                    .put("guider", odkaz(N_NIZKY_GUIDER))
+                    .put("sampler", odkaz("7"))
+                    .put("sigmas", odkaz(N_KROKY))
+                    .put("latent_image", odkaz(N_NIZKY_VYSTUP, 1)),
+            ),
+        )
+
+        // Zvetseni obrazove casti ucenym modelem; zvuk jde beze zmeny dal.
+        val rozmer = rozmery(scene.rozliseni, scene.pomer)
+        wf.put(
+            N_ROZDELENI,
+            uzel("LTXVSeparateAVLatent", JSONObject().put("av_latent", odkaz(N_PRUCHOD1))),
+        )
+        wf.put(
+            N_ZVETSENI,
+            uzel(
+                "MinimaxH3LatentUpscaler3D",
+                JSONObject()
+                    .put("latent", odkaz(N_ROZDELENI, 0))
+                    .put("model_name", UPSCALER)
+                    // Tvar zapisu je prevzaty z funkcni predlohy: volba se
+                    // jmenuje `mode` a jeji podpole `mode.width`/`mode.height`.
+                    .put("mode", "target dimensions")
+                    .put("mode.width", rozmer.first)
+                    .put("mode.height", rozmer.second)
+                    .put("align", 32)
+                    .put("enable_temporal_chunking", true)
+                    .put("force_unload", true)
+                    .put("device", "cuda")
+                    .put("precision", "fp16"),
+            ),
+        )
+        wf.put(
+            N_SLOZENI,
+            uzel(
+                "LTXVConcatAVLatent",
+                JSONObject()
+                    .put("video_latent", odkaz(N_ZVETSENI))
+                    .put("audio_latent", odkaz(N_ROZDELENI, 1)),
+            ),
+        )
+
+        // DRUHY PRUCHOD: pevne sigmy, zacina vysoko, dva poradne kroky.
+        wf.put(
+            N_SIGMY_ZJEMNENI,
+            uzel("ManualSigmas", JSONObject().put("sigmas", SIGMY_ZJEMNENI)),
+        )
+        wf.inputs("8").put("sigmas", odkaz(N_SIGMY_ZJEMNENI))
+        wf.inputs("8").put("latent_image", odkaz(N_SLOZENI))
+    }
+
+    /**
+     * Navazani dva pruchody **neumi**: `MiniMaxH3EasySegmentRender_SatoDive`
+     * si useky vzorkuje sam a bere jediny model, sampler a sigmy - mezi ne
+     * se zvetseni latentu vlozit neda. Sestava tu proto jede jednim
+     * pruchodem, ale i tak s posunem sigm, ktery dela pulku kvality.
+     */
+    private fun zapojShiftNavazani(wf: JSONObject, scene: LongMmScene) {
+        if (!scene.model.dvojiPruchod) return
+        vlozShift(wf, listOf(N_SEED_DALSI, N_KROKY_DALSI))
+        wf.inputs(N_KROKY_DALSI).put("model", odkaz(N_UNET))
     }
 
     /**
@@ -504,17 +627,32 @@ object LongMmBuilder {
      * pásmo bere vzorkovač sám.
      */
     fun rangeForClass(cls: String?, dvaPruchody: Boolean = false): Pair<Float, Float> =
+        rangeForNode(null, cls, dvaPruchody)
+
+    /**
+     * Rozsah procent pro uzel.
+     *
+     * Dva pruchody jsou **oba** `SamplerCustomAdvanced`, takze se podle tridy
+     * rozlisit nedaji - musi se podle ID. Bez toho by ukazatel dojel v prvnim
+     * pruchodu na 88 % a pak zacal znovu od 22 %.
+     */
+    fun rangeForNode(id: String?, cls: String?, dvaPruchody: Boolean): Pair<Float, Float> =
         when (stageForClass(cls)) {
             Stage.MODELS -> 0.00f to 0.10f
             Stage.REFERENCES -> 0.10f to 0.16f
             Stage.ENCODING -> 0.16f to 0.22f
             Stage.SAMPLING -> when {
                 !dvaPruchody -> 0.22f to 0.88f
-                cls == "MiniMaxH3EasyProgressiveUpscale_SatoDive" -> 0.22f to 0.62f
-                else -> 0.62f to 0.88f
+                // Prvni pruchod bezi dole a je to delsi pulka prace.
+                id == N_PRUCHOD1 -> 0.22f to 0.66f
+                else -> 0.66f to 0.88f
             }
             else -> 0.88f to 1.00f
         }
+
+    /** Pozna dvoupruchodovy beh podle toho, ze v grafu je uzel prvniho pruchodu. */
+    fun maDvaPruchody(nodeClasses: Map<String, String>): Boolean =
+        nodeClasses.containsKey(N_PRUCHOD1)
 
     fun reportsSteps(cls: String?): Boolean =
         cls == "SamplerCustomAdvanced" ||

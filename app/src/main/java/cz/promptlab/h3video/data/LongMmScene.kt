@@ -63,6 +63,15 @@ enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
      */
     val zvladneDvaPruchody: Boolean get() = this <= R540
 
+    /** Rozpočet plochy v megapixelech — tabulka `RESOLUTION_MEGAPIXELS` z balíku. */
+    val megapixely: Double get() = when (this) {
+        R480 -> 0.4
+        R540 -> 0.5
+        R640 -> 0.7
+        R720 -> 0.9
+        R768 -> 1.0
+    }
+
     val nizkeProDvaPruchody: String get() = when (this) {
         R480 -> "360P"   // 0,4 ← 0,2 MP = 2,0×
         R540 -> "360P"   // 0,5 ← 0,2 MP = 2,5×  (dvojice kolegy)
@@ -223,7 +232,7 @@ enum class LongMmModel(
     TRIPLUSDVA(
         unet = "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
         lora = "h3" + SLOZKA + "TaoMate-H3-3step-ComfyUI.safetensors",
-        silaPrvni = 1.0f, silaDalsi = 1.0f, kroky = 5, krokyNahore = 2,
+        silaPrvni = 1.0f, silaDalsi = 1.0f, kroky = 3, krokyNahore = 2,
         titleCs = "3 + 2",
         popisCs = "Tři kroky dole, zvětšení latentu, dva nahoře",
     );

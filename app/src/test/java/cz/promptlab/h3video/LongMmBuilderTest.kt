@@ -428,52 +428,6 @@ class LongMmBuilderTest {
         )
     }
 
-    /**
-     * Dvouprůchodová sestava musí přepojit **všechny tři** výstupy — model,
-     * kontext i sigmy. Kdo by zůstal na jednoprůchodové cestě, vzorkoval by
-     * v jiném rozlišení než zbytek grafu.
-     */
-    @Test fun `dvoupruchodova sestava prepoji model, kontext i sigmy`() {
-        val m = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
-        assertTrue(m.dvojiPruchod)
-
-        val a = LongMmBuilder.buildPrvni(
-            prvni, scena().copy(model = m, kroky = m.kroky), 1L, emptyList(),
-        )
-        val pu = a.inputs(LongMmBuilder.N_DVA_PRUCHODY)
-        assertEquals(m.krokyNahore, pu.getInt("high_res_steps"))
-
-        assertEquals(
-            scena().rozliseni.nizkeProDvaPruchody,
-            pu.getString("low_res_resolution"),
-        )
-        assertEquals(LongMmBuilder.UPSCALER, pu.getString("latent_upscale_model"))
-        // NE "latent_upscale_model" — ta cesta je v balíku rozbitá a běh
-        // spadne až po prvním průchodu. Viz komentář v LongMmBuilderu.
-        assertEquals("bislerp", pu.getString("upscale_method"))
-        // odběratelé
-        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, a.inputs("4").getJSONArray("model").getString(0))
-        assertEquals(
-            LongMmBuilder.N_DVA_PRUCHODY,
-            a.inputs(LongMmBuilder.N_VYSTUP).getJSONArray("h3_context").getString(0),
-        )
-        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, a.inputs("8").getJSONArray("sigmas").getString(0))
-        zkontrolujOdkazy(a)
-
-        val b = LongMmBuilder.buildDalsi(
-            dalsi, scena(rezim = LongMmRezim.NAVAZANI).copy(model = m, kroky = m.kroky),
-            1L, "c.mp4",
-        )
-        val render = b.inputs(LongMmBuilder.N_SEED_DALSI)
-        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, render.getJSONArray("model").getString(0))
-        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, render.getJSONArray("h3_context").getString(0))
-        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, render.getJSONArray("sigmas").getString(0))
-        assertEquals(
-            LongMmBuilder.N_DVA_PRUCHODY,
-            b.inputs(LongMmBuilder.N_SLEPENI).getJSONArray("h3_context").getString(0),
-        )
-        zkontrolujOdkazy(b)
-    }
 
     /** Jednoprůchodové sestavy ten uzel do grafu vůbec nedají. */
     @Test fun `jednopruchodove sestavy zustavaji beze zmeny`() {
@@ -555,50 +509,42 @@ class LongMmBuilderTest {
         }
     }
 
+
     /**
-     * Kolik kroků jede nahoře si musí jít nastavit z karty — je to číslo,
-     * které o výsledku dvou průchodů rozhoduje nejvíc. Bez něj šlo posuvníkem
-     * měnit jen celkový počet a poměr zůstával napevno na 2.
+     * Dva pruchody jsou oba `SamplerCustomAdvanced`, takze pasmo procent
+     * se musi delit podle ID uzlu. Kdyz se delilo podle tridy, dojel
+     * ukazatel v prvnim pruchodu na 88 % a pak zacal znovu od 22 %.
      */
-    @Test fun `kroky nahore jdou prenastavit a drzi se v mezich`() {
-        val m = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
-        fun hrs(kroky: Int, nahore: Int): Int = LongMmBuilder.buildPrvni(
+    @Test fun `pasmo procent se deli podle uzlu, ne tridy`() {
+        val S = "SamplerCustomAdvanced"
+        assertTrue(LongMmBuilder.reportsSteps(S))
+        assertEquals(Stage.SAMPLING, LongMmBuilder.stageForClass(S))
+
+        // Jeden pruchod: cele pasmo.
+        assertEquals(0.22f to 0.88f, LongMmBuilder.rangeForNode("8", S, false))
+
+        // Dva pruchody: navazuji na sebe a neprekryvaji se.
+        val prvniPruchod = LongMmBuilder.rangeForNode(LongMmBuilder.N_PRUCHOD1, S, true)
+        val druhyPruchod = LongMmBuilder.rangeForNode("8", S, true)
+        assertEquals(0.22f, prvniPruchod.first)
+        assertEquals(prvniPruchod.second, druhyPruchod.first)
+        assertEquals(0.88f, druhyPruchod.second)
+
+        // Dvoupruchodovy beh se pozna podle uzlu prvniho pruchodu.
+        val g = LongMmBuilder.buildPrvni(
             prvni,
-            scena().copy(model = m, kroky = kroky, krokyNahore = nahore),
+            scena().copy(
+                model = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA,
+                rozliseni = LongMmRozliseni.R540,
+            ),
             1L, emptyList(),
-        ).inputs(LongMmBuilder.N_DVA_PRUCHODY).getInt("high_res_steps")
-
-        // Vlastní volba se propíše.
-        assertEquals(4, hrs(kroky = 8, nahore = 4))
-        assertEquals(1, hrs(kroky = 8, nahore = 1))
-        // Záporná = vzít ze sestavy.
-        assertEquals(m.krokyNahore, hrs(kroky = m.kroky, nahore = -1))
-        // Uzel dělí rozvrh na total-1 nejvýš; víc by stejně zahodil.
-        assertEquals(4, hrs(kroky = 5, nahore = 9))
-        // A aspoň jeden krok nahoře musí zůstat.
-        assertEquals(1, hrs(kroky = 2, nahore = 0))
-    }
-
-    /**
-     * Dvouprůchodový uzel si první průchod vzorkuje sám. Dokud patřil do
-     * „ostatní", hlásila karta fázi skládání — tedy 98 % hned po startu —
-     * a počítadlo kroků během celého prvního průchodu stálo (23. 9. 2026).
-     */
-    @Test fun `dvoupruchodovy uzel patri do vzorkovani a hlasi kroky`() {
-        val U = "MiniMaxH3EasyProgressiveUpscale_SatoDive"
-        assertEquals(Stage.SAMPLING, LongMmBuilder.stageForClass(U))
-        assertTrue(LongMmBuilder.reportsSteps(U))
-
-        // Jeden průchod: vzorkovač si bere celé pásmo.
-        assertEquals(0.22f to 0.88f, LongMmBuilder.rangeForClass("SamplerCustomAdvanced"))
-        // Dva průchody: pásmo se dělí a NEPŘEKRÝVÁ se, jinak by ukazatel
-        // po prvním průchodu skočil zpátky.
-        val prvni = LongMmBuilder.rangeForClass(U, dvaPruchody = true)
-        val druhy = LongMmBuilder.rangeForClass("SamplerCustomAdvanced", dvaPruchody = true)
-        assertEquals(0.22f, prvni.first)
-        assertEquals(prvni.second, druhy.first)
-        assertEquals(0.88f, druhy.second)
-        assertTrue(prvni.second > prvni.first && druhy.second > druhy.first)
+        )
+        assertTrue(LongMmBuilder.maDvaPruchody(LongMmBuilder.nodeClasses(g)))
+        val jeden = LongMmBuilder.buildPrvni(
+            prvni, scena().copy(model = cz.promptlab.h3video.data.LongMmModel.TURBO),
+            1L, emptyList(),
+        )
+        assertFalse(LongMmBuilder.maDvaPruchody(LongMmBuilder.nodeClasses(jeden)))
     }
 
     /**
@@ -662,5 +608,128 @@ class LongMmBuilderTest {
             )
         )
         assertFalse(jeden.any { it.contains("artefakty") || it.contains("artefacts") })
+    }
+
+    /**
+     * Dva pruchody musi byt zapojene stejne jako na karte "3 kroky", ktera
+     * tenhle postup v appce dela spravne. Klicove je, ze druhy pruchod
+     * dostane PEVNE sigmy zacinajici vysoko - ne konec rozvrhu prvniho
+     * pruchodu. Uzel MiniMaxH3EasyProgressiveUpscale_SatoDive delal to
+     * druhe a vysla z nej barevna kase.
+     */
+    @Test fun `dva pruchody jsou zapojene jako karta tri kroky`() {
+        val m = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
+        assertTrue(m.dvojiPruchod)
+        val sc = scena().copy(
+            model = m, kroky = m.kroky, rozliseni = LongMmRozliseni.R540,
+            pomer = cz.promptlab.h3video.data.LongMmPomer.NASIRKU,
+        )
+        val g = LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+
+        // Stary uzel uz v grafu nesmi byt vubec.
+        assertFalse(g.has(LongMmBuilder.N_DVA_PRUCHODY))
+
+        // Posun sigm z karty "3 kroky".
+        val shift = g.inputs(LongMmBuilder.N_SHIFT)
+        assertEquals("MiniMaxH3SigmaShift", g.getJSONObject(LongMmBuilder.N_SHIFT).getString("class_type"))
+        assertEquals(12.0, shift.getDouble("shift_video"), 1e-9)
+        assertEquals(3.0, shift.getDouble("shift_audio"), 1e-9)
+        // Rozvrh si bere NEPOSUNUTY model, stejne jako predloha.
+        assertEquals(
+            LongMmBuilder.N_UNET,
+            g.inputs(LongMmBuilder.N_KROKY).getJSONArray("model").getString(0),
+        )
+
+        // Nizky kontext je kopie zadani s jinym stupnem rozliseni.
+        val nizke = g.inputs(LongMmBuilder.N_NIZKE_ZADANI)
+        assertEquals("360P", nizke.getString("resolution"))
+        assertEquals(
+            g.inputs(LongMmBuilder.N_ZADANI).getString("prompt"),
+            nizke.getString("prompt"),
+        )
+
+        // Prvni pruchod: CELY rozvrh, latent z nizkeho kontextu.
+        val p1 = g.inputs(LongMmBuilder.N_PRUCHOD1)
+        assertEquals(LongMmBuilder.N_KROKY, p1.getJSONArray("sigmas").getString(0))
+        assertEquals(LongMmBuilder.N_NIZKY_VYSTUP, p1.getJSONArray("latent_image").getString(0))
+        assertEquals(LongMmBuilder.N_NIZKY_GUIDER, p1.getJSONArray("guider").getString(0))
+
+        // Zvetseni ucenym 3D modelem na rozmery cile: 540P 16:9 = 960x544.
+        val up = g.inputs(LongMmBuilder.N_ZVETSENI)
+        assertEquals("target dimensions", up.getString("mode"))
+        assertEquals(960, up.getInt("mode.width"))
+        assertEquals(544, up.getInt("mode.height"))
+        assertEquals(LongMmBuilder.UPSCALER, up.getString("model_name"))
+        assertEquals(LongMmBuilder.N_ROZDELENI, up.getJSONArray("latent").getString(0))
+
+        // Zvuk se nezvetsuje, jde rovnou z rozdeleni zpatky do slozeni.
+        val slozeni = g.inputs(LongMmBuilder.N_SLOZENI)
+        assertEquals(LongMmBuilder.N_ZVETSENI, slozeni.getJSONArray("video_latent").getString(0))
+        assertEquals(LongMmBuilder.N_ROZDELENI, slozeni.getJSONArray("audio_latent").getString(0))
+        assertEquals(1, slozeni.getJSONArray("audio_latent").getInt(1))
+
+        // DRUHY pruchod: pevne sigmy, ne konec rozvrhu.
+        assertEquals(
+            LongMmBuilder.SIGMY_ZJEMNENI,
+            g.inputs(LongMmBuilder.N_SIGMY_ZJEMNENI).getString("sigmas"),
+        )
+        val p2 = g.inputs("8")
+        assertEquals(LongMmBuilder.N_SIGMY_ZJEMNENI, p2.getJSONArray("sigmas").getString(0))
+        assertEquals(LongMmBuilder.N_SLOZENI, p2.getJSONArray("latent_image").getString(0))
+        // Ulozeny latent i obraz porad visi na DRUHEM pruchodu.
+        assertEquals("8", g.inputs(LongMmBuilder.N_LATENT_ULOZ).getJSONArray("latent").getString(0))
+        zkontrolujOdkazy(g)
+    }
+
+    /**
+     * Jednopruchodove sestavy nesmi zadny z novych uzlu dostat - jinak by
+     * se jim zmenilo vzorkovani.
+     */
+    @Test fun `jeden pruchod zustava beze zmeny`() {
+        val g = LongMmBuilder.buildPrvni(
+            prvni, scena().copy(model = cz.promptlab.h3video.data.LongMmModel.TURBO),
+            1L, emptyList(),
+        )
+        listOf(
+            LongMmBuilder.N_SHIFT, LongMmBuilder.N_NIZKE_ZADANI, LongMmBuilder.N_PRUCHOD1,
+            LongMmBuilder.N_ZVETSENI, LongMmBuilder.N_SLOZENI, LongMmBuilder.N_SIGMY_ZJEMNENI,
+        ).forEach { assertFalse("$it nema byt v grafu", g.has(it)) }
+        assertEquals(LongMmBuilder.N_KROKY, g.inputs("8").getJSONArray("sigmas").getString(0))
+        zkontrolujOdkazy(g)
+    }
+
+    /**
+     * Navazani dva pruchody neumi (SegmentRender si useky vzorkuje sam),
+     * ale posun sigm tam patri taky - dela pulku kvality.
+     */
+    @Test fun `navazani ma posun sigm ale jeden pruchod`() {
+        val m = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
+        val g = LongMmBuilder.buildDalsi(
+            dalsi, scena(rezim = LongMmRezim.NAVAZANI).copy(model = m, kroky = m.kroky),
+            1L, "c.mp4",
+        )
+        assertTrue(g.has(LongMmBuilder.N_SHIFT))
+        assertFalse(g.has(LongMmBuilder.N_PRUCHOD1))
+        assertFalse(g.has(LongMmBuilder.N_DVA_PRUCHODY))
+        assertEquals(
+            LongMmBuilder.N_SHIFT,
+            g.inputs(LongMmBuilder.N_SEED_DALSI).getJSONArray("model").getString(0),
+        )
+        zkontrolujOdkazy(g)
+    }
+
+    /**
+     * Rozmery musi vyjit presne tak, jak si je spocita balik - jinak by
+     * zvetseny latent nesedel s podminkou postavenou na cilovem platne.
+     */
+    @Test fun `rozmery sedi s tabulkou balicku`() {
+        val p = cz.promptlab.h3video.data.LongMmPomer.NASIRKU
+        // 540P = 0,5 MP na sirku; presne dvojice, na ktere jede karta "3 kroky".
+        assertEquals(960 to 544, LongMmBuilder.rozmery(LongMmRozliseni.R540, p))
+        // 768P = 1,0 MP: vzorec da 1376x768, ne 1344x768 — ta hodnota byla jen
+        // stara vychozi v predloze a uzel si plátno stejne pocita sam.
+        assertEquals(1376 to 768, LongMmBuilder.rozmery(LongMmRozliseni.R768, p))
+        val naVysku = cz.promptlab.h3video.data.LongMmPomer.NAVYSKU
+        assertEquals(544 to 960, LongMmBuilder.rozmery(LongMmRozliseni.R540, naVysku))
     }
 }
