@@ -80,6 +80,16 @@ data class LongMmScene(
     val sekundy: Int = 5,
     val rozliseni: LongMmRozliseni = LongMmRozliseni.R480,
     val pomer: LongMmPomer = LongMmPomer.NASIRKU,
+    /**
+     * Poslat referenční fotky i do navázání.
+     *
+     * **Odchylka od autora.** Ten v předloze navázání reference nemá — uzel
+     * `LoadImage` v ní leží nezapojený a scénu drží jen latent a konec
+     * předchozího videa. `Context Segments` je ale přijímá (`media` plus celá
+     * sada `ref_image_*`), takže jde podobu držet i tady. Vypnuto = jako
+     * u autora.
+     */
+    val referenceVNavazani: Boolean = false,
     /** Realistická LoRA `h3-realism-people-t2v-i2v-r2v`. */
     val realismus: Boolean = false,
     val realismusSila: Float = 0.7f,
@@ -213,6 +223,7 @@ class LongMmStore(private val ctx: Context) {
             zdroj = j.optString("zdroj").takeIf { it.isNotBlank() }
                 ?.let { File(it) }?.takeIf { it.exists() },
             latent = j.optString("latent"),
+            referenceVNavazani = j.optBoolean("referenceVNavazani"),
             realismus = j.optBoolean("realismus"),
             realismusSila = j.optDouble("realismusSila", 0.7).toFloat().coerceIn(0f, 1.5f),
             nazev = j.optString("nazev").ifBlank { "zaber" },
@@ -233,6 +244,7 @@ class LongMmStore(private val ctx: Context) {
                 .put("reference", refy)
                 .put("zdroj", s.zdroj?.absolutePath ?: "")
                 .put("latent", s.latent)
+                .put("referenceVNavazani", s.referenceVNavazani)
                 .put("realismus", s.realismus)
                 .put("realismusSila", s.realismusSila.toDouble())
                 .put("nazev", s.nazev)

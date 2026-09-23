@@ -3373,6 +3373,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setLongMmPrompt(v: String) = updateLongMm { it.copy(prompt = v) }
     fun setLongMmNazev(v: String) = updateLongMm { it.copy(nazev = v) }
     fun setLongMmLatent(v: String) = updateLongMm { it.copy(latent = v) }
+    fun setLongMmReferenceVNavazani(v: Boolean) =
+        updateLongMm { it.copy(referenceVNavazani = v) }
     fun setLongMmRealismus(v: Boolean) = updateLongMm { it.copy(realismus = v) }
     fun setLongMmRealismusSila(v: Float) {
         if (v.isFinite()) updateLongMm { it.copy(realismusSila = v.coerceIn(0f, 1.5f)) }

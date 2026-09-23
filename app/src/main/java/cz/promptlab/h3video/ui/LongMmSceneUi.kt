@@ -140,6 +140,38 @@ fun LongMmSection(vm: MainViewModel) {
                 )
             }
         }
+
+        SectionCard(
+            title = t("Držet podobu z fotek"),
+            subtitle = t("Odchylka od autora — ten reference do navázání neposílá"),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PillRow(
+                    items = listOf(false, true),
+                    selected = scene.referenceVNavazani,
+                    label = { if (it) t("Zapnuto") else t("Vypnuto") },
+                    onSelect = { vm.setLongMmReferenceVNavazani(it) },
+                )
+                if (scene.referenceVNavazani) Row(
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    scene.reference.forEachIndexed { i, ref ->
+                        RefDlazdicka(
+                            thumb = ref.nahled,
+                            onPick = { uri -> vm.pickLongMmRef(i, uri) },
+                            onRemove = { vm.removeLongMmRef(i) },
+                        )
+                    }
+                    if (scene.reference.size < LongMmScene.MAX_REFERENCI) {
+                        RefDlazdicka(
+                            thumb = null,
+                            onPick = { uri -> vm.pickLongMmRef(scene.reference.size, uri) },
+                            onRemove = {},
+                        )
+                    }
+                }
+            }
+        }
     } else {
         SectionCard(
             title = t("Podoba"),

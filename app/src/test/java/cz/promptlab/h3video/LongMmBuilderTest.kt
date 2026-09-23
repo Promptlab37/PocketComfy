@@ -280,6 +280,39 @@ class LongMmBuilderTest {
         zkontrolujOdkazy(wf)
     }
 
+    /**
+     * Reference v navázání jsou **odchylka od autora** — v jeho předloze uzel
+     * `LoadImage` leží nezapojený. Vypnutá volba proto musí nechat graf přesně
+     * takový, jaký ho má on.
+     */
+    @Test fun `reference v navazani jen kdyz jsou zapnute`() {
+        val jmena = listOf("a.png", "b.png")
+        val vypnuto = LongMmBuilder.buildDalsi(
+            dalsi, scena(rezim = LongMmRezim.NAVAZANI, referenci = 2), 1L, "c.mp4", jmena,
+        )
+        assertFalse(vypnuto.has(LongMmBuilder.N_MEDIA))
+        assertFalse(vypnuto.inputs(LongMmBuilder.N_USEK).has("media"))
+        LongMmBuilder.N_REFERENCE.forEach { assertFalse(vypnuto.has(it)) }
+        zkontrolujOdkazy(vypnuto)
+
+        val zapnuto = LongMmBuilder.buildDalsi(
+            dalsi,
+            scena(rezim = LongMmRezim.NAVAZANI, referenci = 2).copy(referenceVNavazani = true),
+            1L, "c.mp4", jmena,
+        )
+        val media = zapnuto.inputs(LongMmBuilder.N_MEDIA)
+        assertEquals(2, media.getInt("image_count"))
+        assertEquals("a.png", zapnuto.inputs(LongMmBuilder.N_REFERENCE[0]).getString("image"))
+        assertEquals("b.png", zapnuto.inputs(LongMmBuilder.N_REFERENCE[1]).getString("image"))
+        assertEquals(
+            LongMmBuilder.N_MEDIA,
+            zapnuto.inputs(LongMmBuilder.N_USEK).getJSONArray("media").getString(0),
+        )
+        // Načítače navíc se nezakládají.
+        assertFalse(zapnuto.has(LongMmBuilder.N_REFERENCE[2]))
+        zkontrolujOdkazy(zapnuto)
+    }
+
     @Test fun `karta rekne, co chybi`() {
         assertNotNull(longMmProblem(scena(prompt = "")))
         assertNotNull(longMmProblem(scena(nazev = "")))

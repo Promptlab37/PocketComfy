@@ -107,8 +107,9 @@ object LongMmBuilder {
     fun buildPrvni(ctx: Context, scene: LongMmScene, seed: Long, reference: List<String>): JSONObject =
         buildPrvni(sablonaPrvni(ctx), scene, seed, reference)
 
-    fun buildDalsi(ctx: Context, scene: LongMmScene, seed: Long, zdroj: String): JSONObject =
-        buildDalsi(sablonaDalsi(ctx), scene, seed, zdroj)
+    fun buildDalsi(
+        ctx: Context, scene: LongMmScene, seed: Long, zdroj: String, reference: List<String>,
+    ): JSONObject = buildDalsi(sablonaDalsi(ctx), scene, seed, zdroj, reference)
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
     fun buildPrvni(
@@ -147,9 +148,44 @@ object LongMmBuilder {
         return wf
     }
 
+    /**
+     * Přidá referenční fotky do grafu **navázání**.
+     *
+     * Autor je v předloze navázání nemá — uzel `LoadImage` v ní leží nezapojený
+     * a scénu drží jen latent a konec předchozího videa. `Context Segments` je
+     * ale přijímá (`media` plus celá sada `ref_image_*`), takže se podoba dá
+     * držet i tady, stejnými fotkami jako v prvním záběru.
+     */
+    private fun zapojReference(wf: JSONObject, reference: List<String>, doUzlu: String) {
+        val pouzite = reference.take(LongMmScene.MAX_REFERENCI)
+        if (pouzite.isEmpty()) return
+        val media = JSONObject()
+            .put("image_count", pouzite.size)
+            .put("video_count", 0)
+            .put("audio_count", 0)
+        pouzite.forEachIndexed { i, jmeno ->
+            val uzel = N_REFERENCE[i]
+            wf.put(
+                uzel,
+                JSONObject()
+                    .put("class_type", "LoadImage")
+                    .put("inputs", JSONObject().put("image", jmeno)),
+            )
+            media.put("image_${i + 1}", JSONArray().put(uzel).put(0))
+        }
+        wf.put(
+            N_MEDIA,
+            JSONObject()
+                .put("class_type", "MiniMaxH3EasyMediaBridge_SatoDive")
+                .put("inputs", media),
+        )
+        wf.inputs(doUzlu).put("media", JSONArray().put(N_MEDIA).put(0))
+    }
+
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
     fun buildDalsi(
         sablona: String, scene: LongMmScene, seed: Long, zdroj: String,
+        reference: List<String> = emptyList(),
     ): JSONObject {
         val wf = JSONObject(sablona)
         wf.inputs(N_ZDROJ).put("file", zdroj)
@@ -168,6 +204,7 @@ object LongMmBuilder {
         usek.put("segment_seconds", List(useku(prompt)) { scene.sekundy }.joinToString(","))
 
         zapojRealismus(wf, scene, N_TURBO_DALSI)
+        if (scene.referenceVNavazani) zapojReference(wf, reference, N_USEK)
         wf.inputs(N_VODITKO).put("seconds", LongMmScene.VODITKO_S)
         wf.inputs(N_SLEPENI).put("overlap_frames", LongMmScene.KONTEXT_SNIMKU)
         return wf

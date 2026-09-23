@@ -864,7 +864,7 @@ object GenerationEngine {
                         app, longMmScene, seed, names,
                     )
                 else cz.promptlab.h3video.comfy.LongMmBuilder.buildDalsi(
-                    app, longMmScene, seed, videoName.orEmpty(),
+                    app, longMmScene, seed, videoName.orEmpty(), names,
                 )
 
             // Dance: Wan-Dancer z APK. Fotka + hudba, choreografii si model

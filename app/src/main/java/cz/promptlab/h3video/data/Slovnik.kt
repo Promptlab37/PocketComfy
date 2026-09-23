@@ -753,6 +753,9 @@ object Slovnik {
         "Na kterou scénu se navazuje" to "Which scene to continue",
         "Název scény" to "Scene name",
         "Realističtější podání" to "More realistic rendering",
+        "Držet podobu z fotek" to "Hold the likeness from the photos",
+        "Odchylka od autora — ten reference do navázání neposílá" to
+            "A departure from the author — he sends no references into a continuation",
         "LoRA h3-realism-people, navrch k rychlostní" to
             "The h3-realism-people LoRA, stacked on the speed one",
         "Podle něj se pak navazuje a číslují se latenty" to
