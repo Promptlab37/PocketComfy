@@ -39,6 +39,10 @@ import org.json.JSONObject
  *    i samotný přidaný kus; appka bere jako výsledek první video, které najde,
  *    a dvě uložená by se jí pletla.
  *
+ * 4. **Obrazový VAE je fp16, ne autorův kvantovaný int8.** Kvantizace se týká
+ *    jen dekódování latentu do pixelů; uživatel si 23. 9. 2026 vyžádal plnou
+ *    přesnost napevno pro všechny sestavy.
+ *
  * Vzorkovací nastavení jsou autorova až na počet kroků: plánovač `simple`,
  * `euler` u prvního záběru a `res_multistep` u navázání, Turbo LoRA 0,8
  * respektive 0,75. Kroků má autor sedm, karta jede od 23. 9. 2026 na osmi.

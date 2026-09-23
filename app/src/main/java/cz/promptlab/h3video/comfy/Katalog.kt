@@ -415,12 +415,6 @@ object Katalog {
             "$HF/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"
         ),
         "minimax_h3_video_vae_fp16.safetensors" to Soubor("models/vae", "video karty"),
-        // Long MiniMax jede na kvantované verzi obrazového VAE — stejně jako
-        // autorova předloha. Plná fp16 zůstává pro ostatní video karty.
-        "minimax_h3_video_vae_int8_convrot.safetensors" to Soubor(
-            "models/vae", "Long MiniMax",
-            "$HF/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_int8_convrot.safetensors"
-        ),
         "minimax_h3_audio_vae_fp32.safetensors" to Soubor("models/vae", "video karty"),
         "qwen3vl_4b_fp8_scaled.safetensors" to Soubor("models/text_encoders", "Úprava obrázku"),
         "taeh3.safetensors" to Soubor("models/vae_approx", "živý náhled u videa"),
