@@ -74,6 +74,12 @@ enum class LongMmModel(
     val silaDalsi: Float,
     /** Výchozí počet kroků. Přenastavit jde posuvníkem. */
     val kroky: Int,
+    /**
+     * Kolik z těch kroků se počítá až ve zvoleném rozlišení. 0 = jeden
+     * průchod. Kladné číslo zapne dvouprůchodové zapojení: zbytek kroků
+     * proběhne dole, latent se zvětší a tady se dotáhne.
+     */
+    val krokyNahore: Int = 0,
     private val titleCs: String,
     private val popisCs: String,
 ) {
@@ -109,7 +115,28 @@ enum class LongMmModel(
         silaPrvni = 0.8f, silaDalsi = 0.8f, kroky = 8,
         titleCs = "Eros Max",
         popisCs = "Eros model i Eros LoRA",
+    ),
+
+    /**
+     * Dvouprůchodové zapojení po vzoru karty **3 kroky**: tři kroky dole,
+     * zvětšení latentu učeným modelem a dva kroky nahoře.
+     *
+     * Nepřenáší se sem kolegův graf — balík má na to **vlastní uzel**
+     * `MiniMaxH3EasyProgressiveUpscale`, který umí i tentýž zvětšovač
+     * (`minimax_h3_latent_upscaler_3d_fp16`). Zapojení tím zůstává autorovo
+     * a funguje i v navázání, kde se vzorkuje jedním uzlem a zvenčí
+     * se do něj vstoupit nedá.
+     */
+    TRIPLUSDVA(
+        unet = "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        lora = "h3" + SLOZKA + "TaoMate-H3-3step-ComfyUI.safetensors",
+        silaPrvni = 1.0f, silaDalsi = 1.0f, kroky = 5, krokyNahore = 2,
+        titleCs = "3 + 2",
+        popisCs = "Tři kroky dole, zvětšení latentu, dva nahoře",
     );
+
+    /** Jede tahle sestava na dva průchody? */
+    val dvojiPruchod: Boolean get() = krokyNahore > 0
 
     val title: String get() = t(titleCs)
     val popis: String get() = t(popisCs)

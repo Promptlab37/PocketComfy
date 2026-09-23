@@ -399,6 +399,9 @@ object Katalog {
         "10Eros_Max_H3_test2_pruned_r128.safetensors" to Soubor(
             "models/loras", "Long MiniMax — volba Eros Max"
         ),
+        "minimax_h3_latent_upscaler_3d_fp16.safetensors" to Soubor(
+            "models/latent_upscale_models", "Long MiniMax — volba 3 + 2 a Dlouhé video"
+        ),
         // Volitelná: karta bez ní jede, jen bez realističtějšího podání.
         "h3-realism-people-t2v-i2v-r2v.safetensors" to Soubor(
             "models/loras", "Long MiniMax — volba Realističtější podání"

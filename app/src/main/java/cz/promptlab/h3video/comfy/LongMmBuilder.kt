@@ -57,6 +57,8 @@ object LongMmBuilder {
     const val N_KROKY_DALSI = "293"
     /** Zadání, plátno a délka. */
     const val N_ZADANI = "270"
+    /** Rozbalení kontextu na latent, VAE a fps. */
+    const val N_VYSTUP = "268"
     const val N_SEED = "6"
     /** Uložení latentu, ze kterého se příště navazuje. */
     const val N_LATENT_ULOZ = "272"
@@ -86,6 +88,19 @@ object LongMmBuilder {
     const val N_TURBO_DALSI = "339"
     /** Doplněná realistická LoRA. Čísla jsou volná v obou předlohách. */
     const val N_REALISMUS = "281"
+    /** Doplněný dvouprůchodový uzel balíku. */
+    const val N_DVA_PRUCHODY = "282"
+
+    /**
+     * Zvětšovač latentu mezi průchody. Tentýž, na kterém jede karta 3 kroky.
+     */
+    const val UPSCALER = "minimax_h3_latent_upscaler_3d_fp16.safetensors"
+
+    /**
+     * Rozlišení prvního průchodu. Karta 3 kroky jede dole na 0,2 MPx, což je
+     * zhruba tenhle stupeň.
+     */
+    const val NIZKE_ROZLISENI = "360P"
 
     /** Soubor realistické LoRA. Stejný základ (`minimax-h3-fl2va`) jako turbo. */
     const val LORA_REALISMUS = "h3-realism-people-t2v-i2v-r2v.safetensors"
@@ -139,6 +154,12 @@ object LongMmBuilder {
         wf.inputs(N_SEED).put("noise_seed", seed)
         wf.inputs(N_LATENT_ULOZ).put("filename_prefix", nazevLatentu(scene))
         zapojSestavu(wf, scene, N_TURBO, N_KROKY)
+        zapojDvaPruchody(
+            wf, scene, seed,
+            model = N_TURBO, kontext = N_ZADANI, kontextSlot = 1,
+            sampler = "7", sigmy = N_KROKY,
+            beruModel = listOf("4"), beruKontext = listOf(N_VYSTUP), beruSigmy = listOf("8"),
+        )
         if (!scene.sage) premostiUzel(wf, N_SAGE, "model")
         zapojRealismus(wf, scene, N_TURBO)
 
@@ -221,6 +242,13 @@ object LongMmBuilder {
         usek.put("segment_seconds", List(useku(prompt)) { scene.sekundy }.joinToString(","))
 
         zapojSestavu(wf, scene, N_TURBO_DALSI, N_KROKY_DALSI)
+        zapojDvaPruchody(
+            wf, scene, seed,
+            model = N_TURBO_DALSI, kontext = N_USEK, kontextSlot = 1,
+            sampler = "294", sigmy = N_KROKY_DALSI,
+            beruModel = listOf(N_SEED_DALSI), beruKontext = listOf(N_SEED_DALSI, N_SLEPENI),
+            beruSigmy = listOf(N_SEED_DALSI),
+        )
         if (!scene.sage) premostiUzel(wf, N_SAGE, "model")
         zapojRealismus(wf, scene, N_TURBO_DALSI)
         if (scene.referenceVNavazani) zapojReference(wf, reference, N_USEK)
@@ -259,6 +287,61 @@ object LongMmBuilder {
             val odkaz = ins.optJSONArray("model") ?: return@forEach
             if (odkaz.optString(0) == poTurbu) ins.put("model", naRealismus)
         }
+    }
+
+    /**
+     * Zavěsí dvouprůchodový uzel balíku a přepojí na něj ty, kdo brali model,
+     * kontext nebo sigmy z jednoprůchodové cesty.
+     *
+     * Uzel vrací všechny tři věci upravené naráz, takže se nedá zapojit jen
+     * částečně — kdo by zůstal na staré cestě, vzorkoval by v jiném rozlišení
+     * než zbytek grafu.
+     */
+    private fun zapojDvaPruchody(
+        wf: JSONObject,
+        scene: LongMmScene,
+        seed: Long,
+        model: String,
+        kontext: String,
+        kontextSlot: Int,
+        sampler: String,
+        sigmy: String,
+        beruModel: List<String>,
+        beruKontext: List<String>,
+        beruSigmy: List<String>,
+    ) {
+        if (!scene.model.dvojiPruchod) return
+        wf.put(
+            N_DVA_PRUCHODY,
+            JSONObject()
+                .put("class_type", "MiniMaxH3EasyProgressiveUpscale_SatoDive")
+                .put(
+                    "inputs",
+                    JSONObject()
+                        .put("enabled", true)
+                        .put("model", JSONArray().put(model).put(0))
+                        .put("h3_context", JSONArray().put(kontext).put(kontextSlot))
+                        .put("sampler", JSONArray().put(sampler).put(0))
+                        .put("sigmas", JSONArray().put(sigmy).put(0))
+                        .put("seed", seedProNavazani(seed))
+                        .put("low_res_resolution", NIZKE_ROZLISENI)
+                        .put("high_res_steps", scene.model.krokyNahore)
+                        .put("high_res_resolution", scene.rozliseni.kod)
+                        .put("upscale_method", "latent_upscale_model")
+                        .put("latent_upscale_model", UPSCALER)
+                        .put("latent_upscale_device", "cuda")
+                        .put("latent_upscale_precision", "fp16"),
+                ),
+        )
+        fun prepoj(uzly: List<String>, pole: String, slot: Int) {
+            uzly.forEach { id ->
+                val ins = wf.optJSONObject(id)?.optJSONObject("inputs") ?: return@forEach
+                if (ins.has(pole)) ins.put(pole, JSONArray().put(N_DVA_PRUCHODY).put(slot))
+            }
+        }
+        prepoj(beruModel, "model", 0)
+        prepoj(beruKontext, "h3_context", 1)
+        prepoj(beruSigmy, "sigmas", 2)
     }
 
     /**

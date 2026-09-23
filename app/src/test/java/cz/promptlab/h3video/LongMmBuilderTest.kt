@@ -393,6 +393,58 @@ class LongMmBuilderTest {
         )
     }
 
+    /**
+     * Dvouprůchodová sestava musí přepojit **všechny tři** výstupy — model,
+     * kontext i sigmy. Kdo by zůstal na jednoprůchodové cestě, vzorkoval by
+     * v jiném rozlišení než zbytek grafu.
+     */
+    @Test fun `dvoupruchodova sestava prepoji model, kontext i sigmy`() {
+        val m = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
+        assertTrue(m.dvojiPruchod)
+
+        val a = LongMmBuilder.buildPrvni(
+            prvni, scena().copy(model = m, kroky = m.kroky), 1L, emptyList(),
+        )
+        val pu = a.inputs(LongMmBuilder.N_DVA_PRUCHODY)
+        assertEquals(m.krokyNahore, pu.getInt("high_res_steps"))
+        assertEquals(LongMmBuilder.NIZKE_ROZLISENI, pu.getString("low_res_resolution"))
+        assertEquals(LongMmBuilder.UPSCALER, pu.getString("latent_upscale_model"))
+        assertEquals("latent_upscale_model", pu.getString("upscale_method"))
+        // odběratelé
+        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, a.inputs("4").getJSONArray("model").getString(0))
+        assertEquals(
+            LongMmBuilder.N_DVA_PRUCHODY,
+            a.inputs(LongMmBuilder.N_VYSTUP).getJSONArray("h3_context").getString(0),
+        )
+        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, a.inputs("8").getJSONArray("sigmas").getString(0))
+        zkontrolujOdkazy(a)
+
+        val b = LongMmBuilder.buildDalsi(
+            dalsi, scena(rezim = LongMmRezim.NAVAZANI).copy(model = m, kroky = m.kroky),
+            1L, "c.mp4",
+        )
+        val render = b.inputs(LongMmBuilder.N_SEED_DALSI)
+        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, render.getJSONArray("model").getString(0))
+        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, render.getJSONArray("h3_context").getString(0))
+        assertEquals(LongMmBuilder.N_DVA_PRUCHODY, render.getJSONArray("sigmas").getString(0))
+        assertEquals(
+            LongMmBuilder.N_DVA_PRUCHODY,
+            b.inputs(LongMmBuilder.N_SLEPENI).getJSONArray("h3_context").getString(0),
+        )
+        zkontrolujOdkazy(b)
+    }
+
+    /** Jednoprůchodové sestavy ten uzel do grafu vůbec nedají. */
+    @Test fun `jednopruchodove sestavy zustavaji beze zmeny`() {
+        for (m in cz.promptlab.h3video.data.LongMmModel.entries.filterNot { it.dvojiPruchod }) {
+            val wf = LongMmBuilder.buildPrvni(
+                prvni, scena().copy(model = m, kroky = m.kroky), 1L, emptyList(),
+            )
+            assertFalse(wf.has(LongMmBuilder.N_DVA_PRUCHODY))
+            zkontrolujOdkazy(wf)
+        }
+    }
+
     @Test fun `karta rekne, co chybi`() {
         assertNotNull(longMmProblem(scena(prompt = "")))
         assertNotNull(longMmProblem(scena(nazev = "")))
