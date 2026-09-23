@@ -338,7 +338,18 @@ object LongMmBuilder {
                         .put("low_res_resolution", NIZKE_ROZLISENI)
                         .put("high_res_steps", scene.model.krokyNahore)
                         .put("high_res_resolution", scene.rozliseni.kod)
-                        .put("upscale_method", "latent_upscale_model")
+                        // Autorova výchozí metoda. Volba `latent_upscale_model`
+                        // vypadá lákavě (vyhrazený 3D zvětšovač latentu), ale
+                        // je v balíku **rozbitá**: `nodes.py:8387` volá
+                        // `MiniMaxH3EasyLatentUpscaler3D.execute()` ještě starým
+                        // tvarem — místo `mode` a `align` jí podá rozměry a
+                        // `enable_chunking` nepředá vůbec. Běh spadne až na
+                        // konci, po dokončeném prvním průchodu, hláškou
+                        // „missing 1 required positional argument:
+                        // 'enable_chunking'". Ověřeno 23. 9. 2026 na nejnovějším
+                        // commitu autora (4142527) — nahoře je to stejně.
+                        // Schématem se to nechytí, je to chyba uvnitř uzlu.
+                        .put("upscale_method", "bislerp")
                         .put("latent_upscale_model", UPSCALER)
                         .put("latent_upscale_device", "cuda")
                         .put("latent_upscale_precision", "fp16"),

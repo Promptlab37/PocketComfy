@@ -443,7 +443,9 @@ class LongMmBuilderTest {
         assertEquals(m.krokyNahore, pu.getInt("high_res_steps"))
         assertEquals(LongMmBuilder.NIZKE_ROZLISENI, pu.getString("low_res_resolution"))
         assertEquals(LongMmBuilder.UPSCALER, pu.getString("latent_upscale_model"))
-        assertEquals("latent_upscale_model", pu.getString("upscale_method"))
+        // NE "latent_upscale_model" — ta cesta je v balíku rozbitá a běh
+        // spadne až po prvním průchodu. Viz komentář v LongMmBuilderu.
+        assertEquals("bislerp", pu.getString("upscale_method"))
         // odběratelé
         assertEquals(LongMmBuilder.N_DVA_PRUCHODY, a.inputs("4").getJSONArray("model").getString(0))
         assertEquals(
