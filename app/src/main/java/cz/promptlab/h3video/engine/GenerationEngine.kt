@@ -729,6 +729,17 @@ object GenerationEngine {
                 musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2,
         )
 
+        // --- 0b3. složka temp na serveru. Uzly, které streamují dekódování po
+        // kusech, do ní zakládají pracovní adresář a bez ní spadnou na
+        // „[WinError 3] Systém nemůže nalézt uvedenou cestu". ComfyUI ji při
+        // startu zakládá, jenže během sezení umí zmizet — 23. 9. 2026 na tom
+        // skončil druhý záběr na kartě Long MiniMax.
+        //
+        // Dělá se to u KAŽDÉHO běhu, ne jen u té jedné karty: na temp sahá
+        // i balík All in One, PromptBuilder, LongMedia, essentials a RES4LYF,
+        // takže stejná chyba čeká i jinde. Stojí to jedno nahrání 67 bajtů.
+        withContext(Dispatchers.IO) { client.zajistiTempSlozku() }
+
         // --- 0c. šablona balíku (jen All in One a Dialogy). Stahuje se DŘÍV,
         // než se nahraje jediný obrázek: když balík na serveru chybí, spadne to
         // hned, a ne až po zbytečném nahrání šesti fotek.

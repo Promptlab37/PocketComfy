@@ -194,6 +194,47 @@ class ComfyClient(baseUrl: String) {
     }
 
     /**
+     * Vynutí na serveru existenci složky `temp`.
+     *
+     * Uzly, které streamují dekódování po kusech, do ní zakládají svůj
+     * pracovní adresář přes `tempfile.mkdtemp(dir=…)` — a to spadne na
+     * „[WinError 3] Systém nemůže nalézt uvedenou cestu", když složka
+     * neexistuje. ComfyUI ji sice při startu založí, ale během sezení
+     * zmizet může (23. 9. 2026 takhle spadlo navázání na kartě Long MiniMax).
+     *
+     * Nahrání souboru s `type=temp` složku vytvoří, protože ji server
+     * před zápisem založí sám. Chyba se schválně polyká: tohle je pojistka,
+     * ne důvod, proč by měl běh skončit.
+     */
+    fun zajistiTempSlozku() {
+        runCatching {
+            // Nejmenší platný PNG, 1×1 průhledný bod.
+            val png = byteArrayOf(
+                0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+                0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+                0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+                0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15.toByte(), 0xC4.toByte(),
+                0x89.toByte(), 0x00, 0x00, 0x00, 0x0A, 0x49, 0x44, 0x41,
+                0x54, 0x78, 0x9C.toByte(), 0x63, 0x00, 0x01, 0x00, 0x00,
+                0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4.toByte(), 0x00,
+                0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE.toByte(),
+                0x42, 0x60, 0x82.toByte(),
+            )
+            val body = MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart(
+                    "image", "h3app_temp.png",
+                    png.toRequestBody("image/png".toMediaType()),
+                )
+                .addFormDataPart("type", "temp")
+                .addFormDataPart("overwrite", "true")
+                .build()
+            http.newCall(Request.Builder().url("$base/upload/image").post(body).build())
+                .execute().close()
+        }
+    }
+
+    /**
      * Definice jednoho uzlu, nebo null když server třídu nezná. Síťová chyba
      * se vyhazuje – „server neodpovídá" nesmí vypadat jako „uzel chybí".
      */
