@@ -53,6 +53,68 @@ enum class LongMmPomer(val kod: String, private val titleCs: String) {
     val title: String get() = t(titleCs)
 }
 
+/**
+ * Sestava modelu a zrychlovací LoRA pro kartu Long MiniMax.
+ *
+ * Autorovo zapojení je [TURBO] a je výchozí. Zbylé dvě si vyžádal uživatel;
+ * váhy k nim na serveru leží a LoRA sedí na architekturu H3 (50 bloků,
+ * stejné šířky vrstev) — **puštěná ale ani jedna nebyla**.
+ */
+/**
+ * Oddělovač podsložek tak, jak ho hlásí ComfyUI — **zpětné** lomítko.
+ * S dopředným by uzel hodnotu odmítl jako mimo nabídku.
+ */
+private const val SLOZKA = '\\'
+
+enum class LongMmModel(
+    val unet: String,
+    val lora: String,
+    /** Síla LoRA u prvního záběru a u navázání — autor je má různé. */
+    val silaPrvni: Float,
+    val silaDalsi: Float,
+    /** Výchozí počet kroků. Přenastavit jde posuvníkem. */
+    val kroky: Int,
+    private val titleCs: String,
+    private val popisCs: String,
+) {
+    TURBO(
+        unet = "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        lora = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        silaPrvni = 0.8f, silaDalsi = 0.75f, kroky = 7,
+        titleCs = "Turbo",
+        popisCs = "Zapojení autora balíku, beze změny",
+    ),
+
+    /**
+     * Čtyřkrokový FastVideo s řídkou pozorností (VSA), k němu LoRA TaoMate.
+     * Počet kroků je z názvu samotného modelu (`4step`).
+     */
+    FASTVIDEO(
+        unet = "minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors",
+        // ComfyUI hlásí podsložky se ZPĚTNÝM lomítkem; s dopředným by uzel
+        // hodnotu odmítl jako mimo nabídku.
+        lora = "h3" + SLOZKA + "TaoMate-H3-3step-ComfyUI.safetensors",
+        silaPrvni = 1.0f, silaDalsi = 1.0f, kroky = 4,
+        titleCs = "FastVideo VSA",
+        popisCs = "Čtyřkrokový model, k němu LoRA TaoMate",
+    ),
+
+    /**
+     * Eros Max s vlastní LoRA. Eros LoRA **není zrychlovací**, takže na málo
+     * krocích nemá co dohnat — osm je jen výchozí hodnota, ne změřené optimum.
+     */
+    EROS(
+        unet = "10Eros_Max_h3_fl2va_pruned_int8_convrot.safetensors",
+        lora = "10Eros_Max_H3_test2_pruned_r128.safetensors",
+        silaPrvni = 0.8f, silaDalsi = 0.8f, kroky = 8,
+        titleCs = "Eros Max",
+        popisCs = "Eros model i Eros LoRA",
+    );
+
+    val title: String get() = t(titleCs)
+    val popis: String get() = t(popisCs)
+}
+
 /** Jedna referenční fotka prvního záběru. */
 @Immutable
 data class LongMmRef(val soubor: File, val nahled: Bitmap? = null)
@@ -90,7 +152,13 @@ data class LongMmScene(
      * u autora.
      */
     val referenceVNavazani: Boolean = false,
-/**
+    /** Sestava modelu a zrychlovací LoRA. */
+    val model: LongMmModel = LongMmModel.TURBO,
+    /** Kroky vzorkování. Výchozí bere ze sestavy, dál je to na uživateli. */
+    val kroky: Int = LongMmModel.TURBO.kroky,
+    /** Síla zrychlovací LoRA; záporná hodnota = vzít tu ze sestavy. */
+    val loraSila: Float = -1f,
+    /**
      * Nechat v grafu uzel `MiniMaxH3MemoryEfficientSageAttentionPatch`.
      *
      * Autor ho v obou předlohách má a je aktivní, proto je zapnutý i tady.
@@ -121,6 +189,11 @@ data class LongMmScene(
     /** Pořadí je závazné — stavitel čte reference v tomhle pořadí. */
     val uploadImages: List<File> get() = reference.map { it.soubor }
 
+    /** Síla zrychlovací LoRA pro tenhle běh — buď vlastní, nebo ze sestavy. */
+    val silaLory: Float
+        get() = if (loraSila >= 0f) loraSila
+        else if (rezim == LongMmRezim.PRVNI) model.silaPrvni else model.silaDalsi
+
     /** Video, které se před během nahraje na server. */
     val uploadVideo: File? get() = zdroj.takeIf { rezim == LongMmRezim.NAVAZANI }
 
@@ -148,6 +221,10 @@ data class LongMmScene(
          */
         const val MIN_S = 2
         const val MAX_S = 30
+
+        /** Meze posuvníku kroků. */
+        const val MIN_KROKU = 2
+        const val MAX_KROKU = 30
 
         /**
          * Kolik sekund konce předchozího videa jde do modelu jako vodítko.
@@ -231,6 +308,11 @@ class LongMmStore(private val ctx: Context) {
             zdroj = j.optString("zdroj").takeIf { it.isNotBlank() }
                 ?.let { File(it) }?.takeIf { it.exists() },
             latent = j.optString("latent"),
+            model = runCatching { LongMmModel.valueOf(j.optString("model")) }
+                .getOrDefault(LongMmModel.TURBO),
+            kroky = j.optInt("kroky", LongMmModel.TURBO.kroky)
+                .coerceIn(LongMmScene.MIN_KROKU, LongMmScene.MAX_KROKU),
+            loraSila = j.optDouble("loraSila", -1.0).toFloat(),
             sage = j.optBoolean("sage", true),
             referenceVNavazani = j.optBoolean("referenceVNavazani"),
             realismus = j.optBoolean("realismus"),
@@ -253,6 +335,9 @@ class LongMmStore(private val ctx: Context) {
                 .put("reference", refy)
                 .put("zdroj", s.zdroj?.absolutePath ?: "")
                 .put("latent", s.latent)
+                .put("model", s.model.name)
+                .put("kroky", s.kroky)
+                .put("loraSila", s.loraSila.toDouble())
                 .put("sage", s.sage)
                 .put("referenceVNavazani", s.referenceVNavazani)
                 .put("realismus", s.realismus)

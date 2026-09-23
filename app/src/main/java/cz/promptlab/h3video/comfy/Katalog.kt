@@ -383,6 +383,22 @@ object Katalog {
         ),
         // Long MiniMax jede na referenčních vahách a na autorově Turbo LoRA;
         // základní model, enkodér i oba VAE sdílí s ostatními video kartami.
+        // Volby modelu na kartě Long MiniMax. Turbo je výchozí, zbylé dvě
+        // jsou navíc — bez nich karta jede dál, jen tu volbu nenabídne.
+        "minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Long MiniMax — volba FastVideo VSA",
+            "$HF/Jackxuanxuan/MiniMax-H3-experimental/resolve/main/minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors"
+        ),
+        "TaoMate-H3-3step-ComfyUI.safetensors" to Soubor(
+            "models/loras/h3", "Long MiniMax — volba FastVideo VSA a karta 3 kroky",
+            "$HF/TaoLiveAIGC/TaoMate-H3"
+        ),
+        "10Eros_Max_h3_fl2va_pruned_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Long MiniMax — volba Eros Max"
+        ),
+        "10Eros_Max_H3_test2_pruned_r128.safetensors" to Soubor(
+            "models/loras", "Long MiniMax — volba Eros Max"
+        ),
         // Volitelná: karta bez ní jede, jen bez realističtějšího podání.
         "h3-realism-people-t2v-i2v-r2v.safetensors" to Soubor(
             "models/loras", "Long MiniMax — volba Realističtější podání"

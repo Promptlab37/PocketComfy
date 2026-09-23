@@ -1116,7 +1116,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     GenerationEngine.start(
                         p.copy(
                             prompt = s.prompt,
-                            steps = cz.promptlab.h3video.comfy.LongMmBuilder.STEPS,
+                            steps = s.kroky,
                         ),
                         s.uploadImages,
                         longMmScene = s,
@@ -3375,6 +3375,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setLongMmLatent(v: String) = updateLongMm { it.copy(latent = v) }
     fun setLongMmReferenceVNavazani(v: Boolean) =
         updateLongMm { it.copy(referenceVNavazani = v) }
+    /** Přepnutí sestavy nastaví i její výchozí kroky a sílu LoRA. */
+    fun setLongMmModel(v: cz.promptlab.h3video.data.LongMmModel) =
+        updateLongMm { it.copy(model = v, kroky = v.kroky, loraSila = -1f) }
+
+    fun setLongMmKroky(v: Int) = updateLongMm {
+        it.copy(kroky = v.coerceIn(
+            cz.promptlab.h3video.data.LongMmScene.MIN_KROKU,
+            cz.promptlab.h3video.data.LongMmScene.MAX_KROKU,
+        ))
+    }
+
+    fun setLongMmLoraSila(v: Float) {
+        if (v.isFinite()) updateLongMm { it.copy(loraSila = v.coerceIn(0f, 1.5f)) }
+    }
+
     fun setLongMmSage(v: Boolean) = updateLongMm { it.copy(sage = v) }
     fun setLongMmRealismus(v: Boolean) = updateLongMm { it.copy(realismus = v) }
     fun setLongMmRealismusSila(v: Float) {

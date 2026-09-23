@@ -345,6 +345,54 @@ class LongMmBuilderTest {
         }
     }
 
+    /**
+     * Sestavy se liší jen modelem, LoRA, její silou a počtem kroků. Musí se
+     * dosadit do obou předloh a do obou režimů stejně.
+     */
+    @Test fun `sestava dosadi model, loru, silu i kroky`() {
+        for (m in cz.promptlab.h3video.data.LongMmModel.entries) {
+            val prvniWf = LongMmBuilder.buildPrvni(
+                prvni, scena().copy(model = m, kroky = m.kroky), 1L, emptyList(),
+            )
+            assertEquals(m.unet, prvniWf.inputs(LongMmBuilder.N_UNET).getString("unet_name"))
+            assertEquals(m.lora, prvniWf.inputs(LongMmBuilder.N_TURBO).getString("lora_name"))
+            assertEquals(
+                m.silaPrvni.toDouble(),
+                prvniWf.inputs(LongMmBuilder.N_TURBO).getDouble("strength"), 0.001,
+            )
+            assertEquals(m.kroky, prvniWf.inputs(LongMmBuilder.N_KROKY).getInt("steps"))
+            zkontrolujOdkazy(prvniWf)
+
+            val dalsiWf = LongMmBuilder.buildDalsi(
+                dalsi,
+                scena(rezim = LongMmRezim.NAVAZANI).copy(model = m, kroky = m.kroky),
+                1L, "c.mp4",
+            )
+            assertEquals(m.unet, dalsiWf.inputs(LongMmBuilder.N_UNET).getString("unet_name"))
+            assertEquals(m.lora, dalsiWf.inputs(LongMmBuilder.N_TURBO_DALSI).getString("lora_name"))
+            assertEquals(
+                m.silaDalsi.toDouble(),
+                dalsiWf.inputs(LongMmBuilder.N_TURBO_DALSI).getDouble("strength"), 0.001,
+            )
+            assertEquals(m.kroky, dalsiWf.inputs(LongMmBuilder.N_KROKY_DALSI).getInt("steps"))
+            zkontrolujOdkazy(dalsiWf)
+        }
+    }
+
+    /** Vlastní síla LoRA přebije tu ze sestavy; záporná znamená „vezmi ze sestavy". */
+    @Test fun `vlastni sila lory prebije sestavu`() {
+        val sc = scena().copy(model = cz.promptlab.h3video.data.LongMmModel.TURBO, loraSila = 0.45f)
+        val wf = LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+        assertEquals(0.45, wf.inputs(LongMmBuilder.N_TURBO).getDouble("strength"), 0.001)
+
+        val vychozi = scena().copy(loraSila = -1f)
+        val wf2 = LongMmBuilder.buildPrvni(prvni, vychozi, 1L, emptyList())
+        assertEquals(
+            cz.promptlab.h3video.data.LongMmModel.TURBO.silaPrvni.toDouble(),
+            wf2.inputs(LongMmBuilder.N_TURBO).getDouble("strength"), 0.001,
+        )
+    }
+
     @Test fun `karta rekne, co chybi`() {
         assertNotNull(longMmProblem(scena(prompt = "")))
         assertNotNull(longMmProblem(scena(nazev = "")))

@@ -228,6 +228,16 @@ if /i "!ODP!"=="a" (
   echo   Pozn.: bez LoRA lightx2v jede karta na 25 kroku a cfg 5 misto 6 kroku.
 )
 
+
+REM ------------------------------------------------------------------
+REM  Karta Long MiniMax - volitelne sestavy modelu. Bez nich karta jede
+REM  dal, jen tu volbu nenabidne. Eros Max neni verejne ke stazeni.
+REM ------------------------------------------------------------------
+set /p ODP="Long MiniMax - sestava FastVideo VSA, cca 22 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Jackxuanxuan/MiniMax-H3-experimental/resolve/main/minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors" "models\diffusion_models\minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors"
+  echo   Pozn.: LoRA TaoMate k teto sestave stahuje sekce karty 3 kroky.
+)
 set /p ODP="Karta Uhel kamery - Qwen Image Edit 2511 + LoRA, cca 31 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/drbaph/Qwen-Image-Edit-2511-FP8/resolve/main/qwen_image_edit_2511_fp8_e4m3fn.safetensors" "models\diffusion_models\qwen_image_edit_2511_fp8_e4m3fn.safetensors"

@@ -50,6 +50,11 @@ object LongMmBuilder {
     val N_REFERENCE = listOf("214", "215", "216", "217")
     /** Sběrač referencí — uzel balíku určený přímo pro API grafy. */
     const val N_MEDIA = "280"
+    /** Načtení modelu. Sestavu volí karta, viz `LongMmModel`. */
+    const val N_UNET = "190"
+    /** Plánovač kroků. */
+    const val N_KROKY = "5"
+    const val N_KROKY_DALSI = "293"
     /** Zadání, plátno a délka. */
     const val N_ZADANI = "270"
     const val N_SEED = "6"
@@ -133,6 +138,7 @@ object LongMmBuilder {
         zadani.put("seconds", scene.sekundy.toDouble())
         wf.inputs(N_SEED).put("noise_seed", seed)
         wf.inputs(N_LATENT_ULOZ).put("filename_prefix", nazevLatentu(scene))
+        zapojSestavu(wf, scene, N_TURBO, N_KROKY)
         if (!scene.sage) premostiUzel(wf, N_SAGE, "model")
         zapojRealismus(wf, scene, N_TURBO)
 
@@ -214,6 +220,7 @@ object LongMmBuilder {
         // sednout na počet částí zadání. Uzel jinak celý běh odmítne.
         usek.put("segment_seconds", List(useku(prompt)) { scene.sekundy }.joinToString(","))
 
+        zapojSestavu(wf, scene, N_TURBO_DALSI, N_KROKY_DALSI)
         if (!scene.sage) premostiUzel(wf, N_SAGE, "model")
         zapojRealismus(wf, scene, N_TURBO_DALSI)
         if (scene.referenceVNavazani) zapojReference(wf, reference, N_USEK)
@@ -252,6 +259,18 @@ object LongMmBuilder {
             val odkaz = ins.optJSONArray("model") ?: return@forEach
             if (odkaz.optString(0) == poTurbu) ins.put("model", naRealismus)
         }
+    }
+
+    /**
+     * Dosadí zvolenou sestavu: model, zrychlovací LoRA i její sílu a počet
+     * kroků. Sestavy se liší jen těmihle čtyřmi hodnotami, zbytek grafu
+     * zůstává autorův.
+     */
+    private fun zapojSestavu(wf: JSONObject, scene: LongMmScene, lora: String, kroky: String) {
+        wf.inputs(N_UNET).put("unet_name", scene.model.unet)
+        wf.inputs(lora).put("lora_name", scene.model.lora)
+        wf.inputs(lora).put("strength", scene.silaLory.toDouble())
+        wf.inputs(kroky).put("steps", scene.kroky)
     }
 
     /**

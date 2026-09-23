@@ -249,6 +249,41 @@ fun LongMmSection(vm: MainViewModel) {
         }
     }
 
+    SectionCard(title = t("Model"), subtitle = scene.model.popis) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            PillRow(
+                items = cz.promptlab.h3video.data.LongMmModel.entries.toList(),
+                selected = scene.model,
+                label = { it.title },
+                onSelect = { vm.setLongMmModel(it) },
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    t("Kroky"),
+                    style = MaterialTheme.typography.labelMedium, color = TextLow,
+                )
+                androidx.compose.material3.Slider(
+                    value = scene.kroky.toFloat(),
+                    onValueChange = { vm.setLongMmKroky(Math.round(it)) },
+                    valueRange = LongMmScene.MIN_KROKU.toFloat()..LongMmScene.MAX_KROKU.toFloat(),
+                    steps = LongMmScene.MAX_KROKU - LongMmScene.MIN_KROKU - 1,
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    colors = sliderColors(),
+                )
+                Text(
+                    "${scene.kroky}",
+                    style = MaterialTheme.typography.labelMedium, color = TextMid,
+                    modifier = Modifier.width(26.dp),
+                )
+            }
+            SilaLory(
+                hodnota = scene.silaLory,
+                popisek = "Síla LoRA",
+                onZmena = { vm.setLongMmLoraSila(it) },
+            )
+        }
+    }
+
     SectionCard(
         title = t("Zrychlovací pozornost (Sage)"),
         subtitle = t("Autor ji má zapnutou, vypnutá jde model rovnou dál"),
