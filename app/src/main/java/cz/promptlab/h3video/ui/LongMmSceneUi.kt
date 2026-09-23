@@ -163,6 +163,26 @@ fun LongMmSection(vm: MainViewModel) {
             }
         }
 
+        // Zapíná se jen tady, u zakládání scény. Uprostřed řetězu by změnila
+        // podání obrazu a spoj by byl vidět.
+        SectionCard(
+            title = t("Realističtější podání"),
+            subtitle = t("LoRA h3-realism-people, navrch k rychlostní"),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                PillRow(
+                    items = listOf(false, true),
+                    selected = scene.realismus,
+                    label = { if (it) t("Zapnuto") else t("Vypnuto") },
+                    onSelect = { vm.setLongMmRealismus(it) },
+                )
+                if (scene.realismus) SilaLory(
+                    hodnota = scene.realismusSila,
+                    onZmena = { vm.setLongMmRealismusSila(it) },
+                )
+            }
+        }
+
         SectionCard(title = t("Plátno"), subtitle = t("Pro celý řetěz se volí jen teď")) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 PillRow(

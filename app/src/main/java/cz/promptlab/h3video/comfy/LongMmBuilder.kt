@@ -3,6 +3,7 @@ package cz.promptlab.h3video.comfy
 import android.content.Context
 import cz.promptlab.h3video.R
 import cz.promptlab.h3video.data.LongMmScene
+import org.json.JSONArray
 import org.json.JSONObject
 
 /**
@@ -69,6 +70,15 @@ object LongMmBuilder {
     /** Slepení zdroje s novým kusem do jednoho celku. */
     const val N_SLEPENI = "335"
 
+    /** Turbo LoRA, na kterou se realistická věší. */
+    const val N_TURBO = "271"
+    const val N_TURBO_DALSI = "339"
+    /** Doplněná realistická LoRA. Čísla jsou volná v obou předlohách. */
+    const val N_REALISMUS = "281"
+
+    /** Soubor realistické LoRA. Stejný základ (`minimax-h3-fl2va`) jako turbo. */
+    const val LORA_REALISMUS = "h3-realism-people-t2v-i2v-r2v.safetensors"
+
     /** Kroky vzorkování — podle nich se počítá ukazatel průběhu. */
     const val STEPS = 7
 
@@ -112,6 +122,7 @@ object LongMmBuilder {
         zadani.put("seconds", scene.sekundy.toDouble())
         wf.inputs(N_SEED).put("noise_seed", seed)
         wf.inputs(N_LATENT_ULOZ).put("filename_prefix", nazevLatentu(scene))
+        zapojRealismus(wf, scene, N_TURBO)
 
         val pouzite = reference.take(LongMmScene.MAX_REFERENCI)
         if (pouzite.isEmpty()) {
@@ -156,9 +167,42 @@ object LongMmBuilder {
         // sednout na počet částí zadání. Uzel jinak celý běh odmítne.
         usek.put("segment_seconds", List(useku(prompt)) { scene.sekundy }.joinToString(","))
 
+        zapojRealismus(wf, scene, N_TURBO_DALSI)
         wf.inputs(N_VODITKO).put("seconds", LongMmScene.VODITKO_S)
         wf.inputs(N_SLEPENI).put("overlap_frames", LongMmScene.KONTEXT_SNIMKU)
         return wf
+    }
+
+    /**
+     * Zavěsí realistickou LoRA za turbo LoRA a přepojí na ni všechny, kdo brali
+     * model z [poTurbu].
+     *
+     * Věší se až za turbo schválně: obě patchují stejné bloky a pořadí určuje,
+     * která má poslední slovo nad krokováním. Latentu se to netýká vůbec — ten
+     * nese stav obrazu, ne váhy, takže jeho tvar ani obsah LoRA nemění.
+     */
+    private fun zapojRealismus(wf: JSONObject, scene: LongMmScene, poTurbu: String) {
+        if (!scene.realismus) return
+        wf.put(
+            N_REALISMUS,
+            JSONObject()
+                .put("class_type", "MiniMaxH3TurboLoRA")
+                .put(
+                    "inputs",
+                    JSONObject()
+                        .put("model", JSONArray().put(poTurbu).put(0))
+                        .put("lora_name", LORA_REALISMUS)
+                        .put("strength", scene.realismusSila.toDouble())
+                        .put("low_vram", false),
+                ),
+        )
+        val naRealismus = JSONArray().put(N_REALISMUS).put(0)
+        wf.keys().asSequence().toList().forEach { id ->
+            if (id == N_REALISMUS) return@forEach
+            val ins = wf.getJSONObject(id).getJSONObject("inputs")
+            val odkaz = ins.optJSONArray("model") ?: return@forEach
+            if (odkaz.optString(0) == poTurbu) ins.put("model", naRealismus)
+        }
     }
 
     /** Seed složený do rozsahu, který uzel navázání přijme. Viz [SEED_MAX]. */

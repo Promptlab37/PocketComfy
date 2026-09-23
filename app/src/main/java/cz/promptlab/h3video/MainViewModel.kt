@@ -3373,6 +3373,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setLongMmPrompt(v: String) = updateLongMm { it.copy(prompt = v) }
     fun setLongMmNazev(v: String) = updateLongMm { it.copy(nazev = v) }
     fun setLongMmLatent(v: String) = updateLongMm { it.copy(latent = v) }
+    fun setLongMmRealismus(v: Boolean) = updateLongMm { it.copy(realismus = v) }
+    fun setLongMmRealismusSila(v: Float) {
+        if (v.isFinite()) updateLongMm { it.copy(realismusSila = v.coerceIn(0f, 1.5f)) }
+    }
     fun setLongMmRozliseni(v: cz.promptlab.h3video.data.LongMmRozliseni) =
         updateLongMm { it.copy(rozliseni = v) }
     fun setLongMmPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateLongMm { it.copy(pomer = v) }

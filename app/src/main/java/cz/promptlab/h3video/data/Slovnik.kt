@@ -752,6 +752,9 @@ object Slovnik {
         "Začít nový řetěz" to "Start a new chain",
         "Na kterou scénu se navazuje" to "Which scene to continue",
         "Název scény" to "Scene name",
+        "Realističtější podání" to "More realistic rendering",
+        "LoRA h3-realism-people, navrch k rychlostní" to
+            "The h3-realism-people LoRA, stacked on the speed one",
         "Podle něj se pak navazuje a číslují se latenty" to
             "Continuing goes by it, and latents are numbered under it",
         "Naváže se na její poslední hotový záběr" to "It continues from its latest finished shot",

@@ -247,6 +247,39 @@ class LongMmBuilderTest {
         assertNull(longMmProblem(scena(nazev = "lod", latent = "kavarna_00001.h3latent.safetensors")))
     }
 
+    /**
+     * Realistická LoRA se věší za turbo a všichni, kdo brali model z turba,
+     * musí přejít na ni. Kdyby se přepojil jen někdo, vzorkovač a plánovač
+     * kroků by jely na jiných vahách.
+     */
+    @Test fun `realisticka lora se zavesi za turbo a prepoji odberatele`() {
+        for (navazani in listOf(false, true)) {
+            val sc = scena(rezim = if (navazani) LongMmRezim.NAVAZANI else LongMmRezim.PRVNI)
+                .copy(realismus = true, realismusSila = 0.6f)
+            val wf = if (navazani) LongMmBuilder.buildDalsi(dalsi, sc, 1L, "c.mp4")
+            else LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+            val turbo = if (navazani) LongMmBuilder.N_TURBO_DALSI else LongMmBuilder.N_TURBO
+            val lora = wf.inputs(LongMmBuilder.N_REALISMUS)
+            assertEquals(LongMmBuilder.LORA_REALISMUS, lora.getString("lora_name"))
+            assertEquals(0.6, lora.getDouble("strength"), 0.001)
+            assertEquals(turbo, lora.getJSONArray("model").getString(0))
+            // Z turba už nesmí brát model nikdo jiný než ta nová LoRA.
+            wf.keys().forEach { id ->
+                if (id == LongMmBuilder.N_REALISMUS) return@forEach
+                val m = wf.inputs(id).optJSONArray("model") ?: return@forEach
+                assertFalse("$id bere model rovnou z turba", m.optString(0) == turbo)
+            }
+            zkontrolujOdkazy(wf)
+        }
+    }
+
+    /** Vypnutá LoRA nesmí v grafu zanechat nic. */
+    @Test fun `bez realisticke lory zustava graf beze zmeny`() {
+        val wf = LongMmBuilder.buildPrvni(prvni, scena(), 1L, emptyList())
+        assertFalse(wf.has(LongMmBuilder.N_REALISMUS))
+        zkontrolujOdkazy(wf)
+    }
+
     @Test fun `karta rekne, co chybi`() {
         assertNotNull(longMmProblem(scena(prompt = "")))
         assertNotNull(longMmProblem(scena(nazev = "")))

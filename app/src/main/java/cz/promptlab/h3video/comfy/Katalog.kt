@@ -383,6 +383,10 @@ object Katalog {
         ),
         // Long MiniMax jede na referenčních vahách a na autorově Turbo LoRA;
         // základní model, enkodér i oba VAE sdílí s ostatními video kartami.
+        // Volitelná: karta bez ní jede, jen bez realističtějšího podání.
+        "h3-realism-people-t2v-i2v-r2v.safetensors" to Soubor(
+            "models/loras", "Long MiniMax — volba Realističtější podání"
+        ),
         "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors" to Soubor(
             "models/loras", "Long MiniMax",
             "$HF/Comfy-Org/MiniMax-H3/resolve/main/loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors"
