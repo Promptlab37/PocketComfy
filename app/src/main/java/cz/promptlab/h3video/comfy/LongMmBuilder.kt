@@ -202,7 +202,7 @@ object LongMmBuilder {
         zapojSestavu(wf, scene, N_TURBO, N_KROKY)
         zapojPozornost(wf, scene)
         zapojOstrost(wf, scene, N_ZADANI)
-        zapojRealismus(wf, scene, N_TURBO)
+        zapojRealismus(wf, scene, N_TURBO, N_KROKY)
 
         val pouzite = reference.take(LongMmScene.MAX_REFERENCI)
         if (pouzite.isEmpty()) {
@@ -288,7 +288,7 @@ object LongMmBuilder {
         zapojSestavu(wf, scene, N_TURBO_DALSI, N_KROKY_DALSI)
         zapojPozornost(wf, scene)
         zapojOstrost(wf, scene, N_USEK)
-        zapojRealismus(wf, scene, N_TURBO_DALSI)
+        zapojRealismus(wf, scene, N_TURBO_DALSI, N_KROKY_DALSI)
         if (scene.referenceVNavazani) zapojReference(wf, reference, N_USEK)
         wf.inputs(N_VODITKO).put("seconds", LongMmScene.VODITKO_S)
         wf.inputs(N_SLEPENI).put("overlap_frames", LongMmScene.KONTEXT_SNIMKU)
@@ -304,8 +304,21 @@ object LongMmBuilder {
      * která má poslední slovo nad krokováním. Latentu se to netýká vůbec — ten
      * nese stav obrazu, ne váhy, takže jeho tvar ani obsah LoRA nemění.
      */
-    private fun zapojRealismus(wf: JSONObject, scene: LongMmScene, poTurbu: String) {
+    private fun zapojRealismus(
+        wf: JSONObject,
+        scene: LongMmScene,
+        poTurbu: String,
+        krokyUzel: String,
+    ) {
         if (!scene.realismus) return
+        // Odkud realismus bere model. Normálně z rychlostní LoRA — ale ta
+        // může být z grafu vyřazená (síla 0, sestava s turbem v modelu).
+        // Pak se vezme to, co v tu chvíli krmí rozvrh kroků; jinak by
+        // realismus visel na uzlu, který v grafu není.
+        val zdroj: JSONArray = if (wf.has(poTurbu)) JSONArray().put(poTurbu).put(0)
+        else wf.inputs(krokyUzel).getJSONArray("model").let { JSONArray().put(it.getString(0)).put(it.getInt(1)) }
+        val zdrojId = zdroj.getString(0)
+        val zdrojSlot = zdroj.getInt(1)
         wf.put(
             N_REALISMUS,
             JSONObject()
@@ -313,7 +326,7 @@ object LongMmBuilder {
                 .put(
                     "inputs",
                     JSONObject()
-                        .put("model", JSONArray().put(poTurbu).put(0))
+                        .put("model", zdroj)
                         .put("lora_name", LORA_REALISMUS)
                         .put("strength", scene.realismusSila.toDouble())
                         .put("low_vram", false),
@@ -324,7 +337,9 @@ object LongMmBuilder {
             if (id == N_REALISMUS) return@forEach
             val ins = wf.getJSONObject(id).getJSONObject("inputs")
             val odkaz = ins.optJSONArray("model") ?: return@forEach
-            if (odkaz.optString(0) == poTurbu) ins.put("model", naRealismus)
+            if (odkaz.optString(0) == zdrojId && odkaz.optInt(1) == zdrojSlot) {
+                ins.put("model", naRealismus)
+            }
         }
     }
 
@@ -518,6 +533,16 @@ object LongMmBuilder {
     private fun zapojSestavu(wf: JSONObject, scene: LongMmScene, lora: String, kroky: String) {
         wf.inputs(N_UNET).put("unet_name", scene.model.unet)
         wf.inputs(kroky).put("steps", scene.kroky)
+        // Sampler sestavy do všech KSamplerSelect v grafu (první záběr „7",
+        // navázání „294"). Prázdný = nechat předlohu.
+        if (scene.model.sampler.isNotBlank()) {
+            wf.keys().asSequence().toList().forEach { id ->
+                val u = wf.optJSONObject(id) ?: return@forEach
+                if (u.optString("class_type") == "KSamplerSelect") {
+                    u.getJSONObject("inputs").put("sampler_name", scene.model.sampler)
+                }
+            }
+        }
         // Nulová síla znamená „bez LoRA". Nechat ji v grafu s nulou by model
         // stejně obalilo — uzel se proto z řetězu vyřadí a jede holý model.
         if (scene.silaLory <= 0f) {

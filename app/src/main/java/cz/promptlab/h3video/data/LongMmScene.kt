@@ -165,6 +165,11 @@ enum class LongMmModel(
      * proběhne dole, latent se zvětší a tady se dotáhne.
      */
     val krokyNahore: Int = 0,
+    /**
+     * Sampler sestavy. Prázdné = nechat, co má předloha (první záběr
+     * `euler`, navázání `res_multistep`).
+     */
+    val sampler: String = "",
     private val titleCs: String,
     private val popisCs: String,
 ) {
@@ -234,6 +239,24 @@ enum class LongMmModel(
         silaPrvni = 1.0f, silaDalsi = 1.0f, kroky = 3, krokyNahore = 2,
         titleCs = "3 + 2",
         popisCs = "Tři kroky dole, zvětšení latentu, dva nahoře",
+    ),
+
+    /**
+     * Eros Max TURBO-hybrid **beta 5** — turbo je zapečené v modelu, bez LoRA.
+     *
+     * Karta modelu (TenStrip/10Eros-Max): „beta_4 and beta_3 are corrupted
+     * test versions. beta_5 is the only true functional one so far."
+     * Sampler podle autora modelu: „res_multistep/simple 6-8 steps (my go-to
+     * for best motion quality)". A: „No cache or spectrum if doing reference,
+     * they cause accuracy loss" — Long karta žádné nemá.
+     */
+    EROSTURBO(
+        unet = "10Eros_Max_h3_TURBO-hybrid_beta5_int8.safetensors",
+        lora = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        silaPrvni = 0f, silaDalsi = 0f, kroky = 6,
+        sampler = "res_multistep",
+        titleCs = "Eros Turbo",
+        popisCs = "",
     );
 
     /** Jede tahle sestava na dva průchody? */

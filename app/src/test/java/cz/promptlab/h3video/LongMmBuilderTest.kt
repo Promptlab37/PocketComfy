@@ -375,6 +375,13 @@ class LongMmBuilderTest {
                 prvni, scena().copy(model = m, kroky = m.kroky), 1L, emptyList(),
             )
             assertEquals(m.unet, prvniWf.inputs(LongMmBuilder.N_UNET).getString("unet_name"))
+            // Sestava bez LoRA (turbo zapečené v modelu): uzel z grafu zmizí.
+            if (m.silaPrvni <= 0f) {
+                assertFalse(prvniWf.has(LongMmBuilder.N_TURBO))
+                assertEquals(m.kroky, prvniWf.inputs(LongMmBuilder.N_KROKY).getInt("steps"))
+                zkontrolujOdkazy(prvniWf)
+                continue
+            }
             assertEquals(m.lora, prvniWf.inputs(LongMmBuilder.N_TURBO).getString("lora_name"))
             assertEquals(
                 m.nacitac,
@@ -764,5 +771,55 @@ class LongMmBuilderTest {
 
         // Vypnout jde porad.
         assertFalse(scena().copy(model = tri, dvaPruchodyVolba = 0).dvaPruchody)
+    }
+
+    /**
+     * Eros Turbo: beta 5 (beta 3 a 4 jsou podle autora poškozené), bez LoRA
+     * a sampler res_multistep, který autor modelu uvádí jako svou volbu
+     * pro nejlepší pohyb. Sampler musí jít do obou předloh.
+     */
+    @Test fun `eros turbo jede betu 5 bez lory s res_multistep`() {
+        val m = cz.promptlab.h3video.data.LongMmModel.EROSTURBO
+        assertTrue(m.unet.contains("beta5"))
+        for (navazani in listOf(false, true)) {
+            val sc = scena(rezim = if (navazani) LongMmRezim.NAVAZANI else LongMmRezim.PRVNI)
+                .copy(model = m, kroky = m.kroky)
+            val g = if (navazani) LongMmBuilder.buildDalsi(dalsi, sc, 1L, "c.mp4")
+            else LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+            assertEquals(m.unet, g.inputs(LongMmBuilder.N_UNET).getString("unet_name"))
+            val lora = if (navazani) LongMmBuilder.N_TURBO_DALSI else LongMmBuilder.N_TURBO
+            assertFalse("LoRA ma byt vyrazena", g.has(lora))
+            val samplery = g.keys().asSequence()
+                .filter { g.getJSONObject(it).optString("class_type") == "KSamplerSelect" }
+                .map { g.inputs(it).getString("sampler_name") }.toList()
+            assertTrue(samplery.isNotEmpty())
+            assertTrue(samplery.all { it == "res_multistep" })
+            zkontrolujOdkazy(g)
+        }
+        // Ostatní sestavy si sampler z předlohy nechávají.
+        val t = LongMmBuilder.buildPrvni(
+            prvni, scena().copy(model = cz.promptlab.h3video.data.LongMmModel.TURBO), 1L, emptyList(),
+        )
+        assertEquals("euler", t.inputs("7").getString("sampler_name"))
+    }
+
+    /**
+     * Realistická LoRA musí jít zapnout i když rychlostní LoRA v grafu není
+     * (síla 0 nebo sestava s turbem v modelu). Dřív se napojila na uzel,
+     * který z grafu zmizel, a server by běh odmítl.
+     */
+    @Test fun `realismus funguje i bez rychlostni lory`() {
+        for (m in cz.promptlab.h3video.data.LongMmModel.entries) {
+            for (navazani in listOf(false, true)) {
+                for (sila in listOf(-1f, 0f)) {
+                    val sc = scena(rezim = if (navazani) LongMmRezim.NAVAZANI else LongMmRezim.PRVNI)
+                        .copy(model = m, kroky = m.kroky, realismus = true, loraSila = sila)
+                    val g = if (navazani) LongMmBuilder.buildDalsi(dalsi, sc, 1L, "c.mp4")
+                    else LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+                    assertTrue("$m: realismus chybi", g.has(LongMmBuilder.N_REALISMUS))
+                    zkontrolujOdkazy(g)
+                }
+            }
+        }
     }
 }
