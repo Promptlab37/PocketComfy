@@ -3437,15 +3437,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val longMmLzeZahodit: Boolean
         get() = posledniZaberSceny() != null
 
-    private fun posledniZaberSceny(): Pair<String, String?>? {
+    /**
+     * Poslední nezahozený záběr téhle scény: jméno latentu a id videa.
+     *
+     * Stačí, když se najde **jedno z toho**. Kdyby se jméno latentu na
+     * serveru rozešlo s názvem scény (diakritika, přejmenování), nesmí to
+     * zahození zablokovat — uživatel pořád vidí v galerii záběr, kterého
+     * se chce zbavit.
+     */
+    private fun posledniZaberSceny(): Pair<String?, String?>? {
         val jmeno = cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(_longMm.value)
         val latent = _longMmLatenty.value
             .filterNot { it in _longMmZahozene.value }
-            .firstOrNull { it.startsWith(jmeno + "_") } ?: return null
+            .firstOrNull { it.startsWith(jmeno + "_") }
         val video = longMmPredchozi.value
             .filterNot { it.id in _longMmZahozene.value }
             .firstOrNull { it.retez == jmeno }?.id
-        return latent to video
+        return if (latent == null && video == null) null else latent to video
     }
 
     /**

@@ -78,19 +78,42 @@ fun LongMmSection(vm: MainViewModel) {
     // Přepočítává se i po doběhnutí záběru (přibude položka v galerii i latent)
     // a po změně scény — jinak by v kartě zůstal vybraný ten předminulý.
     LaunchedEffect(scene.rezim, predchozi.size, latenty.size, scene.nazev) {
-        if (scene.rezim == LongMmRezim.NAVAZANI) {
-            vm.loadLongMmLatenty()
-            vm.predvyberLongMmZdroj()
-        }
+        // Latenty se nactou vzdycky. U prvniho zaberu podle nich karta pozna,
+        // ze uz nejaky hotovy je a da se zahodit; predvybrat zdrojove video
+        // ma smysl jen pri navazovani.
+        vm.loadLongMmLatenty()
+        if (scene.rezim == LongMmRezim.NAVAZANI) vm.predvyberLongMmZdroj()
     }
 
     SectionCard(title = t("Co se dělá"), subtitle = scene.rezim.popis) {
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PillRow(
             items = LongMmRezim.entries.toList(),
             selected = scene.rezim,
             label = { it.title },
             onSelect = { vm.setLongMmRezim(it) },
         )
+        // Zahozeni posledniho zaberu je NAHORE schvalne. Karta navazuje vzdy
+        // na nejnovejsi zaber sceny, takze kdyz se posledni nepovede, tohle
+        // je prvni vec, kterou uzivatel hleda - a dole v kartach ji nenasel.
+        if (vm.longMmLzeZahodit) OutlineButton(
+            text = t("Zahodit poslední záběr a zkusit ho znovu"),
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { vm.zahodPosledniLongMmZaber() },
+        )
+        val zahozenoTady = zahozene.count { it.startsWith(vm.longMmNazevSouboru() + "_") }
+        if (zahozenoTady > 0) {
+            Text(
+                t("Zahozeno záběrů: %d. Navazuje se na ten před nimi.").format(zahozenoTady),
+                style = MaterialTheme.typography.bodySmall, color = Amber,
+            )
+            OutlineButton(
+                text = t("Vrátit zahozené zpět"),
+                modifier = Modifier.fillMaxWidth(),
+                onClick = { vm.vratZahozeneLongMm() },
+            )
+        }
+      }
     }
 
     SectionCard(title = t("Model"), subtitle = scene.model.popis) {
@@ -176,11 +199,6 @@ fun LongMmSection(vm: MainViewModel) {
             subtitle = t("Naváže se na její poslední hotový záběr"),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                val predpona = scene.nazev.trim()
-                    .replace(' ', '_')
-                    .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
-                    .ifBlank { "zaber" } + "_"
-                val zahozenoTadyKusu = zahozene.count { it.startsWith(predpona) }
                 if (sceny.isEmpty()) {
                     Text(
                         latentChyba ?: t("Na serveru zatím žádná scéna není. Začni prvním záběrem."),
@@ -214,26 +232,6 @@ fun LongMmSection(vm: MainViewModel) {
                     style = MaterialTheme.typography.bodySmall, color = TextLow,
                 )
                 ZdrojVideoRadek(vm, scene, zTelefonu)
-                // Karta navazuje vzdy na NEJNOVEJSI zaber sceny. Kdyz se
-                // posledni nepovede, bez tohohle by se na nej nalepil dalsi
-                // misto toho, aby se prekreslil.
-                if (vm.longMmLzeZahodit) OutlineButton(
-                    text = t("Zahodit poslední záběr a zkusit ho znovu"),
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { vm.zahodPosledniLongMmZaber() },
-                )
-                if (zahozenoTadyKusu > 0) {
-                    Text(
-                        t("Zahozeno záběrů: %d. Navazuje se na ten před nimi.")
-                            .format(zahozenoTadyKusu),
-                        style = MaterialTheme.typography.bodySmall, color = Amber,
-                    )
-                    OutlineButton(
-                        text = t("Vrátit zahozené zpět"),
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { vm.vratZahozeneLongMm() },
-                    )
-                }
                 OutlineButton(
                     text = t("Načíst znovu ze serveru"),
                     modifier = Modifier.fillMaxWidth(),
