@@ -417,6 +417,14 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             GenerationEngine.dismissResult()
                             vm.selectTab(Tab.CREATE)
                         },
+                        // Jen u řetězu Long MiniMax — jinde nemá co zahazovat.
+                        onDiscard = if (s.item.retez.isNotBlank()) {
+                            {
+                                vm.zahodZaber(s.item)
+                                GenerationEngine.dismissResult()
+                                vm.selectTab(Tab.CREATE)
+                            }
+                        } else null,
                         onSave = { vm.saveResult(s.item) },
                         saving = s.item.id in savingResults,
                         onFavorite = { vm.toggleFavorite(s.item) },
@@ -491,6 +499,9 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     item = open,
                     onClose = { opened = null },
                     onAgain = { opened = null; vm.selectTab(Tab.CREATE) },
+                    onDiscard = if (open.retez.isNotBlank()) {
+                        { vm.zahodZaber(open); opened = null; vm.selectTab(Tab.CREATE) }
+                    } else null,
                     onSave = { vm.saveResult(open) },
                     saving = open.id in savingResults,
                     onFavorite = { vm.toggleFavorite(open) },

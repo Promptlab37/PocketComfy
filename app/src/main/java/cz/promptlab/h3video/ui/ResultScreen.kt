@@ -95,6 +95,15 @@ fun ResultScreen(
     /** Zvětšit hotové video — poslat do All in One → Zvětšit (jen u videí). */
     onUpscaleVideo: (() -> Unit)? = null,
     /**
+     * Zahodit tenhle záběr a zkusit ho znovu — jen u řetězu Long MiniMax.
+     *
+     * Karta navazuje vždy na **nejnovější** záběr scény. Kdyby se tenhle
+     * jen zavřel, další generování by na něj navázalo místo aby ho
+     * překreslilo. Patří to sem, protože právě tady uživatel vidí, že se
+     * záběr nepovedl.
+     */
+    onDiscard: (() -> Unit)? = null,
+    /**
      * Co k běhu řekly samotné uzly. Jinak to skončí jen v logu na počítači,
      * kam se z telefonu nedostaneš – a přitom jde často o věc, kterou z videa
      * nepoznáš (replika, která se neudělala jako dialog, prázdné povinné pole).
@@ -397,6 +406,15 @@ fun ResultScreen(
 
         Spacer(Modifier.height(16.dp))
         GradientButton(t("Generovat další"), onClick = onAgain)
+        if (onDiscard != null) {
+            Spacer(Modifier.height(10.dp))
+            OutlineButton(
+                t("Zahodit tenhle záběr a zkusit ho znovu"),
+                modifier = Modifier.fillMaxWidth(),
+                color = Amber,
+                onClick = onDiscard,
+            )
+        }
         Spacer(Modifier.height(10.dp))
         OutlineButton(t("Zavřít"), modifier = Modifier.fillMaxWidth(), onClick = onClose)
         Spacer(Modifier.height(26.dp))

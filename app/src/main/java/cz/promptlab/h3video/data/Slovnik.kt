@@ -729,6 +729,8 @@ object Slovnik {
         "Zahozeno záběrů: %d. Navazuje se na ten před nimi." to
             "Shots discarded: %d. Continuing from the one before them.",
         "Vrátit zahozené zpět" to "Restore discarded shots",
+        "Zahodit tenhle záběr a zkusit ho znovu" to
+            "Discard this shot and try it again",
         "Seznam latentů se nepodařilo načíst — server neodpovídá." to
             "The latent list could not be loaded — the server is not responding.",
         "Podoba" to "Likeness",

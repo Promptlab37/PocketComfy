@@ -3473,6 +3473,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         predvyberLongMmZdroj()
     }
 
+    /**
+     * Zahodí **konkrétní** záběr z obrazovky výsledku.
+     *
+     * Zahodí se jeho záznam v galerii i latent, který k němu patří — bez
+     * latentu by se na ten záběr navazovalo dál. Latent se pozná podle
+     * jména řetězu; když se ten na serveru rozešel, zahodí se aspoň video.
+     */
+    fun zahodZaber(item: VideoItem) {
+        val jmeno = item.retez.ifBlank { return }
+        val latent = _longMmLatenty.value
+            .filterNot { it in _longMmZahozene.value }
+            .firstOrNull { it.startsWith(jmeno + "_") }
+        val klice = listOfNotNull(item.id, latent)
+        longMmStore.zahod(klice)
+        _longMmZahozene.value = _longMmZahozene.value + klice
+        loadLongMmLatenty()
+        predvyberLongMmZdroj()
+    }
+
     /** Vrátí zpět všechna zahození téhle scény. */
     fun vratZahozeneLongMm() {
         val jmeno = cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(_longMm.value)
