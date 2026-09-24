@@ -53,15 +53,6 @@ enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
      * dvojice tady. Hodnoty musí být z autorovy nabídky
      * (`_LOW_RES_CHOICES`: 360P, 416P, 480P, 540P, 640P).
      */
-    /**
-     * Dává tenhle stupeň u dvou průchodů použitelný obraz?
-     *
-     * Ne podle úvahy, podle pokusů: 768P (1 MP) dopadlo dvakrát artefakty
-     * a rozsypanou barvou — poprvé s prvním průchodem na 360P, podruhé na
-     * 480P, tedy i s rozumným poměrem. Kolega dotahuje na **0,5 MP** a výš
-     * podle něj nejde: „0.75 nepřidá tolik kvality co stojí času."
-     */
-    val zvladneDvaPruchody: Boolean get() = this <= R540
 
     /** Rozpočet plochy v megapixelech — tabulka `RESOLUTION_MEGAPIXELS` z balíku. */
     val megapixely: Double get() = when (this) {
@@ -350,12 +341,14 @@ data class LongMmScene(
      * zjemnění a posun jsou součást receptu karty „3 kroky" pro LoRA TaoMate,
      * ne obecné nastavení. Na Turbu (`ref2v_turbo_4step`) z toho 24. 9. 2026
      * vyšel rozmazaný obraz s artefakty, protože jeho destilační rozvrh je
-     * jiný. A nad 0,5 MP nefungují ani s TaoMate.
+     * jiný.
+     *
+     * **Rozlišení se neomezuje.** Chvíli tu byl strop 0,5 MP, jenže stál na
+     * pokusech se STARÝM rozbitým uzlem (4.17, 4.18). S tímhle zapojením
+     * 768P nikdo za špatné neoznačil — omezovat ho bylo hádání, ne důkaz.
      */
     val dvaPruchody: Boolean
-        get() = model.dvojiPruchod &&
-            dvaPruchodyVolba != 0 &&
-            rozliseni.zvladneDvaPruchody
+        get() = model.dvojiPruchod && dvaPruchodyVolba != 0
 
     /**
      * Kolik kroků poběží nahoře. Uživatelova volba má přednost, jinak sestava.
@@ -445,9 +438,6 @@ fun longMmHints(s: LongMmScene): List<String> = buildList {
         if (s.rozliseni != LongMmRozliseni.R480) {
             add(t("%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá.")
                 .format(s.rozliseni.title, s.rozliseni.nasobekPlochy))
-        }
-        if (s.model.dvojiPruchod && !s.rozliseni.zvladneDvaPruchody) {
-            add(t("Nad 0,5 MP se dva průchody nespouští — dělaly artefakty a rozsypanou barvu. Jede se jedním."))
         }
         if (s.reference.isNotEmpty()) {
             add(t("Na fotky se v zadání odkazuje značkami <Picture 1>, <Picture 2>… Bez zmínky si jich model nemusí všimnout."))

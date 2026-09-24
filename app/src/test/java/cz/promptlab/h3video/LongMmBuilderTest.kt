@@ -573,42 +573,6 @@ class LongMmBuilderTest {
         assertEquals(0.5, mp.getValue(LongMmRozliseni.R540.kod), 1e-9)
     }
 
-    /**
-     * Strop pro dva průchody je 0,5 MP. Není to úvaha: 768P dopadlo artefakty
-     * a rozsypanou barvou dvakrát po sobě — s prvním průchodem na 360P
-     * i na 480P (23. 9. 2026). Kolega dotahuje na 0,5 MP a výš nejde.
-     */
-    @Test fun `dva pruchody maji strop na pul megapixelu`() {
-        assertTrue(LongMmRozliseni.R480.zvladneDvaPruchody)
-        assertTrue(LongMmRozliseni.R540.zvladneDvaPruchody)
-        assertFalse(LongMmRozliseni.R640.zvladneDvaPruchody)
-        assertFalse(LongMmRozliseni.R720.zvladneDvaPruchody)
-        assertFalse(LongMmRozliseni.R768.zvladneDvaPruchody)
-
-        // Nad stropem to karta musí říct, pod ním mlčet.
-        val nad = longMmHints(
-            scena().copy(
-                model = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA,
-                rozliseni = LongMmRozliseni.R768,
-            )
-        )
-        assertTrue(nad.any { it.contains("artefakty") || it.contains("artefacts") })
-        val pod = longMmHints(
-            scena().copy(
-                model = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA,
-                rozliseni = LongMmRozliseni.R540,
-            )
-        )
-        assertFalse(pod.any { it.contains("artefakty") || it.contains("artefacts") })
-        // Jednoprůchodová sestava na 768P se nevaruje, tam to jde.
-        val jeden = longMmHints(
-            scena().copy(
-                model = cz.promptlab.h3video.data.LongMmModel.TURBO,
-                rozliseni = LongMmRozliseni.R768,
-            )
-        )
-        assertFalse(jeden.any { it.contains("artefakty") || it.contains("artefacts") })
-    }
 
     /**
      * Dva pruchody musi byt zapojene stejne jako na karte "3 kroky", ktera
@@ -733,46 +697,6 @@ class LongMmBuilderTest {
         assertEquals(544 to 960, LongMmBuilder.rozmery(LongMmRozliseni.R540, naVysku))
     }
 
-    /**
-     * Dva pruchody se smi zapnout JEN u sestavy, ktera je ma, a jen do
-     * 0,5 MP. 24. 9. 2026 dal prepinac u Turba rozmazany obraz s artefakty
-     * a 768P dopadlo spatne i s TaoMate - cisla zjemneni jsou soucast
-     * receptu, ne obecne nastaveni. Karta nesmi nabizet, co dela kasi.
-     */
-    @Test fun `dva pruchody jen u sve sestavy a do pul megapixelu`() {
-        val tri = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
-        val turbo = cz.promptlab.h3video.data.LongMmModel.TURBO
-
-        // Turbo: zapnout nejde, ani kdyz to volba tvrdi.
-        val t1 = scena().copy(model = turbo, rozliseni = LongMmRozliseni.R540, dvaPruchodyVolba = 1)
-        assertFalse(t1.dvaPruchody)
-        assertFalse(
-            LongMmBuilder.buildPrvni(prvni, t1, 1L, emptyList())
-                .has(LongMmBuilder.N_PRUCHOD1)
-        )
-
-        // 3 + 2 do 0,5 MP: jedou.
-        val d1 = scena().copy(model = tri, kroky = tri.kroky, rozliseni = LongMmRozliseni.R540)
-        assertTrue(d1.dvaPruchody)
-        assertTrue(
-            LongMmBuilder.buildPrvni(prvni, d1, 1L, emptyList())
-                .has(LongMmBuilder.N_PRUCHOD1)
-        )
-
-        // 3 + 2 nad 0,5 MP: nejedou, prepne se na jeden pruchod.
-        for (r in listOf(LongMmRozliseni.R640, LongMmRozliseni.R720, LongMmRozliseni.R768)) {
-            val sc = scena().copy(model = tri, kroky = tri.kroky, rozliseni = r)
-            assertFalse("$r nesmi pustit dva pruchody", sc.dvaPruchody)
-            val g = LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
-            assertFalse(g.has(LongMmBuilder.N_PRUCHOD1))
-            // Jeden pruchod musi zustat cely a funkcni.
-            assertEquals(LongMmBuilder.N_KROKY, g.inputs("8").getJSONArray("sigmas").getString(0))
-            zkontrolujOdkazy(g)
-        }
-
-        // Vypnout jde porad.
-        assertFalse(d1.copy(dvaPruchodyVolba = 0).dvaPruchody)
-    }
 
     /**
      * Ostrost detailu (Detail Daemon) musi jit do OBOU predloh - autor ji
@@ -806,5 +730,39 @@ class LongMmBuilderTest {
             assertTrue(mekke.getBoolean("enable_detail_daemon"))
             assertEquals(-0.15, mekke.getDouble("detail_strength"), 1e-6)
         }
+    }
+
+    /**
+     * Dva pruchody patri k sestave, ne k rozliseni.
+     *
+     * Zapnout je jde jen u sestavy, ktera je ma - u Turba z nich 24. 9. 2026
+     * vysel rozmazany obraz s artefakty, protoze sigmy zjemneni jsou soucast
+     * receptu pro LoRA TaoMate. Rozliseni se ale NEOMEZUJE: strop 0,5 MP
+     * stal na pokusech se starym rozbitym uzlem, ne na tomhle zapojeni.
+     */
+    @Test fun `dva pruchody patri k sestave, ne k rozliseni`() {
+        val tri = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
+        val turbo = cz.promptlab.h3video.data.LongMmModel.TURBO
+
+        // Turbo: zapnout nejde ani na prani.
+        val t1 = scena().copy(model = turbo, rozliseni = LongMmRozliseni.R540, dvaPruchodyVolba = 1)
+        assertFalse(t1.dvaPruchody)
+        assertFalse(
+            LongMmBuilder.buildPrvni(prvni, t1, 1L, emptyList()).has(LongMmBuilder.N_PRUCHOD1)
+        )
+
+        // 3 + 2: jedou na KAZDEM rozliseni, ktere karta nabizi.
+        for (r in LongMmRozliseni.entries) {
+            val sc = scena().copy(model = tri, kroky = tri.kroky, rozliseni = r)
+            assertTrue("$r musi pustit dva pruchody", sc.dvaPruchody)
+            val g = LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+            assertTrue(g.has(LongMmBuilder.N_PRUCHOD1))
+            // Nizky pruchod je vzdy nize nez cil.
+            assertEquals(r.nizkeProDvaPruchody, g.inputs(LongMmBuilder.N_NIZKE_ZADANI).getString("resolution"))
+            zkontrolujOdkazy(g)
+        }
+
+        // Vypnout jde porad.
+        assertFalse(scena().copy(model = tri, dvaPruchodyVolba = 0).dvaPruchody)
     }
 }
