@@ -257,6 +257,23 @@ enum class LongMmModel(
         sampler = "res_multistep",
         titleCs = "Eros Turbo",
         popisCs = "",
+    ),
+
+    /**
+     * Singularity v1.3 — doladěný Ref2VA model (WarmBloodAban/Minimax-h3_Singularity).
+     *
+     * Karta modelu jako zrychlení doporučuje právě
+     * `minimax_h3_ref2v_turbo_4step_v0.1` („enables 4-step fast inference").
+     * Model je Ref2VA, takže do adaptéru jde tam, kam patří (`ref2va_model`).
+     * 8 kroků a síla 1,0 podle workflow „Ultra Speed Singularity", ve kterém
+     * uživatel tenhle model viděl; 4 kroky jsou podle autora minimum.
+     */
+    SINGULARITY(
+        unet = "Minimax-h3_Singularity_ref2va_Pruned_v1.3_int8.safetensors",
+        lora = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        silaPrvni = 1.0f, silaDalsi = 1.0f, kroky = 8,
+        titleCs = "Singularity",
+        popisCs = "",
     );
 
     /** Jede tahle sestava na dva průchody? */

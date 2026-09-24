@@ -776,6 +776,7 @@ object Slovnik {
         "Čtyřkrokový model, k němu LoRA TaoMate" to "A four-step model with the TaoMate LoRA",
         "Eros Max" to "Eros Max",
         "Eros Turbo" to "Eros Turbo",
+        "Singularity" to "Singularity",
         "Eros model i Eros LoRA" to "The Eros model and the Eros LoRA",
         "3 + 2" to "3 + 2",
         "Tři kroky dole, zvětšení latentu, dva nahoře" to
