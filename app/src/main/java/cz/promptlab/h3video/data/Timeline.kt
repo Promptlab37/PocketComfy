@@ -7,7 +7,7 @@ import org.json.JSONObject
 import java.io.File
 
 /**
- * Časová osa pro kolegovy LSI nody (`LSIMinimaxTimeline` + `…TimelineRender`).
+ * Časová osa pro LSI nody (`LSIMinimaxTimeline` + `…TimelineRender`).
  *
  * Proti kartě Režisér je tohle ta cesta na DELŠÍ video. MiniMax H3 zvládne
  * jeden záběr do 15 s; osa se proto renderuje po segmentech za sebou a každý

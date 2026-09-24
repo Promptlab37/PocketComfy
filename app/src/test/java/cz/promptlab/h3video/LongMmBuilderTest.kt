@@ -568,7 +568,7 @@ class LongMmBuilderTest {
             assertTrue("$r: skok $pomer x je moc", pomer <= 2.6)
             assertTrue("$r: skok $pomer x je maly", pomer >= 1.9)
         }
-        // Dvojice, kterou jede kolega: 0,2 -> 0,5 MP.
+        // Dvojice 0,2 -> 0,5 MP.
         assertEquals("360P", LongMmRozliseni.R540.nizkeProDvaPruchody)
         assertEquals(0.5, mp.getValue(LongMmRozliseni.R540.kod), 1e-9)
     }

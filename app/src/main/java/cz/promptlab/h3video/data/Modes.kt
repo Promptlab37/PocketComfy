@@ -53,7 +53,7 @@ enum class Mode(
     ),
 
     /**
-     * Kolegovy LSI nody: dlouhé video po segmentech. Každý segment je vlastní
+     * LSI nody: dlouhé video po segmentech. Každý segment je vlastní
      * běh do 15 s a navazuje na poslední snímek předchozího, takže výsledek
      * není limitovaný jedním záběrem modelu.
      */
