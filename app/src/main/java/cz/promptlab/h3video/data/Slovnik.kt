@@ -724,6 +724,11 @@ object Slovnik {
         "Nejdřív napiš aspoň pár slov o tom, co se má dít." to
             "Write at least a few words about what should happen first.",
         "Načíst znovu ze serveru" to "Reload from the server",
+        "Zahodit poslední záběr a zkusit ho znovu" to
+            "Discard the last shot and try it again",
+        "Zahozeno záběrů: %d. Navazuje se na ten před nimi." to
+            "Shots discarded: %d. Continuing from the one before them.",
+        "Vrátit zahozené zpět" to "Restore discarded shots",
         "Seznam latentů se nepodařilo načíst — server neodpovídá." to
             "The latent list could not be loaded — the server is not responding.",
         "Podoba" to "Likeness",

@@ -434,6 +434,26 @@ class LongMmStore(private val ctx: Context) {
 
     fun dir(): File = File(ctx.filesDir, "longmm").also { it.mkdirs() }
 
+    /**
+     * Zahozené záběry — jména latentů a id videí, které se mají přeskočit.
+     *
+     * Karta navazuje vždy na **nejnovější** latent a video scény. Bez tohohle
+     * seznamu by se nepovedený záběr stal základem dalšího a uživatel by se
+     * ho nezbavil jinak než mazáním souborů na serveru. Na serveru se nic
+     * nemaže — zahození je jen rozhodnutí appky a dá se vzít zpět.
+     */
+    fun zahozene(): Set<String> =
+        sp.getStringSet(KEY_ZAHOZENE, emptySet())?.toSet() ?: emptySet()
+
+    fun zahod(klice: Collection<String>) {
+        if (klice.isEmpty()) return
+        sp.edit().putStringSet(KEY_ZAHOZENE, zahozene() + klice).apply()
+    }
+
+    fun vratZahozene(klice: Collection<String>) {
+        sp.edit().putStringSet(KEY_ZAHOZENE, zahozene() - klice.toSet()).apply()
+    }
+
     fun refFile(i: Int): File = File(dir(), "ref$i.png")
 
     fun load(): LongMmScene = runCatching {
@@ -502,5 +522,8 @@ class LongMmStore(private val ctx: Context) {
         ).apply()
     }
 
-    private companion object { const val KEY = "longMmScene" }
+    private companion object {
+        const val KEY = "longMmScene"
+        const val KEY_ZAHOZENE = "longMmZahozene"
+    }
 }

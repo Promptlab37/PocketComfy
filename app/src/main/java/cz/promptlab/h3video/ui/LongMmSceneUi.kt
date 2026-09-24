@@ -67,6 +67,7 @@ fun LongMmSection(vm: MainViewModel) {
     val predchozi by vm.longMmPredchozi.collectAsStateWithLifecycle()
     val sceny by vm.longMmSceny.collectAsStateWithLifecycle()
     val delky by vm.longMmDelky.collectAsStateWithLifecycle()
+    val zahozene by vm.longMmZahozene.collectAsStateWithLifecycle()
     val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
     val ctx = androidx.compose.ui.platform.LocalContext.current
     val prepisujeSe = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
@@ -175,6 +176,11 @@ fun LongMmSection(vm: MainViewModel) {
             subtitle = t("Naváže se na její poslední hotový záběr"),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                val predpona = scene.nazev.trim()
+                    .replace(' ', '_')
+                    .filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+                    .ifBlank { "zaber" } + "_"
+                val zahozenoTadyKusu = zahozene.count { it.startsWith(predpona) }
                 if (sceny.isEmpty()) {
                     Text(
                         latentChyba ?: t("Na serveru zatím žádná scéna není. Začni prvním záběrem."),
@@ -208,6 +214,26 @@ fun LongMmSection(vm: MainViewModel) {
                     style = MaterialTheme.typography.bodySmall, color = TextLow,
                 )
                 ZdrojVideoRadek(vm, scene, zTelefonu)
+                // Karta navazuje vzdy na NEJNOVEJSI zaber sceny. Kdyz se
+                // posledni nepovede, bez tohohle by se na nej nalepil dalsi
+                // misto toho, aby se prekreslil.
+                if (vm.longMmLzeZahodit) OutlineButton(
+                    text = t("Zahodit poslední záběr a zkusit ho znovu"),
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { vm.zahodPosledniLongMmZaber() },
+                )
+                if (zahozenoTadyKusu > 0) {
+                    Text(
+                        t("Zahozeno záběrů: %d. Navazuje se na ten před nimi.")
+                            .format(zahozenoTadyKusu),
+                        style = MaterialTheme.typography.bodySmall, color = Amber,
+                    )
+                    OutlineButton(
+                        text = t("Vrátit zahozené zpět"),
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { vm.vratZahozeneLongMm() },
+                    )
+                }
                 OutlineButton(
                     text = t("Načíst znovu ze serveru"),
                     modifier = Modifier.fillMaxWidth(),

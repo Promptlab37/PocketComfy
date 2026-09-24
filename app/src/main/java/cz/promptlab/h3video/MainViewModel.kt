@@ -3430,6 +3430,55 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * aplikace. Chyba se nesmí spolknout — bez ní by nabídka vypadala jako
      * „nic tu není" i ve chvíli, kdy server jen neodpovídá.
      */
+    private val _longMmZahozene = MutableStateFlow(longMmStore.zahozene())
+    val longMmZahozene: StateFlow<Set<String>> = _longMmZahozene.asStateFlow()
+
+    /** Dá se vůbec co zahodit? Jen když scéna nějaký hotový záběr má. */
+    val longMmLzeZahodit: Boolean
+        get() = posledniZaberSceny() != null
+
+    private fun posledniZaberSceny(): Pair<String, String?>? {
+        val jmeno = cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(_longMm.value)
+        val latent = _longMmLatenty.value
+            .filterNot { it in _longMmZahozene.value }
+            .firstOrNull { it.startsWith(jmeno + "_") } ?: return null
+        val video = longMmPredchozi.value
+            .filterNot { it.id in _longMmZahozene.value }
+            .firstOrNull { it.retez == jmeno }?.id
+        return latent to video
+    }
+
+    /**
+     * Zahodí poslední hotový záběr téhle scény.
+     *
+     * Karta pak navazuje na ten před ním, takže další generování nepovedený
+     * kus **přepíše** místo aby na něj nalepilo pokračování. Na serveru se
+     * nic nemaže, jde to vzít zpět.
+     */
+    fun zahodPosledniLongMmZaber() {
+        val (latent, video) = posledniZaberSceny() ?: return
+        val klice = listOfNotNull(latent, video)
+        longMmStore.zahod(klice)
+        _longMmZahozene.value = _longMmZahozene.value + klice
+        // Oba výběry se musí přepočítat, ať karta hned ukazuje nový základ.
+        loadLongMmLatenty()
+        predvyberLongMmZdroj()
+    }
+
+    /** Vrátí zpět všechna zahození téhle scény. */
+    fun vratZahozeneLongMm() {
+        val jmeno = cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(_longMm.value)
+        val moje = _longMmZahozene.value.filter {
+            it.startsWith(jmeno + "_") ||
+                longMmPredchozi.value.any { v -> v.id == it && v.retez == jmeno }
+        }
+        if (moje.isEmpty()) return
+        longMmStore.vratZahozene(moje)
+        _longMmZahozene.value = _longMmZahozene.value - moje.toSet()
+        loadLongMmLatenty()
+        predvyberLongMmZdroj()
+    }
+
     fun loadLongMmLatenty() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
@@ -3445,8 +3494,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     // poslední, a to znamená pokaždé přepočítat.
                     val muj = cz.promptlab.h3video.comfy.LongMmBuilder
                         .nazevLatentu(_longMm.value) + "_"
-                    val vybrany = seznam.firstOrNull { it.startsWith(muj) }
-                        ?: seznam.firstOrNull().orEmpty()
+                    // Zahozené záběry se přeskakují — jinak by se na nepovedený
+                    // navázalo místo toho, aby se překreslil.
+                    val zive = seznam.filterNot { it in _longMmZahozene.value }
+                    val vybrany = zive.firstOrNull { it.startsWith(muj) }
+                        ?: zive.firstOrNull().orEmpty()
                     if (_longMm.value.latent != vybrany) {
                         updateLongMm { it.copy(latent = vybrany) }
                     }
@@ -3708,8 +3760,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val jmeno = cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(s)
         // Poslední záběr TÉHLE scény. Fallback na úplně poslední je jen pro
         // záznamy z verzí do 3.93, které jméno scény ještě nenesou.
-        val posledni = longMmPredchozi.value.firstOrNull { it.retez == jmeno }
-            ?: longMmPredchozi.value.firstOrNull { it.retez.isBlank() }
+        val zive = longMmPredchozi.value.filterNot { it.id in _longMmZahozene.value }
+        val posledni = zive.firstOrNull { it.retez == jmeno }
+            ?: zive.firstOrNull { it.retez.isBlank() }
             ?: return
         if (posledni.file(getApplication()) == s.zdroj) return
         setLongMmZdrojZGalerie(posledni)
