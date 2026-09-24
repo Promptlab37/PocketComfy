@@ -201,6 +201,7 @@ object LongMmBuilder {
         wf.inputs(N_LATENT_ULOZ).put("filename_prefix", nazevLatentu(scene))
         zapojSestavu(wf, scene, N_TURBO, N_KROKY)
         zapojPozornost(wf, scene)
+        zapojOstrost(wf, scene, N_ZADANI)
         zapojRealismus(wf, scene, N_TURBO)
 
         val pouzite = reference.take(LongMmScene.MAX_REFERENCI)
@@ -286,6 +287,7 @@ object LongMmBuilder {
 
         zapojSestavu(wf, scene, N_TURBO_DALSI, N_KROKY_DALSI)
         zapojPozornost(wf, scene)
+        zapojOstrost(wf, scene, N_USEK)
         zapojRealismus(wf, scene, N_TURBO_DALSI)
         if (scene.referenceVNavazani) zapojReference(wf, reference, N_USEK)
         wf.inputs(N_VODITKO).put("seconds", LongMmScene.VODITKO_S)
@@ -334,6 +336,19 @@ object LongMmBuilder {
      * částečně — kdo by zůstal na staré cestě, vzorkoval by v jiném rozlišení
      * než zbytek grafu.
      */
+    /**
+     * Ostrost detailů do zadání (Detail Daemon autorova uzlu).
+     *
+     * Uzel se zapíná až od nenulové síly — při nule si ho sám vypne
+     * (`nodes.py:4696`), takže je čistší mu to říct rovnou.
+     */
+    private fun zapojOstrost(wf: JSONObject, scene: LongMmScene, uzel: String) {
+        val ins = wf.optJSONObject(uzel)?.optJSONObject("inputs") ?: return
+        val sila = scene.ostrost.coerceIn(-1f, 1f)
+        ins.put("enable_detail_daemon", Math.abs(sila) > 0.001f)
+        ins.put("detail_strength", sila.toDouble())
+    }
+
     private fun uzel(trida: String, vstupy: JSONObject): JSONObject =
         JSONObject().put("class_type", trida).put("inputs", vstupy)
 

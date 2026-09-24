@@ -732,8 +732,10 @@ object Slovnik {
         "Zahodit tenhle záběr a zkusit ho znovu" to
             "Discard this shot and try it again",
         "Dva průchody" to "Two passes",
-        "Zapnuto mimo sestavu 3 + 2. Čísla zjemnění jsou odladěná pro ni, jinde je to pokus." to
-            "Enabled outside the 3 + 2 preset. The refinement numbers are tuned for it; elsewhere this is an experiment.",
+        "Ostrost detailů" to "Detail sharpness",
+        "vyp" to "off",
+        "Autor doporučuje 0,10–0,30 na obličeje. Záporná hodnota obraz změkčí." to
+            "The author recommends 0.10–0.30 for faces. A negative value softens the image.",
         "Seznam latentů se nepodařilo načíst — server neodpovídá." to
             "The latent list could not be loaded — the server is not responding.",
         "Podoba" to "Likeness",
@@ -765,8 +767,8 @@ object Slovnik {
         "Název scény" to "Scene name",
         "Realističtější podání" to "More realistic rendering",
         "540p · 0,5 MP" to "540p · 0.5 MP",
-        "Dva průchody nad 0,5 MP dělají artefakty a rozsypanou barvu — ověřeno na 768p. Kolega dotahuje na 540p." to
-            "Two passes above 0.5 MP produce artefacts and scattered colour — verified at 768p. My colleague refines at 540p.",
+        "Nad 0,5 MP se dva průchody nespouští — dělaly artefakty a rozsypanou barvu. Jede se jedním." to
+            "Above 0.5 MP two passes are not used — they produced artefacts and scattered colour. A single pass runs instead.",
         "Kroky platí pro průchod dole. Nahoře se vždy přidají dva kroky zjemnění s pevným nastavením." to
             "Steps apply to the lower pass. Two refinement steps with fixed settings are always added on top.",
         "Zrychlovací pozornost" to "Speed-up attention",

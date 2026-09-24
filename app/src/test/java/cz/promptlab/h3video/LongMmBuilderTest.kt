@@ -732,4 +732,79 @@ class LongMmBuilderTest {
         val naVysku = cz.promptlab.h3video.data.LongMmPomer.NAVYSKU
         assertEquals(544 to 960, LongMmBuilder.rozmery(LongMmRozliseni.R540, naVysku))
     }
+
+    /**
+     * Dva pruchody se smi zapnout JEN u sestavy, ktera je ma, a jen do
+     * 0,5 MP. 24. 9. 2026 dal prepinac u Turba rozmazany obraz s artefakty
+     * a 768P dopadlo spatne i s TaoMate - cisla zjemneni jsou soucast
+     * receptu, ne obecne nastaveni. Karta nesmi nabizet, co dela kasi.
+     */
+    @Test fun `dva pruchody jen u sve sestavy a do pul megapixelu`() {
+        val tri = cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA
+        val turbo = cz.promptlab.h3video.data.LongMmModel.TURBO
+
+        // Turbo: zapnout nejde, ani kdyz to volba tvrdi.
+        val t1 = scena().copy(model = turbo, rozliseni = LongMmRozliseni.R540, dvaPruchodyVolba = 1)
+        assertFalse(t1.dvaPruchody)
+        assertFalse(
+            LongMmBuilder.buildPrvni(prvni, t1, 1L, emptyList())
+                .has(LongMmBuilder.N_PRUCHOD1)
+        )
+
+        // 3 + 2 do 0,5 MP: jedou.
+        val d1 = scena().copy(model = tri, kroky = tri.kroky, rozliseni = LongMmRozliseni.R540)
+        assertTrue(d1.dvaPruchody)
+        assertTrue(
+            LongMmBuilder.buildPrvni(prvni, d1, 1L, emptyList())
+                .has(LongMmBuilder.N_PRUCHOD1)
+        )
+
+        // 3 + 2 nad 0,5 MP: nejedou, prepne se na jeden pruchod.
+        for (r in listOf(LongMmRozliseni.R640, LongMmRozliseni.R720, LongMmRozliseni.R768)) {
+            val sc = scena().copy(model = tri, kroky = tri.kroky, rozliseni = r)
+            assertFalse("$r nesmi pustit dva pruchody", sc.dvaPruchody)
+            val g = LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+            assertFalse(g.has(LongMmBuilder.N_PRUCHOD1))
+            // Jeden pruchod musi zustat cely a funkcni.
+            assertEquals(LongMmBuilder.N_KROKY, g.inputs("8").getJSONArray("sigmas").getString(0))
+            zkontrolujOdkazy(g)
+        }
+
+        // Vypnout jde porad.
+        assertFalse(d1.copy(dvaPruchodyVolba = 0).dvaPruchody)
+    }
+
+    /**
+     * Ostrost detailu (Detail Daemon) musi jit do OBOU predloh - autor ji
+     * ma i na uzlu navazovani, takze ma platit pro cely retez. Na nule se
+     * uzel nesmi zapnout vubec.
+     */
+    @Test fun `ostrost detailu jde do obou predloh`() {
+        for ((navazani, uzel) in listOf(
+            false to LongMmBuilder.N_ZADANI,
+            true to LongMmBuilder.N_USEK,
+        )) {
+            fun ins(ostrost: Float): JSONObject {
+                val sc = scena(rezim = if (navazani) LongMmRezim.NAVAZANI else LongMmRezim.PRVNI)
+                    .copy(ostrost = ostrost)
+                val g = if (navazani) LongMmBuilder.buildDalsi(dalsi, sc, 1L, "c.mp4")
+                else LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList())
+                return g.inputs(uzel)
+            }
+            // Nula = uzel vypnuty.
+            val vyp = ins(0f)
+            assertFalse(vyp.getBoolean("enable_detail_daemon"))
+            assertEquals(0.0, vyp.getDouble("detail_strength"), 1e-6)
+
+            // Autorem doporucena hodnota na oblicej.
+            val zap = ins(0.2f)
+            assertTrue(zap.getBoolean("enable_detail_daemon"))
+            assertEquals(0.2, zap.getDouble("detail_strength"), 1e-6)
+
+            // Zaporna hodnota obraz zmekci - taky se musi propsat.
+            val mekke = ins(-0.15f)
+            assertTrue(mekke.getBoolean("enable_detail_daemon"))
+            assertEquals(-0.15, mekke.getDouble("detail_strength"), 1e-6)
+        }
+    }
 }

@@ -143,10 +143,11 @@ fun LongMmSection(vm: MainViewModel) {
                     modifier = Modifier.width(26.dp),
                 )
             }
-            // Dva průchody jdou zapnout u kterékoli sestavy. Odladěná čísla
-            // (posun sigm, sigmy zjemnění) pochází z karty „3 kroky", tedy
-            // od LoRA TaoMate — u jiných sestav je to pokus, ne jistota.
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // Přepínač „Dva průchody" tu byl a je pryč (4.24). Zapnutý
+            // u Turba dal rozmazaný obraz s artefakty — sigmy zjemnění
+            // jsou součást receptu pro LoRA TaoMate, ne obecná volba.
+            // Vypnout je pořád možné, zapnout mimo sestavu 3 + 2 ne.
+            if (scene.model.dvojiPruchod) Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     t("Dva průchody"),
                     style = MaterialTheme.typography.labelMedium, color = TextLow,
@@ -159,10 +160,6 @@ fun LongMmSection(vm: MainViewModel) {
                     onSelect = { vm.setLongMmDvaPruchody(it) },
                 )
             }
-            if (scene.dvaPruchody && !scene.model.dvojiPruchod) Text(
-                t("Zapnuto mimo sestavu 3 + 2. Čísla zjemnění jsou odladěná pro ni, jinde je to pokus."),
-                style = MaterialTheme.typography.bodySmall, color = Amber,
-            )
             // Dvouprůchodová sestava: počet kroků platí pro průchod DOLE.
             // Zjemnění nahoře má pevné, odladěné sigmy (dva kroky) — stejně
             // jako karta „3 kroky", odkud je celé zapojení převzaté.
@@ -172,6 +169,32 @@ fun LongMmSection(vm: MainViewModel) {
                     style = MaterialTheme.typography.bodySmall, color = TextLow,
                 )
             }
+            // Ostrost detailů. Autorovo vlastní ovládání (Detail Daemon),
+            // které jsme měli celou dobu na nule — a výsledky vypadaly
+            // „trochu mázle". V nápovědě uzlu doporučuje 0,1–0,3.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    t("Ostrost detailů"),
+                    style = MaterialTheme.typography.labelMedium, color = TextLow,
+                )
+                androidx.compose.material3.Slider(
+                    value = scene.ostrost,
+                    onValueChange = { vm.setLongMmOstrost(Math.round(it * 20f) / 20f) },
+                    valueRange = -0.5f..0.5f,
+                    steps = 19,
+                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+                    colors = sliderColors(),
+                )
+                Text(
+                    if (scene.ostrost == 0f) t("vyp") else "%+.2f".format(scene.ostrost),
+                    style = MaterialTheme.typography.labelMedium, color = TextMid,
+                    modifier = Modifier.width(46.dp),
+                )
+            }
+            Text(
+                t("Autor doporučuje 0,10–0,30 na obličeje. Záporná hodnota obraz změkčí."),
+                style = MaterialTheme.typography.bodySmall, color = TextLow,
+            )
             // Vlastní posuvník, ne sdílený: ten jede od 0,5 a tady je potřeba
             // dosáhnout i na nulu (= bez LoRA) a na rozsah 0,2–0,6, který
             // u konceptových LoRA doporučuje autor modelu Eros.

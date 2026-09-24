@@ -311,6 +311,15 @@ data class LongMmScene(
      * Výchozí je autorovo (Sage) — v obou jeho předlohách je aktivní.
      */
     val pozornost: LongMmPozornost = LongMmPozornost.SAGE,
+    /**
+     * Ostrost detailů — `detail_strength` autorova uzlu (Detail Daemon).
+     *
+     * Kladná hodnota přidá detail ve fázi dotahování, záporná změkčí.
+     * Funguje tak, že modelu podstrčí mírně nižší úroveň šumu, než na jaké
+     * doopravdy je. Autor v nápovědě uzlu doporučuje **0,1–0,3 na obličeje**.
+     * Nula = uzel se ani nezapne (`enable_detail_daemon` zůstane vypnuté).
+     */
+    val ostrost: Float = 0f,
     /** Realistická LoRA `h3-realism-people-t2v-i2v-r2v`. */
     val realismus: Boolean = false,
     val realismusSila: Float = 0.7f,
@@ -334,9 +343,19 @@ data class LongMmScene(
     /** Pořadí je závazné — stavitel čte reference v tomhle pořadí. */
     val uploadImages: List<File> get() = reference.map { it.soubor }
 
-    /** Jedou se dva průchody? Volba uživatele má přednost před sestavou. */
+    /**
+     * Jedou se dva průchody?
+     *
+     * Vypnout jde vždycky. **Zapnout jen tam, kde to sestava má** — sigmy
+     * zjemnění a posun jsou součást receptu karty „3 kroky" pro LoRA TaoMate,
+     * ne obecné nastavení. Na Turbu (`ref2v_turbo_4step`) z toho 24. 9. 2026
+     * vyšel rozmazaný obraz s artefakty, protože jeho destilační rozvrh je
+     * jiný. A nad 0,5 MP nefungují ani s TaoMate.
+     */
     val dvaPruchody: Boolean
-        get() = if (dvaPruchodyVolba >= 0) dvaPruchodyVolba == 1 else model.dvojiPruchod
+        get() = model.dvojiPruchod &&
+            dvaPruchodyVolba != 0 &&
+            rozliseni.zvladneDvaPruchody
 
     /**
      * Kolik kroků poběží nahoře. Uživatelova volba má přednost, jinak sestava.
@@ -427,8 +446,8 @@ fun longMmHints(s: LongMmScene): List<String> = buildList {
             add(t("%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá.")
                 .format(s.rozliseni.title, s.rozliseni.nasobekPlochy))
         }
-        if (s.dvaPruchody && !s.rozliseni.zvladneDvaPruchody) {
-            add(t("Dva průchody nad 0,5 MP dělají artefakty a rozsypanou barvu — ověřeno na 768p. Kolega dotahuje na 540p."))
+        if (s.model.dvojiPruchod && !s.rozliseni.zvladneDvaPruchody) {
+            add(t("Nad 0,5 MP se dva průchody nespouští — dělaly artefakty a rozsypanou barvu. Jede se jedním."))
         }
         if (s.reference.isNotEmpty()) {
             add(t("Na fotky se v zadání odkazuje značkami <Picture 1>, <Picture 2>… Bez zmínky si jich model nemusí všimnout."))
@@ -502,6 +521,7 @@ class LongMmStore(private val ctx: Context) {
                 ?: if (j.optBoolean("sage", true)) LongMmPozornost.SAGE
                 else LongMmPozornost.SERVER,
             referenceVNavazani = j.optBoolean("referenceVNavazani"),
+            ostrost = j.optDouble("ostrost", 0.0).toFloat().coerceIn(-1f, 1f),
             realismus = j.optBoolean("realismus"),
             realismusSila = j.optDouble("realismusSila", 0.7).toFloat().coerceIn(0f, 1.5f),
             nazev = j.optString("nazev").ifBlank { "zaber" },
@@ -529,6 +549,7 @@ class LongMmStore(private val ctx: Context) {
                 .put("dvaPruchodyVolba", s.dvaPruchodyVolba)
                 .put("pozornost", s.pozornost.name)
                 .put("referenceVNavazani", s.referenceVNavazani)
+                .put("ostrost", s.ostrost.toDouble())
                 .put("realismus", s.realismus)
                 .put("realismusSila", s.realismusSila.toDouble())
                 .put("nazev", s.nazev)
