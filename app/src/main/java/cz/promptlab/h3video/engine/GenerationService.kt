@@ -59,9 +59,18 @@ class GenerationService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        naPopredi = true
         if (watcher == null) {
             watcher = scope.launch {
-                GenerationEngine.state.collectLatest { s ->
+                // Hlídá se stav běhu I fronta: služba se smí vypnout až ve
+                // chvíli, kdy nic neběží A nic nečeká. Dřív se vypnula hned
+                // po doběhnutí úlohy — a další z fronty ji pak musela znovu
+                // zapnout z pozadí (zamčený telefon), což Android od verze 12
+                // nedovolí. Úloha se rozjela bez služby, v úsporném režimu
+                // přišla o síť a spadla. Po odemčení další zase prošla.
+                kotlinx.coroutines.flow.combine(
+                    GenerationEngine.state, RunQueue.queue,
+                ) { st, q -> st to q.size }.collectLatest { (s, cekaVeFronte) ->
                     when (s) {
                         is GenState.Running -> {
                             val percent = (s.overall * 100).toInt().coerceIn(0, 100)
@@ -78,7 +87,21 @@ class GenerationService : Service() {
                                 buildProgress(text, percent, true, s.kind)
                             )
                         }
-                        else -> stopSelf()
+                        else -> if (cekaVeFronte > 0) {
+                            notify(
+                                NOTIF_PROGRESS,
+                                buildProgress(
+                                    t("Ve frontě čeká: %d").format(cekaVeFronte), 0, false,
+                                ),
+                            )
+                        } else {
+                            // Poslední úloha z fronty: fronta je prázdná dřív,
+                            // než se nový běh stihne přihlásit. Chvíli počkat —
+                            // přijde-li mezitím Running, collectLatest tohle
+                            // zruší a služba jede dál.
+                            kotlinx.coroutines.delay(3000)
+                            if (!GenerationEngine.isRunning) stopSelf()
+                        }
                     }
                 }
             }
@@ -87,6 +110,7 @@ class GenerationService : Service() {
     }
 
     override fun onDestroy() {
+        naPopredi = false
         watcher?.cancel()
         scope.cancel()
         super.onDestroy()
@@ -144,7 +168,16 @@ class GenerationService : Service() {
         private const val NOTIF_PROGRESS = 1001
         private const val NOTIF_DONE = 1002
 
+        /**
+         * Běží služba na popředí? Když ano, nový běh ji znovu nestartuje —
+         * její hlídač si ho převezme sám. Znovu volat `startForegroundService`
+         * z pozadí (zamčený telefon) Android 12+ odmítne.
+         */
+        @Volatile var naPopredi: Boolean = false
+            private set
+
         fun start(ctx: Context) {
+            if (naPopredi) return
             val i = Intent(ctx, GenerationService::class.java)
             runCatching {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ctx.startForegroundService(i)
@@ -152,7 +185,15 @@ class GenerationService : Service() {
             }
         }
 
+        /**
+         * Zastaví službu — **ale ne, dokud něco čeká ve frontě.** Engine volá
+         * stop po každém dokončeném i spadlém běhu; kdyby služba opravdu
+         * skončila, další úloha z fronty by ji musela zapnout z pozadí
+         * a to Android 12+ se zamčeným telefonem nedovolí. Až je fronta
+         * prázdná, vypne se služba sama (hlídač v [onStartCommand]).
+         */
         fun stop(ctx: Context) {
+            if (RunQueue.queue.value.isNotEmpty()) return
             runCatching { ctx.stopService(Intent(ctx, GenerationService::class.java)) }
         }
 

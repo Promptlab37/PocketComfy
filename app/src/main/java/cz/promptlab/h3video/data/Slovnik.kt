@@ -727,6 +727,7 @@ object Slovnik {
         "Zahodit poslední záběr a zkusit ho znovu" to
             "Discard the last shot and try it again",
         "Zahozeno: %d" to "Discarded: %d",
+        "Ve frontě čeká: %d" to "Waiting in queue: %d",
         "Vrátit zahozené zpět" to "Restore discarded shots",
         "Zahodit tenhle záběr a zkusit ho znovu" to
             "Discard this shot and try it again",
