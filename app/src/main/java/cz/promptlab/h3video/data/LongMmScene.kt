@@ -168,12 +168,20 @@ enum class LongMmModel(
     private val titleCs: String,
     private val popisCs: String,
 ) {
+    /**
+     * Oficiální šablona R2V z dokumentace ComfyUI (Native workflows):
+     * `minimax_h3_ref2va_pruned_int8_convrot` + `ref2v_turbo_4step_v0.1`,
+     * síla 1,0, 4 kroky. R2V podle ní „uses ref2va diffusion model
+     * exclusively" — FL2VA a Ref2VA jsou u MiniMaxu dva checkpointy
+     * s různými vahami. Dřív tu byl `fl2va` se silou 0,8/0,75 a 7 kroky
+     * podle ukázky balíku; ta ref2v LoRA tak běžela na cizích vahách.
+     */
     TURBO(
-        unet = "minimax_h3_fl2va_pruned_int8_convrot.safetensors",
+        unet = "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
         lora = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
-        silaPrvni = 0.8f, silaDalsi = 0.75f, kroky = 7,
+        silaPrvni = 1.0f, silaDalsi = 1.0f, kroky = 4,
         titleCs = "Turbo",
-        popisCs = "Zapojení autora balíku, beze změny",
+        popisCs = "",
     ),
 
     /**
