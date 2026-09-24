@@ -726,16 +726,13 @@ object Slovnik {
         "Načíst znovu ze serveru" to "Reload from the server",
         "Zahodit poslední záběr a zkusit ho znovu" to
             "Discard the last shot and try it again",
-        "Zahozeno záběrů: %d. Navazuje se na ten před nimi." to
-            "Shots discarded: %d. Continuing from the one before them.",
+        "Zahozeno: %d" to "Discarded: %d",
         "Vrátit zahozené zpět" to "Restore discarded shots",
         "Zahodit tenhle záběr a zkusit ho znovu" to
             "Discard this shot and try it again",
         "Dva průchody" to "Two passes",
         "Ostrost detailů" to "Detail sharpness",
         "vyp" to "off",
-        "Autor doporučuje 0,10–0,30 na obličeje. Záporná hodnota obraz změkčí." to
-            "The author recommends 0.10–0.30 for faces. A negative value softens the image.",
         "Seznam latentů se nepodařilo načíst — server neodpovídá." to
             "The latent list could not be loaded — the server is not responding.",
         "Podoba" to "Likeness",
@@ -769,18 +766,10 @@ object Slovnik {
         "540p · 0,5 MP" to "540p · 0.5 MP",
         "Nad 0,5 MP se dva průchody nespouští — dělaly artefakty a rozsypanou barvu. Jede se jedním." to
             "Above 0.5 MP two passes are not used — they produced artefacts and scattered colour. A single pass runs instead.",
-        "Kroky platí pro průchod dole. Nahoře se vždy přidají dva kroky zjemnění s pevným nastavením." to
-            "Steps apply to the lower pass. Two refinement steps with fixed settings are always added on top.",
         "Zrychlovací pozornost" to "Speed-up attention",
         "Sage" to "Sage",
-        "Zapojení autora balíku. Přesné, ale běh trvá déle" to
-            "The pack author's wiring. Accurate, but the run takes longer",
         "Comfy Kitchen INT8" to "Comfy Kitchen INT8",
-        "Jako kolega. Kvantovaná pozornost přímo z jádra ComfyUI" to
-            "Same as the colleague. Quantised attention straight from the ComfyUI core",
         "Nechat na serveru" to "Leave it to the server",
-        "Nic se nepřidá, platí globální nastavení ComfyUI" to
-            "Nothing is added, ComfyUI's global setting applies",
         "Turbo" to "Turbo",
         "Zapojení autora balíku, beze změny" to "The pack author's wiring, unchanged",
         "FastVideo VSA" to "FastVideo VSA",
@@ -797,8 +786,6 @@ object Slovnik {
             "The author keeps it on; switched off the model passes straight through",
         "Držet podobu z fotek" to "Hold the likeness from the photos",
         "Posílat je i do navazujících záběrů" to "Send them into continuing shots too",
-        "Odchylka od autora — ten reference do navázání neposílá" to
-            "A departure from the author — he sends no references into a continuation",
         "LoRA h3-realism-people, navrch k rychlostní" to
             "The h3-realism-people LoRA, stacked on the speed one",
         "Podle něj se pak navazuje a číslují se latenty" to

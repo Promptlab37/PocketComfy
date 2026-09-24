@@ -26,9 +26,8 @@ enum class LongMmRezim(private val titleCs: String, private val popisCs: String)
 enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
     R480("480P", "480p"),
     /**
-     * **0,5 MP.** Na tomhle stupni dotahuje dva průchody kolega (23. 9. 2026:
-     * „0.2 základ a refine 0.5, protože 0.75 nepřidá tolik kvality co stojí
-     * času"). V tabulce balíku je 360P = 0,2 MP a 540P = 0,5 MP, takže jeho
+     * **0,5 MP.**
+     * V tabulce balíku je 360P = 0,2 MP a 540P = 0,5 MP, takže jeho
      * dvojice je přesně R540 s prvním průchodem na 360P.
      */
     R540("540P", "540p · 0,5 MP"),
@@ -48,7 +47,7 @@ enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
      *
      * Nesmí to být pevná hodnota. Skok mezi průchody se drží kolem
      * **2–2,5násobku plochy**; při pětinásobku (360P → 768P) zůstala po
-     * roztažení latentu barevná kaše (23. 9. 2026). Kolega jede 0,2 → 0,5 MP,
+     * roztažení latentu barevná kaše (23. 9. 2026). Dvojice 0,2 → 0,5 MP
      * tedy 360P → 540P, což je přesně 2,5×; stejný poměr drží i ostatní
      * dvojice tady. Hodnoty musí být z autorovy nabídky
      * (`_LOW_RES_CHOICES`: 360P, 416P, 480P, 540P, 640P).
@@ -65,7 +64,7 @@ enum class LongMmRozliseni(val kod: String, private val titleCs: String) {
 
     val nizkeProDvaPruchody: String get() = when (this) {
         R480 -> "360P"   // 0,4 ← 0,2 MP = 2,0×
-        R540 -> "360P"   // 0,5 ← 0,2 MP = 2,5×  (dvojice kolegy)
+        R540 -> "360P"   // 0,5 ← 0,2 MP = 2,5×  
         R640 -> "416P"   // 0,7 ← 0,3 MP = 2,3×
         R720 -> "480P"   // 0,9 ← 0,4 MP = 2,25×
         R768 -> "480P"   // 1,0 ← 0,4 MP = 2,5×
@@ -109,7 +108,7 @@ enum class LongMmPomer(val kod: String, private val titleCs: String) {
  */
 enum class LongMmPozornost(private val titleCs: String, private val popisCs: String) {
     /** Autorovo zapojení: `MiniMaxH3MemoryEfficientSageAttentionPatch`. */
-    SAGE("Sage", "Zapojení autora balíku. Přesné, ale běh trvá déle"),
+    SAGE("Sage", ""),
 
     /**
      * `ModelAttentionBackend` s volbou `comfy kitchen attention` —
@@ -117,10 +116,10 @@ enum class LongMmPozornost(private val titleCs: String, private val popisCs: Str
      * jen tam, kde ji grafická karta zvládne; na tomhle serveru v nabídce je.
      * Jádro ji značí jako experimentální.
      */
-    KITCHEN("Comfy Kitchen INT8", "Jako kolega. Kvantovaná pozornost přímo z jádra ComfyUI"),
+    KITCHEN("Comfy Kitchen INT8", ""),
 
     /** Do grafu se nepřidá žádný uzel pozornosti. */
-    SERVER("Nechat na serveru", "Nic se nepřidá, platí globální nastavení ComfyUI");
+    SERVER("Nechat na serveru", "");
 
     val title: String get() = t(titleCs)
     val popis: String get() = t(popisCs)

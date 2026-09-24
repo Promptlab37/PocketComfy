@@ -104,7 +104,7 @@ fun LongMmSection(vm: MainViewModel) {
         val zahozenoTady = zahozene.count { it.startsWith(vm.longMmNazevSouboru() + "_") }
         if (zahozenoTady > 0) {
             Text(
-                t("Zahozeno záběrů: %d. Navazuje se na ten před nimi.").format(zahozenoTady),
+                t("Zahozeno: %d").format(zahozenoTady),
                 style = MaterialTheme.typography.bodySmall, color = Amber,
             )
             OutlineButton(
@@ -116,7 +116,7 @@ fun LongMmSection(vm: MainViewModel) {
       }
     }
 
-    SectionCard(title = t("Model"), subtitle = scene.model.popis) {
+    SectionCard(title = t("Model")) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PillRow(
                 items = cz.promptlab.h3video.data.LongMmModel.entries.toList(),
@@ -163,12 +163,6 @@ fun LongMmSection(vm: MainViewModel) {
             // Dvouprůchodová sestava: počet kroků platí pro průchod DOLE.
             // Zjemnění nahoře má pevné, odladěné sigmy (dva kroky) — stejně
             // jako karta „3 kroky", odkud je celé zapojení převzaté.
-            if (scene.dvaPruchody) {
-                Text(
-                    t("Kroky platí pro průchod dole. Nahoře se vždy přidají dva kroky zjemnění s pevným nastavením."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
-                )
-            }
             // Ostrost detailů. Autorovo vlastní ovládání (Detail Daemon),
             // které jsme měli celou dobu na nule — a výsledky vypadaly
             // „trochu mázle". V nápovědě uzlu doporučuje 0,1–0,3.
@@ -191,10 +185,6 @@ fun LongMmSection(vm: MainViewModel) {
                     modifier = Modifier.width(46.dp),
                 )
             }
-            Text(
-                t("Autor doporučuje 0,10–0,30 na obličeje. Záporná hodnota obraz změkčí."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-            )
             // Vlastní posuvník, ne sdílený: ten jede od 0,5 a tady je potřeba
             // dosáhnout i na nulu (= bez LoRA) a na rozsah 0,2–0,6, který
             // u konceptových LoRA doporučuje autor modelu Eros.
@@ -222,7 +212,6 @@ fun LongMmSection(vm: MainViewModel) {
 
     SectionCard(
         title = t("Zrychlovací pozornost"),
-        subtitle = scene.pozornost.popis,
     ) {
         PillRow(
             items = LongMmPozornost.entries.toList(),
@@ -285,7 +274,6 @@ fun LongMmSection(vm: MainViewModel) {
 
         SectionCard(
             title = t("Držet podobu z fotek"),
-            subtitle = t("Odchylka od autora — ten reference do navázání neposílá"),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 PillRow(
