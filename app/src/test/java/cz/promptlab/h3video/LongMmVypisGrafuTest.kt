@@ -96,6 +96,26 @@ class LongMmVypisGrafuTest {
             pocet += 2
         }
 
+        // Dva průchody zapnuté u KAŽDÉ sestavy — přepínač je umí zapnout
+        // i tam, kde je sestava sama nemá, a kontrola to musí prověřit.
+        for (m in LongMmModel.entries) {
+            val sc = LongMmScene(
+                prompt = "žena u okna", sekundy = 5, rozliseni = LongMmRozliseni.R540,
+                nazev = "kontrola", latent = "kontrola_00003.h3latent.safetensors",
+                zdroj = File("celek.mp4"),
+                model = m, kroky = m.kroky, dvaPruchodyVolba = 1,
+            )
+            File(cil, "prvni-dvapruchody-${m.name.lowercase()}.json").writeText(
+                LongMmBuilder.buildPrvni(prvni, sc, 1L, emptyList()).toString(1)
+            )
+            File(cil, "dalsi-dvapruchody-${m.name.lowercase()}.json").writeText(
+                LongMmBuilder.buildDalsi(
+                    dalsi, sc.copy(rezim = LongMmRezim.NAVAZANI), 1L, "celek.mp4", emptyList(),
+                ).toString(1)
+            )
+            pocet += 2
+        }
+
         // Bez referencí — jiná větev stavitele, taky musí projít kontrolou.
         File(cil, "prvni-bezreferenci.json").writeText(
             LongMmBuilder.buildPrvni(

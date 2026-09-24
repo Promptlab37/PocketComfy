@@ -397,7 +397,7 @@ object LongMmBuilder {
      * Vola se az **na konci** stavby, aby kopie zadani mela i reference.
      */
     private fun zapojDvaPruchody(wf: JSONObject, scene: LongMmScene) {
-        if (!scene.model.dvojiPruchod) return
+        if (!scene.dvaPruchody) return
 
         // Bez posunu sigm je obraz mekky - viz ThreeStepBuilder.
         vlozShift(wf, listOf("4", N_KROKY))
@@ -490,7 +490,7 @@ object LongMmBuilder {
      * pruchodem, ale i tak s posunem sigm, ktery dela pulku kvality.
      */
     private fun zapojShiftNavazani(wf: JSONObject, scene: LongMmScene) {
-        if (!scene.model.dvojiPruchod) return
+        if (!scene.dvaPruchody) return
         vlozShift(wf, listOf(N_SEED_DALSI, N_KROKY_DALSI))
         wf.inputs(N_KROKY_DALSI).put("model", odkaz(N_UNET))
     }

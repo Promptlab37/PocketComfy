@@ -3401,6 +3401,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (v.isFinite()) updateLongMm { it.copy(loraSila = v.coerceIn(0f, 1.5f)) }
     }
 
+    /** Dva průchody zapnout/vypnout bez ohledu na sestavu. */
+    fun setLongMmDvaPruchody(v: Boolean) =
+        updateLongMm { it.copy(dvaPruchodyVolba = if (v) 1 else 0) }
+
     /** Kolik kroků poběží v cílovém rozlišení (jen dvouprůchodové sestavy). */
     fun setLongMmKrokyNahore(v: Int) = updateLongMm { it.copy(krokyNahore = v) }
 

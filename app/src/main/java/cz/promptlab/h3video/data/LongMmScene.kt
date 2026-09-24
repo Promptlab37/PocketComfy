@@ -288,6 +288,14 @@ data class LongMmScene(
     /** Síla zrychlovací LoRA; záporná hodnota = vzít tu ze sestavy. */
     val loraSila: Float = -1f,
     /**
+     * Dva průchody: −1 = jak má sestava, 0 = vypnout, 1 = zapnout.
+     *
+     * Tříhodnotové schválně. Kdyby to byl obyčejný přepínač, musel by mít
+     * jednu výchozí hodnotu pro všechny sestavy — a uložená scéna by pak
+     * po přepnutí sestavy tiše přebila to, co k ní patří.
+     */
+    val dvaPruchodyVolba: Int = -1,
+    /**
      * Kolik z [kroky] proběhne až v cílovém rozlišení (dvouprůchodové sestavy).
      * Záporná hodnota = vzít počet ze sestavy.
      *
@@ -325,6 +333,10 @@ data class LongMmScene(
 ) {
     /** Pořadí je závazné — stavitel čte reference v tomhle pořadí. */
     val uploadImages: List<File> get() = reference.map { it.soubor }
+
+    /** Jedou se dva průchody? Volba uživatele má přednost před sestavou. */
+    val dvaPruchody: Boolean
+        get() = if (dvaPruchodyVolba >= 0) dvaPruchodyVolba == 1 else model.dvojiPruchod
 
     /**
      * Kolik kroků poběží nahoře. Uživatelova volba má přednost, jinak sestava.
@@ -415,7 +427,7 @@ fun longMmHints(s: LongMmScene): List<String> = buildList {
             add(t("%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá.")
                 .format(s.rozliseni.title, s.rozliseni.nasobekPlochy))
         }
-        if (s.model.dvojiPruchod && !s.rozliseni.zvladneDvaPruchody) {
+        if (s.dvaPruchody && !s.rozliseni.zvladneDvaPruchody) {
             add(t("Dva průchody nad 0,5 MP dělají artefakty a rozsypanou barvu — ověřeno na 768p. Kolega dotahuje na 540p."))
         }
         if (s.reference.isNotEmpty()) {
@@ -482,6 +494,7 @@ class LongMmStore(private val ctx: Context) {
                 .coerceIn(LongMmScene.MIN_KROKU, LongMmScene.MAX_KROKU),
             loraSila = j.optDouble("loraSila", -1.0).toFloat(),
             krokyNahore = j.optInt("krokyNahore", -1),
+            dvaPruchodyVolba = j.optInt("dvaPruchodyVolba", -1),
             // Starší uložená scéna měla jen boolean `sage`; ať se po
             // aktualizaci nikomu volba nepřeklopí sama.
             pozornost = j.optString("pozornost").takeIf { it.isNotBlank() }
@@ -513,6 +526,7 @@ class LongMmStore(private val ctx: Context) {
                 .put("kroky", s.kroky)
                 .put("loraSila", s.loraSila.toDouble())
                 .put("krokyNahore", s.krokyNahore)
+                .put("dvaPruchodyVolba", s.dvaPruchodyVolba)
                 .put("pozornost", s.pozornost.name)
                 .put("referenceVNavazani", s.referenceVNavazani)
                 .put("realismus", s.realismus)

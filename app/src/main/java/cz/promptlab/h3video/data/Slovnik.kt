@@ -731,6 +731,9 @@ object Slovnik {
         "Vrátit zahozené zpět" to "Restore discarded shots",
         "Zahodit tenhle záběr a zkusit ho znovu" to
             "Discard this shot and try it again",
+        "Dva průchody" to "Two passes",
+        "Zapnuto mimo sestavu 3 + 2. Čísla zjemnění jsou odladěná pro ni, jinde je to pokus." to
+            "Enabled outside the 3 + 2 preset. The refinement numbers are tuned for it; elsewhere this is an experiment.",
         "Seznam latentů se nepodařilo načíst — server neodpovídá." to
             "The latent list could not be loaded — the server is not responding.",
         "Podoba" to "Likeness",

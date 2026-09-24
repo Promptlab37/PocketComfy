@@ -143,10 +143,30 @@ fun LongMmSection(vm: MainViewModel) {
                     modifier = Modifier.width(26.dp),
                 )
             }
+            // Dva průchody jdou zapnout u kterékoli sestavy. Odladěná čísla
+            // (posun sigm, sigmy zjemnění) pochází z karty „3 kroky", tedy
+            // od LoRA TaoMate — u jiných sestav je to pokus, ne jistota.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    t("Dva průchody"),
+                    style = MaterialTheme.typography.labelMedium, color = TextLow,
+                )
+                Spacer(Modifier.width(12.dp))
+                PillRow(
+                    items = listOf(false, true),
+                    selected = scene.dvaPruchody,
+                    label = { if (it) t("Zapnuto") else t("Vypnuto") },
+                    onSelect = { vm.setLongMmDvaPruchody(it) },
+                )
+            }
+            if (scene.dvaPruchody && !scene.model.dvojiPruchod) Text(
+                t("Zapnuto mimo sestavu 3 + 2. Čísla zjemnění jsou odladěná pro ni, jinde je to pokus."),
+                style = MaterialTheme.typography.bodySmall, color = Amber,
+            )
             // Dvouprůchodová sestava: počet kroků platí pro průchod DOLE.
             // Zjemnění nahoře má pevné, odladěné sigmy (dva kroky) — stejně
             // jako karta „3 kroky", odkud je celé zapojení převzaté.
-            if (scene.model.dvojiPruchod) {
+            if (scene.dvaPruchody) {
                 Text(
                     t("Kroky platí pro průchod dole. Nahoře se vždy přidají dva kroky zjemnění s pevným nastavením."),
                     style = MaterialTheme.typography.bodySmall, color = TextLow,
