@@ -274,6 +274,25 @@ enum class LongMmModel(
         silaPrvni = 1.0f, silaDalsi = 1.0f, kroky = 8,
         titleCs = "Singularity",
         popisCs = "",
+    ),
+
+    /**
+     * Plný model bez LoRA — profil „V2 Kvalita" karty All in One
+     * (`Profile.V2_QUALITY`, podle `MINIMAX_H3_ULTRA_WORKFLOW-V2_apka-normalWF`):
+     * `res_multistep` + `simple`, posun 12/3 (jádro), CLIP `nvfp4_awq`.
+     * Long jede v režimu reference, takže model `ref2va` — stejně jako
+     * referenční cesta All in One.
+     *
+     * 20 kroků jako v autorově workflow; All in One jich má 10, protože
+     * `res_multistep` na větším rozlišení jednou přetekl 16GB kartu.
+     */
+    V2KVALITA(
+        unet = "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+        lora = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+        silaPrvni = 0f, silaDalsi = 0f, kroky = 20,
+        sampler = "res_multistep",
+        titleCs = "V2 Kvalita",
+        popisCs = "",
     );
 
     /** Jede tahle sestava na dva průchody? */

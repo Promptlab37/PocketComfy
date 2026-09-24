@@ -777,6 +777,7 @@ object Slovnik {
         "Eros Max" to "Eros Max",
         "Eros Turbo" to "Eros Turbo",
         "Singularity" to "Singularity",
+        "V2 Kvalita" to "V2 Quality",
         "Eros model i Eros LoRA" to "The Eros model and the Eros LoRA",
         "3 + 2" to "3 + 2",
         "Tři kroky dole, zvětšení latentu, dva nahoře" to
