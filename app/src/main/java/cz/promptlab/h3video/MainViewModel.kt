@@ -1927,6 +1927,62 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
+    /** Jak dlouho smí být server během přepisu nedostupný (zamčený telefon apod.). */
+    private val NEDOSTUPNY_MAX_MS = 20 * 60_000L
+
+    /** Přepis už je na serveru ve frontě — od té chvíle se neopakuje od začátku. */
+    @Volatile private var prepisZarazen = false
+
+    /**
+     * Zařadí přepis. Když odpověď nedorazí (telefon se zamkl uprostřed),
+     * zkusí to znovu — ale napřed se zeptá, jestli server úlohu už nemá,
+     * ať se nespustí dvakrát.
+     */
+    private suspend fun zaradPrepis(
+        client: ComfyClient, wf: org.json.JSONObject, clientId: String, promptId: String,
+    ) {
+        val od = android.os.SystemClock.elapsedRealtime()
+        while (true) {
+            val chyba = runCatching { client.queuePrompt(wf, clientId, promptId) }.exceptionOrNull()
+            if (chyba == null || client.promptKnown(promptId) == true) {
+                prepisZarazen = true
+                return
+            }
+            // Server odpověděl a zadání odmítl → skutečná chyba.
+            if (client.isAlive() ||
+                android.os.SystemClock.elapsedRealtime() - od > NEDOSTUPNY_MAX_MS
+            ) throw chyba
+            kotlinx.coroutines.delay(5000)
+        }
+    }
+
+    /**
+     * Příprava přepisu (dotazy na server, nahrání fotek) přežije zamčení
+     * telefonu: když spadne a server je zrovna nedostupný, počká se, až se
+     * spojení vrátí, a příprava se zopakuje. Je bezpečné ji opakovat —
+     * fotky mají pevná jména a na server se zatím nic nezařadilo. Jakmile je
+     * přepis ve frontě, opakování končí: tam už čeká [spustPrepisAPockej].
+     */
+    private suspend fun <T> odolne(blok: suspend () -> T): Result<T> {
+        val od = android.os.SystemClock.elapsedRealtime()
+        prepisZarazen = false
+        while (true) {
+            val vysledek = try {
+                Result.success(blok())
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Result.failure(e)
+            }
+            if (vysledek.isSuccess || prepisZarazen) return vysledek
+            val client = ComfyClient(settings.serverUrl)
+            // Server odpovídá → chyba je skutečná, ne síťová.
+            if (client.isAlive() || client.launcherStav() != null) return vysledek
+            if (android.os.SystemClock.elapsedRealtime() - od > NEDOSTUPNY_MAX_MS) return vysledek
+            kotlinx.coroutines.delay(5000)
+        }
+    }
+
     /** Stejná mez jako u generování (GenerationEngine.SERVER_WAIT_SECONDS). */
     private val SPUSTENI_MAX_MS = 360_000L
 
@@ -2053,24 +2109,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             })
         }.getOrNull()
         try {
-            client.queuePrompt(wf, clientId, promptId)
-            // Ticho po tuhle dobu znamená, že se běh někde zasekl. Načítání
-            // modelu z disku umí mlčet i minutu, proto ne míň.
-            val ticho = 300_000L
+            zaradPrepis(client, wf, clientId, promptId)
+            // Rozhoduje server, ne hodiny. Do 4.50 tu byla mez „pět minut bez
+            // zprávy": zamčený telefon uspí appku, po odemčení ta mez hned
+            // vypršela a přepis skončil chybou, ačkoli výsledek na serveru
+            // dávno ležel (25. 9. 2026). Teď se vždy nejdřív zeptá na výsledek;
+            // chyba je jen, když server úlohu nezná, nebo je dlouho nedostupný.
+            var neznama = 0
+            var nedostupnyOd = 0L
             var kolo = 0
-            while (System.currentTimeMillis() - zivot.get() < ticho) {
-                // Dokud server přepis nezačal, hlídat frontu: stojí-li před
-                // ním generování, čeká se na ně celé a uživatel to má vidět.
-                if (_prubehPrepisu.value.beziOd == 0L && kolo % 2 == 0) {
-                    val pred = client.predTebou(promptId)
-                    if (pred > 0) {
-                        zivot.set(System.currentTimeMillis())
-                        _prubehPrepisu.value = _prubehPrepisu.value.copy(
-                            faze = FazePrepisu.FRONTA, predTebou = pred,
-                        )
-                    } else if (pred == 0) prepisBezi(FazePrepisu.MODEL)
-                }
-                kolo++
+            while (true) {
                 val h = client.history(promptId)
                 if (h != null) {
                     val status = h.optJSONObject("status")
@@ -2089,13 +2137,43 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             .apply()
                         return text.getString(0)
                     }
+                    neznama = 0
+                    nedostupnyOd = 0L
+                } else if (kolo % 2 == 0) {
+                    // Ve frontě? Kolik je před ním?
+                    val pred = client.predTebou(promptId)
+                    when {
+                        pred > 0 -> {
+                            neznama = 0; nedostupnyOd = 0L
+                            if (_prubehPrepisu.value.beziOd == 0L) _prubehPrepisu.value =
+                                _prubehPrepisu.value.copy(faze = FazePrepisu.FRONTA, predTebou = pred)
+                        }
+                        pred == 0 -> {
+                            neznama = 0; nedostupnyOd = 0L
+                            prepisBezi(FazePrepisu.MODEL)
+                        }
+                        else -> when (client.promptKnown(promptId)) {
+                            true -> { neznama = 0; nedostupnyOd = 0L }
+                            // Server odpověděl a úlohu nezná (restart ComfyUI).
+                            false -> if (++neznama >= 5) throw ComfyException(
+                                "rewrite lost",
+                                t("Server přepis ztratil (nejspíš se ComfyUI restartovalo). Zkus to znovu."),
+                            )
+                            // Nedostupný — zamčený telefon, výpadek sítě. Čeká se.
+                            null -> {
+                                if (nedostupnyOd == 0L) nedostupnyOd = android.os.SystemClock.elapsedRealtime()
+                                else if (android.os.SystemClock.elapsedRealtime() - nedostupnyOd > NEDOSTUPNY_MAX_MS)
+                                    throw ComfyException(
+                                        "rewrite offline",
+                                        t("Server je přes dvacet minut nedostupný. Zkontroluj počítač a Tailscale."),
+                                    )
+                            }
+                        }
+                    }
                 }
+                kolo++
                 kotlinx.coroutines.delay(1000)
             }
-            throw ComfyException(
-                "rewrite timeout",
-                "Přepisovač se neozval pět minut. Mrkni, jestli ComfyUI běží.",
-            )
         } finally {
             ws?.cancel()
             _rewriteProgress.value = null
@@ -2147,7 +2225,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.PREKLAD)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
+                odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
@@ -2209,7 +2287,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
+                odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
@@ -2266,7 +2344,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
+                odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
@@ -2344,7 +2422,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
+                odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     if (client.objectInfo(Qwen21PeBuilder.NODE_CLASS) == null) throw ComfyException(
                         "TextGenerate chybi",
@@ -2518,11 +2596,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
+                odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val refy = _threeStepRefs.value.map { it.soubor }.filter { it.exists() }
                     if (refy.isNotEmpty()) {
-                        return@runCatching prepisSReferencemi(
+                        return@odolne prepisSReferencemi(
                             client, refy, p.seconds.toDouble(), zadani,
                         )
                     }
@@ -2592,12 +2670,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
+                odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     // Režim Reference má vlastní cestu: starý přepisovač zná
                     // jen T2VA/I2VA/FL2VA/L2VA a reference neumí vůbec.
                     if (s.mode == AioMode.REFERENCE && s.refsWithImage.isNotEmpty()) {
-                        return@runCatching prepisSReferencemi(client, s, zadani)
+                        return@odolne prepisSReferencemi(client, s, zadani)
                     }
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
                         ?: throw ComfyException(
@@ -4157,7 +4235,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
+                odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     uklidPredPrepisem(client)
                     // Navázání má vlastní cestu. Oficiální přepisovač píše
@@ -4166,7 +4244,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     // tak 22. 9. 2026 vznikla moderní kancelář a žena dál pila
                     // kafe, protože model ten cizí popis zahodil.
                     if (s.rezim == cz.promptlab.h3video.data.LongMmRezim.NAVAZANI) {
-                        return@runCatching prepisNavazani(client, zadani)
+                        return@odolne prepisNavazani(client, zadani)
                     }
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
                         ?: throw ComfyException(
@@ -4254,7 +4332,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
+                odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     // 12B enkodér i odvázaný model chtějí místo na grafice.
                     uklidPredPrepisem(client)

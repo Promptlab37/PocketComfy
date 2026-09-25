@@ -650,6 +650,10 @@ object Slovnik {
             "Four times the pixels and far more memory and time. " +
             "Off = around 1 megapixel like the other models on this card.",
         "napsáno %d" to "written %d",
+        "Server přepis ztratil (nejspíš se ComfyUI restartovalo). Zkus to znovu." to
+            "The server lost the rewrite (ComfyUI probably restarted). Try again.",
+        "Server je přes dvacet minut nedostupný. Zkontroluj počítač a Tailscale." to
+            "The server has been unreachable for over twenty minutes. Check the computer and Tailscale.",
         "Zapínám ComfyUI na počítači" to "Starting ComfyUI on the computer",
         "Počítač neodpovídá. Zkontroluj, že je zapnutý a přihlášený a že máš v telefonu zapnutý Tailscale." to
             "The computer does not respond. Check that it is on and logged in and that Tailscale is on in the phone.",

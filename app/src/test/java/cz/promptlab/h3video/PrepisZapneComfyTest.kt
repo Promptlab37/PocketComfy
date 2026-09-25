@@ -21,6 +21,8 @@ class PrepisZapneComfyTest {
         funkce.forEachIndexed { i, (od, jmeno) ->
             val telo = kod.substring(od, funkce.getOrNull(i + 1)?.first ?: kod.length)
             if ("RewriteState.Busy(" in telo && "zajistiComfy(" !in telo) chybi += jmeno
+            // Zamčený telefon nesmí přepis shodit (4.51): příprava jede přes odolne { }.
+            if ("RewriteState.Busy(" in telo && "odolne {" !in telo) chybi += "$jmeno (bez odolne)"
         }
         assertTrue("Bez zajištění ComfyUI: $chybi", chybi.isEmpty())
     }
