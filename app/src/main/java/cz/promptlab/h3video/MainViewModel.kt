@@ -4622,38 +4622,77 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Fotka k opravě se kopíruje bajt po bajtu — kvalita je tu všechno. */
+    /** Karta Oprava právě kopíruje vybranou fotku. */
+    private val _restoreNacita = MutableStateFlow(false)
+    val restoreNacita: StateFlow<Boolean> = _restoreNacita.asStateFlow()
+
+    /** Fotku se nepodařilo načíst — hláška pod výběrem. */
+    private val _restoreChyba = MutableStateFlow<String?>(null)
+    val restoreChyba: StateFlow<String?> = _restoreChyba.asStateFlow()
+
+    /**
+     * Výběr fotky na kartě Oprava.
+     *
+     * Do 4.45 se nepovedené načtení tiše zahodilo a karta nijak neukazovala,
+     * že fotku kopíruje — uživatel 25. 9. 2026 nahlásil, že se fotka přidala
+     * „až napodruhé". Typicky jde o fotku jen v cloudu, kterou telefon při
+     * prvním čtení teprve stahuje. Proto: viditelné načítání, druhý pokus
+     * jinou cestou (dekódování s otočením podle EXIF) a hláška, když ani ten
+     * nevyjde.
+     */
     fun pickRestoreImage(uri: Uri?) {
         if (uri == null) return
+        _restoreChyba.value = null
+        _restoreNacita.value = true
         viewModelScope.launch {
-            val vysledek = withContext(Dispatchers.IO) {
-                runCatching {
-                    val resolver = getApplication<android.app.Application>().contentResolver
-                    val ext = (android.webkit.MimeTypeMap.getSingleton()
-                        .getExtensionFromMimeType(resolver.getType(uri)) ?: "png").lowercase()
-                    restoreStore.dir().listFiles()?.forEach { it.delete() }
-                    if (ext in setOf("png", "jpg", "jpeg", "webp")) {
-                        val target = File(restoreStore.dir(), "zdroj.$ext")
-                        resolver.openInputStream(uri)?.use { input ->
-                            target.outputStream().use { input.copyTo(it) }
-                        } ?: return@runCatching null
-                        target.takeIf { it.length() > 0 }
-                    } else {
-                        // HEIC ze Samsungu (a jiné exotické formáty) server
-                        // nepřečte – překóduje se na JPEG včetně EXIF otočení.
-                        val bmp = ImageUtils.loadUpright(getApplication(), uri, 4096)
-                            ?: return@runCatching null
-                        val target = File(restoreStore.dir(), "zdroj.jpg")
-                        target.outputStream().use {
-                            bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it)
-                        }
-                        target
-                    }
-                }.getOrNull()
-            } ?: return@launch
-            val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(vysledek) }
+            val app = getApplication<android.app.Application>()
+            fun kopie(): File? = runCatching {
+                val resolver = app.contentResolver
+                val ext = (android.webkit.MimeTypeMap.getSingleton()
+                    .getExtensionFromMimeType(resolver.getType(uri)) ?: "").lowercase()
+                if (ext !in setOf("png", "jpg", "jpeg", "webp")) return@runCatching null
+                val target = File(restoreStore.dir(), "zdroj.$ext.tmp")
+                resolver.openInputStream(uri)?.use { input ->
+                    target.outputStream().use { input.copyTo(it) }
+                } ?: return@runCatching null
+                target.takeIf { it.length() > 0 && ImageUtils.loadFileThumb(it) != null }
+            }.getOrNull()
+            // HEIC ze Samsungu i cokoli, co se nedá zkopírovat 1:1: překódovat
+            // na JPEG včetně otočení podle EXIF.
+            fun prekodovani(): File? = runCatching {
+                val bmp = ImageUtils.loadUpright(app, uri, 4096) ?: return@runCatching null
+                val target = File(restoreStore.dir(), "zdroj.jpg.tmp")
+                target.outputStream().use {
+                    bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 95, it)
+                }
+                target.takeIf { it.length() > 0 }
+            }.getOrNull()
+
+            val docasny = withContext(Dispatchers.IO) {
+                kopie() ?: prekodovani() ?: run {
+                    // Cloudová fotka se mezitím mohla dostáhnout.
+                    kotlinx.coroutines.delay(1500)
+                    kopie() ?: prekodovani()
+                }
+            }
+            if (docasny == null) {
+                _restoreNacita.value = false
+                _restoreChyba.value = t(
+                    "Fotku se nepodařilo načíst. Když je jen v cloudu, stáhni ji nejdřív do telefonu."
+                )
+                return@launch
+            }
+            val (vysledek, thumb) = withContext(Dispatchers.IO) {
+                // Stará fotka se maže až teď, když je nová bezpečně načtená.
+                restoreStore.dir().listFiles()?.forEach { if (it != docasny) it.delete() }
+                val cil = File(restoreStore.dir(), docasny.name.removeSuffix(".tmp"))
+                docasny.renameTo(cil)
+                cil to ImageUtils.loadFileThumb(cil)
+            }
             // `copy`, ne nová scéna: zadání a LoRA má výběr fotky nechat být.
             _restore.value = _restore.value.copy(source = vysledek, thumb = thumb)
             restoreStore.save(_restore.value)
+            _restoreNacita.value = false
         }
     }
 

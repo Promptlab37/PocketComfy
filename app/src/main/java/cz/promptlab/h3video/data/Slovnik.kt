@@ -650,6 +650,9 @@ object Slovnik {
             "Four times the pixels and far more memory and time. " +
             "Off = around 1 megapixel like the other models on this card.",
         "napsáno %d" to "written %d",
+        "Načítám fotku…" to "Loading the photo…",
+        "Fotku se nepodařilo načíst. Když je jen v cloudu, stáhni ji nejdřív do telefonu." to
+            "The photo could not be loaded. If it is only in the cloud, download it to the phone first.",
         "Bez LoRA" to "No LoRA",
         "Vyber LoRA" to "Choose a LoRA",
         "neoznačený model" to "model not labelled",
