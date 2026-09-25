@@ -206,8 +206,12 @@ fun vstupUrcujePomer(druh: String, scene: AioScene): Boolean {
         "first", "key" -> true
         "refvideo" -> true
         "source" -> scene.mode == AioMode.EXTEND
-        "ref" -> scene.first.image == null &&
-            scene.refVideo == null &&
+        // První snímek sem nepatří: patří režimu „Z obrázku" a Reference ho
+        // nepoužívá. Karta si ho ale pamatuje i po přepnutí, a do 4.47 tak
+        // stará fotka na výšku zablokovala převzetí poměru z reference
+        // (25. 9. 2026: auto na šířku → video 640×960). Reference se navíc
+        // kotví jako snímek 0 (H3IdentityAnchor), plátno jí musí sedět.
+        "ref" -> scene.refVideo == null &&
             scene.refs.count { it.image != null } == 1
         else -> false
     }

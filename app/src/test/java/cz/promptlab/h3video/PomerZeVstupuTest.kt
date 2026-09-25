@@ -45,6 +45,17 @@ class PomerZeVstupuTest {
     }
 
     @Test
+    fun `zapamatovany prvni snimek z jineho rezimu referenci neblokuje`() {
+        // 25. 9. 2026: stará fotka na výšku v „Z obrázku" zablokovala poměr
+        // a auto na šířku vyšlo 640×960. Reference první snímek nepoužívá.
+        val s = scena(AioMode.REFERENCE).copy(
+            first = AioSlot(key = 1, image = foto),
+            refs = listOf(AioSlot(key = 1, image = foto)),
+        )
+        assertTrue(vstupUrcujePomer("ref", s))
+    }
+
+    @Test
     fun `pri vice referencich se na plátno nesaha`() {
         // Které z nich by mělo patřit? Hádat se nemá.
         val s = scena(AioMode.REFERENCE).copy(

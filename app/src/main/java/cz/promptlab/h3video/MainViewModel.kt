@@ -2680,6 +2680,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         updateAio { it.copy(mode = mode) }
         hlidejProfilKCeste()
         doplnReferencniZnacky()
+        prevezmiPomerJedineReference()
+    }
+
+    /** Zbyla v Referenci jediná fotka? Plátno podle ní (viz [prevezmiPomerZeVstupu]). */
+    private fun prevezmiPomerJedineReference() {
+        val s = _aio.value
+        if (s.mode != AioMode.REFERENCE) return
+        val jedina = s.refs.singleOrNull { it.image != null }?.image ?: return
+        prevezmiPomerZeVstupu("ref", jedina, video = false)
     }
 
     /**
@@ -2731,7 +2740,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         runCatching { aioStore.imageFile("ref", key).delete() }
         val left = s.refs.filterNot { it.key == key }
         s.copy(refs = left.ifEmpty { listOf(AioSlot(key = 1)) })
-    }
+    }.also { prevezmiPomerJedineReference() }
 
     fun addAioKey() = updateAio { s ->
         if (!s.canAddKey) s
@@ -2870,6 +2879,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 })
             }
         }
+        if (druh == "ref") prevezmiPomerJedineReference()
     }
 
     /**
