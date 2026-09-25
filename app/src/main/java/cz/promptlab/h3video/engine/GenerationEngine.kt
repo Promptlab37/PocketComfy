@@ -1237,6 +1237,10 @@ object GenerationEngine {
      */
     private suspend fun awaitServer(client: ComfyClient) {
         if (withContext(Dispatchers.IO) { client.isAlive() }) return
+        // Neodpovědělo na rychlý dotaz, ale podle spouštěče běží — je jen
+        // zavalené prací (dlouhé zvětšení apod.). Nezapínat a nečekat šest
+        // minut na odpověď: úloha se zařadí do fronty za tu běžící.
+        if (withContext(Dispatchers.IO) { client.launcherStav() } == "running") return
 
         // ComfyUI nestartuje samo – na počítači nic neběží, dokud si to appka
         // neřekne. Požádáme spouštěče; když neodpoví ani ten, je vypnutý celý

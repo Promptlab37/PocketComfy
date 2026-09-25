@@ -1899,6 +1899,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private suspend fun zajistiComfy(client: ComfyClient) {
         if (client.isAlive()) return
+        // Neodpovědělo na rychlý dotaz — ale to umí i ComfyUI zavalené
+        // dlouhou úlohou. Běží-li podle spouštěče, nic se nezapíná: zadání
+        // se zařadí do fronty a průběh ukáže, kolik úloh je před ním.
+        if (client.launcherStav() == "running") return
         _prubehPrepisu.value = PrubehPrepisu(faze = FazePrepisu.START)
         try {
             cekejNaComfy(client)

@@ -111,6 +111,22 @@ class ComfyClient(baseUrl: String) {
         pingClient.newCall(req).execute().use { it.isSuccessful }
     }.getOrDefault(false)
 
+    /**
+     * Co o ComfyUI ví spouštěč: `running`, `starting`, `stopped`, nebo null
+     * (spouštěč neodpovídá). Rozliší „ComfyUI je vypnuté" od „ComfyUI je
+     * zavalené prací a na rychlý dotaz nestihlo odpovědět" — 25. 9. 2026
+     * dělalo 18minutové zvětšení SeedVR2 přesně tohle a appka pak hlásila
+     * „Zapínám ComfyUI", ačkoli běželo.
+     */
+    fun launcherStav(): String? = runCatching {
+        val host = base.substringAfter("://").substringBefore(':')
+        val req = Request.Builder().url("http://$host:$LAUNCHER_PORT/status").build()
+        pingClient.newCall(req).execute().use { r ->
+            if (!r.isSuccessful) return@runCatching null
+            JSONObject(r.body!!.string()).optString("comfyui").ifBlank { null }
+        }
+    }.getOrNull()
+
     /** Běží na počítači aspoň spouštěč? Rozliší „počítač spí" od „ComfyUI stojí". */
     fun launcherAlive(): Boolean = runCatching {
         val host = base.substringAfter("://").substringBefore(':')
