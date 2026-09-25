@@ -164,9 +164,9 @@ fun loryProModel(model: InpaintModel, vse: List<String>): List<String> {
             val flux = jmeno.contains("flux", true) || jmeno.contains("-f1", true)
             flux && flux2Znaky.none { jmeno.contains(it, ignoreCase = true) }
         }
-        // Qwen Image 2.1 je nová architektura — nesedí na ni ani LoRA pro
-        // starší Qwen Image. Nabízet tu cokoli by znamenalo nabízet past.
-        InpaintModel.QWEN21 -> emptyList()
+        // Qwen Image 2.1 je nová architektura — LoRA pro starší Qwen Image
+        // na ni nesedí, nabízí se jen soubory označené pro 2.1.
+        InpaintModel.QWEN21 -> vse.filter { Qwen21Lora.soubor(it) }
     }.sorted()
 }
 

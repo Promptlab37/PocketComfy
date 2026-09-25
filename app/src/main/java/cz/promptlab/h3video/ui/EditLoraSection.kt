@@ -87,12 +87,17 @@ private fun ModelLoraSection(
     serad: (List<EditLoraFile>) -> List<EditLoraFile> = { it },
     poznamka: (EditLoraFile) -> String = { "" },
 ) {
-    var picker by rememberSaveable { mutableStateOf(false) }
-    var query by rememberSaveable { mutableStateOf("") }
-    var unknown by rememberSaveable(modelName) { mutableStateOf(false) }
     var confirm by remember(modelName) { mutableStateOf<String?>(null) }
-    val matching = catalog.files.filter { compatibility(it) == LoraCompatibility.MATCH }
+    val matching = serad(catalog.files.filter { compatibility(it) == LoraCompatibility.MATCH })
     val unclassified = catalog.files.filter { compatibility(it) == LoraCompatibility.UNKNOWN }
+    // Pro model nahoře; soubory bez označení modelu pod čarou — ty se
+    // potvrzují, protože na jiném modelu by graf spadl.
+    val volby = matching.map { f ->
+        val note = poznamka(f)
+        LoraVolba(f.name, poznamka = note, varovani = note.isNotBlank())
+    } + unclassified.mapIndexed { i, f ->
+        LoraVolba(f.name, poznamka = t("neoznačený model"), varovani = true, oddelit = i == 0)
+    }
 
     SectionCard(title = title,
         subtitle = t("Volba a síla se pamatují pro každý model zvlášť"),
@@ -102,14 +107,22 @@ private fun ModelLoraSection(
             }
         },
     ) {
-        OutlineButton(selected.name.ifBlank { t("Vybrat LoRA (nepovinné)") },
-            modifier = Modifier.fillMaxWidth(), color = Cyan,
-            icon = { Icon(Icons.Default.ExpandMore, null, Modifier.size(18.dp)) },
-            onClick = { picker = true })
+        LoraRozbalovaci(
+            popisek = t("LoRA"),
+            volby = volby,
+            vybrana = selected.name,
+            onVybrat = { name ->
+                when {
+                    name.isEmpty() -> select("", false)
+                    unclassified.any { it.name == name } -> confirm = name
+                    else -> select(name, false)
+                }
+            },
+        )
         if (selected.name.isNotBlank()) {
+            Spacer(Modifier.height(6.dp))
             LabeledSlider(t("Síla LoRA"), "%.2f".format(selected.strength), selected.strength,
                 0f..2f, onChange = strength)
-            TextButton(onClick = { select("", false) }) { Text(t("Bez doplňkové LoRA"), color = TextMid) }
         }
         if (catalog.loading) {
             LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp), color = Cyan)
@@ -117,69 +130,19 @@ private fun ModelLoraSection(
         } else if (catalog.error) {
             Text(t("Seznam LoRA se nepodařilo načíst. Zkontrolujte server a obnovte seznam."),
                 color = Amber, style = MaterialTheme.typography.bodySmall)
-        } else if (matching.isEmpty()) {
-            Text(t("Žádná LoRA s rozpoznaným základním modelem. Ve výběru lze přiřadit neoznačený soubor."),
-                color = TextMid, style = MaterialTheme.typography.bodySmall)
         }
         if (!catalog.loading && !catalog.error && selected.name.isNotBlank() && catalog.files.none { it.name == selected.name }) {
             Text(t("Vybraná LoRA na tomto serveru chybí. Obnovte seznam nebo vyberte jinou."),
                 color = Amber, style = MaterialTheme.typography.bodySmall)
         }
-        Spacer(Modifier.height(6.dp))
-        Text(t("Síla 0 LoRA vypne."),
-            color = TextLow, style = MaterialTheme.typography.bodySmall)
     }
 
-    if (picker) Dialog(onDismissRequest = { picker = false }) {
-        Surface(shape = RoundedCornerShape(24.dp), color = Surface1) {
-            Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
-                DarkTextField(query, { query = it }, placeholder = t("Hledat LoRA…"), minHeight = 48.dp, singleLine = true, onClear = { query = "" })
-                PillRow(listOf(false, true), unknown,
-                    label = { if (it) t("Neurčené") + " (${unclassified.size})" else t("Pro model") + " (${matching.size})" },
-                    onSelect = { unknown = it })
-                Text(if (unknown) t("U těchto souborů chybí označení modelu. Vyberte jen LoRA určenou pro aktuální model.")
-                    else t("Výběr podle základního modelu v metadatech nebo názvu souboru."),
-                    style = MaterialTheme.typography.bodySmall, color = TextMid)
-                val files = serad(
-                    (if (unknown) unclassified else matching).filter { it.name.contains(query.trim(), true) }
-                )
-                LazyColumn(Modifier.fillMaxWidth().heightIn(max = 300.dp)) {
-                    item {
-                        ListItem(headlineContent = { Text(t("Bez doplňkové LoRA")) },
-                            modifier = Modifier.clickable { select("", false); picker = false })
-                    }
-                    items(files, key = { it.name }) { file ->
-                        val note = poznamka(file)
-                        ListItem(headlineContent = { Text(file.name, style = MaterialTheme.typography.bodyMedium) },
-                            supportingContent = if (note.isBlank()) null else {
-                                { Text(note, style = MaterialTheme.typography.bodySmall, color = Amber) }
-                            },
-                            trailingContent = { if (selected.name == file.name) Icon(Icons.Default.Check, null, tint = Cyan) },
-                            modifier = Modifier.clickable {
-                                if (unknown) confirm = file.name
-                                else { select(file.name, false); picker = false }
-                            })
-                    }
-                    if (files.isEmpty()) item {
-                        Text(if (catalog.loading) t("Načítám LoRA a údaje o modelech…")
-                            else t("Seznam je prázdný. LoRA musí být uložená na serveru ve složce models/loras."),
-                            Modifier.padding(12.dp), style = MaterialTheme.typography.bodySmall, color = TextMid)
-                    }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = refresh, enabled = !catalog.loading) { Text(t("Obnovit")) }
-                    TextButton(onClick = { picker = false }) { Text(t("Zavřít")) }
-                }
-            }
-        }
-    }
     confirm?.let { name ->
         AlertDialog(onDismissRequest = { confirm = null }, title = { Text(t("Přiřadit LoRA k modelu?")) },
             text = { Text(t("U souboru %s nelze ověřit základní model. Použijte ho jen pokud je určený pro %s.")
                 .format(name, modelName)) },
             confirmButton = { TextButton(onClick = {
-                select(name, true); confirm = null; picker = false
+                select(name, true); confirm = null
             }) { Text(t("Použít pro tento model")) } },
             dismissButton = { TextButton(onClick = { confirm = null }) { Text(t("Zrušit")) } })
     }

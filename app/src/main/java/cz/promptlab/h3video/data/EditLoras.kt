@@ -125,13 +125,36 @@ object LoraTrigger {
         ).replace(Regex("," + MEZERY + ","), ", ").trim().trim(',').trim()
 }
 
+/**
+ * LoRA pro **Qwen Image 2.1**. Starý Qwen-Image (2509/2511/2512) má 60 bloků,
+ * 2.1 jen 32 — soubory se navzájem nenačtou. Soubory pro 2.1 nesou v metadatech
+ * `ss_base_model_version = qwen_image_2` (ověřeno na třech z CivitAI, 25. 9. 2026),
+ * v názvu bývá „qwen_image_2.1" nebo „qwen2-1". Pozor: „qwen_image_2512" začíná
+ * stejně, proto za dvojkou nesmí následovat další číslice kromě jedničky.
+ */
+object Qwen21Lora {
+    private val VZOR = Regex("qwenimage2(?![02-9])|qwen21(?![0-9])")
+
+    /** [normalizovany] = malá písmena bez interpunkce. */
+    fun je(normalizovany: String): Boolean = VZOR.containsMatchIn(normalizovany)
+
+    /** Detailer má na kartách vlastní vypínač — do nabídky nepatří. */
+    fun jeDetailer(normalizovany: String): Boolean = "detailer" in normalizovany && je(normalizovany)
+
+    /** Podle jména souboru (karta Domalovat metadata nečte). */
+    fun soubor(jmeno: String): Boolean {
+        val n = jmeno.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9]"), "")
+        return je(n) && !jeDetailer(n)
+    }
+}
+
 /** Metadata mají přednost před názvem. Neoznačený soubor vyžaduje přiřazení uživatelem. */
 object EditLoras {
     private fun normalized(text: String) = text.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9]"), "")
 
     fun compatibility(motor: EditMotor, name: String, metadata: JSONObject? = null): LoraCompatibility {
         val filename = normalized(name)
-        if (filename.contains("krea2identityedit")) {
+        if (filename.contains("krea2identityedit") || Qwen21Lora.jeDetailer(filename)) {
             return LoraCompatibility.BUILT_IN
         }
         // Pouze údaje o základním modelu, nikdy popis nebo trénovací prompty.
@@ -148,11 +171,14 @@ object EditLoras {
         if (value.isBlank()) return LoraCompatibility.UNKNOWN
         val family = when {
             "krea2" in value -> EditMotor.KREA2
-            "qwenimage21" in value || "qwenimage2.1" in value -> EditMotor.QWEN21
+            Qwen21Lora.je(value) -> EditMotor.QWEN21
             "klein" in value && "4b" in value -> return LoraCompatibility.INCOMPATIBLE
             "klein" in value && "9b" in value -> EditMotor.KLEIN
-            // Označení Klein bez velikosti nebo obecné Qwen/FLUX.2 nestačí.
-            "klein" in value || "qwen" in value || "flux2" in value -> return LoraCompatibility.UNKNOWN
+            // Qwen, který není 2.1, je starý Qwen-Image (60 bloků) — na žádný
+            // z motorů karty nesedí.
+            "qwen" in value -> return LoraCompatibility.INCOMPATIBLE
+            // Označení Klein bez velikosti nebo obecné FLUX.2 nestačí.
+            "klein" in value || "flux2" in value -> return LoraCompatibility.UNKNOWN
             listOf("flux1", "fluxdev", "fluxfill", "fluxkontext", "sdxl", "sd15", "sd3", "zimage", "minimax", "wan2")
                 .any { it in value } -> return LoraCompatibility.INCOMPATIBLE
             else -> return LoraCompatibility.UNKNOWN

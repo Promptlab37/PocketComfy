@@ -65,7 +65,8 @@ class EditLoraTest {
         assertEquals(LoraCompatibility.MATCH, EditLoras.compatibility(EditMotor.KREA2, "Krea_2/style.safetensors"))
         assertEquals(LoraCompatibility.MATCH, EditLoras.compatibility(EditMotor.KLEIN, "Flux-2-Klein-9B/style.safetensors"))
         assertEquals(LoraCompatibility.INCOMPATIBLE, EditLoras.compatibility(EditMotor.KLEIN, "klein-4b.safetensors"))
-        assertEquals(LoraCompatibility.UNKNOWN, EditLoras.compatibility(EditMotor.KREA2, "qwen_edit.safetensors"))
+        // starý Qwen-Image (ne 2.1) nesedí na žádný motor karty
+        assertEquals(LoraCompatibility.INCOMPATIBLE, EditLoras.compatibility(EditMotor.KREA2, "qwen_edit.safetensors"))
         assertEquals(LoraCompatibility.UNKNOWN, EditLoras.compatibility(EditMotor.KLEIN, "portrait.safetensors"))
         assertEquals(LoraCompatibility.UNKNOWN, EditLoras.compatibility(EditMotor.KLEIN, "klein_portrait.safetensors"))
     }

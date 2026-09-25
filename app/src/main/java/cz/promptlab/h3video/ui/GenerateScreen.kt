@@ -1110,11 +1110,10 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     ) { v -> vm.update { it.copy(qwen21Dvak = v) } }
                 }
             }
-            // Starý výběr LoRA na Qwen 2.1 nesedí (32 vrstev proti 60 u starého
-            // Qwen-Image). Má ale vlastní LoRA Detailer — ta je tady, kde LoRA
-            // uživatel hledá; schovaná pod 2K ji nenašel.
-            if (vybranyModel != T2iModel.QWEN21) ImageLoraSection(vm, params)
-            else SectionCard(title = t("LoRA")) {
+            // Nabídka se řídí modelem (u Qwen 2.1 jen soubory pro 2.1). Detailer
+            // má vlastní vypínač a jde s vybranými LoRA dohromady.
+            ImageLoraSection(vm, params)
+            if (vybranyModel == T2iModel.QWEN21) SectionCard(title = t("LoRA Detailer")) {
                 ToggleRow(
                     t("LoRA Detailer"),
                     "",
@@ -1133,9 +1132,8 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
 private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
     val available by vm.availableLoras.collectAsStateWithLifecycle()
     val loraError by vm.loraError.collectAsStateWithLifecycle()
-    var picking by remember { mutableStateOf(false) }
-    var showAll by remember { mutableStateOf(false) }
-    var swapping by remember { mutableStateOf(false) }
+    // Seznam ze serveru hned, ať nabídky nejsou při prvním rozbalení prázdné.
+    LaunchedEffect(Unit) { vm.loadLoras() }
 
     val active = params.extraLoras.count { it.enabled }
     // Karta 3 kroky má vlastní zrychlovací LoRA napevno v předloze — na ní ten
@@ -1188,49 +1186,29 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
                         style = MaterialTheme.typography.bodySmall, color = TextLow
                     )
                     Spacer(Modifier.height(8.dp))
-                    Text(
-                        if (swapping) t("Zrušit výměnu") else t("Vyměnit Turbo LoRA"),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Cyan,
-                        modifier = Modifier
-                            .clickable { swapping = !swapping; if (swapping) vm.loadLoras() }
-                            .padding(vertical = 6.dp)
+                    // Nejdřív ty, o kterých víme, na jaký shift jsou trénované –
+                    // u nich se shift i kroky dosadí samy.
+                    LoraRozbalovaci(
+                        popisek = t("Turbo LoRA"),
+                        volby = TURBO.KNOWN.map { known ->
+                            val onServer = available.isEmpty() || available.contains(known.file)
+                            LoraVolba(
+                                known.file,
+                                nazev = known.label,
+                                poznamka = if (onServer)
+                                    "${known.steps} kroků · shift %.2f".format(
+                                        java.util.Locale.US, known.shiftVideo
+                                    )
+                                else t("Na serveru není – nejdřív ji stáhni do models/loras"),
+                                varovani = !onServer,
+                                povoleno = onServer,
+                            )
+                        },
+                        vybrana = params.turboLora,
+                        onVybrat = { vm.setTurboLora(it) },
+                        prazdna = null,
+                        otevreno = { vm.loadLoras() },
                     )
-                    AnimatedVisibility(swapping) {
-                        Column {
-                            // Nejdřív ty, o kterých víme, na jaký shift jsou trénované –
-                            // u nich se shift i kroky dosadí samy.
-                            TURBO.KNOWN.forEach { known ->
-                                val onServer = available.isEmpty() || available.contains(known.file)
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable(enabled = onServer) {
-                                            vm.setTurboLora(known.file); swapping = false
-                                        }
-                                        .padding(vertical = 9.dp, horizontal = 8.dp)
-                                ) {
-                                    Column {
-                                        Text(
-                                            known.label,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (onServer) TextHi else TextLow
-                                        )
-                                        Text(
-                                            if (onServer)
-                                                "${known.steps} kroků · shift %.2f".format(
-                                                    java.util.Locale.US, known.shiftVideo
-                                                )
-                                            else t("Na serveru není – nejdřív ji stáhni do models/loras"),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = if (onServer) TextLow else Amber
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
 
@@ -1279,76 +1257,27 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
             }
 
             Spacer(Modifier.height(12.dp))
-            OutlineButton(
-                t("Přidat LoRA"),
-                modifier = Modifier.fillMaxWidth(),
-                color = Cyan,
-            ) { picking = true; vm.loadLoras() }
-
-            if (picking) {
-                Spacer(Modifier.height(10.dp))
-                when {
-                    loraError != null -> Text(
-                        loraError!!, style = MaterialTheme.typography.bodySmall, color = Amber
-                    )
-                    available.isEmpty() -> Text(
-                        t("Načítám seznam ze serveru…"),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
-                    )
-                    else -> {
-                        // Ve složce jsou i LoRA pro jiné modely; ty by na H3 nesedly,
-                        // proto se ve výchozím stavu nabízejí jen minimax/h3. „h3" se
-                        // hledá jako samostatný kus názvu – jinak by prošlo i „epoch35".
-                        val h3 = Regex("(^|[^a-z0-9])h3([^a-z0-9]|$)", RegexOption.IGNORE_CASE)
-                        val filtered = available.filter {
-                            showAll || it.contains("minimax", true) || h3.containsMatchIn(it)
-                        }.filterNot { it == params.turboLora }
-                            .filterNot { n -> params.extraLoras.any { it.name == n } }
-                        Column {
-                            filtered.take(30).forEach { n ->
-                                Box(
-                                    Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable { vm.addLora(n); picking = false }
-                                        .padding(vertical = 10.dp, horizontal = 8.dp)
-                                ) {
-                                    Text(
-                                        n.removeSuffix(".safetensors"),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = TextHi, maxLines = 2
-                                    )
-                                }
-                            }
-                            if (filtered.isEmpty()) {
-                                Text(
-                                    t("Nic dalšího pro H3 na serveru není."),
-                                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                                )
-                            }
-                            Spacer(Modifier.height(6.dp))
-                            Row {
-                                Text(
-                                    if (showAll) "Jen pro H3" else t("Zobrazit všechny LoRA"),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Cyan,
-                                    modifier = Modifier
-                                        .clickable { showAll = !showAll }
-                                        .padding(6.dp)
-                                )
-                                Spacer(Modifier.weight(1f))
-                                Text(
-                                    t("Zrušit"),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = TextLow,
-                                    modifier = Modifier
-                                        .clickable { picking = false }
-                                        .padding(6.dp)
-                                )
-                            }
-                        }
-                    }
-                }
+            // Ve složce jsou i LoRA pro jiné modely; ty by na H3 nesedly, proto
+            // jsou minimax/h3 nahoře a zbytek pod čarou s poznámkou. „h3" se
+            // hledá jako samostatný kus názvu – jinak by prošlo i „epoch35".
+            val h3 = Regex("(^|[^a-z0-9])h3([^a-z0-9]|$)", RegexOption.IGNORE_CASE)
+            val volne = available.filterNot { it == params.turboLora }
+                .filterNot { n -> params.extraLoras.any { it.name == n } }
+            val proH3 = volne.filter { it.contains("minimax", true) || h3.containsMatchIn(it) }
+            val ostatni = volne - proH3.toSet()
+            LoraRozbalovaci(
+                popisek = t("Přidat LoRA"),
+                volby = proH3.map { LoraVolba(it) } + ostatni.mapIndexed { i, n ->
+                    LoraVolba(n, poznamka = t("jiný model než H3"), varovani = true, oddelit = i == 0)
+                },
+                vybrana = "",
+                onVybrat = { if (it.isNotEmpty()) vm.addLora(it) },
+                prazdna = null,
+                otevreno = { vm.loadLoras() },
+            )
+            loraError?.let {
+                Spacer(Modifier.height(6.dp))
+                Text(it, style = MaterialTheme.typography.bodySmall, color = Amber)
             }
         }
     }

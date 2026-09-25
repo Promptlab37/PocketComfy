@@ -112,6 +112,8 @@ object Qwen21EditBuilder {
             wf.inputs(N_TEXT).put("images.image_${index + 1}", link(nodeId))
         }
         if (scene.qwen21Detailer) zapojDetailer(wf)
+        // Vybraná LoRA jde před KV cache — za Detailer, když je zapnutý.
+        EditLoraBuilder.attach(wf, scene, N_CACHE)
         return wf
     }
 

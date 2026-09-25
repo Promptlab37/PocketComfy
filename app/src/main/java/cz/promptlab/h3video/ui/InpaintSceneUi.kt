@@ -225,14 +225,45 @@ fun InpaintSection(vm: MainViewModel) {
     LaunchedEffect(Unit) { vm.refreshInpaintLoras() }
     val vsechnyLory by vm.inpaintLoras.collectAsStateWithLifecycle()
     val lory = vm.inpaintLoraNabidka(scene.model, vsechnyLory)
+    // Rozšíření jede vždy na Qwen 2.1 — nabídka podle něj, ne podle modelu
+    // vybraného pro domalování.
+    val loryRozsireni = vm.inpaintLoraNabidka(InpaintModel.QWEN21, vsechnyLory)
+
+    @Composable
+    fun LoraKarta(nabidka: List<String>) = SectionCard(
+        title = t("Doplňková LoRA"),
+        subtitle = if (nabidka.isEmpty()) t("Na serveru není žádná LoRA pro tenhle model")
+        else t("Pomůže tam, kde model sám tápe — třeba na anatomii"),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            LoraRozbalovaci(
+                popisek = t("LoRA"),
+                volby = nabidka.map { LoraVolba(it) },
+                vybrana = scene.lora.takeIf { it in nabidka }.orEmpty(),
+                onVybrat = { vm.setInpaintLora(it) },
+                otevreno = { vm.refreshInpaintLoras() },
+            )
+            if (scene.lora.isNotBlank() && scene.lora in nabidka) {
+                LabeledSlider(
+                    label = t("Síla LoRA"),
+                    value = "%.2f".format(scene.loraSila),
+                    position = scene.loraSila,
+                    range = 0.2f..1.4f,
+                    onChange = { vm.setInpaintLoraSila((it * 20).roundToInt() / 20f) },
+                    note = t("Kolem 0,8–1,0 bývá nejjistější; víc už deformuje okolí."),
+                )
+            }
+        }
+    }
+    if (!masku) LoraKarta(loryRozsireni)
 
     // U rozšíření se model nevybírá — vlastní předlohu má jen Qwen 2.1.
     if (masku) SkladaciSekce(
         title = t("Model a doladění"),
         souhrn = scene.model.title +
-            // U Qwenu LoRA neexistuje — uložená volba z jiného modelu by
-            // ve shrnutí strašila, i když ji graf vůbec nedostane.
-            (if (scene.lora.isNotBlank() && scene.model != InpaintModel.QWEN21) " · LoRA" else "") +
+            // Jen když LoRA k modelu opravdu patří — volbu z jiného modelu
+            // graf nedostane a ve shrnutí by strašila.
+            (if (scene.lora in lory) " · LoRA" else "") +
             (if (scene.model == InpaintModel.FILL && scene.sila < 1f)
                 " · síla %.2f".format(scene.sila) else ""),
         klic = "nastaveni-inpaint",
@@ -258,31 +289,7 @@ fun InpaintSection(vm: MainViewModel) {
         // Základní modely mají o některých motivech jen mlhavou představu —
         // hlavně o anatomii. LoRA trénovaná přímo na to je jediné, co s tím
         // spolehlivě pohne; musí ale patřit ke stejné rodině jako model.
-        if (scene.model != InpaintModel.QWEN21) SectionCard(
-            title = t("Doplňková LoRA"),
-            subtitle = if (lory.isEmpty())
-                t("Na serveru není žádná LoRA pro tenhle model")
-            else t("Pomůže tam, kde model sám tápe — třeba na anatomii")
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                PillRow(
-                    items = listOf("") + lory,
-                    selected = scene.lora,
-                    label = { if (it.isEmpty()) t("Žádná") else it.substringBeforeLast(".") },
-                    onSelect = { vm.setInpaintLora(it) },
-                )
-                if (scene.lora.isNotBlank()) {
-                    LabeledSlider(
-                        label = t("Síla LoRA"),
-                        value = "%.2f".format(scene.loraSila),
-                        position = scene.loraSila,
-                        range = 0.2f..1.4f,
-                        onChange = { vm.setInpaintLoraSila((it * 20).roundToInt() / 20f) },
-                        note = t("Kolem 0,8–1,0 bývá nejjistější; víc už deformuje okolí."),
-                    )
-                }
-            }
-        }
+        LoraKarta(lory)
 
         if (scene.model == InpaintModel.FILL) {
             SectionCard(

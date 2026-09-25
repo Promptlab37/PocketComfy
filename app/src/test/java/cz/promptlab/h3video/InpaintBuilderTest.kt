@@ -327,6 +327,7 @@ class InpaintBuilderTest {
     }
 
     /** Na Qwen 2.1 nesedí žádná LoRA — karta žádnou nenabízí a graf žádnou nemá. */
+    /** Qwen 2.1 bere jen LoRA pro 2.1 (viz Qwen21LoraTest) — cizí soubor graf nedostane. */
     @Test fun `qwen 21 nema lora`() {
         assertEquals(emptyList<String>(), cz.promptlab.h3video.data.loryProModel(
             InpaintModel.QWEN21,

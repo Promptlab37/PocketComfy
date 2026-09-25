@@ -148,6 +148,8 @@ object InpaintBuilder {
         )
         if (model == InpaintModel.QWEN21) {
             wf.inputs(N_SAMPLER).put("seed", seed)
+            // Jen LoRA pro 2.1 — starý Qwen-Image (60 bloků) by graf shodil.
+            if (cz.promptlab.h3video.data.Qwen21Lora.soubor(lora)) zapojLoraQwen21(wf, lora, loraSila)
             // Pod maskou má vzniknout obsah ze zadání, ne dokreslení toho,
             // co tam bylo. Sílu karta u tohohle modelu ani nenabízí.
             wf.inputs(N_SAMPLER).put("denoise", 1.0)
@@ -189,6 +191,31 @@ object InpaintBuilder {
             }
         }
         return wf
+    }
+
+    /** LoRA pro Qwen 2.1 mezi načtený model a jeho KV cache. */
+    const val N_LORA_QWEN21 = "6"
+
+    /**
+     * Qwen 2.1 (domalování i rozšíření mají stejná čísla uzlů): UNETLoader 1
+     * → QwenImage21Cache 4. LoRA se vkládá mezi ně; bez ní se graf nezmění.
+     */
+    fun zapojLoraQwen21(wf: JSONObject, lora: String, sila: Float) {
+        if (lora.isBlank() || sila <= 0f) return
+        wf.put(
+            N_LORA_QWEN21,
+            JSONObject()
+                .put("class_type", "LoraLoaderModelOnly")
+                .put(
+                    "inputs",
+                    JSONObject()
+                        .put("model", JSONArray().put("1").put(0))
+                        .put("lora_name", lora)
+                        .put("strength_model", sila.toDouble()),
+                )
+                .put("_meta", JSONObject().put("title", "Doplňková LoRA")),
+        )
+        wf.inputs("4").put("model", JSONArray().put(N_LORA_QWEN21).put(0))
     }
 
     /**
@@ -311,6 +338,9 @@ object InpaintBuilder {
         val wf = JSONObject(template)
         wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
         wf.inputs(N_TEXT).put("prompt", zadaniRozsireni(scene.prompt, scene.smery))
+        // Rozšíření jede vždy na Qwen 2.1 — projde jen LoRA pro 2.1.
+        if (cz.promptlab.h3video.data.Qwen21Lora.soubor(scene.lora))
+            zapojLoraQwen21(wf, scene.lora, scene.loraSila)
         val okraje = listOf(
             okrajPx(vyska, scene.procent, Smer.NAHORU in scene.smery),
             okrajPx(vyska, scene.procent, Smer.DOLU in scene.smery),

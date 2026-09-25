@@ -967,8 +967,11 @@ object GenerationEngine {
             inpaintScene != null ->
                 InpaintBuilder.build(
                     app, inpaintScene.model, inpaintScene.prompt, seed, names,
-                    lora = if (inpaintScene.model == cz.promptlab.h3video.data.InpaintModel.QWEN21)
-                        "" else inpaintScene.lora,
+                    // Jen LoRA pro zvolený model — volba z jiného modelu by
+                    // graf shodila (jiná architektura).
+                    lora = inpaintScene.lora.takeIf {
+                        cz.promptlab.h3video.data.loryProModel(inpaintScene.model, listOf(it)).isNotEmpty()
+                    }.orEmpty(),
                     loraSila = inpaintScene.loraSila,
                     sila = inpaintScene.sila,
                 )

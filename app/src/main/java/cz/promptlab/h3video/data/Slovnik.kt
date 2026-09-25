@@ -650,6 +650,10 @@ object Slovnik {
             "Four times the pixels and far more memory and time. " +
             "Off = around 1 megapixel like the other models on this card.",
         "napsáno %d" to "written %d",
+        "Bez LoRA" to "No LoRA",
+        "Vyber LoRA" to "Choose a LoRA",
+        "neoznačený model" to "model not labelled",
+        "jiný model než H3" to "not an H3 model",
         "Posílám zadání na server" to "Sending the prompt to the server",
         "Čekám ve frontě serveru — před tebou %d" to "Waiting in the server queue — %d ahead of you",
         "Načítám jazykový model" to "Loading the language model",

@@ -212,11 +212,10 @@ fun ImageEditSection(vm: MainViewModel) {
         }
     }
 
-    // Qwen 2.1 je nová architektura. LoRA pro jiné modely na ni nesedí.
-    if (scene.motor != EditMotor.QWEN21) EditLoraSection(vm, scene)
-    // Qwen 2.1 má jedinou LoRA — Detailer. Patří sem, kde je u ostatních
-    // motorů výběr LoRA; v nastavení Qwenu ji uživatel nenašel.
-    else SectionCard(title = t("LoRA")) {
+    // Nabídka podle motoru: u Qwen 2.1 jen soubory pro 2.1 (32 bloků).
+    EditLoraSection(vm, scene)
+    // Detailer má u Qwen 2.1 vlastní vypínač a jde se vybranou LoRA dohromady.
+    if (scene.motor == EditMotor.QWEN21) SectionCard(title = t("LoRA Detailer")) {
         EditToggleRow(
             t("LoRA Detailer"),
             "",

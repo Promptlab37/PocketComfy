@@ -13,6 +13,7 @@ object ImageLoras {
         val metadata = file.metadata?.let { m -> listOf("ss_base_model_version", "ss_sd_model_name",
             "modelspec.architecture", "modelspec.implementation", "base_model", "base_model_name_or_path")
             .mapNotNull { m.optString(it).takeIf(String::isNotBlank) }.joinToString(" ") }.orEmpty()
+        if (Qwen21Lora.jeDetailer(norm(file.name))) return LoraCompatibility.BUILT_IN
         val fromMetadata = classify(model, norm(metadata))
         return if (fromMetadata != LoraCompatibility.UNKNOWN) fromMetadata else classify(model, norm(file.name))
     }
@@ -23,11 +24,17 @@ object ImageLoras {
             "ernie" in value -> "ernie"
             ("klein" in value && "4b" in value) || "f2k4b" in value -> "klein4"
             ("klein" in value && "9b" in value) || "f2k9b" in value -> "klein9"
+            Qwen21Lora.je(value) -> "qwen21"
             listOf("qwen", "krea", "minimax", "wan", "sdxl", "sd15", "flux1", "fluxdev", "fluxkontext")
                 .any { it in value } -> "other"
             else -> return LoraCompatibility.UNKNOWN
         }
-        val expected = if (model.zRodinyZImage) "zimage" else if (model == T2iModel.KLEIN) "klein9" else "ernie"
+        val expected = when {
+            model.zRodinyZImage -> "zimage"
+            model == T2iModel.KLEIN -> "klein9"
+            model == T2iModel.QWEN21 -> "qwen21"
+            else -> "ernie"
+        }
         return if (family == expected) LoraCompatibility.MATCH else LoraCompatibility.INCOMPATIBLE
     }
 
