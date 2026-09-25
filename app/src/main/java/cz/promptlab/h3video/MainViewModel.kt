@@ -1,5 +1,7 @@
 package cz.promptlab.h3video
 
+import cz.promptlab.h3video.comfy.nabidka
+import cz.promptlab.h3video.comfy.nabidkaArr
 import cz.promptlab.h3video.data.EditLora
 import cz.promptlab.h3video.data.ImageLoras
 
@@ -2015,7 +2017,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                 "překladač nepojede.",
                         )
                     val nabidka = spec.optJSONObject("input")?.optJSONObject("required")
-                        ?.optJSONArray("model")?.optJSONArray(0)
+                        ?.nabidkaArr("model")
                         ?: throw ComfyException("chybi model", "Uzel nenabízí žádný model.")
                     val model = ImagePromptBuilder.vyberModel(
                         (0 until nabidka.length()).map { nabidka.getString(it) }
@@ -2076,7 +2078,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             "Server nemá uzly llama.cpp — bez nich prompt vylepšit nejde.",
                         )
                     val nabidka = spec.getJSONObject("input").getJSONObject("required")
-                        .getJSONArray("model").getJSONArray(0)
+                        .nabidkaArr("model")
                     val model = ImagePromptBuilder.vyberModel(
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
@@ -2133,7 +2135,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             "Server nemá uzly llama.cpp — bez nich prompt vylepšit nejde.",
                         )
                     val nabidka = spec.getJSONObject("input").getJSONObject("required")
-                        .getJSONArray("model").getJSONArray(0)
+                        .nabidkaArr("model")
                     val model = ImagePromptBuilder.vyberModel(
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
@@ -2144,7 +2146,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     // jen svůj projektor. Když na serveru není, jede se dál
                     // naslepo z textu; to je pořád lepší než spadnout.
                     val mmprojNabidka = spec.getJSONObject("input").getJSONObject("required")
-                        .getJSONArray("mmproj").getJSONArray(0)
+                        .nabidkaArr("mmproj")
                     val mmproj = ImagePromptBuilder.vyberMmproj(
                         model,
                         (0 until mmprojNabidka.length()).map { mmprojNabidka.getString(it) },
@@ -2304,8 +2306,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             )
         val req = spec.getJSONObject("input").getJSONObject("required")
         fun volby(klic: String): List<String> {
-            val pole = req.optJSONArray(klic)?.optJSONArray(0) ?: return emptyList()
-            return (0 until pole.length()).map { pole.getString(it) }
+            return req.nabidka(klic)
         }
         val captioner = H3RefWriteBuilder.vyberOdblokovany(
             volby("caption_model"), H3RefWriteBuilder.CAPTIONER_ODVAZANY,
@@ -2369,14 +2370,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                 "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
                         )
                     val req = spec.getJSONObject("input").getJSONObject("required")
-                    val nabidka = req.getJSONArray("model").getJSONArray(0)
+                    val nabidka = req.nabidkaArr("model")
                     val model = PromptRewriteBuilder.vyberModel(
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
                         "zadny model",
                         "Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM.",
                     )
-                    val rozliseniEnum = req.getJSONArray("resolution").getJSONArray(0)
+                    val rozliseniEnum = req.nabidkaArr("resolution")
                     val rozliseni = (0 until rozliseniEnum.length())
                         .map { rozliseniEnum.getString(it) }
                         .let { en ->
@@ -2442,7 +2443,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                 "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
                         )
                     val req = spec.getJSONObject("input").getJSONObject("required")
-                    val nabidka = req.getJSONArray("model").getJSONArray(0)
+                    val nabidka = req.nabidkaArr("model")
                     val model = PromptRewriteBuilder.vyberModel(
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
@@ -2471,7 +2472,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         else -> "T2VA"
                     }
                     // Poměr stran a délka z toho, co má uživatel na kartě.
-                    val rozliseniEnum = req.getJSONArray("resolution").getJSONArray(0)
+                    val rozliseniEnum = req.nabidkaArr("resolution")
                     val rozliseni = (0 until rozliseniEnum.length())
                         .map { rozliseniEnum.getString(it) }
                         .let { en ->
@@ -3633,7 +3634,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             "Server nemá uzly llama.cpp — bez nich se zadání navázání přepsat nedá.",
         )
         val nabidka = spec.getJSONObject("input").getJSONObject("required")
-            .getJSONArray("model").getJSONArray(0)
+            .nabidkaArr("model")
             .let { a -> (0 until a.length()).map { a.getString(it) } }
         val model = ImagePromptBuilder.vyberModel(nabidka) ?: throw ComfyException(
             "zadny model",
@@ -3966,7 +3967,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                 "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
                         )
                     val req = spec.getJSONObject("input").getJSONObject("required")
-                    val nabidka = req.getJSONArray("model").getJSONArray(0)
+                    val nabidka = req.nabidkaArr("model")
                     val model = PromptRewriteBuilder.vyberModel(
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
@@ -3976,7 +3977,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val fotka = s.reference.firstOrNull()?.soubor?.takeIf { it.exists() }
                         ?.takeIf { s.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI }
                     val nahrana = fotka?.let { client.uploadImage(it.readBytes(), "rw_longmm.png") }
-                    val rozliseniEnum = req.getJSONArray("resolution").getJSONArray(0)
+                    val rozliseniEnum = req.nabidkaArr("resolution")
                     val pomer = (0 until rozliseniEnum.length()).map { rozliseniEnum.getString(it) }
                         .let { en ->
                             en.firstOrNull { it == s.pomer.kod } ?: en.firstOrNull { it == "16:9" }
@@ -4104,7 +4105,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         )
         fun nabidka(pole: String): List<String> {
             val a = spec.getJSONObject("input").getJSONObject("required")
-                .getJSONArray(pole).getJSONArray(0)
+                .nabidkaArr(pole)
             return (0 until a.length()).map { a.getString(it) }
         }
         val model = ImagePromptBuilder.vyberModel(nabidka("model")) ?: throw ComfyException(

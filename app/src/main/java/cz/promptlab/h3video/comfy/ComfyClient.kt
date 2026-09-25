@@ -263,7 +263,7 @@ class ComfyClient(baseUrl: String) {
             val arr = JSONObject(r.body!!.string())
                 .getJSONObject("LoraLoaderModelOnly")
                 .getJSONObject("input").getJSONObject("required")
-                .getJSONArray("lora_name").getJSONArray(0)
+                .nabidkaArr("lora_name")
             return (0 until arr.length()).map { arr.getString(it) }
         }
     }
@@ -279,7 +279,7 @@ class ComfyClient(baseUrl: String) {
             val arr = JSONObject(r.body!!.string())
                 .getJSONObject("UNETLoader")
                 .getJSONObject("input").getJSONObject("required")
-                .getJSONArray("unet_name").getJSONArray(0)
+                .nabidkaArr("unet_name")
             return (0 until arr.length()).map { arr.getString(it) }
         }
     }
@@ -297,7 +297,7 @@ class ComfyClient(baseUrl: String) {
     fun unetGgufNames(): List<String> = runCatching {
         val spec = objectInfo("UnetLoaderGGUF") ?: return emptyList()
         val arr = spec.getJSONObject("input").getJSONObject("required")
-            .getJSONArray("unet_name").getJSONArray(0)
+            .nabidkaArr("unet_name")
         (0 until arr.length()).map { arr.getString(it) }
     }.getOrDefault(emptyList())
 
@@ -315,7 +315,7 @@ class ComfyClient(baseUrl: String) {
     fun latentNames(): List<String> = runCatching {
         val spec = objectInfo("MiniMaxH3EasyLoadLatent_SatoDive") ?: return emptyList()
         val arr = spec.getJSONObject("input").getJSONObject("required")
-            .getJSONArray("latent_file").getJSONArray(0)
+            .nabidkaArr("latent_file")
         // Dokud nic uloženého není, vrací uzel jedinou položku v závorce
         // („(none saved yet)"). Není to název souboru a do nabídky nepatří.
         (0 until arr.length()).map { arr.getString(it) }.filterNot { it.startsWith("(") }

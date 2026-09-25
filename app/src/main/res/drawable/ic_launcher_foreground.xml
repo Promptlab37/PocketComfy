@@ -1,36 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- PocketComfy: play trojuhelnik slozeny z uzlu grafu ComfyUI, jiskra AI. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- prstenec -->
+    <!-- draty mezi uzly -->
     <path
-        android:pathData="M54,25 m-21,0 a21,21 0 1,0 42,0 a21,21 0 1,0 -42,0"
-        android:strokeWidth="0" />
-    <group>
-        <path
-            android:pathData="M54,33 m-19,0 a19,19 0 1,1 38,0 a19,19 0 1,1 -38,0"
-            android:strokeColor="#7C5CFF"
-            android:strokeWidth="5"
-            android:strokeLineCap="round" />
-        <path
-            android:pathData="M54,52 a19,19 0 0,1 13.4,-32.4"
-            android:strokeColor="#22D3EE"
-            android:strokeWidth="5"
-            android:strokeLineCap="round" />
-    </group>
+        android:pathData="M40,33 L40,75 L77,54 Z"
+        android:strokeWidth="6.5"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient android:type="linear"
+                android:startX="40" android:startY="33"
+                android:endX="77" android:endY="64"
+                android:startColor="#7C5CFF" android:endColor="#22D3EE" />
+        </aapt:attr>
+    </path>
 
-    <!-- play uprostřed -->
-    <path
-        android:pathData="M49,26 L62,33 L49,40 Z"
-        android:fillColor="#E8E8F5" />
+    <!-- uzly -->
+    <path android:pathData="M33.00,33.00 a7.0,7.0 0 1,0 14.0,0 a7.0,7.0 0 1,0 -14.0,0 Z M33.00,75.00 a7.0,7.0 0 1,0 14.0,0 a7.0,7.0 0 1,0 -14.0,0 Z M70.00,54.00 a7.0,7.0 0 1,0 14.0,0 a7.0,7.0 0 1,0 -14.0,0 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="40" android:startY="33"
+                android:endX="77" android:endY="64"
+                android:startColor="#7C5CFF" android:endColor="#22D3EE" />
+        </aapt:attr>
+    </path>
 
-    <!-- vlnovka = zvuk -->
-    <path
-        android:pathData="M32,70 L32,78 M40,64 L40,84 M48,58 L48,90 M56,66 L56,82 M64,61 L64,87 M72,69 L72,79"
-        android:strokeColor="#22D3EE"
-        android:strokeWidth="4"
-        android:strokeLineCap="round" />
+    <!-- zasuvky uzlu -->
+    <path android:pathData="M36.80,33.00 a3.2,3.2 0 1,0 6.4,0 a3.2,3.2 0 1,0 -6.4,0 Z M36.80,75.00 a3.2,3.2 0 1,0 6.4,0 a3.2,3.2 0 1,0 -6.4,0 Z M73.80,54.00 a3.2,3.2 0 1,0 6.4,0 a3.2,3.2 0 1,0 -6.4,0 Z" android:fillColor="#12121E" />
+
+    <!-- jiskra -->
+    <path android:pathData="M72.00,22.50 L73.41,28.59 L79.50,30.00 L73.41,31.41 L72.00,37.50 L70.59,31.41 L64.50,30.00 L70.59,28.59 Z" android:fillColor="#FFB86B" />
+    <path android:pathData="M81.00,35.40 L81.71,38.29 L84.60,39.00 L81.71,39.71 L81.00,42.60 L80.29,39.71 L77.40,39.00 L80.29,38.29 Z" android:fillColor="#FFB86B" />
 </vector>
