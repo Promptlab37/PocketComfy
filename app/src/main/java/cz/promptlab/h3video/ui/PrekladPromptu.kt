@@ -65,9 +65,6 @@ fun PrekladPromptu(
             if (bezi) t("Překládám…") else popisek,
             color = Violet,
         ) { if (!bezi) vm.prelozPrompt(pole) }
-        if (bezi) {
-            CircularProgressIndicator(Modifier.size(18.dp), color = Violet, strokeWidth = 2.dp)
-        }
         if (!bezi && puvodni != null) {
             Text(
                 t("Vrátit původní"),
@@ -79,6 +76,7 @@ fun PrekladPromptu(
             )
         }
     }
+    PrubehPrepisu(vm, MainViewModel.PraceNaPromptu.PREKLAD, Violet)
     (stav as? MainViewModel.RewriteState.Fail)
         ?.takeIf { it.druh == MainViewModel.PraceNaPromptu.PREKLAD }?.let {
         Spacer(Modifier.height(4.dp))

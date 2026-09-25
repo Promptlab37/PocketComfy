@@ -161,7 +161,6 @@ fun ImageEditSection(vm: MainViewModel) {
                 //    odvážnější zadání potichu zjemní (ověřeno 21. 9. 2026),
                 //  - odvázaný nepřepisuje nic, zato fotku nevidí a píše jen
                 //    z toho, co napsal uživatel.
-                val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
                 androidx.compose.foundation.layout.FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -176,22 +175,7 @@ fun ImageEditSection(vm: MainViewModel) {
                         color = cz.promptlab.h3video.ui.theme.Amber,
                     ) { if (!bezi) vm.vylepsiUpravuOdvazane() }
                 }
-                if (bezi) {
-                    Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        androidx.compose.material3.CircularProgressIndicator(
-                            Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp,
-                        )
-                        // Bez počtu napsaných slov to vypadá zaseklé.
-                        postup?.let { (kolik, _) ->
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                t("napsáno %d").format(kolik),
-                                style = MaterialTheme.typography.bodySmall, color = TextLow,
-                            )
-                        }
-                    }
-                }
+                PrubehPrepisu(vm)
                 (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Fail)
                     ?.takeIf {
                         it.druh == cz.promptlab.h3video.MainViewModel.PraceNaPromptu.VYLEPSENI

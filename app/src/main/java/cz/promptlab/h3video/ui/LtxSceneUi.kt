@@ -207,7 +207,6 @@ fun LtxSection(vm: MainViewModel) {
             val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
             val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
                 MainViewModel.PraceNaPromptu.VYLEPSENI
-            val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
             Spacer(Modifier.height(10.dp))
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -223,20 +222,7 @@ fun LtxSection(vm: MainViewModel) {
                     color = Amber,
                 ) { if (!bezi) vm.vylepsiLtxPopisOdvazane() }
             }
-            if (bezi) {
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
-                    // Bez počtu napsaných slov to vypadá zaseklé.
-                    postup?.let { (kolik, _) ->
-                        Spacer(Modifier.width(10.dp))
-                        Text(
-                            t("napsáno %d").format(kolik),
-                            style = MaterialTheme.typography.bodySmall, color = TextLow,
-                        )
-                    }
-                }
-            }
+            PrubehPrepisu(vm)
             (stavPrepisu as? MainViewModel.RewriteState.Fail)
                 ?.takeIf { it.druh == MainViewModel.PraceNaPromptu.VYLEPSENI }
                 ?.let { chyba ->

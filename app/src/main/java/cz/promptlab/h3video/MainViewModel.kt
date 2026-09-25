@@ -1854,7 +1854,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     sealed interface RewriteState {
         data object Idle : RewriteState
-        data class Busy(val druh: PraceNaPromptu) : RewriteState
+        /** [od] = kdy práce začala; z toho UI počítá uběhlý čas. */
+        data class Busy(
+            val druh: PraceNaPromptu,
+            val od: Long = System.currentTimeMillis(),
+        ) : RewriteState
         data class Fail(val message: String, val druh: PraceNaPromptu) : RewriteState
     }
 
@@ -1868,6 +1872,53 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private val _rewriteProgress = MutableStateFlow<Pair<Int, Int>?>(null)
     val rewriteProgress: StateFlow<Pair<Int, Int>?> = _rewriteProgress.asStateFlow()
+
+    /** Co přepis na serveru právě dělá — podle toho, co server hlásí. */
+    enum class FazePrepisu { PRIPRAVA, FRONTA, MODEL, PSANI }
+
+    /**
+     * Průběh přepisu pro UI: fáze, počet úloh před ním ve frontě serveru
+     * a kolik sekund trval minule stejný přepisovač (odhad délky).
+     */
+    data class PrubehPrepisu(
+        val faze: FazePrepisu = FazePrepisu.PRIPRAVA,
+        val predTebou: Int = 0,
+        val obvykleS: Int = 0,
+        /** Kdy server přepis opravdu začal (0 = ještě ne) — odhad běží od tud. */
+        val beziOd: Long = 0L,
+    )
+
+    private val _prubehPrepisu = MutableStateFlow(PrubehPrepisu())
+    val prubehPrepisu: StateFlow<PrubehPrepisu> = _prubehPrepisu.asStateFlow()
+
+    /** Přepis se na serveru rozběhl (skončilo čekání ve frontě). */
+    private fun prepisBezi(faze: FazePrepisu) {
+        val p = _prubehPrepisu.value
+        _prubehPrepisu.value = p.copy(
+            faze = if (p.faze == FazePrepisu.PSANI) p.faze else faze,
+            predTebou = 0,
+            beziOd = if (p.beziOd == 0L) System.currentTimeMillis() else p.beziOd,
+        )
+    }
+
+    /** Klíč pro zapamatovanou délku: třídy uzlů a soubory modelů v grafu. */
+    private fun klicTrvani(wf: org.json.JSONObject): String {
+        val casti = sortedSetOf<String>()
+        for (id in wf.keys()) {
+            val u = wf.optJSONObject(id) ?: continue
+            casti.add(u.optString("class_type"))
+            val ins = u.optJSONObject("inputs") ?: continue
+            for (k in listOf("model", "model_name", "clip_name", "unet_name")) {
+                (ins.opt(k) as? String)?.let { casti.add(it) }
+            }
+        }
+        return "prepis_s_" + casti.joinToString("|").hashCode()
+    }
+
+    private val trvaniPrepisu by lazy {
+        getApplication<android.app.Application>()
+            .getSharedPreferences("prepis_trvani", android.content.Context.MODE_PRIVATE)
+    }
 
     private val _rewriteState = MutableStateFlow<RewriteState>(RewriteState.Idle)
     val rewriteState: StateFlow<RewriteState> = _rewriteState.asStateFlow()
@@ -1928,6 +1979,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val promptId = java.util.UUID.randomUUID().toString()
         val clientId = java.util.UUID.randomUUID().toString()
         _rewriteProgress.value = null
+        val klic = klicTrvani(wf)
+        _prubehPrepisu.value = PrubehPrepisu(obvykleS = trvaniPrepisu.getInt(klic, 0))
         val zivot = java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis())
         val ws = runCatching {
             client.openWebSocket(clientId, object : okhttp3.WebSocketListener() {
@@ -1938,9 +1991,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         data.optString("prompt_id") != promptId
                     ) return
                     zivot.set(System.currentTimeMillis())
-                    if (zprava.optString("type") == "progress") {
-                        val max = data.optInt("max", 0)
-                        if (max > 0) _rewriteProgress.value = data.optInt("value", 0) to max
+                    when (zprava.optString("type")) {
+                        "progress" -> {
+                            val max = data.optInt("max", 0)
+                            if (max > 0) _rewriteProgress.value = data.optInt("value", 0) to max
+                            prepisBezi(FazePrepisu.PSANI)
+                            _prubehPrepisu.value =
+                                _prubehPrepisu.value.copy(faze = FazePrepisu.PSANI)
+                        }
+                        // Který uzel právě běží: načítač modelu, nebo už psaní.
+                        "executing" -> {
+                            val uzel = data.optString("node")
+                            if (uzel.isEmpty() || uzel == "null") return
+                            val trida = wf.optJSONObject(uzel)?.optString("class_type").orEmpty()
+                            val nacita = "Load" in trida && trida != "LoadImage"
+                            prepisBezi(if (nacita) FazePrepisu.MODEL else FazePrepisu.PSANI)
+                            if (!nacita) _prubehPrepisu.value =
+                                _prubehPrepisu.value.copy(faze = FazePrepisu.PSANI)
+                        }
                     }
                 }
             })
@@ -1950,7 +2018,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             // Ticho po tuhle dobu znamená, že se běh někde zasekl. Načítání
             // modelu z disku umí mlčet i minutu, proto ne míň.
             val ticho = 300_000L
+            var kolo = 0
             while (System.currentTimeMillis() - zivot.get() < ticho) {
+                // Dokud server přepis nezačal, hlídat frontu: stojí-li před
+                // ním generování, čeká se na ně celé a uživatel to má vidět.
+                if (_prubehPrepisu.value.beziOd == 0L && kolo % 2 == 0) {
+                    val pred = client.predTebou(promptId)
+                    if (pred > 0) {
+                        zivot.set(System.currentTimeMillis())
+                        _prubehPrepisu.value = _prubehPrepisu.value.copy(
+                            faze = FazePrepisu.FRONTA, predTebou = pred,
+                        )
+                    } else if (pred == 0) prepisBezi(FazePrepisu.MODEL)
+                }
+                kolo++
                 val h = client.history(promptId)
                 if (h != null) {
                     val status = h.optJSONObject("status")
@@ -1961,7 +2042,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val text = h.optJSONObject("outputs")
                         ?.optJSONObject(uzelNahledu)
                         ?.optJSONArray("text")
-                    if (text != null && text.length() > 0) return text.getString(0)
+                    if (text != null && text.length() > 0) {
+                        // Délka bez čekání ve frontě — ta bude příště jiná.
+                        val od = _prubehPrepisu.value.beziOd
+                        if (od > 0L) trvaniPrepisu.edit()
+                            .putInt(klic, ((System.currentTimeMillis() - od) / 1000).toInt())
+                            .apply()
+                        return text.getString(0)
+                    }
                 }
                 kotlinx.coroutines.delay(1000)
             }
@@ -1972,6 +2060,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         } finally {
             ws?.cancel()
             _rewriteProgress.value = null
+            _prubehPrepisu.value = PrubehPrepisu()
         }
     }
 

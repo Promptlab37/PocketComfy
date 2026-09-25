@@ -398,6 +398,7 @@ fun LongMmSection(vm: MainViewModel) {
                 color = Cyan,
                 modifier = Modifier.fillMaxWidth(),
             ) { if (!prepisujeSe) vm.vylepsiLongMmPrompt() }
+            PrubehPrepisu(vm)
             // Překlad do angličtiny a hlavně „Vrátit původní" — po vylepšení
             // se zadání přepíše a bez tohohle by se k němu člověk nedostal.
             PrekladPromptu(vm, MainViewModel.PromptPole.LONGMM)

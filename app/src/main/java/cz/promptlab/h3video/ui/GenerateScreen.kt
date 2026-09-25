@@ -838,7 +838,6 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
             // Necenzurovaný vylepšovač: přepisovač H3 na odblokovaném základu.
             val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
             val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
-            val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
             val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
                 MainViewModel.PraceNaPromptu.VYLEPSENI
             val beziPreklad = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
@@ -859,21 +858,11 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
                     if (!bezi && !beziPreklad) vm.prelozPrompt(MainViewModel.PromptPole.OBRAZEK)
                 }
             }
-            if (bezi || beziPreklad || puvodni != null) {
+            PrubehPrepisu(vm, barva = cz.promptlab.h3video.ui.theme.Amber)
+            PrubehPrepisu(vm, MainViewModel.PraceNaPromptu.PREKLAD, cz.promptlab.h3video.ui.theme.Violet)
+            if (!bezi && !beziPreklad && puvodni != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (bezi || beziPreklad) {
-                        androidx.compose.material3.CircularProgressIndicator(
-                            Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
-                        )
-                        postup?.let { (kolik, _) ->
-                            Spacer(Modifier.width(10.dp))
-                            Text(
-                                t("napsáno %d").format(kolik),
-                                style = MaterialTheme.typography.bodySmall, color = TextLow,
-                            )
-                        }
-                    }
-                    if (!bezi && !beziPreklad && puvodni != null) {
+                    run {
                         Text(
                             t("Vrátit původní"),
                             style = MaterialTheme.typography.bodySmall, color = TextMid,
@@ -1007,7 +996,6 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 // Vlastní příznak, ať překladové tlačítko nesvítí při vylepšování.
                 val beziPreklad = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
                     MainViewModel.PraceNaPromptu.PREKLAD
-                val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
                 Spacer(Modifier.height(8.dp))
                 val jeQwen21 = vybranyModel == T2iModel.QWEN21
                 // U Qwen 2.1 jsou tlačítka tři a do jednoho řádku se na telefon
@@ -1044,22 +1032,12 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                         }
                     }
                 }
-                if (bezi || beziPreklad || (!bezi && puvodni != null)) {
+                PrubehPrepisu(vm)
+                PrubehPrepisu(vm, MainViewModel.PraceNaPromptu.PREKLAD, cz.promptlab.h3video.ui.theme.Violet)
+                if (!bezi && !beziPreklad && puvodni != null) {
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (bezi || beziPreklad) {
-                            androidx.compose.material3.CircularProgressIndicator(
-                                Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
-                            )
-                            postup?.let { (kolik, _) ->
-                                Spacer(Modifier.width(10.dp))
-                                Text(
-                                    t("napsáno %d").format(kolik),
-                                    style = MaterialTheme.typography.bodySmall, color = TextLow,
-                                )
-                            }
-                        }
-                        if (!bezi && puvodni != null) {
+                        run {
                             Text(
                                 t("Vrátit původní"),
                                 style = MaterialTheme.typography.bodySmall, color = TextMid,

@@ -190,11 +190,6 @@ fun AllInOneSection(vm: MainViewModel) {
                             if (bezi) t("Překládám…") else t("🌐 Přeložit"),
                             color = cz.promptlab.h3video.ui.theme.Violet,
                         ) { if (!bezi) vm.prelozPrompt(MainViewModel.PromptPole.AIO) }
-                        if (bezi) {
-                            CircularProgressIndicator(
-                                Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
-                            )
-                        }
                         if (!bezi && puvodni != null) {
                             Text(
                                 t("Vrátit původní"),
@@ -206,6 +201,8 @@ fun AllInOneSection(vm: MainViewModel) {
                             )
                         }
                     }
+                    PrubehPrepisu(vm, barva = cz.promptlab.h3video.ui.theme.Amber)
+                    PrubehPrepisu(vm, MainViewModel.PraceNaPromptu.PREKLAD, cz.promptlab.h3video.ui.theme.Violet)
                     (stavPrepisu as? MainViewModel.RewriteState.Fail)?.let {
                         Spacer(Modifier.height(4.dp))
                         Text(

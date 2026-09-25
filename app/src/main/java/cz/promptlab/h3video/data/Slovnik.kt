@@ -650,6 +650,13 @@ object Slovnik {
             "Four times the pixels and far more memory and time. " +
             "Off = around 1 megapixel like the other models on this card.",
         "napsáno %d" to "written %d",
+        "Posílám zadání na server" to "Sending the prompt to the server",
+        "Čekám ve frontě serveru — před tebou %d" to "Waiting in the server queue — %d ahead of you",
+        "Načítám jazykový model" to "Loading the language model",
+        "Píšu zadání" to "Writing the prompt",
+        "uběhlo %s" to "elapsed %s",
+        "zbývá asi %s" to "about %s left",
+        "trvá déle než minule (%s)" to "taking longer than last time (%s)",
         "Přepisovač se neozval pět minut. Mrkni, jestli ComfyUI běží." to
             "The rewriter went quiet for five minutes. Check that ComfyUI is running.",
         "Server je starší než ComfyUI 0.37 — chybí uzel na přepis zadání." to

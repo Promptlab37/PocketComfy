@@ -395,6 +395,31 @@ class ComfyClient(baseUrl: String) {
         }
     }
 
+    /**
+     * Kolik úloh server udělá před touhle: běžící + čekající s nižším pořadovým
+     * číslem. 0 = už běží, -1 = ve frontě není (doběhla, nebo server neodpověděl).
+     */
+    fun predTebou(promptId: String): Int = runCatching {
+        get("/queue").use { r ->
+            if (!r.isSuccessful) return -1
+            val j = JSONObject(r.body!!.string())
+            val bezi = j.optJSONArray("queue_running") ?: org.json.JSONArray()
+            val ceka = j.optJSONArray("queue_pending") ?: org.json.JSONArray()
+            for (i in 0 until bezi.length())
+                if (bezi.getJSONArray(i).optString(1) == promptId) return 0
+            var moje = -1.0
+            for (i in 0 until ceka.length()) {
+                val u = ceka.getJSONArray(i)
+                if (u.optString(1) == promptId) moje = u.optDouble(0)
+            }
+            if (moje < 0) return -1
+            var pred = bezi.length()
+            for (i in 0 until ceka.length())
+                if (ceka.getJSONArray(i).optDouble(0) < moje) pred++
+            pred
+        }
+    }.getOrDefault(-1)
+
     /** Je úloha ve frontě (běžící nebo čekající)? Vrací pozici, -1 když tam není. */
     fun queuePosition(promptId: String): Int = runCatching {
         get("/queue").use { r ->
