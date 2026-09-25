@@ -2397,6 +2397,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         client: ComfyClient,
         s: cz.promptlab.h3video.data.AioScene,
         zadani: String,
+    ): String = prepisSReferencemi(
+        client, s.refsWithImage.mapNotNull { it.image }, s.frames / 24.0, zadani,
+    )
+
+    /**
+     * Přepis zadání pro reference (Ref2VA): přepisovač si fotky přečte
+     * a napíše `subject_definitions` s `<Subject N>` → `<Picture N>`. Bez toho
+     * H3 dostane popis vymyšlených lidí a reference nemá s čím spojit.
+     */
+    private suspend fun prepisSReferencemi(
+        client: ComfyClient,
+        fotky: List<java.io.File>,
+        sekundy: Double,
+        zadani: String,
     ): String {
         val spec = client.objectInfo(H3RefWriteBuilder.NODE_CLASS)
             ?: throw ComfyException(
@@ -2424,13 +2438,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             en.firstOrNull { it == _params.value.aspect.label }
                 ?: en.firstOrNull { it == "16:9" } ?: en.firstOrNull() ?: "16:9"
         }
-        val jmena = s.refsWithImage.mapIndexedNotNull { i, slot ->
-            slot.image?.let { client.uploadImage(it.readBytes(), "rw_ref${i + 1}.png") }
+        val jmena = fotky.mapIndexed { i, f ->
+            client.uploadImage(f.readBytes(), "rw_ref${i + 1}.png")
         }
         val wf = H3RefWriteBuilder.build(
             zadani = "$zadani. Do not add any on-screen text or captions unless explicitly requested.",
             obrazky = jmena,
-            sekundy = (s.frames / 24.0).coerceIn(2.0, 60.0),
+            sekundy = sekundy.coerceIn(2.0, 60.0),
             pomer = rozliseni,
             captioner = captioner,
             writer = writer,
@@ -2444,8 +2458,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      *
      * Tentýž přepisovač jako All in One (`MiniMaxH3PromptWriter8B`), který si
      * z nabídky bere odblokovaný základ (Huihui abliterated) — je vycvičený
-     * na H3 a nic neodmítá. Karta jede jen z textu, proto úloha T2VA;
-     * poměr stran a délka se berou z karty.
+     * na H3 a nic neodmítá. Bez referencí úloha T2VA; poměr stran a délka se
+     * berou z karty.
+     *
+     * S referencemi jede přepis pro reference jako v All in One — do 4.43
+     * tu byl i s fotkami T2VA, přepisovač je neviděl a vymyslel jiné lidi
+     * (běh z 25. 9. 2026: „žena s hnědými vlasy v bílém tílku").
      */
     fun vylepsi3KrokyPrompt() {
         if (_rewriteState.value is RewriteState.Busy) return
@@ -2463,6 +2481,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
                     val client = ComfyClient(settings.serverUrl)
+                    val refy = _threeStepRefs.value.map { it.soubor }.filter { it.exists() }
+                    if (refy.isNotEmpty()) {
+                        return@runCatching prepisSReferencemi(
+                            client, refy, p.seconds.toDouble(), zadani,
+                        )
+                    }
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
                         ?: throw ComfyException(
                             "rewriter chybi",
