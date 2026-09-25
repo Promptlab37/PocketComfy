@@ -821,6 +821,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
  * předvídatelnější. Hotový obrázek jde z výsledku rovnou do Úpravy či Zvětšit.
  */
 @Composable
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.data.GenParams) {
     SectionCard(
         title = t("Rychlé video"),
@@ -834,6 +835,59 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
                 minHeight = 120.dp,
                 onClear = { vm.update { it.copy(prompt = "") } },
             )
+            // Necenzurovaný vylepšovač: přepisovač H3 na odblokovaném základu.
+            val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
+            val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
+            val postup by vm.rewriteProgress.collectAsStateWithLifecycle()
+            val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
+                MainViewModel.PraceNaPromptu.VYLEPSENI
+            val beziPreklad = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
+                MainViewModel.PraceNaPromptu.PREKLAD
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OutlineButton(
+                    if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
+                    color = cz.promptlab.h3video.ui.theme.Amber,
+                ) { if (!bezi && !beziPreklad) vm.vylepsi3KrokyPrompt() }
+                OutlineButton(
+                    if (beziPreklad) t("Překládám…") else t("🌐 Přeložit"),
+                    color = cz.promptlab.h3video.ui.theme.Violet,
+                ) {
+                    if (!bezi && !beziPreklad) vm.prelozPrompt(MainViewModel.PromptPole.OBRAZEK)
+                }
+            }
+            if (bezi || beziPreklad || puvodni != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (bezi || beziPreklad) {
+                        androidx.compose.material3.CircularProgressIndicator(
+                            Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
+                        )
+                        postup?.let { (kolik, _) ->
+                            Spacer(Modifier.width(10.dp))
+                            Text(
+                                t("napsáno %d").format(kolik),
+                                style = MaterialTheme.typography.bodySmall, color = TextLow,
+                            )
+                        }
+                    }
+                    if (!bezi && !beziPreklad && puvodni != null) {
+                        Text(
+                            t("Vrátit původní"),
+                            style = MaterialTheme.typography.bodySmall, color = TextMid,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { vm.vratPuvodniPromptObrazku() }
+                                .padding(horizontal = 6.dp, vertical = 4.dp)
+                        )
+                    }
+                }
+            }
+            (stavPrepisu as? MainViewModel.RewriteState.Fail)?.let {
+                Text(it.message, style = MaterialTheme.typography.bodySmall, color = Danger)
+            }
 
             Column {
                 Text(t("Délka"), style = MaterialTheme.typography.labelMedium, color = TextLow)
@@ -859,15 +913,6 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
                 )
             }
 
-            // Vysvětlení, proč tu nejsou kroky ani posun: řídí je předloha
-            // a jiné hodnoty dávají měkký, mléčný obraz.
-            Text(
-                t("Kroky, posun ani rozlišení prvního průchodu se nenastavují — " +
-                    "jsou odladěné v předloze. První průchod jede na 0,2 MPx, " +
-                    "pak se obraz zvětší na 0,5 MPx a dva kroky ho dotáhnou."),
-                style = MaterialTheme.typography.bodySmall,
-                color = TextLow,
-            )
         }
     }
 

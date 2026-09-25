@@ -2335,6 +2335,84 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return spustPrepisAPockej(client, wf, H3RefWriteBuilder.N_PREVIEW)
     }
 
+    /**
+     * ✨ Vylepšit zadání na kartě **3 kroky**.
+     *
+     * Tentýž přepisovač jako All in One (`MiniMaxH3PromptWriter8B`), který si
+     * z nabídky bere odblokovaný základ (Huihui abliterated) — je vycvičený
+     * na H3 a nic neodmítá. Karta jede jen z textu, proto úloha T2VA;
+     * poměr stran a délka se berou z karty.
+     */
+    fun vylepsi3KrokyPrompt() {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val p = _params.value
+        val zadani = p.prompt.trim()
+        if (zadani.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(
+                t("Nejdřív napiš aspoň pár slov o tom, co se má dít."),
+                PraceNaPromptu.VYLEPSENI,
+            )
+            return
+        }
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl)
+                    val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
+                        ?: throw ComfyException(
+                            "rewriter chybi",
+                            "Server nemá balík Prompt Rewriter — nainstaluj " +
+                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+                        )
+                    val req = spec.getJSONObject("input").getJSONObject("required")
+                    val nabidka = req.getJSONArray("model").getJSONArray(0)
+                    val model = PromptRewriteBuilder.vyberModel(
+                        (0 until nabidka.length()).map { nabidka.getString(it) }
+                    ) ?: throw ComfyException(
+                        "zadny model",
+                        "Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM.",
+                    )
+                    val rozliseniEnum = req.getJSONArray("resolution").getJSONArray(0)
+                    val rozliseni = (0 until rozliseniEnum.length())
+                        .map { rozliseniEnum.getString(it) }
+                        .let { en ->
+                            en.firstOrNull { it == p.aspect.label }
+                                ?: en.firstOrNull { it == "16:9" } ?: en.first()
+                        }
+                    val durCfg = req.getJSONArray("duration").optJSONObject(1)
+                    val delka = p.seconds
+                        .coerceIn(durCfg?.optInt("min", 2) ?: 2, durCfg?.optInt("max", 60) ?: 60)
+                    val zadaniProModel =
+                        "$zadani. Do not add any on-screen text or captions unless explicitly requested."
+                    val wf = PromptRewriteBuilder.build(
+                        prompt = zadaniProModel,
+                        model = model,
+                        task = "T2VA",
+                        resolution = rozliseni,
+                        durationSec = delka,
+                        seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                        firstImage = null,
+                        lastImage = null,
+                    )
+                    spustPrepisAPockej(client, wf, PromptRewriteBuilder.N_PREVIEW)
+                }
+            }
+            vysledek.onSuccess { text ->
+                _rewriteOriginal.value = zadani
+                val hotovy = if (_params.value.rewriteHudba) text.trim()
+                else PromptRewriteBuilder.bezPodkresoveHudby(text.trim())
+                update { it.copy(prompt = hotovy) }
+                _rewriteState.value = RewriteState.Idle
+            }.onFailure { e ->
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    PraceNaPromptu.VYLEPSENI,
+                )
+            }
+        }
+    }
+
     fun vylepsiAioPrompt() {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _aio.value
