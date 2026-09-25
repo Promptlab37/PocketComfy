@@ -882,6 +882,7 @@ object GenerationEngine {
                     rychlaPozornost = effective.sageAttention,
                     lory = effective.extraLoras,
                     reference = names,
+                    nastaveni = cz.promptlab.h3video.comfy.ThreeStepBuilder.Nastaveni.z(effective),
                 )
 
             // Long MiniMax: jeden záběr na běh. První zakládá řetěz a uloží

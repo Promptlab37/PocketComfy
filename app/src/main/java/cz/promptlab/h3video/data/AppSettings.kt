@@ -308,6 +308,15 @@ class AppSettings(ctx: Context) {
             sageAttention = sp.getBoolean("sage", defaults.sageAttention),
             qwen21Dvak = sp.getBoolean("qwen21_2k", defaults.qwen21Dvak),
             qwen21Detailer = sp.getBoolean("qwen21_detailer", defaults.qwen21Detailer),
+            tkMpx = sp.getFloat("tk_mpx", defaults.tkMpx),
+            tkZvetseni = sp.getFloat("tk_zvetseni", defaults.tkZvetseni),
+            tkKroky = sp.getInt("tk_kroky", defaults.tkKroky),
+            tkSampler = sp.getString("tk_sampler", defaults.tkSampler)!!,
+            tkScheduler = sp.getString("tk_scheduler", defaults.tkScheduler)!!,
+            tkShiftObraz = sp.getFloat("tk_shift_obraz", defaults.tkShiftObraz),
+            tkShiftZvuk = sp.getFloat("tk_shift_zvuk", defaults.tkShiftZvuk),
+            tkUnet = sp.getString("tk_unet", defaults.tkUnet)!!,
+            tkVernost = sp.getString("tk_vernost", defaults.tkVernost)!!,
             crf = sp.getInt("crf", defaults.crf),
             livePreview = sp.getBoolean("livePreview", defaults.livePreview),
             teaCache = sp.getBoolean("teaCache", defaults.teaCache),
@@ -353,6 +362,15 @@ class AppSettings(ctx: Context) {
             putBoolean("sage", p.sageAttention)
             putBoolean("qwen21_2k", p.qwen21Dvak)
             putBoolean("qwen21_detailer", p.qwen21Detailer)
+            putFloat("tk_mpx", p.tkMpx)
+            putFloat("tk_zvetseni", p.tkZvetseni)
+            putInt("tk_kroky", p.tkKroky)
+            putString("tk_sampler", p.tkSampler)
+            putString("tk_scheduler", p.tkScheduler)
+            putFloat("tk_shift_obraz", p.tkShiftObraz)
+            putFloat("tk_shift_zvuk", p.tkShiftZvuk)
+            putString("tk_unet", p.tkUnet)
+            putString("tk_vernost", p.tkVernost)
             putInt("crf", p.crf)
             putBoolean("livePreview", p.livePreview)
             putBoolean("teaCache", p.teaCache)

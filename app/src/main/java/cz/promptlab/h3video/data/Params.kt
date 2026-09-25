@@ -34,6 +34,22 @@ data class GenParams(
     val qwen21Dvak: Boolean = false,
     /** Detailer LoRA na kartě Obrázek s Qwen Image 2.1. */
     val qwen21Detailer: Boolean = false,
+    /**
+     * Nastavení karty **3 kroky** — vlastní, ne sdílené: třístupňový recept
+     * se sdílenými hodnotami (8 kroků, beta, shift 12,19) nepracuje. Výchozí
+     * hodnoty jsou přesně ty z předlohy `workflow_h3_3step.json`.
+     */
+    val tkMpx: Float = cz.promptlab.h3video.comfy.ThreeStepBuilder.MPX_PRVNI_PRUCHOD.toFloat(),
+    val tkZvetseni: Float = cz.promptlab.h3video.comfy.ThreeStepBuilder.ZVETSENI,
+    val tkKroky: Int = cz.promptlab.h3video.comfy.ThreeStepBuilder.KROKY,
+    val tkSampler: String = cz.promptlab.h3video.comfy.ThreeStepBuilder.SAMPLER,
+    val tkScheduler: String = cz.promptlab.h3video.comfy.ThreeStepBuilder.SCHEDULER,
+    val tkShiftObraz: Float = cz.promptlab.h3video.comfy.ThreeStepBuilder.SHIFT_OBRAZ,
+    val tkShiftZvuk: Float = cz.promptlab.h3video.comfy.ThreeStepBuilder.SHIFT_ZVUK,
+    /** Prázdné = model z předlohy. */
+    val tkUnet: String = "",
+    /** Věrnost referencí (`ref_image_size`): max / match. */
+    val tkVernost: String = "max",
     /** Spectrum – přibližný akcelerátor v ULTRA workflow; týká se jen Časové osy. */
     val spectrum: Boolean = true,
     /** Komprese hotového souboru, ne kvalita generování. */

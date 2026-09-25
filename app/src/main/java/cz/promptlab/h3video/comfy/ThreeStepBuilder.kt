@@ -73,6 +73,25 @@ object ThreeStepBuilder {
     /** Megapixely prvního průchodu. Vyšší hodnota = pomalejší, ale ostřejší. */
     const val MPX_PRVNI_PRUCHOD = 0.2
 
+    // ---- hodnoty předlohy (výchozí nastavení karty) ----
+    /** Zvětšení hrany mezi průchody (uzly 302/303: `round(a*1.5811/32)*32`). */
+    const val ZVETSENI = 1.5811f
+    const val KROKY = 3
+    const val SAMPLER = "euler"
+    const val SCHEDULER = "simple"
+    const val SHIFT_OBRAZ = 12f
+    const val SHIFT_ZVUK = 3f
+
+    /** Kroky a vzorkování prvního průchodu; `SplitSigmas` musí sedět na kroky. */
+    const val N_PLANOVAC = "8"
+    const val N_ROZDELENI = "3"
+    const val N_SAMPLER = "29"
+    const val N_UNET = "34"
+    val N_ZVETSENI = listOf("302", "303")
+    val N_PRUVODCI = listOf("33", "35")
+    const val N_NAHLED = "3050"
+    const val TAEH3 = "taeh3.safetensors"
+
     /** Nejkratší a nejdelší rozumná délka. Model drží hlas do zhruba patnácti vteřin. */
     const val MIN_SEKUND = 2.0
     const val MAX_SEKUND = 15.0
@@ -87,13 +106,42 @@ object ThreeStepBuilder {
         ctx.resources.openRawResource(R.raw.workflow_h3_3step)
             .bufferedReader().use { it.readText() }
 
+    /** Nastavení karty; výchozí = přesně předloha. */
+    data class Nastaveni(
+        val mpx: Float = MPX_PRVNI_PRUCHOD.toFloat(),
+        val zvetseni: Float = ZVETSENI,
+        val kroky: Int = KROKY,
+        val sampler: String = SAMPLER,
+        val scheduler: String = SCHEDULER,
+        val shiftObraz: Float = SHIFT_OBRAZ,
+        val shiftZvuk: Float = SHIFT_ZVUK,
+        val unet: String = "",
+        val vernost: String = "max",
+        val nahled: Boolean = false,
+    ) {
+        companion object {
+            fun z(p: cz.promptlab.h3video.data.GenParams) = Nastaveni(
+                p.tkMpx, p.tkZvetseni, p.tkKroky, p.tkSampler, p.tkScheduler,
+                p.tkShiftObraz, p.tkShiftZvuk, p.tkUnet, p.tkVernost, p.livePreview,
+            )
+        }
+    }
+
+    /** Rozměry obou průchodů tak, jak je spočítají uzly v grafu. */
+    fun rozmery(aspect: Aspect, n: Nastaveni): Pair<Pair<Int, Int>, Pair<Int, Int>> {
+        val (w, h) = cz.promptlab.h3video.data.Resolution.calc(aspect, n.mpx)
+        fun zv(a: Int) = Math.round(a * n.zvetseni / 32.0).toInt() * 32
+        return (w to h) to (zv(w) to zv(h))
+    }
+
     fun build(
         ctx: Context, prompt: String, sekundy: Double, aspect: Aspect, seed: Long,
         rychlaPozornost: Boolean = true,
         lory: List<LoraEntry> = emptyList(),
         reference: List<String> = emptyList(),
+        nastaveni: Nastaveni = Nastaveni(),
     ): JSONObject =
-        build(template(ctx), prompt, sekundy, aspect, seed, rychlaPozornost, lory, reference)
+        build(template(ctx), prompt, sekundy, aspect, seed, rychlaPozornost, lory, reference, nastaveni)
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
     fun build(
@@ -101,8 +149,10 @@ object ThreeStepBuilder {
         rychlaPozornost: Boolean = true,
         lory: List<LoraEntry> = emptyList(),
         reference: List<String> = emptyList(),
+        nastaveni: Nastaveni = Nastaveni(),
     ): JSONObject {
         val wf = JSONObject(template)
+        val n = nastaveni
 
         wf.getJSONObject(N_PROMPT).getJSONObject("inputs")
             .put("value", prompt.trim())
@@ -112,7 +162,29 @@ object ThreeStepBuilder {
 
         wf.getJSONObject(N_ROZLISENI).getJSONObject("inputs").apply {
             put("aspect_ratio", aspectLabel(aspect))
-            put("megapixels", MPX_PRVNI_PRUCHOD)
+            put("megapixels", n.mpx.toString().toDouble())
+        }
+        // Zvětšení mezi průchody — výraz předlohy, jen s jiným číslem.
+        N_ZVETSENI.forEach { id ->
+            wf.getJSONObject(id).getJSONObject("inputs").put(
+                "expression",
+                "round(a*%s/32)*32".format(java.util.Locale.US, formatCislo(n.zvetseni)),
+            )
+        }
+        // První průchod: kroky, plánovač; SplitSigmas dělí přesně za nimi,
+        // takže první průchod odjede celou svou křivku jako v předloze.
+        wf.getJSONObject(N_PLANOVAC).getJSONObject("inputs").apply {
+            put("steps", n.kroky)
+            put("scheduler", n.scheduler)
+        }
+        wf.getJSONObject(N_ROZDELENI).getJSONObject("inputs").put("step", n.kroky)
+        wf.getJSONObject(N_SAMPLER).getJSONObject("inputs").put("sampler_name", n.sampler)
+        wf.getJSONObject(N_SHIFT).getJSONObject("inputs").apply {
+            put("shift_video", n.shiftObraz.toString().toDouble())
+            put("shift_audio", n.shiftZvuk.toString().toDouble())
+        }
+        if (n.unet.isNotBlank()) {
+            wf.getJSONObject(N_UNET).getJSONObject("inputs").put("unet_name", n.unet)
         }
 
         wf.getJSONObject(N_SEED).getJSONObject("inputs")
@@ -127,9 +199,41 @@ object ThreeStepBuilder {
         )
 
         nasadLory(wf, lory)
-        nasadReference(wf, reference, prompt)
+        nasadReference(wf, reference, prompt, n.vernost)
+        if (n.nahled) nasadNahled(wf)
 
         return wf
+    }
+
+    /** 1.5811 → „1.5811", 2.0 → „2" (výraz v předloze má čísla bez zbytečných nul). */
+    private fun formatCislo(x: Float): String =
+        java.math.BigDecimal(x.toDouble()).setScale(4, java.math.RoundingMode.HALF_UP)
+            .stripTrailingZeros().toPlainString()
+
+    /**
+     * Živý náhled jako na ostatních kartách H3: uzel od KJ na konec řetězu
+     * modelu, před oba průvodce (jinak než na ostatních kartách to nejde —
+     * tahle předloha náhled nemá).
+     */
+    private fun nasadNahled(wf: JSONObject) {
+        wf.put(
+            N_NAHLED, JSONObject()
+                .put("class_type", "ModelPreviewOverrideKJ")
+                .put(
+                    "inputs", JSONObject()
+                        .put("model", JSONArray().put(N_ATTENTION).put(0))
+                        .put("max_resolution", 512)
+                        .put("jpeg_quality", 70)
+                        .put("suppress_default_preview", true)
+                        .put("preview_frames", 8)
+                        .put("preview_fps", 12)
+                        .put("tiny_vae", TAEH3),
+                )
+                .put("_meta", JSONObject().put("title", "Model Preview Override")),
+        )
+        N_PRUVODCI.forEach {
+            wf.getJSONObject(it).getJSONObject("inputs").put("model", JSONArray().put(N_NAHLED).put(0))
+        }
     }
 
     /** Oba průchody — nízký a vysoký. Oba dostávají stejné zadání i fotky. */
@@ -149,7 +253,9 @@ object ThreeStepBuilder {
      * `ref_image_`). Model je podle nápovědy uzlu pozná jen, když na ně
      * zadání odkazuje značkou `<Picture N>` — chybí-li, doplní se na začátek.
      */
-    private fun nasadReference(wf: JSONObject, reference: List<String>, prompt: String) {
+    private fun nasadReference(
+        wf: JSONObject, reference: List<String>, prompt: String, vernost: String = "max",
+    ) {
         val fotky = reference.filter { it.isNotBlank() }.take(MAX_REFERENCI)
         if (fotky.isEmpty()) return
         fotky.forEachIndexed { i, jmeno ->
@@ -168,7 +274,7 @@ object ThreeStepBuilder {
                 .put("width", stare.get("width"))
                 .put("height", stare.get("height"))
                 .put("length", stare.get("length"))
-                .put("ref_image_size", "max")
+                .put("ref_image_size", vernost)
                 .put("vae", JSONArray().put(N_VIDEO_VAE).put(0))
                 .put("audio_vae", JSONArray().put(N_AUDIO_VAE).put(0))
             fotky.indices.forEach { i ->

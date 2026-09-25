@@ -298,6 +298,12 @@ fun ovladaProKartu(
     // karta volí sama (a v navázání ho zamyká, protože latent se přepočítat nedá).
     Mode.LONGMM -> Ovlada.NIC
     Mode.LONG -> Ovlada(rozliseni = !dlouheNavazuje)
+    // 3 kroky: rozlišení, kroky, shift i model má vlastní nastavení karty
+    // (GenParams.tk*) — sdílené hodnoty by třístupňový recept rozbily.
+    // Ze sdíleného platí jen LoRA.
+    Mode.THREESTEP -> Ovlada(
+        rozliseni = false, kroky = false, model = false, shift = false, profil = false,
+    )
     else -> Ovlada()
 }
 

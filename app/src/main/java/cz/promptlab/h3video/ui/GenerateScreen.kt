@@ -440,10 +440,18 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // Hlavni obrazovka tak zustava: vstupy, zadani, Generovat.
         if (mode.isVideo && ovlada.neco) SkladaciSekce(
             title = t("Nastavení"),
-            souhrn = params.profile.title + " · " + params.resolution.label +
+            souhrn = if (mode == Mode.THREESTEP) params.tkSouhrn()
+            else params.profile.title + " · " + params.resolution.label +
                 (if (mode == Mode.TIMELINE && params.spectrum) " · Spectrum" else ""),
             klic = "nastaveni-" + mode.name,
         ) {
+            // ------------------------------------------------------- 3 kroky
+            // Vlastní nastavení — sdílené hodnoty by třístupňový recept rozbily.
+            if (mode == Mode.THREESTEP) {
+                val refy by vm.threeStepRefs.collectAsStateWithLifecycle()
+                TriKrokyNastaveni(vm, params, sReferencemi = refy.isNotEmpty())
+            }
+
             // ------------------------------------------------------- Turbo / Kvalita
             if (ovlada.profil) ProfilePicker(params.profile, referencniCesta) { vm.setProfile(it) }
 
@@ -581,7 +589,12 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             if (ovlada.lora && !qwen21) LoraCard(vm, params)
 
 
-            val onWorkflowDefaults = remember(params) { vm.matchesWorkflow(params) }
+            // U 3 kroků se z pokročilého do grafu dostane jen Sage — zbytek
+            // sdíleného nastavení tam nevede, porovnávat ho by lhalo.
+            val onWorkflowDefaults = remember(params) {
+                if (mode == Mode.THREESTEP) params.sageAttention == cz.promptlab.h3video.data.GenParams().sageAttention
+                else vm.matchesWorkflow(params)
+            }
             SectionCard(
                 title = t("Pokročilé"),
                 subtitle = if (advanced) null else
@@ -669,7 +682,8 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                     note = "Hodnota z workflow je 3."
                                 )
                             }
-                            LabeledSlider(
+                            // 3 kroky ukládá přes SaveVideo bez CRF — posuvník by lhal.
+                            if (mode != Mode.THREESTEP) LabeledSlider(
                                 label = t("Komprese videa (CRF)"), value = "${params.crf}",
                                 position = params.crf.toFloat(), range = 10f..30f,
                                 onChange = { v -> vm.update { it.copy(crf = v.toInt()) } },
@@ -694,7 +708,8 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                 else t("Rychlejší pozornost, ve workflow zapnutá"),
                                 params.sageAttention
                             ) { v -> vm.update { it.copy(sageAttention = v) } }
-                            ToggleRow(
+                            // Při třech krocích TeaCache nemá co přeskočit a předloha ho nemá.
+                            if (mode != Mode.THREESTEP) ToggleRow(
                                 "TeaCache",
                                 t("Přeskočí podobné kroky — až 3× rychlejší, drobně méně věrné"),
                                 params.teaCache
