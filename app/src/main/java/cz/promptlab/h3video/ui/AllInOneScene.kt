@@ -66,6 +66,7 @@ import kotlin.math.roundToInt
  * Karta záměrně nekopíruje to, co appka umí jinde. Přináší tři věci navíc:
  * klíčové snímky, prodloužení hotového videa a zvětšení.
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun AllInOneSection(vm: MainViewModel) {
     val scene by vm.aio.collectAsStateWithLifecycle()
@@ -170,12 +171,19 @@ fun AllInOneSection(vm: MainViewModel) {
                     val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
                         MainViewModel.PraceNaPromptu.VYLEPSENI
                     Spacer(Modifier.height(10.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    // FlowRow, NE Row: tlačítka + „Vrátit původní" se na telefon do jednoho
+                    // řádku nevejdou. Obyčejný Row pak smáčkne text na nulovou šířku,
+                    // ten se zalomí po písmenech do vysokého sloupce a natáhne řádek —
+                    // nad a pod tlačítky vznikne velké prázdné místo (25. 9. 2026, podruhé).
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
                         OutlineButton(
                             if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
                             color = cz.promptlab.h3video.ui.theme.Amber,
                         ) { if (!bezi) vm.vylepsiAioPrompt() }
-                        Spacer(Modifier.width(8.dp))
                         // Vylepšovač zadání rozepíše; tohle ho jen přeloží,
                         // když si člověk scénu napsal sám a chce ji anglicky.
                         OutlineButton(
@@ -183,13 +191,11 @@ fun AllInOneSection(vm: MainViewModel) {
                             color = cz.promptlab.h3video.ui.theme.Violet,
                         ) { if (!bezi) vm.prelozPrompt(MainViewModel.PromptPole.AIO) }
                         if (bezi) {
-                            Spacer(Modifier.width(10.dp))
                             CircularProgressIndicator(
                                 Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp
                             )
                         }
                         if (!bezi && puvodni != null) {
-                            Spacer(Modifier.width(12.dp))
                             Text(
                                 t("Vrátit původní"),
                                 style = MaterialTheme.typography.bodySmall, color = TextMid,

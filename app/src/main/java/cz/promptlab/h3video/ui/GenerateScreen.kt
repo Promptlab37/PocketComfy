@@ -1132,6 +1132,12 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                             "Vypnuto = okolo 1 megapixelu jako ostatní modely karty."),
                         params.qwen21Dvak,
                     ) { v -> vm.update { it.copy(qwen21Dvak = v) } }
+                    Spacer(Modifier.height(10.dp))
+                    ToggleRow(
+                        t("Detailer"),
+                        "",
+                        params.qwen21Detailer,
+                    ) { v -> vm.update { it.copy(qwen21Detailer = v) } }
                 }
             }
             // Žádná stávající LoRA na Qwen 2.1 nesedí — 32 vrstev proti 60
@@ -1523,7 +1529,9 @@ private fun ToggleRow(title: String, detail: String, checked: Boolean, onChange:
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyMedium)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
+            if (detail.isNotBlank()) {
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
+            }
         }
         Switch(checked = checked, onCheckedChange = onChange, colors = switchColors())
     }

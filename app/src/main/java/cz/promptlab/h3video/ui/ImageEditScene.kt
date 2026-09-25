@@ -264,6 +264,11 @@ fun ImageEditSection(vm: MainViewModel) {
                 t("Přidá do zadání výslovný pokyn k alfa kanálu. Výsledek zůstane PNG."),
                 scene.qwen21Transparent,
             ) { vm.setEditQwen21Transparent(it) }
+            EditToggleRow(
+                t("Detailer"),
+                "",
+                scene.qwen21Detailer,
+            ) { vm.setEditQwen21Detailer(it) }
         }
     }
 
@@ -419,7 +424,9 @@ private fun EditToggleRow(
     ) {
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyMedium)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
+            if (detail.isNotBlank()) {
+                Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
+            }
         }
         Switch(checked = checked, onCheckedChange = onChange, colors = switchColors())
     }

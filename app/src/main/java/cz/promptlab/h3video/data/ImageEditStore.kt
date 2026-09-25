@@ -41,6 +41,7 @@ class ImageEditStore(private val ctx: Context) {
                 .put("qwen21CacheDevice", s.qwen21CacheDevice.name)
                 .put("qwen21CachePrecision", s.qwen21CachePrecision.name)
                 .put("qwen21Transparent", s.qwen21Transparent)
+                .put("qwen21Detailer", s.qwen21Detailer)
                 .put("modelLoras", EditLoras.encode(s.modelLoras))
                 .put("groundingPx", s.groundingPx)
                 .put("megapixels", s.megapixels.toDouble())
@@ -102,6 +103,7 @@ class ImageEditStore(private val ctx: Context) {
                     root.optString("qwen21CachePrecision"), Qwen21CachePrecision.DEFAULT,
                 ),
                 qwen21Transparent = root.optBoolean("qwen21Transparent", false),
+                qwen21Detailer = root.optBoolean("qwen21Detailer", false),
                 modelLoras = EditLoras.decode(root.optJSONObject("modelLoras")),
                 // Uložená volba odstraněného starého Qwenu se automaticky převede
                 // na jediný podporovaný Qwen Image 2.1.

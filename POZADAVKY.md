@@ -296,3 +296,10 @@ V appce: **Nastavení → Co serveru chybí → Zkontrolovat server.** Appka se
 zeptá serveru na každou třídu uzlu ze svých workflow a u výběrových vstupů
 (modely, LoRA, VAE) ověří, že server soubor opravdu nabízí. Co chybí, vypíše
 jmenovitě — nody doinstaluj přes ComfyUI-Manager, modely nahraj do složek výš.
+
+### Detailer pro Qwen Image 2.1
+
+`elusarcas-qwen2-1-detailer-v1.safetensors` (80 MB) do `models/loras` —
+z [reverentelusarca/elusarcas-qwen-2.1-detail-enhancer-lora](https://huggingface.co/reverentelusarca/elusarcas-qwen-2.1-detail-enhancer-lora).
+Karta **Oprava fotky** ho používá vždy; v kartách **Úprava obrázku**
+a **Obrázek** (Qwen Image 2.1) je to přepínač **Detailer**.

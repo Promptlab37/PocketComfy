@@ -26,6 +26,39 @@ object Qwen21EditBuilder {
     const val N_SAVE = "40"
     const val N_FIRST_IMAGE = "100"
 
+    /**
+     * Detailer LoRA pro Qwen Image 2.1 (reverentelusarca,
+     * `elusarcas-qwen-2.1-detail-enhancer-lora`). Podle autora na „detail
+     * enhancement, creative upscaling, photo restoration and quality
+     * improvements"; spouštěcí fráze „enhance this image".
+     */
+    const val DETAILER = "elusarcas-qwen2-1-detailer-v1.safetensors"
+    const val N_DETAILER = "5"
+
+    /** Věta za spouštěcí frází — autorův startovní prompt, zkrácený. */
+    const val DETAILER_PROMPT =
+        "Enhance this image with rich fine details, natural microdetails and improved " +
+            "clarity while preserving the original composition, lighting and style."
+
+    /**
+     * Vloží detailer mezi načtený model (uzel 1) a KV cache (uzel 4). Obě
+     * šablony Qwen 2.1 (úprava i text → obrázek) mají tahle čísla stejná,
+     * proto jedna funkce pro všechny karty.
+     */
+    fun zapojDetailer(wf: JSONObject, sila: Double = 1.0) {
+        wf.put(
+            N_DETAILER,
+            node(
+                "LoraLoaderModelOnly", "Detailer",
+                JSONObject()
+                    .put("model", link(N_UNET))
+                    .put("lora_name", DETAILER)
+                    .put("strength_model", sila),
+            ),
+        )
+        wf.inputs(N_CACHE).put("model", link(N_DETAILER))
+    }
+
     const val MAX_IMAGES = 10
     const val DEFAULT_STEPS = 25
     const val MIN_STEPS = 10
@@ -52,7 +85,11 @@ object Qwen21EditBuilder {
 
         wf.inputs(N_FIRST_IMAGE).put("image", used.first())
         wf.inputs(N_TEXT)
-            .put("prompt", scene.qwen21Prompt)
+            .put(
+                "prompt",
+                if (scene.qwen21Detailer) scene.qwen21Prompt.trim() + " " + DETAILER_PROMPT
+                else scene.qwen21Prompt,
+            )
             .put("resolution", scene.qwen21Resolution.pixels)
         wf.inputs(N_SAMPLER)
             .put("seed", seed)
@@ -74,6 +111,7 @@ object Qwen21EditBuilder {
             )
             wf.inputs(N_TEXT).put("images.image_${index + 1}", link(nodeId))
         }
+        if (scene.qwen21Detailer) zapojDetailer(wf)
         return wf
     }
 

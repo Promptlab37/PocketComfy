@@ -314,6 +314,18 @@ object Katalog {
             "models/vae", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (0,7 GB, RGBA)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors"
         ),
+        "elusarcas-qwen2-1-detailer-v1.safetensors" to Soubor(
+            "models/loras", "Oprava fotky (vždy), Detailer v Úpravě a Obrázku — Qwen 2.1 (80 MB)",
+            "$HF/reverentelusarca/elusarcas-qwen-2.1-detail-enhancer-lora/resolve/main/elusarcas-qwen2-1-detailer-v1.safetensors"
+        ),
+        "10Eros_Max_h3_TURBO-hybrid_beta5_int8.safetensors" to Soubor(
+            "models/diffusion_models", "Long MiniMax — volba Eros Turbo (21 GB, nepovinné)",
+            "$HF/TenStrip/10Eros-Max/resolve/main/10Eros_Max_h3_TURBO-hybrid_beta5_int8.safetensors"
+        ),
+        "Minimax-h3_Singularity_ref2va_Pruned_v1.3_int8.safetensors" to Soubor(
+            "models/diffusion_models", "Long MiniMax — volba Singularity (21 GB, nepovinné)",
+            "$HF/WarmBloodAban/Minimax-h3_Singularity/resolve/main/Minimax-h3_Singularity_ref2va_Pruned_v1.3_int8.safetensors"
+        ),
         "qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors" to Soubor(
             "models/text_encoders",
             "✨ Vylepšit zadání u úprav — Qwen 2.1 PE-I2I (9,5 GB, nepovinné)",

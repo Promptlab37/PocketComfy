@@ -3054,6 +3054,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         updateEdit { it.copy(qwen21CachePrecision = v) }
 
     fun setEditQwen21Transparent(v: Boolean) = updateEdit { it.copy(qwen21Transparent = v) }
+    fun setEditQwen21Detailer(v: Boolean) = updateEdit { it.copy(qwen21Detailer = v) }
 
     data class EditLoraCatalog(
         val files: List<EditLoraFile> = emptyList(), val loading: Boolean = false,

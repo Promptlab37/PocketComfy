@@ -1,7 +1,9 @@
 package cz.promptlab.h3video.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -37,6 +39,7 @@ import cz.promptlab.h3video.ui.theme.Violet
  *
  * [popisek] se hodí tam, kde je potřeba říct, co se přeloží (segment osy…).
  */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 fun PrekladPromptu(
     vm: MainViewModel,
@@ -49,17 +52,23 @@ fun PrekladPromptu(
     val bezi = (stav as? MainViewModel.RewriteState.Busy)?.druh ==
         MainViewModel.PraceNaPromptu.PREKLAD
 
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    // FlowRow, NE Row: tlačítka + „Vrátit původní" se na telefon do jednoho
+    // řádku nevejdou. Obyčejný Row pak smáčkne text na nulovou šířku,
+    // ten se zalomí po písmenech do vysokého sloupce a natáhne řádek —
+    // nad a pod tlačítky vznikne velké prázdné místo (25. 9. 2026, podruhé).
+    androidx.compose.foundation.layout.FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
         OutlineButton(
             if (bezi) t("Překládám…") else popisek,
             color = Violet,
         ) { if (!bezi) vm.prelozPrompt(pole) }
         if (bezi) {
-            Spacer(Modifier.width(10.dp))
             CircularProgressIndicator(Modifier.size(18.dp), color = Violet, strokeWidth = 2.dp)
         }
         if (!bezi && puvodni != null) {
-            Spacer(Modifier.width(12.dp))
             Text(
                 t("Vrátit původní"),
                 style = MaterialTheme.typography.bodySmall, color = TextMid,

@@ -50,6 +50,9 @@ object RestoreBuilder {
             prompt = prompt,
             qwen21Steps = STEPS,
             qwen21Resolution = Qwen21Resolution.STANDARD,
+            // Detailer je na tohle přímo stavěný („photo restoration and
+            // quality improvements") — v Opravě jede vždy.
+            qwen21Detailer = true,
         )
         return Qwen21EditBuilder.build(template, scene, seed, images).also { wf ->
             wf.getJSONObject(N_SAVE).getJSONObject("inputs")

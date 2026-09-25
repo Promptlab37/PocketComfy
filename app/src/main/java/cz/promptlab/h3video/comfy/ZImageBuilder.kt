@@ -283,10 +283,11 @@ object ZImageBuilder {
         kroky: Int = 0,
         cfg: Float = 0f,
         qwen2k: Boolean = false,
+        qwenDetailer: Boolean = false,
     ): JSONObject = build(
         template(ctx, T2iModel.zId(model)),
         prompt, aspect, seed, nsfwLora, nsfwSila, model, loraFile, loraFile2, nsfwSila2,
-        userLoras, kroky, cfg, qwen2k,
+        userLoras, kroky, cfg, qwen2k, qwenDetailer,
     )
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
@@ -299,6 +300,7 @@ object ZImageBuilder {
         kroky: Int = 0,
         cfg: Float = 0f,
         qwen2k: Boolean = false,
+        qwenDetailer: Boolean = false,
     ): JSONObject {
         val m = T2iModel.zId(model)
         val wf = JSONObject(template)
@@ -311,6 +313,7 @@ object ZImageBuilder {
         } else if (m == T2iModel.QWEN21) {
             val (qw, qh) = if (qwen2k) size2kFor(aspect) else (w to h)
             buildQwen21(wf, prompt, qw, qh, seed, kroky, cfg)
+            if (qwenDetailer) Qwen21EditBuilder.zapojDetailer(wf)
         } else {
             buildFlux2(wf, m, prompt, w, h, seed)
         }

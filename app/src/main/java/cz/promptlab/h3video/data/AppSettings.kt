@@ -245,6 +245,7 @@ class AppSettings(ctx: Context) {
             .putBoolean("spectrum", d.spectrum)
             .putBoolean("sage", d.sageAttention)
             .putBoolean("qwen21_2k", d.qwen21Dvak)
+            .putBoolean("qwen21_detailer", d.qwen21Detailer)
             .putBoolean("turbo", true)
             .putBoolean(MIGRATED, true)
             .apply()
@@ -306,6 +307,7 @@ class AppSettings(ctx: Context) {
             spectrum = sp.getBoolean("spectrum", defaults.spectrum),
             sageAttention = sp.getBoolean("sage", defaults.sageAttention),
             qwen21Dvak = sp.getBoolean("qwen21_2k", defaults.qwen21Dvak),
+            qwen21Detailer = sp.getBoolean("qwen21_detailer", defaults.qwen21Detailer),
             crf = sp.getInt("crf", defaults.crf),
             livePreview = sp.getBoolean("livePreview", defaults.livePreview),
             teaCache = sp.getBoolean("teaCache", defaults.teaCache),
@@ -350,6 +352,7 @@ class AppSettings(ctx: Context) {
             putBoolean("spectrum", p.spectrum)
             putBoolean("sage", p.sageAttention)
             putBoolean("qwen21_2k", p.qwen21Dvak)
+            putBoolean("qwen21_detailer", p.qwen21Detailer)
             putInt("crf", p.crf)
             putBoolean("livePreview", p.livePreview)
             putBoolean("teaCache", p.teaCache)

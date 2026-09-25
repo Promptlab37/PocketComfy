@@ -156,6 +156,8 @@ data class ImageEditScene(
     val qwen21CachePrecision: Qwen21CachePrecision = Qwen21CachePrecision.DEFAULT,
     /** Přidá modelu výslovný pokyn k výstupu s alfa kanálem. */
     val qwen21Transparent: Boolean = false,
+    /** Detailer LoRA (`Qwen21EditBuilder.DETAILER`). */
+    val qwen21Detailer: Boolean = false,
     /** Každý motor má vlastní volbu: LoRA se nepřenáší mezi nekompatibilními modely. */
     val modelLoras: Map<EditMotor, EditLora> = emptyMap(),
     /** Delší hrana výstupu; 1 MP je podle autora rozumný strop. */
