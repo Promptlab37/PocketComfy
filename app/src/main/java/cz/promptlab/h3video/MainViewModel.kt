@@ -3675,6 +3675,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Víc fotek najednou — přidají se za sebou na konec. */
+    fun pickThreeStepRefs(uris: List<Uri>) {
+        viewModelScope.launch {
+            for (uri in uris) {
+                val index = _threeStepRefs.value.size
+                if (index >= cz.promptlab.h3video.comfy.ThreeStepBuilder.MAX_REFERENCI) break
+                val cil = threeStepRefFile(index)
+                val nahled = withContext(Dispatchers.IO) {
+                    ImageUtils.importToApp(getApplication(), uri, cil)
+                } ?: continue
+                _threeStepRefs.value = _threeStepRefs.value +
+                    cz.promptlab.h3video.data.LongMmRef(cil, nahled)
+            }
+        }
+    }
+
     /** Odebrání fotky — soubory se přečíslují, ať sedí se značkami `<Picture N>`. */
     fun removeThreeStepRef(index: Int) {
         viewModelScope.launch {
@@ -3692,6 +3708,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             _threeStepRefs.value = presunute
+        }
+    }
+
+    /** Víc fotek najednou — přidají se za sebou na konec. */
+    fun pickLongMmRefs(uris: List<Uri>) {
+        viewModelScope.launch {
+            for (uri in uris) {
+                val index = _longMm.value.reference.size
+                if (index >= cz.promptlab.h3video.data.LongMmScene.MAX_REFERENCI) break
+                val cil = longMmStore.refFile(index)
+                val nahled = withContext(Dispatchers.IO) {
+                    ImageUtils.importToApp(getApplication(), uri, cil)
+                } ?: continue
+                updateLongMm { s ->
+                    s.copy(reference = (s.reference + cz.promptlab.h3video.data.LongMmRef(cil, nahled))
+                        .take(cz.promptlab.h3video.data.LongMmScene.MAX_REFERENCI))
+                }
+            }
         }
     }
 

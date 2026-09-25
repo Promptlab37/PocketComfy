@@ -902,11 +902,9 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
                         )
                     }
                     if (refy.size < cz.promptlab.h3video.comfy.ThreeStepBuilder.MAX_REFERENCI) {
-                        cz.promptlab.h3video.ui.RefDlazdicka(
-                            thumb = null,
-                            onPick = { uri -> vm.pickThreeStepRef(refy.size, uri) },
-                            onRemove = {},
-                        )
+                        cz.promptlab.h3video.ui.RefPridat(
+                            cz.promptlab.h3video.comfy.ThreeStepBuilder.MAX_REFERENCI - refy.size,
+                        ) { uris -> vm.pickThreeStepRefs(uris) }
                     }
                 }
             }

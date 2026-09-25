@@ -293,11 +293,9 @@ fun LongMmSection(vm: MainViewModel) {
                         )
                     }
                     if (scene.reference.size < LongMmScene.MAX_REFERENCI) {
-                        RefDlazdicka(
-                            thumb = null,
-                            onPick = { uri -> vm.pickLongMmRef(scene.reference.size, uri) },
-                            onRemove = {},
-                        )
+                        RefPridat(LongMmScene.MAX_REFERENCI - scene.reference.size) { uris ->
+                            vm.pickLongMmRefs(uris)
+                        }
                     }
                 }
             }
@@ -317,11 +315,9 @@ fun LongMmSection(vm: MainViewModel) {
                         )
                     }
                     if (scene.reference.size < LongMmScene.MAX_REFERENCI) {
-                        RefDlazdicka(
-                            thumb = null,
-                            onPick = { uri -> vm.pickLongMmRef(scene.reference.size, uri) },
-                            onRemove = {},
-                        )
+                        RefPridat(LongMmScene.MAX_REFERENCI - scene.reference.size) { uris ->
+                            vm.pickLongMmRefs(uris)
+                        }
                     }
                 }
                 // Rozhoduje se o tom ve chvíli, kdy se ta fotka vkládá — mít
@@ -529,6 +525,35 @@ private fun ZdrojVideoRadek(
                 TextMid
             )
         }
+    }
+}
+
+/**
+ * Prázdný čtvereček ➕: v galerii jde označit **víc fotek najednou** (až do
+ * [zbyva]). Dřív se galerie otevírala jen na jednu a další čtvereček se
+ * objevil až po výběru — uživatel to bral tak, že víc fotek nejde.
+ */
+@Composable
+internal fun RefPridat(zbyva: Int, onPick: (List<android.net.Uri>) -> Unit) {
+    val vice = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(maxOf(2, zbyva))
+    ) { uris -> if (uris.isNotEmpty()) onPick(uris.take(zbyva)) }
+    val jedna = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) onPick(listOf(uri)) }
+    val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+    Box(
+        Modifier
+            .size(72.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Surface2)
+            .border(1.dp, Outline1, RoundedCornerShape(12.dp))
+            .clickable { if (zbyva >= 2) vice.launch(imageOnly) else jedna.launch(imageOnly) }
+    ) {
+        Icon(
+            Icons.Default.AddPhotoAlternate, null,
+            Modifier.align(Alignment.Center).size(22.dp), TextMid
+        )
     }
 }
 
