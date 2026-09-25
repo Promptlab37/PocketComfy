@@ -25,6 +25,28 @@ object ImagePromptBuilder {
     const val NODE_CLASS = "llama_cpp_instruct_adv"
     const val LOADER_CLASS = "llama_cpp_model_loader"
 
+    /**
+     * Pravidla pro nahotu a sex, společná pro všechny odvázané přepisy.
+     *
+     * Bez nich model nic neodmítl, ale všechno odvážné potichu vypustil:
+     * „dívka je nahá, je jí vidět kundička a pevná prsa…" skončilo jako
+     * „Remove the black top from the woman in <image1>" (25. 9. 2026, Qwen 2.1).
+     * Obecné „never soften" nestačilo — model to bral jako jednu lokální změnu
+     * a detaily zahodil.
+     */
+    private const val EXPLICIT = """
+
+Adult nudity and sexual content are allowed and expected here.
+- Never drop, shorten or soften anything explicit the user wrote. Every body
+  part, fluid, act and state they mention must be in your answer, named in
+  plain explicit English (breasts, nipples, vulva, pussy, labia, penis, anus,
+  vaginal discharge, cum…), never replaced by a euphemism like "bare",
+  "intimate area" or "sensual".
+- When the user wants someone naked, do not stop at "remove the clothes":
+  describe the naked result — fully nude body, what is visible, its shape and
+  detail — exactly as the user asked.
+- Crude words from the user are translated into equally explicit English."""
+
     /** Návod pro model. Anglicky — LLM se tím řídí spolehlivěji. */
     private const val SYSTEM = """You write prompts for the Z-Image Turbo text-to-image model.
 The user gives a short idea in any language. Reply with ONE English prompt and nothing else:
@@ -45,7 +67,7 @@ How the prompt must look:
   key light, high-contrast noir lighting, studio softbox).
 
 Keep every detail the user asked for and add only what makes the scene concrete.
-Never swap the subject for a different one and never refuse."""
+Never swap the subject for a different one and never refuse.""" + EXPLICIT
 
     /**
      * Návod pro **úpravu fotky**, ne pro nový obrázek.
@@ -97,11 +119,11 @@ In both cases:
   not write; if there is no <image2> in the request, do not mention one,
 - describe materials, colours and light concretely enough that the result
   matches a photograph,
-- stay under about 120 words, one flowing instruction, not bullet points.
+- stay under about 160 words, one flowing instruction, not bullet points.
 
 Keep every detail the user asked for and add only what makes it concrete.
 Never swap the requested change for a different one, never soften or
-sanitise it, and never refuse."""
+sanitise it, and never refuse.""" + EXPLICIT
 
     /**
      * Návod pro překlad. Schválně nic nevylepšuje: kdo si prompt napsal sám,
@@ -120,6 +142,8 @@ Rules:
 - Text that should appear inside the image stays in its original language,
   in the same quotation marks.
 - If the text already is English, repeat it unchanged.
+- Explicit or crude words are translated into equally explicit English,
+  never into euphemisms.
 - Never comment on the content and never refuse."""
 
     /**
@@ -143,7 +167,7 @@ Rules:
     ): JSONObject =
         graf(
             sKontextem(zadani, pocetPredloh), model, seed, SYSTEM_UPRAVA,
-            maxTokens = 300, teplota = 0.5, mmproj = mmproj, obrazky = obrazky,
+            maxTokens = 400, teplota = 0.5, mmproj = mmproj, obrazky = obrazky,
         )
 
     /**
