@@ -1007,8 +1007,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             // 3 kroky: běh řídí předloha, proto se nedosazují kroky ani shift.
             // Rozlišení prvního průchodu je v ní pevně 0,2 MPx; appka posílá
             // jen zadání, délku, poměr stran a seed.
-            Mode.THREESTEP -> QueuedRun(id, p.mode.title, p.prompt) {
-                GenerationEngine.start(p, emptyList())
+            Mode.THREESTEP -> {
+                val refy = _threeStepRefs.value.map { it.soubor }
+                QueuedRun(id, p.mode.title, p.prompt) {
+                    GenerationEngine.start(p, refy)
+                }
             }
 
             // Délka jde do parametrů kvůli popisku v galerii; prompt je styl,
@@ -3642,6 +3645,52 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
         )
         return spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.LongMmPromptBuilder.N_PREVIEW)
+    }
+
+    // --- 3 kroky: reference ----------------------------------------------
+    private fun threeStepRefFile(i: Int): java.io.File =
+        java.io.File(java.io.File(getApplication<Application>().filesDir, "3kroky").also { it.mkdirs() }, "ref$i.png")
+
+    private val _threeStepRefs = MutableStateFlow(
+        (0 until cz.promptlab.h3video.comfy.ThreeStepBuilder.MAX_REFERENCI)
+            .map { threeStepRefFile(it) }
+            .takeWhile { it.exists() }
+            .map { cz.promptlab.h3video.data.LongMmRef(it, android.graphics.BitmapFactory.decodeFile(it.absolutePath)) }
+    )
+    val threeStepRefs: StateFlow<List<cz.promptlab.h3video.data.LongMmRef>> = _threeStepRefs.asStateFlow()
+
+    fun pickThreeStepRef(index: Int, uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val cil = threeStepRefFile(index)
+            val nahled = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), uri, cil)
+            } ?: return@launch
+            val refy = _threeStepRefs.value.toMutableList()
+            val novy = cz.promptlab.h3video.data.LongMmRef(cil, nahled)
+            if (index < refy.size) refy[index] = novy else refy.add(novy)
+            _threeStepRefs.value = refy.take(cz.promptlab.h3video.comfy.ThreeStepBuilder.MAX_REFERENCI)
+        }
+    }
+
+    /** Odebrání fotky — soubory se přečíslují, ať sedí se značkami `<Picture N>`. */
+    fun removeThreeStepRef(index: Int) {
+        viewModelScope.launch {
+            val zbyle = _threeStepRefs.value.toMutableList()
+            if (index !in zbyle.indices) return@launch
+            zbyle.removeAt(index)
+            val presunute = withContext(Dispatchers.IO) {
+                val docasne = zbyle.map { it to it.soubor.readBytes() }
+                (0 until cz.promptlab.h3video.comfy.ThreeStepBuilder.MAX_REFERENCI)
+                    .forEach { runCatching { threeStepRefFile(it).delete() } }
+                docasne.mapIndexed { i, (ref, bajty) ->
+                    val cil = threeStepRefFile(i)
+                    cil.writeBytes(bajty)
+                    ref.copy(soubor = cil)
+                }
+            }
+            _threeStepRefs.value = presunute
+        }
     }
 
     fun pickLongMmRef(index: Int, uri: Uri?) {

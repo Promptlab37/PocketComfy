@@ -160,11 +160,11 @@ fun AllInOneSection(vm: MainViewModel) {
                     onClear = { vm.setAioPrompt("") },
                 )
                 // ✨ Vylepšovač: pár slov (klidně česky) → plný H3 prompt se
-                // záběry, časováním a zvukem. Přepisovač (Rewriter 8B) neumí
-                // Ref2VA, u Reference a listu postavy se proto neukazuje.
-                if (scene.mode != AioMode.CHARSHEET && scene.mode != AioMode.REFERENCE &&
-                    scene.mode != AioMode.UPSCALE
-                ) {
+                // záběry, časováním a zvukem. U Reference jede vlastní
+                // přepisovač s popisem fotek (MiniMaxH3UniversalWriter), obojí
+                // na odblokovaném modelu. Dřív byl u Reference schovaný — ze
+                // doby, kdy přepisovač reference neuměl.
+                if (scene.mode != AioMode.CHARSHEET && scene.mode != AioMode.UPSCALE) {
                     val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
                     val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
                     val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
@@ -172,8 +172,8 @@ fun AllInOneSection(vm: MainViewModel) {
                     Spacer(Modifier.height(10.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlineButton(
-                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
-                            color = Cyan,
+                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
+                            color = cz.promptlab.h3video.ui.theme.Amber,
                         ) { if (!bezi) vm.vylepsiAioPrompt() }
                         Spacer(Modifier.width(8.dp))
                         // Vylepšovač zadání rozepíše; tohle ho jen přeloží,

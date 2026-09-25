@@ -869,6 +869,7 @@ object GenerationEngine {
                     effective.aspect, seed,
                     rychlaPozornost = effective.sageAttention,
                     lory = effective.extraLoras,
+                    reference = names,
                 )
 
             // Long MiniMax: jeden záběr na běh. První zakládá řetěz a uloží

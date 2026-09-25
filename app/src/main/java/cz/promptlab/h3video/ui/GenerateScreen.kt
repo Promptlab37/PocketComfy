@@ -889,6 +889,28 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
                 Text(it.message, style = MaterialTheme.typography.bodySmall, color = Danger)
             }
 
+            val refy by vm.threeStepRefs.collectAsStateWithLifecycle()
+            Column {
+                Text(t("Podoba"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                Spacer(Modifier.height(8.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    refy.forEachIndexed { i, ref ->
+                        cz.promptlab.h3video.ui.RefDlazdicka(
+                            thumb = ref.nahled,
+                            onPick = { uri -> vm.pickThreeStepRef(i, uri) },
+                            onRemove = { vm.removeThreeStepRef(i) },
+                        )
+                    }
+                    if (refy.size < cz.promptlab.h3video.comfy.ThreeStepBuilder.MAX_REFERENCI) {
+                        cz.promptlab.h3video.ui.RefDlazdicka(
+                            thumb = null,
+                            onPick = { uri -> vm.pickThreeStepRef(refy.size, uri) },
+                            onRemove = {},
+                        )
+                    }
+                }
+            }
+
             Column {
                 Text(t("Délka"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                 Spacer(Modifier.height(8.dp))

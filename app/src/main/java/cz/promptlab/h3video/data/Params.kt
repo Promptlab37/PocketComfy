@@ -159,9 +159,10 @@ data class GenParams(
             // Úprava obrázku: upravovaná fotka a nepovinná vkládaná osoba.
             Mode.EDIT -> 2
             Mode.UPSCALE -> 1
-            // Obrázek z textu, hudba ani 3 kroky žádnou fotku neberou.
+            // Obrázek z textu ani hudba žádnou fotku neberou.
             Mode.IMAGE -> 0
-            Mode.THREESTEP -> 0
+            // 3 kroky: nepovinné reference (MiniMaxH3ReferenceToVideo).
+            Mode.THREESTEP -> cz.promptlab.h3video.comfy.ThreeStepBuilder.MAX_REFERENCI
             Mode.MUSIC -> 0
             Mode.RESTORE -> 1
             // Video ze zvuku: jedna fotka, ze které video začne.

@@ -533,7 +533,7 @@ private fun ZdrojVideoRadek(
 }
 
 @Composable
-private fun RefDlazdicka(
+internal fun RefDlazdicka(
     thumb: android.graphics.Bitmap?,
     onPick: (android.net.Uri?) -> Unit,
     onRemove: () -> Unit,

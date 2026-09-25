@@ -91,14 +91,16 @@ object ThreeStepBuilder {
         ctx: Context, prompt: String, sekundy: Double, aspect: Aspect, seed: Long,
         rychlaPozornost: Boolean = true,
         lory: List<LoraEntry> = emptyList(),
+        reference: List<String> = emptyList(),
     ): JSONObject =
-        build(template(ctx), prompt, sekundy, aspect, seed, rychlaPozornost, lory)
+        build(template(ctx), prompt, sekundy, aspect, seed, rychlaPozornost, lory, reference)
 
     /** Stejné sestavení z textu předlohy, ať jde graf ověřit testem bez Androidu. */
     fun build(
         template: String, prompt: String, sekundy: Double, aspect: Aspect, seed: Long,
         rychlaPozornost: Boolean = true,
         lory: List<LoraEntry> = emptyList(),
+        reference: List<String> = emptyList(),
     ): JSONObject {
         val wf = JSONObject(template)
 
@@ -125,8 +127,65 @@ object ThreeStepBuilder {
         )
 
         nasadLory(wf, lory)
+        nasadReference(wf, reference, prompt)
 
         return wf
+    }
+
+    /** Oba průchody — nízký a vysoký. Oba dostávají stejné zadání i fotky. */
+    val N_PODMINKY = listOf("16", "19")
+    const val N_VIDEO_VAE = "7"
+    const val N_AUDIO_VAE = "13"
+    const val REF_ID_OD = 700
+    const val MAX_REFERENCI = 4
+
+    /**
+     * S fotkami se v obou průchodech vymění `MiniMaxH3ImageToVideo` za
+     * `MiniMaxH3ReferenceToVideo` z jádra ComfyUI. Má stejné výstupy
+     * (positive, LATENT) i stejné zadání, šířku, výšku a délku, navíc
+     * `ref_images` — zbytek receptu tedy zůstává, jak je.
+     *
+     * Fotky se zapisují jako `ref_images.ref_image_0` … (Autogrow s prefixem
+     * `ref_image_`). Model je podle nápovědy uzlu pozná jen, když na ně
+     * zadání odkazuje značkou `<Picture N>` — chybí-li, doplní se na začátek.
+     */
+    private fun nasadReference(wf: JSONObject, reference: List<String>, prompt: String) {
+        val fotky = reference.filter { it.isNotBlank() }.take(MAX_REFERENCI)
+        if (fotky.isEmpty()) return
+        fotky.forEachIndexed { i, jmeno ->
+            wf.put(
+                (REF_ID_OD + i).toString(),
+                JSONObject()
+                    .put("class_type", "LoadImage")
+                    .put("inputs", JSONObject().put("image", jmeno)),
+            )
+        }
+        N_PODMINKY.forEach { id ->
+            val stare = wf.getJSONObject(id).getJSONObject("inputs")
+            val nove = JSONObject()
+                .put("clip", stare.getJSONArray("clip"))
+                .put("prompt", stare.get("prompt"))
+                .put("width", stare.get("width"))
+                .put("height", stare.get("height"))
+                .put("length", stare.get("length"))
+                .put("ref_image_size", "max")
+                .put("vae", JSONArray().put(N_VIDEO_VAE).put(0))
+                .put("audio_vae", JSONArray().put(N_AUDIO_VAE).put(0))
+            fotky.indices.forEach { i ->
+                nove.put("ref_images.ref_image_$i", JSONArray().put((REF_ID_OD + i).toString()).put(0))
+            }
+            wf.put(
+                id,
+                JSONObject()
+                    .put("class_type", "MiniMaxH3ReferenceToVideo")
+                    .put("inputs", nove),
+            )
+        }
+        if (!prompt.contains("<Picture", ignoreCase = true)) {
+            val znacky = fotky.indices.joinToString(", ") { "<Picture ${it + 1}>" }
+            wf.getJSONObject(N_PROMPT).getJSONObject("inputs")
+                .put("value", "Reference images: $znacky.\n\n" + prompt.trim())
+        }
     }
 
     /**
