@@ -384,7 +384,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun checkUpdate(silent: Boolean = false) {
         if (_update.value is UpdateState.Downloading || _update.value is UpdateState.Ready) return
-        if (silent && (updateCheckJob?.isActive == true || _update.value is UpdateState.Available)) return
+        // Zapamatovaná nabídka („je venku 4.34") už další kontroly neblokuje.
+        // Dřív ano: mezitím vyšly 4.35 a 4.36, uživatel klepl na Aktualizovat
+        // a nainstalovala se ta stará — a tak pořád dokola po jedné verzi.
+        if (silent && updateCheckJob?.isActive == true) return
         updateCheckJob?.cancel()
         if (!silent) _update.value = UpdateState.Checking
         updateCheckJob = viewModelScope.launch {
@@ -416,15 +419,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         updateCheckJob?.cancel()
         _update.value = UpdateState.Downloading(info, 0f)
         viewModelScope.launch {
+            // Vždy stáhnout NEJNOVĚJŠÍ vydání, ne to, které appka našla při
+            // poslední kontrole — mezitím mohlo vyjít několik dalších. Když se
+            // na GitHub zrovna nedá dostat, jede se s tím, co už známe.
+            val nejnovejsi = withContext(Dispatchers.IO) {
+                runCatching { UpdateChecker.check(getApplication(), settings.githubToken) }
+                    .getOrNull()
+            } ?: info
+            _update.value = UpdateState.Downloading(nejnovejsi, 0f)
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    UpdateChecker.download(getApplication(), info, settings.githubToken) { p ->
-                        _update.value = UpdateState.Downloading(info, p)
+                    UpdateChecker.download(getApplication(), nejnovejsi, settings.githubToken) { p ->
+                        _update.value = UpdateState.Downloading(nejnovejsi, p)
                     }
                 }
             }
             _update.value = result.fold(
-                onSuccess = { UpdateState.Ready(info, it) },
+                onSuccess = { UpdateState.Ready(nejnovejsi, it) },
                 onFailure = { UpdateState.Failed("Stažení se nepovedlo: ${it.message}") }
             )
         }

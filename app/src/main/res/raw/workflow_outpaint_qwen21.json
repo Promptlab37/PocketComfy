@@ -1,258 +1,254 @@
 {
-  "1": {
-    "class_type": "UNETLoader",
-    "inputs": {
-      "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
-      "weight_dtype": "default"
-    },
-    "_meta": {
-      "title": "Qwen Image 2.1"
-    }
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "qwen_image_2.1_int8_convrot.safetensors",
+   "weight_dtype": "default"
   },
-  "2": {
-    "class_type": "CLIPLoader",
-    "inputs": {
-      "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
-      "type": "qwen_image",
-      "device": "default"
-    },
-    "_meta": {
-      "title": "Textový enkodér"
-    }
-  },
-  "3": {
-    "class_type": "VAELoader",
-    "inputs": {
-      "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
-    },
-    "_meta": {
-      "title": "VAE"
-    }
-  },
-  "4": {
-    "class_type": "QwenImage21Cache",
-    "inputs": {
-      "model": [
-        "1",
-        0
-      ],
-      "device": "auto",
-      "dtype": "default"
-    },
-    "_meta": {
-      "title": "Sdílená KV cache"
-    }
-  },
-  "5": {
-    "class_type": "DifferentialDiffusion",
-    "inputs": {
-      "model": [
-        "4",
-        0
-      ]
-    },
-    "_meta": {
-      "title": "Měkká maska (rozvrh místo hranice)"
-    }
-  },
-  "10": {
-    "class_type": "LoadImage",
-    "inputs": {
-      "image": ""
-    },
-    "_meta": {
-      "title": "Fotka"
-    }
-  },
-  "15": {
-    "class_type": "ImagePadForOutpaint",
-    "inputs": {
-      "image": [
-        "10",
-        0
-      ],
-      "left": 0,
-      "top": 0,
-      "right": 0,
-      "bottom": 0,
-      "feathering": 0
-    },
-    "_meta": {
-      "title": "Přilepit místo a označit ho"
-    }
-  },
-  "20": {
-    "class_type": "InpaintCropImproved",
-    "inputs": {
-      "image": [
-        "15",
-        0
-      ],
-      "mask": [
-        "15",
-        1
-      ],
-      "downscale_algorithm": "bilinear",
-      "upscale_algorithm": "bicubic",
-      "preresize": true,
-      "preresize_mode": "ensure maximum resolution",
-      "preresize_min_width": 0,
-      "preresize_min_height": 0,
-      "preresize_max_width": 2048,
-      "preresize_max_height": 2048,
-      "mask_fill_holes": false,
-      "mask_expand_pixels": 48,
-      "mask_invert": false,
-      "mask_blend_pixels": 64,
-      "mask_hipass_filter": 0.0,
-      "extend_for_outpainting": false,
-      "extend_up_factor": 1.0,
-      "extend_down_factor": 1.0,
-      "extend_left_factor": 1.0,
-      "extend_right_factor": 1.0,
-      "context_from_mask_extend_factor": 20.0,
-      "output_resize_to_target_size": false,
-      "output_target_width": 1024,
-      "output_target_height": 1024,
-      "output_padding": "32",
-      "device_mode": "cpu (compatible)"
-    },
-    "_meta": {
-      "title": "Výřez, přesah a prolnutí"
-    }
-  },
-  "22": {
-    "class_type": "VAEEncode",
-    "inputs": {
-      "pixels": [
-        "20",
-        1
-      ],
-      "vae": [
-        "3",
-        0
-      ]
-    },
-    "_meta": {
-      "title": "Výřez do latentu"
-    }
-  },
-  "23": {
-    "class_type": "SetLatentNoiseMask",
-    "inputs": {
-      "samples": [
-        "22",
-        0
-      ],
-      "mask": [
-        "20",
-        2
-      ]
-    },
-    "_meta": {
-      "title": "Přepisuje se jen maska"
-    }
-  },
-  "30": {
-    "class_type": "TextEncodeQwenImage21",
-    "inputs": {
-      "clip": [
-        "2",
-        0
-      ],
-      "vae": [
-        "3",
-        0
-      ],
-      "prompt": "",
-      "negative_prompt": "",
-      "resolution": 0,
-      "images.image_1": [
-        "20",
-        1
-      ],
-      "images.image_2": [
-        "10",
-        0
-      ]
-    },
-    "_meta": {
-      "title": "Zadání + reference"
-    }
-  },
-  "45": {
-    "class_type": "KSampler",
-    "inputs": {
-      "seed": 0,
-      "steps": 25,
-      "cfg": 1.0,
-      "sampler_name": "euler",
-      "scheduler": "simple",
-      "denoise": 1.0,
-      "model": [
-        "5",
-        0
-      ],
-      "positive": [
-        "30",
-        0
-      ],
-      "negative": [
-        "30",
-        1
-      ],
-      "latent_image": [
-        "23",
-        0
-      ]
-    },
-    "_meta": {
-      "title": "Vzorkování"
-    }
-  },
-  "50": {
-    "class_type": "VAEDecode",
-    "inputs": {
-      "samples": [
-        "45",
-        0
-      ],
-      "vae": [
-        "3",
-        0
-      ]
-    },
-    "_meta": {
-      "title": "Zpět do pixelů"
-    }
-  },
-  "51": {
-    "class_type": "InpaintStitchImproved",
-    "inputs": {
-      "stitcher": [
-        "20",
-        0
-      ],
-      "inpainted_image": [
-        "50",
-        0
-      ]
-    },
-    "_meta": {
-      "title": "Vlepit zpět"
-    }
-  },
-  "60": {
-    "class_type": "SaveImage",
-    "inputs": {
-      "images": [
-        "51",
-        0
-      ],
-      "filename_prefix": "PocketOutpaintQwen21"
-    },
-    "_meta": {
-      "title": "Uložit"
-    }
+  "_meta": {
+   "title": "Qwen Image 2.1"
   }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3vl_8b_int8_convrot.safetensors",
+   "type": "qwen_image",
+   "device": "default"
+  },
+  "_meta": {
+   "title": "Textový enkodér"
+  }
+ },
+ "3": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "qwen_image_2.1_vae_bf16.safetensors"
+  },
+  "_meta": {
+   "title": "VAE"
+  }
+ },
+ "4": {
+  "class_type": "QwenImage21Cache",
+  "inputs": {
+   "model": [
+    "1",
+    0
+   ],
+   "device": "auto",
+   "dtype": "default"
+  },
+  "_meta": {
+   "title": "Sdílená KV cache"
+  }
+ },
+ "5": {
+  "class_type": "DifferentialDiffusion",
+  "inputs": {
+   "model": [
+    "4",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Měkká maska (rozvrh místo hranice)"
+  }
+ },
+ "10": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "Fotka"
+  }
+ },
+ "15": {
+  "class_type": "ImagePadForOutpaint",
+  "inputs": {
+   "image": [
+    "10",
+    0
+   ],
+   "left": 0,
+   "top": 0,
+   "right": 0,
+   "bottom": 0,
+   "feathering": 0
+  },
+  "_meta": {
+   "title": "Přilepit místo a označit ho"
+  }
+ },
+ "20": {
+  "class_type": "InpaintCropImproved",
+  "inputs": {
+   "image": [
+    "15",
+    0
+   ],
+   "mask": [
+    "15",
+    1
+   ],
+   "downscale_algorithm": "bilinear",
+   "upscale_algorithm": "bicubic",
+   "preresize": true,
+   "preresize_mode": "ensure maximum resolution",
+   "preresize_min_width": 0,
+   "preresize_min_height": 0,
+   "preresize_max_width": 2048,
+   "preresize_max_height": 2048,
+   "mask_fill_holes": false,
+   "mask_expand_pixels": 48,
+   "mask_invert": false,
+   "mask_blend_pixels": 64,
+   "mask_hipass_filter": 0.0,
+   "extend_for_outpainting": false,
+   "extend_up_factor": 1.0,
+   "extend_down_factor": 1.0,
+   "extend_left_factor": 1.0,
+   "extend_right_factor": 1.0,
+   "context_from_mask_extend_factor": 20.0,
+   "output_resize_to_target_size": false,
+   "output_target_width": 1024,
+   "output_target_height": 1024,
+   "output_padding": "32",
+   "device_mode": "cpu (compatible)"
+  },
+  "_meta": {
+   "title": "Výřez, přesah a prolnutí"
+  }
+ },
+ "22": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "20",
+    1
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Výřez do latentu"
+  }
+ },
+ "23": {
+  "class_type": "SetLatentNoiseMask",
+  "inputs": {
+   "samples": [
+    "22",
+    0
+   ],
+   "mask": [
+    "20",
+    2
+   ]
+  },
+  "_meta": {
+   "title": "Přepisuje se jen maska"
+  }
+ },
+ "30": {
+  "class_type": "TextEncodeQwenImage21",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ],
+   "prompt": "",
+   "negative_prompt": "",
+   "resolution": 0,
+   "images.image_1": [
+    "10",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Zadání + reference"
+  }
+ },
+ "45": {
+  "class_type": "KSampler",
+  "inputs": {
+   "seed": 0,
+   "steps": 25,
+   "cfg": 1.0,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 1.0,
+   "model": [
+    "5",
+    0
+   ],
+   "positive": [
+    "30",
+    0
+   ],
+   "negative": [
+    "30",
+    1
+   ],
+   "latent_image": [
+    "23",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Vzorkování"
+  }
+ },
+ "50": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "45",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Zpět do pixelů"
+  }
+ },
+ "51": {
+  "class_type": "InpaintStitchImproved",
+  "inputs": {
+   "stitcher": [
+    "20",
+    0
+   ],
+   "inpainted_image": [
+    "50",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Vlepit zpět"
+  }
+ },
+ "60": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "51",
+    0
+   ],
+   "filename_prefix": "PocketOutpaintQwen21"
+  },
+  "_meta": {
+   "title": "Uložit"
+  }
+ }
 }

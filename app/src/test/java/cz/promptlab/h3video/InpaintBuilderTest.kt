@@ -446,15 +446,18 @@ class InpaintBuilderTest {
     }
 
     /**
-     * Fotka jde do grafu dvakrát: `<image1>` je přilepené plátno (určuje
-     * velikost), `<image2>` je celá fotka jako kontext. Bez druhé by model
-     * kreslil nohy k tělu, které nevidí — vyříznuto je jen okolí masky.
+     * Předlohou pro model je **původní fotka**, ne výřez se šedým okrajem.
+     * 25. 9. 2026 Qwen šedý pás z výřezu věrně zkopíroval a rozšíření vyšlo
+     * šedé; se samotnou fotkou jako předlohou pás obsahuje obraz (ověřeno
+     * během). Výřez se šedým plátnem jde jen do latentu, který určuje velikost.
      */
-    @Test fun `rozsireni vidi celou fotku jako druhou referenci`() {
+    @Test fun `predlohou rozsireni je puvodni fotka, ne sedy vyrez`() {
         val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
         val text = wf.inputs(InpaintBuilder.N_TEXT)
-        assertEquals(InpaintBuilder.N_VYREZ, text.getJSONArray("images.image_1").getString(0))
-        assertEquals(InpaintBuilder.N_IMAGE, text.getJSONArray("images.image_2").getString(0))
+        assertEquals(InpaintBuilder.N_IMAGE, text.getJSONArray("images.image_1").getString(0))
+        assertFalse(text.has("images.image_2"))
+        // Výřez se šedým plátnem jde do latentu, ne do předlohy.
+        assertEquals(InpaintBuilder.N_VYREZ, wf.inputs("22").getJSONArray("pixels").getString(0))
         assertTrue(wf.inputs(InpaintBuilder.N_VYREZ)
             .getDouble("context_from_mask_extend_factor") >= 5.0)
         assertFalse(wf.inputs(InpaintBuilder.N_VYREZ).getBoolean("mask_fill_holes"))
@@ -474,7 +477,7 @@ class InpaintBuilderTest {
             setOf(cz.promptlab.h3video.data.Smer.DOLU))
         assertTrue(dolu.startsWith("Extend the picture in <image1> downward"))
         assertTrue(dolu.contains("nohy v džínách"))
-        assertTrue(dolu.contains("<image2>"))
+        assertFalse(dolu.contains("<image2>"))
 
         assertEquals("downward and to the left", InpaintBuilder.smeryVetou(
             setOf(cz.promptlab.h3video.data.Smer.VLEVO, cz.promptlab.h3video.data.Smer.DOLU)))

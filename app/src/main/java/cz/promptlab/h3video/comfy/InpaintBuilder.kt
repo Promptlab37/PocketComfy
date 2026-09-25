@@ -101,8 +101,8 @@ object InpaintBuilder {
 
     /**
      * Předloha rozšíření. Je to tentýž graf jako inpaint přes Qwen 2.1, jen
-     * bez načítače masky — tu si `InpaintCropImproved` vyrobí z přilepeného
-     * místa sám — a s fotkou podruhé jako `<image2>`.
+     * bez načítače masky — tu vyrobí `ImagePadForOutpaint` z přilepeného
+     * místa — a s původní fotkou jako jedinou předlohou `<image1>`.
      */
     private fun templateRozsireni(ctx: Context): String = cachedRozsireni
         ?: ctx.resources.openRawResource(R.raw.workflow_outpaint_qwen21)
@@ -217,8 +217,14 @@ object InpaintBuilder {
      *
      * Vede **operace se směrem**, ne popis výsledku — u Qwenu je to stejný
      * případ jako u karty Úhel kamery: název úlohy bez pokynu skončí tím, že
-     * model nechá skoro všechno být. `<image2>` je ta samá fotka celá, aby
-     * měl v kontextu celou postavu; velikost plátna určuje jen `<image1>`.
+     * model nechá skoro všechno být.
+     *
+     * **Předlohou `<image1>` je původní fotka, NE výřez se šedým okrajem.**
+     * Do 4.38 šel jako `<image1>` výřez s přilepeným šedým plátnem a Qwen
+     * jako editační model ten šedý pás občas věrně zkopíroval — 25. 9. 2026
+     * vyšel přidaný pás jako rovná šedá (rozptyl 0,6), přestože maska byla
+     * správně. Ověřeno pokusem: se samotnou fotkou jako předlohou pás obsahuje
+     * obraz a šev není vidět. Velikost plátna určuje latent, ne předloha.
      */
     fun zadaniRozsireni(prompt: String, smery: Set<Smer>): String {
         val text = prompt.trim()
@@ -230,7 +236,7 @@ object InpaintBuilder {
             " Work out what continues there from what the photo already shows."
         else " Fill the new area with: $text."
         return "Extend the picture in <image1> $kam and paint the empty area that " +
-            "was added there. <image2> is the same photo in full, for context.$co " +
+            "was added there.$co " +
             "Continue the subject, the perspective, the lighting and the background " +
             "across the seam so the added part looks like it was always in the frame: " +
             "bodies, edges, horizon and floor must line up exactly where they meet. " +
