@@ -63,6 +63,7 @@ fun PrubehPrepisu(
     val ubehlo = ((ted - busy.od) / 1000).coerceAtLeast(0)
 
     val nadpis = when (prubeh.faze) {
+        FazePrepisu.START -> t("Zapínám ComfyUI na počítači")
         FazePrepisu.PRIPRAVA -> t("Posílám zadání na server")
         FazePrepisu.FRONTA -> t("Čekám ve frontě serveru — před tebou %d").format(prubeh.predTebou)
         FazePrepisu.MODEL -> t("Načítám jazykový model")

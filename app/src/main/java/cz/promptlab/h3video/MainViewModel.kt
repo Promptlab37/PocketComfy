@@ -1874,7 +1874,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val rewriteProgress: StateFlow<Pair<Int, Int>?> = _rewriteProgress.asStateFlow()
 
     /** Co přepis na serveru právě dělá — podle toho, co server hlásí. */
-    enum class FazePrepisu { PRIPRAVA, FRONTA, MODEL, PSANI }
+    enum class FazePrepisu { START, PRIPRAVA, FRONTA, MODEL, PSANI }
 
     /**
      * Průběh přepisu pro UI: fáze, počet úloh před ním ve frontě serveru
@@ -1890,6 +1890,41 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _prubehPrepisu = MutableStateFlow(PrubehPrepisu())
     val prubehPrepisu: StateFlow<PrubehPrepisu> = _prubehPrepisu.asStateFlow()
+
+    /**
+     * Před každým přepisem či překladem: běží ComfyUI? Když ne, požádá
+     * spouštěče na počítači, ať ho nahodí, a počká — stejně jako generování
+     * (GenerationEngine). Do 4.46 to vylepšovače nedělaly a na vypnutém
+     * serveru jen spadly (uživatel 25. 9. 2026: „to jsem myslel, že je jasný").
+     */
+    private suspend fun zajistiComfy(client: ComfyClient) {
+        if (client.isAlive()) return
+        _prubehPrepisu.value = PrubehPrepisu(faze = FazePrepisu.START)
+        try {
+            cekejNaComfy(client)
+        } finally {
+            _prubehPrepisu.value = PrubehPrepisu()
+        }
+    }
+
+    private suspend fun cekejNaComfy(client: ComfyClient) {
+        if (!client.requestServerStart() && !client.launcherAlive()) throw ComfyException(
+            "launcher offline",
+            t("Počítač neodpovídá. Zkontroluj, že je zapnutý a přihlášený a že máš v telefonu zapnutý Tailscale."),
+        )
+        val od = System.currentTimeMillis()
+        while (System.currentTimeMillis() - od < SPUSTENI_MAX_MS) {
+            kotlinx.coroutines.delay(3000)
+            if (client.isAlive()) return
+        }
+        throw ComfyException(
+            "server offline",
+            t("ComfyUI se na počítači nerozjelo ani po šesti minutách."),
+        )
+    }
+
+    /** Stejná mez jako u generování (GenerationEngine.SERVER_WAIT_SECONDS). */
+    private val SPUSTENI_MAX_MS = 360_000L
 
     /** Přepis se na serveru rozběhl (skončilo čekání ve frontě). */
     private fun prepisBezi(faze: FazePrepisu) {
@@ -2109,7 +2144,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
-                    val client = ComfyClient(settings.serverUrl)
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
                             "chybi uzel",
@@ -2171,7 +2206,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
-                    val client = ComfyClient(settings.serverUrl)
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
                             "llama uzel chybi",
@@ -2228,7 +2263,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
-                    val client = ComfyClient(settings.serverUrl)
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
                             "llama uzel chybi",
@@ -2306,7 +2341,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
-                    val client = ComfyClient(settings.serverUrl)
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     if (client.objectInfo(Qwen21PeBuilder.NODE_CLASS) == null) throw ComfyException(
                         "TextGenerate chybi",
                         "Server je starší než ComfyUI 0.37 — chybí uzel na přepis zadání.",
@@ -2480,7 +2515,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
-                    val client = ComfyClient(settings.serverUrl)
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val refy = _threeStepRefs.value.map { it.soubor }.filter { it.exists() }
                     if (refy.isNotEmpty()) {
                         return@runCatching prepisSReferencemi(
@@ -2554,7 +2589,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
-                    val client = ComfyClient(settings.serverUrl)
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     // Režim Reference má vlastní cestu: starý přepisovač zná
                     // jen T2VA/I2VA/FL2VA/L2VA a reference neumí vůbec.
                     if (s.mode == AioMode.REFERENCE && s.refsWithImage.isNotEmpty()) {
@@ -4109,7 +4144,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
-                    val client = ComfyClient(settings.serverUrl)
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     uklidPredPrepisem(client)
                     // Navázání má vlastní cestu. Oficiální přepisovač píše
                     // VŽDYCKY samostatný klip i s kulisami, oblečením a světlem
@@ -4206,7 +4241,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
-                    val client = ComfyClient(settings.serverUrl)
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     // 12B enkodér i odvázaný model chtějí místo na grafice.
                     uklidPredPrepisem(client)
                     val fotka = scene.obrazek?.takeIf { it.exists() }
