@@ -198,7 +198,7 @@ fun ProgressScreen(
             Column(Modifier.weight(1f)) {
                 Text(
                     if (state.preparing) t("Načítám model")
-                    else stageText(state.stage, state.kind),
+                    else stageText(state.stage, state.kind, state.model),
                     style = MaterialTheme.typography.titleLarge,
                     color = TextHi,
                     maxLines = 2
@@ -209,7 +209,7 @@ fun ProgressScreen(
                         state.preparing -> t("Model se nahrává do grafické karty, chvíli to trvá.")
                         state.stage == Stage.QUEUED && state.queuePosition > 0 ->
                             "Před tebou je ${state.queuePosition} úloha ve frontě"
-                        else -> stageDetailText(state.stage, state.kind)
+                        else -> stageDetailText(state.stage, state.kind, state.modelSoubor)
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = TextMid,

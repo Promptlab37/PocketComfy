@@ -16,19 +16,26 @@ object RestoreBuilder {
     const val N_SAVE = Qwen21EditBuilder.N_SAVE
     const val STEPS = Qwen21EditBuilder.DEFAULT_STEPS
 
-    /** Výchozí obecná záchrana staré nebo poškozené fotografie. */
+    /**
+     * Uživatelův univerzální prompt na opravu poškozených fotek — doslova
+     * z jeho předlohy `workflow_qwen_restore.json` (uzel 223), kterou appka
+     * používala do 3.63. Při přechodu na Qwen 2.1 (3.64) ho nahradil vlastní
+     * text; 25. 9. 2026 si ho uživatel vyžádal zpátky.
+     */
     const val DEFAULT_PROMPT =
-        "Restore <image1> as a high-resolution photograph while strictly preserving " +
-            "the original people, facial identity, composition, pose and geometry. " +
-            "Remove dust, scratches, stains, grain and paper artifacts; repair torn " +
-            "edges and missing areas with realistic texture continuity; restore natural " +
-            "colors, neutral white balance, sharp hair and eyes, fine skin micro-texture " +
-            "and physically accurate lighting. No smoothing, blur or identity drift."
+        "Ultra high-resolution photo reconstruction with strict sharpness control, " +
+            "preserve original facial identity with zero identity drift and no shape " +
+            "deformation, remove dust scratches stains grain and paper artifacts while " +
+            "maintaining natural micro-texture, full realistic colorization with physically " +
+            "accurate subsurface scattering on skin, crisp edges high local contrast fine " +
+            "detail preservation no smoothing no blur no softness, naturalistic lighting " +
+            "neutral white balance professional color grading with restrained saturation, " +
+            "repair torn edges and missing areas with realistic texture continuity, true 4K " +
+            "detail razor-sharp focus high-frequency detail retention professional modern " +
+            "photography look, detailed sharp hair, focus on eyes."
 
-    /** Kvalitativní doplněk pro uživatelovo cílené zadání. */
-    const val KVALITA =
-        "ultra sharp, fine detail, natural skin micro-texture, " +
-            "physically accurate lighting, photorealistic, no blur, no smoothing"
+    /** Při vlastním zadání se za ně připojí tentýž uživatelův prompt. */
+    const val KVALITA = DEFAULT_PROMPT
 
     private var cached: String? = null
 
@@ -43,8 +50,9 @@ object RestoreBuilder {
     fun build(
         template: String, seed: Long, images: List<String>, pokyn: String = "",
     ): JSONObject {
-        val prompt = if (pokyn.isBlank()) DEFAULT_PROMPT else
-            "Edit <image1>: ${pokyn.trim()}, $KVALITA"
+        // <image1> říká Qwenu 2.1, kterou fotku upravuje; text za ním je doslova uživatelův.
+        val prompt = if (pokyn.isBlank()) "Restore <image1>: $DEFAULT_PROMPT" else
+            "Edit <image1>: ${pokyn.trim()}. $KVALITA"
         val scene = ImageEditScene(
             motor = EditMotor.QWEN21,
             prompt = prompt,

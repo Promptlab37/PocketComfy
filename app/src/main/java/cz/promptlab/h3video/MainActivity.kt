@@ -684,7 +684,7 @@ private fun MiniProgress(state: GenState.Running, onExpand: () -> Unit) {
             Spacer(Modifier.size(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    stageText(state.stage, state.kind),
+                    stageText(state.stage, state.kind, state.model),
                     style = MaterialTheme.typography.bodyMedium,
                     color = TextHi,
                     fontWeight = FontWeight.SemiBold,

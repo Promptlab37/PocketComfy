@@ -109,6 +109,12 @@ sealed interface GenState {
         val isSwap: Boolean = false,
         /** Beh domalovava do masky (inpaint) - texty "Domalovavam". */
         val isInpaint: Boolean = false,
+        /** Domalovat v režimu Rozšířit — žádná maska, přidává se plátno. */
+        val isOutpaint: Boolean = false,
+        /** Čitelný název modelu přečtený z odeslaného grafu (viz [RunModel]). */
+        val model: String = "",
+        /** Přesný soubor modelu z grafu. */
+        val modelSoubor: String = "",
     ) : GenState
 
     data class Done(
@@ -238,6 +244,9 @@ object GenerationEngine {
 
     /** Běží domalování do masky (Klein / Flux Fill)? Vlastní workflow z APK, výsledek PNG. */
     @Volatile private var inpaintRun: Boolean = false
+    @Volatile private var outpaintRun: Boolean = false
+    /** Co běh opravdu načítá — z grafu, ne z karty. */
+    @Volatile private var runModel: Pair<String, String> = "" to ""
 
     /** Běží dlouhé video? Graf se skládá v appce, výsledkem je jedno MP4. */
     @Volatile private var longRun: Boolean = false
@@ -442,6 +451,8 @@ object GenerationEngine {
         angleRun = angleScene != null
         swapRun = swapScene != null
         inpaintRun = inpaintScene != null
+        outpaintRun = inpaintScene?.rezim == cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT
+        runModel = "" to ""
         longRun = longScene != null
         model3dRun = model3dScene != null
         ltxRun = ltxScene != null
@@ -995,6 +1006,7 @@ object GenerationEngine {
             else -> effective.steps
         }
         // Podle tříd uzlů se u šablon balíku poznávají fáze běhu.
+        runModel = RunModel.zGrafu(workflow)
         if (jedeNaAio) nodeClasses = AioBuilder.nodeClasses(workflow)
         if (editScene != null) nodeClasses = when (editScene.motor) {
             cz.promptlab.h3video.data.EditMotor.KLEIN ->
@@ -2003,6 +2015,9 @@ object GenerationEngine {
             isAngle = angleRun,
             isSwap = swapRun,
             isInpaint = inpaintRun,
+            isOutpaint = outpaintRun,
+            model = runModel.first,
+            modelSoubor = runModel.second,
         )
     }
 

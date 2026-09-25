@@ -77,7 +77,7 @@ class GenerationService : Service() {
                             val text = buildString {
                                 // Krea 2 vyrábí obrázek – "Generuji video" by lhalo.
                                 // Texty všech druhů běhů drží matice v RunTexts.kt.
-                                append(stageText(s.stage, s.kind))
+                                append(stageText(s.stage, s.kind, s.model))
                                 if (s.stage == Stage.SAMPLING && s.totalSteps > 0)
                                     append(" · krok ${s.step}/${s.totalSteps}")
                                 s.etaSeconds?.let { append(" · zbývá ~${formatEta(it)}") }

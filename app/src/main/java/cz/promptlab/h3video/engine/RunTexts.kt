@@ -26,6 +26,8 @@ enum class RunKind {
      */
     MUSIC_COVER,
     MODEL3D,
+    /** Domalovat → Rozšířit: žádná maska, ke kraji se přidává plátno. */
+    OUTPAINT,
 }
 
 val GenState.Running.kind: RunKind
@@ -44,11 +46,26 @@ val GenState.Running.kind: RunKind
         isRestore -> RunKind.RESTORE
         isAngle -> RunKind.ANGLE
         isSwap -> RunKind.SWAP
+        isInpaint && isOutpaint -> RunKind.OUTPAINT
         isInpaint -> RunKind.INPAINT
         isT2i -> RunKind.T2I
         isImage -> RunKind.EDIT
         else -> RunKind.VIDEO
     }
+
+/**
+ * Nadpis fáze podle skutečného modelu. Když graf model nese, fáze načítání
+ * ho jmenuje přímo („Načítám Qwen Image 2.1") — pevný text podle karty lhal,
+ * jakmile karta uměla víc modelů.
+ */
+fun stageText(stage: Stage, kind: RunKind, model: String): String =
+    if (stage == Stage.MODELS && model.isNotBlank()) t("Načítám %s").format(model)
+    else stageText(stage, kind)
+
+/** Podtitulek s přesným souborem modelu z grafu. */
+fun stageDetailText(stage: Stage, kind: RunKind, soubor: String): String =
+    if (stage == Stage.MODELS && soubor.isNotBlank()) soubor
+    else stageDetailText(stage, kind)
 
 /** Nadpis fáze — úplná matice, žádný druh nepropadá na texty o videu. */
 fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
@@ -58,6 +75,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.EDIT, RunKind.RESTORE, RunKind.ANGLE, RunKind.UPSCALE, RunKind.DLSS,
         RunKind.MODEL3D -> t("Odesílám fotku")
         RunKind.SWAP, RunKind.INPAINT -> t("Odesílám fotky")
+        RunKind.OUTPAINT -> t("Odesílám fotku")
         RunKind.MUSIC_COVER -> t("Odesílám nahrávku")
         RunKind.T2I, RunKind.MUSIC, RunKind.MUSIC_YUE2 -> t("Připravuji zadání")
     }
@@ -65,12 +83,12 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
     Stage.MODELS -> when (kind) {
         RunKind.VIDEO -> t("Načítám modely")
         RunKind.LONG -> t("Načítám MiniMax H3")
-        RunKind.EDIT -> t("Načítám Krea 2")
-        RunKind.T2I -> t("Načítám Z-Image")
-        RunKind.RESTORE -> t("Načítám Qwen Edit")
-        RunKind.ANGLE -> t("Načítám Qwen Edit")
+        RunKind.EDIT -> t("Načítám model úpravy")
+        RunKind.T2I -> t("Načítám model obrázku")
+        RunKind.RESTORE -> t("Načítám Qwen Image")
+        RunKind.ANGLE -> t("Načítám Qwen Image")
         RunKind.SWAP -> t("Načítám Flux Fill")
-        RunKind.INPAINT -> t("Načítám model na domalování")
+        RunKind.INPAINT, RunKind.OUTPAINT -> t("Načítám model na domalování")
         RunKind.UPSCALE -> t("Načítám SeedVR2")
         RunKind.DLSS -> t("Spouštím DLSS 5")
         RunKind.MUSIC -> t("Načítám ACE-Step")
@@ -84,6 +102,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.EDIT, RunKind.RESTORE, RunKind.ANGLE -> t("Načítám fotku")
         RunKind.SWAP -> t("Připravuji výřez tváře")
         RunKind.INPAINT -> t("Vyřezávám okolí masky")
+        RunKind.OUTPAINT -> t("Přidávám plátno")
         RunKind.UPSCALE -> t("Dělím na dlaždice")
         RunKind.DLSS -> t("Načítám fotku")
         RunKind.T2I -> t("Připravuji plátno")
@@ -107,6 +126,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.ANGLE -> t("Otáčím pohled")
         RunKind.SWAP -> t("Měním tvář")
         RunKind.INPAINT -> t("Domalovávám do masky")
+        RunKind.OUTPAINT -> t("Rozšiřuji obrázek")
         RunKind.UPSCALE -> t("Zvětšuji obrázek")
         RunKind.DLSS -> t("Doostřuji fotku")
         RunKind.MUSIC -> t("Skládám hudbu")
@@ -125,6 +145,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.MUSIC, RunKind.MUSIC_YUE2, RunKind.MUSIC_COVER -> t("Ukládám skladbu")
         RunKind.SWAP -> t("Vlepuji tvář zpět")
         RunKind.INPAINT -> t("Vlepuji domalovaný kus zpět")
+        RunKind.OUTPAINT -> t("Napojuji rozšíření na fotku")
         RunKind.UPSCALE -> t("Slepuji dlaždice")
         RunKind.MODEL3D -> t("Peču textury a rozbaluji UV")
         else -> t("Ukládám obrázek")
@@ -141,14 +162,14 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
 /** Podtitulek fáze — kde nemá druh nic zvláštního, platí obecný popis. */
 fun stageDetailText(stage: Stage, kind: RunKind): String = when {
     stage == Stage.MODELS -> when (kind) {
-        RunKind.VIDEO -> t("MiniMax H3 + textový enkodér")
+        RunKind.VIDEO -> t("Video model + textový enkodér")
         RunKind.LONG -> t("MiniMax H3 (referenční váhy) + enkodér")
-        RunKind.EDIT -> t("Krea 2 + textový enkodér")
-        RunKind.T2I -> t("Z-Image Turbo + textový enkodér")
+        RunKind.EDIT -> t("Model úpravy + textový enkodér")
+        RunKind.T2I -> t("Model obrázku + textový enkodér")
         RunKind.RESTORE -> t("Qwen Image 2.1 — obnova fotografie")
-        RunKind.ANGLE -> t("Qwen Image 2.1 — nový úhel kamery")
+        RunKind.ANGLE -> t("Qwen Image — nový úhel kamery")
         RunKind.SWAP -> t("Flux Fill + portrétní LoRA")
-        RunKind.INPAINT -> t("Model na domalování + textový enkodér")
+        RunKind.INPAINT, RunKind.OUTPAINT -> t("Model na domalování + textový enkodér")
         RunKind.UPSCALE -> "SeedVR2 + VAE"
         RunKind.DLSS -> t("NVIDIA Neural Rendering, žádný difuzní model")
         RunKind.MUSIC -> "ACE-Step 1.5 Turbo"
@@ -200,6 +221,7 @@ fun mainPhaseTitle(kind: RunKind): String = when (kind) {
     RunKind.ANGLE -> t("Nový úhel kamery")
     RunKind.SWAP -> t("Výměna tváře")
     RunKind.INPAINT -> t("Domalování do masky")
+    RunKind.OUTPAINT -> t("Rozšíření obrázku")
     RunKind.UPSCALE -> t("Zvětšování")
     RunKind.DLSS -> t("Doostření DLSS 5")
     RunKind.MUSIC -> t("Skládání hudby")

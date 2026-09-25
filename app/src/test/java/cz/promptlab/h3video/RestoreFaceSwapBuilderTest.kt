@@ -60,7 +60,7 @@ class RestoreFaceSwapBuilderTest {
         // opravovací zadání je pevné a nesmí být prázdné
         assertTrue(
             wf.inputs(RestoreBuilder.N_PROMPT).getString("prompt")
-                .contains("Restore <image1>")
+                .contains("Restore <image1>: Ultra high-resolution photo reconstruction")
         )
         assertEquals(RestoreBuilder.STEPS, 25)
         assertEquals("H3RestoreQwen21", wf.inputs(RestoreBuilder.N_SAVE).getString("filename_prefix"))
