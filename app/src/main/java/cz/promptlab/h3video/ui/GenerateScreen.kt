@@ -513,10 +513,18 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                         // ale člověk pak přepne na jiný poměr, model fotku do
                         // plátna roztáhne — ať to vidí dřív, než to spustí,
                         // a ne až na výsledku.
+                        // Fotka podle režimu, ve kterém karta je — ne první,
+                        // co najde. Karta si pamatuje vstupy všech režimů a do
+                        // 4.48 tu v Referenci strašil zapomenutý první snímek
+                        // ze „Z obrázku" (25. 9. 2026: auto na šířku → „2:3").
                         val vstupniFotka = if (mode == Mode.ALLINONE) {
-                            aioScene.first.thumb
-                                ?: aioScene.keys.firstOrNull { it.thumb != null }?.thumb
-                                ?: aioScene.refs.singleOrNull { it.thumb != null }?.thumb
+                            when (aioScene.mode) {
+                                AioMode.IMAGE -> aioScene.first.thumb
+                                AioMode.KEYFRAMES -> aioScene.keys.firstOrNull { it.thumb != null }?.thumb
+                                AioMode.REFERENCE -> aioScene.refs.singleOrNull { it.thumb != null }?.thumb
+                                    ?.takeIf { aioScene.refVideo == null }
+                                else -> null
+                            }
                         } else null
                         vstupniFotka?.let { fotka ->
                             val sedici = Aspect.nejblizsi(fotka.width, fotka.height)
