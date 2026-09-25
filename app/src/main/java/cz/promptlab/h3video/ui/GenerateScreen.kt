@@ -1130,17 +1130,19 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                             "Vypnuto = okolo 1 megapixelu jako ostatní modely karty."),
                         params.qwen21Dvak,
                     ) { v -> vm.update { it.copy(qwen21Dvak = v) } }
-                    Spacer(Modifier.height(10.dp))
-                    ToggleRow(
-                        t("Detailer"),
-                        "",
-                        params.qwen21Detailer,
-                    ) { v -> vm.update { it.copy(qwen21Detailer = v) } }
                 }
             }
-            // Žádná stávající LoRA na Qwen 2.1 nesedí — 32 vrstev proti 60
-            // u starého Qwen-Image.
+            // Starý výběr LoRA na Qwen 2.1 nesedí (32 vrstev proti 60 u starého
+            // Qwen-Image). Má ale vlastní LoRA Detailer — ta je tady, kde LoRA
+            // uživatel hledá; schovaná pod 2K ji nenašel.
             if (vybranyModel != T2iModel.QWEN21) ImageLoraSection(vm, params)
+            else SectionCard(title = t("LoRA")) {
+                ToggleRow(
+                    t("LoRA Detailer"),
+                    "",
+                    params.qwen21Detailer,
+                ) { v -> vm.update { it.copy(qwen21Detailer = v) } }
+            }
         }
     }
 }

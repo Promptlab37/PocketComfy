@@ -230,6 +230,15 @@ fun ImageEditSection(vm: MainViewModel) {
 
     // Qwen 2.1 je nová architektura. LoRA pro jiné modely na ni nesedí.
     if (scene.motor != EditMotor.QWEN21) EditLoraSection(vm, scene)
+    // Qwen 2.1 má jedinou LoRA — Detailer. Patří sem, kde je u ostatních
+    // motorů výběr LoRA; v nastavení Qwenu ji uživatel nenašel.
+    else SectionCard(title = t("LoRA")) {
+        EditToggleRow(
+            t("LoRA Detailer"),
+            "",
+            scene.qwen21Detailer,
+        ) { vm.setEditQwen21Detailer(it) }
+    }
 
     if (scene.motor == EditMotor.QWEN21) SectionCard(
         title = t("Qwen Image 2.1"),
@@ -264,11 +273,6 @@ fun ImageEditSection(vm: MainViewModel) {
                 t("Přidá do zadání výslovný pokyn k alfa kanálu. Výsledek zůstane PNG."),
                 scene.qwen21Transparent,
             ) { vm.setEditQwen21Transparent(it) }
-            EditToggleRow(
-                t("Detailer"),
-                "",
-                scene.qwen21Detailer,
-            ) { vm.setEditQwen21Detailer(it) }
         }
     }
 

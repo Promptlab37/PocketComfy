@@ -779,6 +779,7 @@ object Slovnik {
         "Eros Turbo" to "Eros Turbo",
         "Singularity" to "Singularity",
         "Detailer" to "Detailer",
+        "LoRA Detailer" to "LoRA Detailer",
         "V2 Kvalita" to "V2 Quality",
         "Eros model i Eros LoRA" to "The Eros model and the Eros LoRA",
         "3 + 2" to "3 + 2",
