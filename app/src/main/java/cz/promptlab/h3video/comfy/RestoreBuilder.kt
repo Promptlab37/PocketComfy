@@ -67,12 +67,19 @@ object RestoreBuilder {
         .openRawResource(R.raw.workflow_qwen21_edit)
         .bufferedReader().use { it.readText() }.also { cached = it }
 
+    /** Uzly doostření DLSS 5 (na konci grafu, za VAEDecode). */
+    const val N_DLSS_NASTAVENI = "50"
+    const val N_DLSS = "51"
+    const val N_DEKODER = Qwen21EditBuilder.N_DECODE
+
     fun build(
         ctx: Context, seed: Long, images: List<String>, pokyn: String = "",
-    ): JSONObject = build(template(ctx), seed, images, pokyn)
+        doostrit: Boolean = false, nasobek: String = "1x",
+    ): JSONObject = build(template(ctx), seed, images, pokyn, doostrit, nasobek)
 
     fun build(
         template: String, seed: Long, images: List<String>, pokyn: String = "",
+        doostrit: Boolean = false, nasobek: String = "1x",
     ): JSONObject {
         // <image1> říká Qwenu 2.1, kterou fotku upravuje; text za ním je doslova uživatelův.
         val prompt = if (pokyn.isBlank()) "$UVOD $DEFAULT_PROMPT" else
@@ -95,11 +102,72 @@ object RestoreBuilder {
                 "prompt",
                 text.getString("prompt").replace(Qwen21EditBuilder.DETAILER_PROMPT, DETAILER_VETA),
             )
+            if (doostrit) pridejDoostreni(wf, nasobek)
         }
     }
 
-    fun stageForClass(cls: String?): Stage = Qwen21EditBuilder.stageForClass(cls)
-    fun rangeForClass(cls: String?): Pair<Float, Float> = Qwen21EditBuilder.rangeForClass(cls)
+    /**
+     * DLSS 5 za dekodér: VAEDecode → DLSS5EnhanceImages → SaveImage. Nastavení
+     * je přesně výchozí z předlohy karty Zvětšit (`workflow_dlss_enhance.json`),
+     * mění se jen násobek. `verify_neural_rendering` zůstává zapnuté — bez něj
+     * by uzel při selhání tiše vrátil jen zvětšenou fotku.
+     */
+    private fun pridejDoostreni(wf: JSONObject, nasobek: String) {
+        wf.put(
+            N_DLSS_NASTAVENI, JSONObject()
+                .put("class_type", "DLSS5Settings")
+                .put(
+                    "inputs", JSONObject()
+                        .put("upscaling_mode", DlssBuilder.modeFor(nasobek))
+                        .put("nr_preset", "Default")
+                        .put("nr_style", "Default")
+                        .put("nr_intensity", 1.0)
+                        .put("local_tone_strength", 1.0)
+                        .put("local_structure_strength", 1.5)
+                        .put("skin_structure_strength", 2.0)
+                        .put("automatic_mask", true)
+                        .put("dlss_model_preset", "M")
+                        .put("motion", "none")
+                        .put("scene_change_threshold", 0.24)
+                        .put("warmup_frames", 0)
+                        .put("runtime_dir", ""),
+                )
+                .put("_meta", JSONObject().put("title", "DLSS 5 — nastavení")),
+        )
+        wf.put(
+            N_DLSS, JSONObject()
+                .put("class_type", "DLSS5EnhanceImages")
+                .put(
+                    "inputs", JSONObject()
+                        .put("images", org.json.JSONArray().put(N_DEKODER).put(0))
+                        .put("settings", org.json.JSONArray().put(N_DLSS_NASTAVENI).put(0))
+                        .put("verify_neural_rendering", true),
+                )
+                .put("_meta", JSONObject().put("title", "DLSS 5 — doostření")),
+        )
+        wf.getJSONObject(N_SAVE).getJSONObject("inputs")
+            .put("images", org.json.JSONArray().put(N_DLSS).put(0))
+    }
+
+    /**
+     * Fáze jako u úpravy Qwen 2.1, navíc doostření: DLSS má vlastní fázi
+     * (text „Doostřuji fotku"), uložení se schová pod dekódování — trvá
+     * zlomek sekundy a jinak by se hlásilo jako doostřování i bez DLSS.
+     */
+    fun stageForClass(cls: String?): Stage = when (cls) {
+        "DLSS5Settings", "DLSS5EnhanceImages" -> Stage.MUXING
+        "SaveImage" -> Stage.DECODING
+        else -> Qwen21EditBuilder.stageForClass(cls)
+    }
+
+    fun rangeForClass(cls: String?): Pair<Float, Float> = when (stageForClass(cls)) {
+        Stage.MODELS -> 0.00f to 0.08f
+        Stage.REFERENCES -> 0.08f to 0.12f
+        Stage.ENCODING -> 0.12f to 0.22f
+        Stage.SAMPLING -> 0.22f to 0.84f
+        Stage.DECODING -> 0.84f to 0.88f
+        else -> 0.88f to 0.99f
+    }
     fun reportsSteps(cls: String?): Boolean = Qwen21EditBuilder.reportsSteps(cls)
     fun nodeClasses(wf: JSONObject): Map<String, String> = Qwen21EditBuilder.nodeClasses(wf)
 }

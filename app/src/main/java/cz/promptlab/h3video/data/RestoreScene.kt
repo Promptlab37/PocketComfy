@@ -23,6 +23,14 @@ data class RestoreScene(
      * v ní stojí „no shape deformation", což je pravý opak cílené opravy.
      */
     val pokyn: String = "",
+    /**
+     * Doostření NVIDIA DLSS 5 jako poslední krok (od 4.54). Qwen vrací fotku
+     * kolem 1 MPx a měkčí; DLSS ji bez dokreslování doostří (1×), případně
+     * rovnou zvětší (2×). Uživatel 26. 9. 2026: „aby výstup byl hotový ostrý".
+     */
+    val doostrit: Boolean = true,
+    /** "1x" = jen doostření, "2x" = doostření + zvětšení (viz DlssBuilder). */
+    val doostritNasobek: String = "1x",
 ) {
     val uploadImages: List<File> get() = listOfNotNull(source)
 }
@@ -41,6 +49,8 @@ class RestoreStore(private val ctx: Context) {
     fun load(): RestoreScene {
         val zaklad = RestoreScene(
             pokyn = sp.getString(KEY_POKYN, "") ?: "",
+            doostrit = sp.getBoolean(KEY_DOOSTRIT, true),
+            doostritNasobek = sp.getString(KEY_NASOBEK, "1x") ?: "1x",
         )
         val name = sp.getString(KEY, null) ?: return zaklad
         val f = File(dir(), name)
@@ -51,11 +61,15 @@ class RestoreStore(private val ctx: Context) {
         sp.edit()
             .putString(KEY, s.source?.name)
             .putString(KEY_POKYN, s.pokyn)
+            .putBoolean(KEY_DOOSTRIT, s.doostrit)
+            .putString(KEY_NASOBEK, s.doostritNasobek)
             .apply()
     }
 
     private companion object {
         const val KEY = "restoreScene"
         const val KEY_POKYN = "restorePokyn"
+        const val KEY_DOOSTRIT = "restoreDoostrit"
+        const val KEY_NASOBEK = "restoreDoostritNasobek"
     }
 }

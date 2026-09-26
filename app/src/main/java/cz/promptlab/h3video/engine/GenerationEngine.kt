@@ -935,6 +935,8 @@ object GenerationEngine {
                 RestoreBuilder.build(
                     app, seed, names,
                     pokyn = restoreScene.pokyn,
+                    doostrit = restoreScene.doostrit,
+                    nasobek = restoreScene.doostritNasobek,
                 )
 
             // Výměna tváře jede na uživatelově ACE++ workflow z APK.

@@ -650,6 +650,12 @@ object Slovnik {
             "Four times the pixels and far more memory and time. " +
             "Off = around 1 megapixel like the other models on this card.",
         "napsáno %d" to "written %d",
+        "Doostření RTX" to "RTX sharpening",
+        "NVIDIA DLSS 5 jako poslední krok — nic nedokresluje, jen doostří" to
+            "NVIDIA DLSS 5 as the last step — it adds nothing, only sharpens",
+        "Doostřit a zvětšit 2×" to "Sharpen and upscale 2×",
+        "Jen doostřit" to "Sharpen only",
+        "Doostřuji fotku (RTX)" to "Sharpening the photo (RTX)",
         "Výběr fotek" to "Photo picker",
         "Ze souborů — naposledy upravené jsou nahoře" to "From files — most recently edited first",
         "Systémový výběr — řazení podle data pořízení" to "System picker — sorted by date taken",

@@ -187,4 +187,24 @@ class RestoreFaceSwapBuilderTest {
         assertEquals(Stage.MUXING, FaceSwapBuilder.stageForClass("InpaintStitchImproved"))
         assertTrue(FaceSwapBuilder.reportsSteps("KSampler"))
     }
+
+    @Test
+    fun `oprava - doostreni DLSS na konci grafu`() {
+        val bez = RestoreBuilder.build(restore, 1L, listOf("a.png"))
+        assertTrue(!bez.has(RestoreBuilder.N_DLSS))
+        assertEquals(RestoreBuilder.N_DEKODER,
+            bez.inputs(RestoreBuilder.N_SAVE).getJSONArray("images").getString(0))
+
+        val se = RestoreBuilder.build(restore, 1L, listOf("a.png"), doostrit = true, nasobek = "2x")
+        assertEquals("DLSS5EnhanceImages", se.getJSONObject(RestoreBuilder.N_DLSS).getString("class_type"))
+        assertEquals(RestoreBuilder.N_DEKODER,
+            se.inputs(RestoreBuilder.N_DLSS).getJSONArray("images").getString(0))
+        assertTrue(se.inputs(RestoreBuilder.N_DLSS).getBoolean("verify_neural_rendering"))
+        assertEquals(RestoreBuilder.N_DLSS,
+            se.inputs(RestoreBuilder.N_SAVE).getJSONArray("images").getString(0))
+        assertEquals("2x (Performance)",
+            se.inputs(RestoreBuilder.N_DLSS_NASTAVENI).getString("upscaling_mode"))
+        java.io.File("build/qwen21-grafy").mkdirs()
+        java.io.File("build/qwen21-grafy/oprava_dlss.json").writeText(se.toString(1))
+    }
 }

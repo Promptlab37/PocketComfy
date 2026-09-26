@@ -148,6 +148,8 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.OUTPAINT -> t("Napojuji rozšíření na fotku")
         RunKind.UPSCALE -> t("Slepuji dlaždice")
         RunKind.MODEL3D -> t("Peču textury a rozbaluji UV")
+        // Oprava: jediný uzel v téhle fázi je DLSS 5 (viz RestoreBuilder).
+        RunKind.RESTORE -> t("Doostřuji fotku (RTX)")
         else -> t("Ukládám obrázek")
     }
     Stage.DOWNLOADING -> when (kind) {

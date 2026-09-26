@@ -137,4 +137,22 @@ fun RestoreSection(vm: MainViewModel) {
             }
         }
     }
+
+    SectionCard(
+        title = t("Doostření RTX"),
+        subtitle = t("NVIDIA DLSS 5 jako poslední krok — nic nedokresluje, jen doostří"),
+        trailing = {
+            androidx.compose.material3.Switch(
+                checked = scene.doostrit,
+                onCheckedChange = { v -> vm.updateRestore { it.copy(doostrit = v) } },
+            )
+        },
+    ) {
+        if (scene.doostrit) PillRow(
+            items = listOf("1x", "2x"),
+            selected = scene.doostritNasobek,
+            label = { if (it == "2x") t("Doostřit a zvětšit 2×") else t("Jen doostřit") },
+            onSelect = { v -> vm.updateRestore { it.copy(doostritNasobek = v) } },
+        )
+    }
 }
