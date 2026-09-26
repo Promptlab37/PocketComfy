@@ -60,8 +60,17 @@ class RestoreFaceSwapBuilderTest {
         // opravovací zadání je pevné a nesmí být prázdné
         assertTrue(
             wf.inputs(RestoreBuilder.N_PROMPT).getString("prompt")
-                .contains("Restore <image1>: Ultra high-resolution photo reconstruction")
+                .contains("Ultra high-resolution photo reconstruction")
         )
+        // 26. 9. 2026: výsledky byly málo barevné — obarvení je výslovný úkol,
+        // identita se drží odkazem na fotku a „střídmá sytost" je pryč.
+        val p = wf.inputs(RestoreBuilder.N_PROMPT).getString("prompt")
+        assertTrue(p.startsWith("Restore <image1> into a full-color professional photograph"))
+        assertTrue(p.contains("same person as in <image1>"))
+        assertTrue(p.contains("rich vivid true-to-life colors"))
+        assertTrue(!p.contains("restrained saturation"))
+        assertTrue(!p.contains("lighting and style"))
+        assertTrue(p.contains(RestoreBuilder.DETAILER_VETA))
         assertEquals(RestoreBuilder.STEPS, 25)
         assertEquals("H3RestoreQwen21", wf.inputs(RestoreBuilder.N_SAVE).getString("filename_prefix"))
         assertTrue(wf.toString().contains("qwen_image_2.1_int8_convrot.safetensors"))
