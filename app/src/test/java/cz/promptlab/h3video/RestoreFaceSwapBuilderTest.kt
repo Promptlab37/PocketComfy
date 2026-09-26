@@ -200,7 +200,12 @@ class RestoreFaceSwapBuilderTest {
         assertEquals(RestoreBuilder.N_DEKODER,
             se.inputs(RestoreBuilder.N_DLSS).getJSONArray("images").getString(0))
         assertTrue(se.inputs(RestoreBuilder.N_DLSS).getBoolean("verify_neural_rendering"))
+        // barvy zpět z výstupu Qwenu, uloží se až tahle verze
         assertEquals(RestoreBuilder.N_DLSS,
+            se.inputs(RestoreBuilder.N_BARVY).getJSONArray("image_target").getString(0))
+        assertEquals(RestoreBuilder.N_DEKODER,
+            se.inputs(RestoreBuilder.N_BARVY).getJSONArray("image_ref").getString(0))
+        assertEquals(RestoreBuilder.N_BARVY,
             se.inputs(RestoreBuilder.N_SAVE).getJSONArray("images").getString(0))
         assertEquals("2x (Performance)",
             se.inputs(RestoreBuilder.N_DLSS_NASTAVENI).getString("upscaling_mode"))

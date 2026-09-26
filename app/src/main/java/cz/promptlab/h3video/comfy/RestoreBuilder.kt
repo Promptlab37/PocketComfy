@@ -70,6 +70,16 @@ object RestoreBuilder {
     /** Uzly doostření DLSS 5 (na konci grafu, za VAEDecode). */
     const val N_DLSS_NASTAVENI = "50"
     const val N_DLSS = "51"
+
+    /**
+     * Vrácení barev po DLSS. Neuronový průchod mění i tón a „grade" fotky
+     * (README balíku: local tone mapping, styly „shift the grade") a uživatel
+     * 26. 9. 2026 poznal, že doostření „vezme barvy". Samostatný parametr na
+     * zachování barev DLSS nemá — proto se barvy přenesou zpátky z výstupu
+     * Qwenu (color-matcher, metoda MKL: statistika barev, ne pixely, takže
+     * ostrost z DLSS zůstane a jde to i přes zvětšení 2×).
+     */
+    const val N_BARVY = "52"
     const val N_DEKODER = Qwen21EditBuilder.N_DECODE
 
     fun build(
@@ -145,8 +155,21 @@ object RestoreBuilder {
                 )
                 .put("_meta", JSONObject().put("title", "DLSS 5 — doostření")),
         )
+        wf.put(
+            N_BARVY, JSONObject()
+                .put("class_type", "ColorMatchV2")
+                .put(
+                    "inputs", JSONObject()
+                        .put("image_target", org.json.JSONArray().put(N_DLSS).put(0))
+                        .put("image_ref", org.json.JSONArray().put(N_DEKODER).put(0))
+                        .put("method", "mkl")
+                        .put("strength", 1.0)
+                        .put("multithread", true),
+                )
+                .put("_meta", JSONObject().put("title", "Barvy zpět podle Qwenu")),
+        )
         wf.getJSONObject(N_SAVE).getJSONObject("inputs")
-            .put("images", org.json.JSONArray().put(N_DLSS).put(0))
+            .put("images", org.json.JSONArray().put(N_BARVY).put(0))
     }
 
     /**
@@ -155,7 +178,7 @@ object RestoreBuilder {
      * zlomek sekundy a jinak by se hlásilo jako doostřování i bez DLSS.
      */
     fun stageForClass(cls: String?): Stage = when (cls) {
-        "DLSS5Settings", "DLSS5EnhanceImages" -> Stage.MUXING
+        "DLSS5Settings", "DLSS5EnhanceImages", "ColorMatchV2" -> Stage.MUXING
         "SaveImage" -> Stage.DECODING
         else -> Qwen21EditBuilder.stageForClass(cls)
     }
