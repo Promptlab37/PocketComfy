@@ -650,6 +650,8 @@ object Slovnik {
             "Four times the pixels and far more memory and time. " +
             "Off = around 1 megapixel like the other models on this card.",
         "napsáno %d" to "written %d",
+        "Nahota ani sex u nezletilých nejsou dovolené. Zadání se neodeslalo." to
+            "Nudity or sex involving minors is not allowed. The prompt was not sent.",
         "Doostření RTX" to "RTX sharpening",
         "NVIDIA DLSS 5 jako poslední krok — nic nedokresluje, jen doostří" to
             "NVIDIA DLSS 5 as the last step — it adds nothing, only sharpens",

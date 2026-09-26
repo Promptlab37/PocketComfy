@@ -37,30 +37,58 @@ object ImagePromptBuilder {
     private const val EXPLICIT = """
 
 Adult nudity and sexual content are allowed and expected here.
+- ADULTS ONLY. If the request states or implies an age under 18 (for example
+  "15 let", "child", "schoolgirl") or anyone in the photo looks under 18 and
+  the request involves nudity or sex, do not write any instruction: reply with
+  exactly REFUSED_MINOR and nothing else.
 - Never drop, shorten or soften anything explicit the user wrote. Every body
   part, fluid, act and state they mention must be in your answer, named in
   plain explicit English (breasts, nipples, vulva, pussy, labia, penis, anus,
   vaginal discharge, cum…), never replaced by a euphemism like "bare",
   "intimate area" or "sensual".
 - NAKED means the genitals and breasts are shown, not hidden or smoothed over.
-  Whenever the user wants a woman naked or undressed, your answer MUST contain
-  a sentence that describes her naked body explicitly: her bare breasts with
-  visible nipples and areolae, and her vulva with visible labia (and pubic
-  hair or a shaved pubic mound), anatomically realistic and detailed, matching
-  her body and skin. For a naked man describe his penis and testicles the same
-  way. "Fully nude" alone is NOT enough — always spell these parts out.
+  Whenever the user wants someone naked or undressed, describe the naked body
+  explicitly: for a woman her bare breasts with visible nipples and areolae
+  and her vulva with visible labia; for a man his penis and testicles.
+  "Fully nude" alone is NOT enough — always spell these parts out.
+- THE BODY MUST BE THIS PERSON'S BODY, NOT A GENERIC ONE. When the photo is
+  attached, look at each person and estimate what their real body looks like
+  under the clothes, from everything visible: build and weight (slim, athletic,
+  average, curvy, heavy), how the clothes fit, shoulder, waist and hip width,
+  belly, arms and legs; bust size that matches their figure and the fit of
+  their top; skin tone and undertone continued from their face, neck and arms;
+  skin that matches their apparent age; pubic and body hair consistent with
+  their hair colour; tattoos, moles or tan lines where the visible skin
+  suggests them. Never make the body slimmer, younger or more idealised than
+  the person is, and never invent a model's body.
+- With several people, describe EACH person separately, by position or marker
+  ("the woman on the left", "the man from <image2>"), each with their own
+  estimated body and the anatomy of their sex.
 - Say what the undressed body looks like, not only which clothes go away.
 - Crude words from the user are translated into equally explicit English.
-- Describe the body with the user's own words (firm, big, small, shaved,
-  wet…) and with what the photo shows; add every extra detail they asked for.
+- The user's own words about the body (firm, big, small, shaved, wet…) win
+  over your estimate; add every extra detail they asked for.
 
-Shape of the answer when someone is undressed (fill in the brackets from the
-request and the photo, never leave them generic):
-Remove all clothing from [who] in <image1> so she is completely naked: her
-[user's words] bare breasts with visible nipples and areolae, and her vulva
-with visible labia [and pubic hair or shaved mound], anatomically realistic.
-[Every other explicit detail the user asked for.] Keep her face, identity,
-hair, pose, framing, background and lighting exactly as they are."""
+When someone is undressed and the photo is attached, FIRST write one line
+that starts with "SEEN:" and states, for each person, exactly what the photo
+shows: build, skin colour, bust, hair colour. Look at the face, neck and hands
+for the skin colour. Then write "INSTRUCTION:" and after it the instruction,
+built only from what you wrote after SEEN.
+
+Shape of the instruction when someone is undressed. Every <slot> must be replaced
+by concrete words you chose from the photo — never copy the slot names or
+these explanations into your answer:
+Remove all clothing from <who and where in <image1>> so she is completely
+naked, with the body she really has: <build: one of slim, petite, athletic,
+average, curvy, plus-size, heavy> figure, <skin: one of pale, fair, light,
+light-olive, olive, tan, light-brown, brown, dark-brown, deep> skin with a
+<warm, neutral or cool> undertone, <breast size: one of small, medium, full,
+large, very large, matching her figure and the user's words> bare breasts with
+visible nipples and areolae, and her vulva with visible labia and <pubic hair
+matching her hair colour, or shaved>, anatomically realistic. <Each further
+person the same way.> <Every other explicit detail the user asked for.> Keep
+every face, identity, hair, pose, framing, background and lighting exactly as
+they are."""
 
     /** Návod pro model. Anglicky — LLM se tím řídí spolehlivěji. */
     private const val SYSTEM = """You write prompts for the Z-Image Turbo text-to-image model.
@@ -413,7 +441,13 @@ Rules:
      * nebo ji zabalí do uvozovek. Tohle nechá jen samotný prompt.
      */
     fun ocisti(text: String): String {
+        // Řádek „SEEN: …" je pozorování fotky, které si přepisovač píše
+        // napřed, aby tělo odhadl podle skutečné osoby (viz EXPLICIT). Do
+        // zadání pro obrazový model nepatří.
         var s = text.trim()
+        val znacka = s.lastIndexOf("INSTRUCTION:", ignoreCase = true)
+        if (znacka >= 0) s = s.substring(znacka + "INSTRUCTION:".length).trim()
+        else if (s.startsWith("SEEN:", ignoreCase = true)) s = s.substringAfter('\n', s).trim()
         val uvozovky = listOf("```", "\"", "'")
         uvozovky.forEach { z ->
             if (s.startsWith(z) && s.endsWith(z) && s.length > 2 * z.length) {

@@ -725,6 +725,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * v té části obrazovky, která se má při změně překreslit.
      */
     fun validation(p: GenParams): String? {
+        // Pojistka proti nahotě nezletilých — před čímkoli dalším.
+        val zadaniKarty = makeRunner(p).prompt +
+            (if (p.mode == Mode.RESTORE) " " + _restore.value.pokyn else "")
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadaniKarty))
+            return cz.promptlab.h3video.data.NezletiliPojistka.HLASKA
         // All in One i Dialogy jedou na šablonách balíku ze serveru – když tam
         // balík prokazatelně chybí, ať to uživatel ví hned, ne až po nahrání fotek.
         // Balík ALLinONE potřebují jen karty All in One a Dialogy.
@@ -2145,7 +2150,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         if (od > 0L) trvaniPrepisu.edit()
                             .putInt(klic, ((System.currentTimeMillis() - od) / 1000).toInt())
                             .apply()
-                        return text.getString(0)
+                        val hotovy = text.getString(0)
+                        if (hotovy.contains(cz.promptlab.h3video.data.NezletiliPojistka.ZNACKA))
+                            throw ComfyException(
+                                "minor refused", cz.promptlab.h3video.data.NezletiliPojistka.HLASKA,
+                            )
+                        return hotovy
                     }
                     neznama = 0
                     nedostupnyOd = 0L
@@ -2232,6 +2242,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             _rewriteState.value = RewriteState.Fail(t("Nejdřív něco napiš, ať je co překládat."), PraceNaPromptu.PREKLAD)
             return
         }
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
+            _rewriteState.value = RewriteState.Fail(cz.promptlab.h3video.data.NezletiliPojistka.HLASKA, PraceNaPromptu.PREKLAD)
+            return
+        }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.PREKLAD)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
@@ -2294,6 +2308,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             )
             return
         }
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
+            _rewriteState.value = RewriteState.Fail(cz.promptlab.h3video.data.NezletiliPojistka.HLASKA, PraceNaPromptu.VYLEPSENI)
+            return
+        }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
@@ -2349,6 +2367,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 t("Nejdřív napiš aspoň pár slov o tom, co chceš."),
                 PraceNaPromptu.VYLEPSENI,
             )
+            return
+        }
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
+            _rewriteState.value = RewriteState.Fail(cz.promptlab.h3video.data.NezletiliPojistka.HLASKA, PraceNaPromptu.VYLEPSENI)
             return
         }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
@@ -2429,6 +2451,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         val fotky = if (proUpravu) _edit.value.uploadImages else emptyList<java.io.File>()
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
+            _rewriteState.value = RewriteState.Fail(cz.promptlab.h3video.data.NezletiliPojistka.HLASKA, PraceNaPromptu.VYLEPSENI)
+            return
+        }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
@@ -2603,6 +2629,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             )
             return
         }
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
+            _rewriteState.value = RewriteState.Fail(cz.promptlab.h3video.data.NezletiliPojistka.HLASKA, PraceNaPromptu.VYLEPSENI)
+            return
+        }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
@@ -2675,6 +2705,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val zadani = s.prompt.trim()
         if (zadani.isBlank()) {
             _rewriteState.value = RewriteState.Fail("Nejdřív napiš aspoň pár slov o tom, co chceš.", PraceNaPromptu.VYLEPSENI)
+            return
+        }
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
+            _rewriteState.value = RewriteState.Fail(cz.promptlab.h3video.data.NezletiliPojistka.HLASKA, PraceNaPromptu.VYLEPSENI)
             return
         }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
@@ -4242,6 +4276,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             )
             return
         }
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
+            _rewriteState.value = RewriteState.Fail(cz.promptlab.h3video.data.NezletiliPojistka.HLASKA, PraceNaPromptu.VYLEPSENI)
+            return
+        }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
@@ -4337,6 +4375,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 t("Nejdřív napiš aspoň pár slov o tom, co má být vidět."),
                 PraceNaPromptu.VYLEPSENI,
             )
+            return
+        }
+        if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
+            _rewriteState.value = RewriteState.Fail(cz.promptlab.h3video.data.NezletiliPojistka.HLASKA, PraceNaPromptu.VYLEPSENI)
             return
         }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
