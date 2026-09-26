@@ -89,6 +89,8 @@ sealed interface GenState {
         val isUpscale: Boolean = false,
         /** Zvětšení běží přes DLSS 5, ne přes SeedVR2 — jiné texty průběhu. */
         val isDlss: Boolean = false,
+        /** Zvětšení přes Smart Upscaler (vidoucí model + Z-Image po dlaždicích). */
+        val isChytre: Boolean = false,
         /** Dlouhé video: řetěz navazujících úseků v jednom běhu. */
         val isLong: Boolean = false,
         /** 3D model: výsledkem je GLB, ne video ani fotka. */
@@ -285,6 +287,7 @@ object GenerationEngine {
             else AceMusicBuilder.stageForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.stageForClass(nodeClasses[node])
         upscaleRun -> DlssBuilder.stageForClass(nodeClasses[node])
+            ?: chytreFaze(node)
             ?: SeedVr2Builder.stageForClass(nodeClasses[node])
         editRun -> when {
             editKlein -> cz.promptlab.h3video.comfy.KleinEditBuilder.stageForClass(nodeClasses[node])
@@ -294,6 +297,13 @@ object GenerationEngine {
         aioRun -> AioBuilder.stageForClass(nodeClasses[node])
         else -> WorkflowBuilder.stageFor(node)
     }
+
+    /** Běží chytré zvětšení? Pozná se podle tříd grafu, ať to přežije i znovupřipojení. */
+    private fun chytreBeh(): Boolean =
+        cz.promptlab.h3video.comfy.SmartUpscaleBuilder.jeChytre(nodeClasses)
+
+    private fun chytreFaze(node: String?): Stage? =
+        if (chytreBeh()) cz.promptlab.h3video.comfy.SmartUpscaleBuilder.stageForClass(nodeClasses[node]) else null
 
     private fun rangeOf(node: String?): Pair<Float, Float> = when {
         restoreRun -> RestoreBuilder.rangeForClass(nodeClasses[node])
@@ -314,6 +324,7 @@ object GenerationEngine {
             else AceMusicBuilder.rangeForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.rangeForClass(nodeClasses[node])
         upscaleRun -> DlssBuilder.rangeForClass(nodeClasses[node])
+            ?: (if (chytreBeh()) cz.promptlab.h3video.comfy.SmartUpscaleBuilder.rangeForClass(nodeClasses[node]) else null)
             ?: SeedVr2Builder.rangeForClass(nodeClasses[node])
         editRun -> when {
             editKlein -> cz.promptlab.h3video.comfy.KleinEditBuilder.rangeForClass(nodeClasses[node])
@@ -343,8 +354,9 @@ object GenerationEngine {
         musicRun -> if (musicYue2) Yue2MusicBuilder.reportsSteps(nodeClasses[node])
             else AceMusicBuilder.reportsSteps(nodeClasses[node])
         t2iRun -> ZImageBuilder.reportsSteps(nodeClasses[node])
-        upscaleRun -> DlssBuilder.reportsSteps(nodeClasses[node]) ||
-            SeedVr2Builder.reportsSteps(nodeClasses[node])
+        upscaleRun -> if (chytreBeh()) false
+            else DlssBuilder.reportsSteps(nodeClasses[node]) ||
+                SeedVr2Builder.reportsSteps(nodeClasses[node])
         editRun -> when {
             editKlein -> cz.promptlab.h3video.comfy.KleinEditBuilder.reportsSteps(nodeClasses[node])
             editQwen21 -> cz.promptlab.h3video.comfy.Qwen21EditBuilder.reportsSteps(nodeClasses[node])
@@ -591,7 +603,7 @@ object GenerationEngine {
                                 inpaintRun -> InpaintBuilder.nodeClasses(it)
                                 musicRun -> AceMusicBuilder.nodeClasses(it)   // mapa je stejná pro obě hudební šablony
                                 t2iRun -> ZImageBuilder.nodeClasses(it)
-                                upscaleRun -> SeedVr2Builder.nodeClasses(it)
+                                upscaleRun -> DlssBuilder.nodeClasses(it)
                                 editRun -> Krea2Builder.nodeClasses(it)
                                 else -> AioBuilder.nodeClasses(it)
                             }
@@ -855,10 +867,13 @@ object GenerationEngine {
 
             // Zvětšit má dvě metody: uživatelovo SeedVR2 workflow z APK, nebo
             // rychlé doostření přes NVIDIA DLSS 5 (balík ComfyUI-DLSS5-Enhancer).
-            upscaleScene != null ->
-                if (upscaleScene.metoda == cz.promptlab.h3video.data.UpscaleMetoda.DLSS)
+            upscaleScene != null -> when (upscaleScene.metoda) {
+                cz.promptlab.h3video.data.UpscaleMetoda.DLSS ->
                     DlssBuilder.build(app, upscaleScene, names)
-                else SeedVr2Builder.build(app, upscaleScene, seed, names)
+                cz.promptlab.h3video.data.UpscaleMetoda.CHYTRE ->
+                    cz.promptlab.h3video.comfy.SmartUpscaleBuilder.build(app, upscaleScene, seed, names)
+                else -> SeedVr2Builder.build(app, upscaleScene, seed, names)
+            }
 
             // Obrázek z textu jede na uživatelově Z-Image Turbo workflow z APK.
             t2i ->
@@ -2015,6 +2030,7 @@ object GenerationEngine {
             // Pozná se z tříd odeslaného grafu, takže to přežije i znovupřipojení
             // po ukončení appky (nodeClasses se obnovují z uloženého workflow).
             isDlss = upscaleRun && DlssBuilder.jeDlss(nodeClasses),
+            isChytre = upscaleRun && cz.promptlab.h3video.comfy.SmartUpscaleBuilder.jeChytre(nodeClasses),
             isLong = longRun,
             isModel3d = model3dRun,
             isT2i = t2iRun,

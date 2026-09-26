@@ -38,6 +38,8 @@ call :klon https://github.com/drozbay/MaskVidExperiments
 REM --- karta Zvetsit
 call :klon https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler
 call :klon https://github.com/Praveenhalder/praveen-tools
+REM Metoda Chytre zvetseni na karte Zvetsit (modely viz nize).
+call :klon https://github.com/HallettVisual/ComfyUI-Smart-Upscaler
 REM Volitelne: metoda DLSS 5 na karte Zvetsit. Po naklonovani je potreba
 REM jeste jednou spustit install_runtime.py - viz konec skriptu.
 call :klon https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer
@@ -114,6 +116,12 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/diffusion_models/z_image_turbo_bf16.safetensors" "models\diffusion_models\z_image_turbo_bf16.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/text_encoders/qwen_3_4b.safetensors" "models\text_encoders\qwen_3_4b.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors" "models\vae\ae.sft"
+)
+
+set /p ODP="Karta Zvetsit - Chytre zvetseni (potrebuje Z-Image Turbo), cca 7 GB navic. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors" "models\text_encoders\qwen3vl_4b_fp8_scaled.safetensors"
+  call :stahni "https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1/resolve/main/Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors" "models\model_patches\Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors"
 )
 
 set /p ODP="Karta Obrazek - Z-Image Base, cca 11,5 GB navic. Stahnout? [a/n] "

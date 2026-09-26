@@ -15,6 +15,8 @@ import cz.promptlab.h3video.comfy.Stage
  */
 enum class RunKind {
     VIDEO, LONG, EDIT, T2I, RESTORE, ANGLE, SWAP, INPAINT, UPSCALE, DLSS,
+    /** Chytré zvětšení (Smart Upscaler): prompt pro každou dlaždici a Z-Image. */
+    CHYTRE,
     /** Hudba na ACE-Step 1.5 Turbo. */
     MUSIC,
     /** Hudba na YuE2 — navíc si píše noty, takže má i jiné fáze. */
@@ -42,6 +44,7 @@ val GenState.Running.kind: RunKind
         // DLSS je taky karta Zvětšit, ale nedělí na dlaždice ani nenačítá
         // difuzní model — texty o SeedVR2 by u něj lhaly.
         isDlss -> RunKind.DLSS
+        isChytre -> RunKind.CHYTRE
         isUpscale -> RunKind.UPSCALE
         isRestore -> RunKind.RESTORE
         isAngle -> RunKind.ANGLE
@@ -73,7 +76,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
     Stage.UPLOADING -> when (kind) {
         RunKind.VIDEO, RunKind.LONG -> t("Odesílám podklady")
         RunKind.EDIT, RunKind.RESTORE, RunKind.ANGLE, RunKind.UPSCALE, RunKind.DLSS,
-        RunKind.MODEL3D -> t("Odesílám fotku")
+        RunKind.CHYTRE, RunKind.MODEL3D -> t("Odesílám fotku")
         RunKind.SWAP, RunKind.INPAINT -> t("Odesílám fotky")
         RunKind.OUTPAINT -> t("Odesílám fotku")
         RunKind.MUSIC_COVER -> t("Odesílám nahrávku")
@@ -91,6 +94,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.INPAINT, RunKind.OUTPAINT -> t("Načítám model na domalování")
         RunKind.UPSCALE -> t("Načítám SeedVR2")
         RunKind.DLSS -> t("Spouštím DLSS 5")
+        RunKind.CHYTRE -> t("Načítám Z-Image Turbo")
         RunKind.MUSIC -> t("Načítám ACE-Step")
         RunKind.MUSIC_YUE2 -> t("Načítám YuE2")
         RunKind.MUSIC_COVER -> t("Načítám YuE2 a přepisovač")
@@ -105,6 +109,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.OUTPAINT -> t("Přidávám plátno")
         RunKind.UPSCALE -> t("Dělím na dlaždice")
         RunKind.DLSS -> t("Načítám fotku")
+        RunKind.CHYTRE -> t("Dělím na dlaždice")
         RunKind.T2I -> t("Připravuji plátno")
         RunKind.MODEL3D -> t("Odstraňuji pozadí")
         RunKind.MUSIC -> t("Připravuji zadání")
@@ -115,6 +120,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.VIDEO -> t("Zpracovávám prompt")
         RunKind.MUSIC, RunKind.MUSIC_YUE2, RunKind.MUSIC_COVER -> t("Čtu zadání skladby")
         RunKind.SWAP -> t("Připravuji vlepení")
+        RunKind.CHYTRE -> t("Čtu obrázek a píšu prompt pro každou dlaždici")
         else -> t("Čtu zadání")
     }
     Stage.SAMPLING -> when (kind) {
@@ -129,6 +135,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.OUTPAINT -> t("Rozšiřuji obrázek")
         RunKind.UPSCALE -> t("Zvětšuji obrázek")
         RunKind.DLSS -> t("Doostřuji fotku")
+        RunKind.CHYTRE -> t("Přegenerovávám dlaždice")
         RunKind.MUSIC -> t("Skládám hudbu")
         RunKind.MUSIC_YUE2 -> t("Rozeznívám skladbu")
         RunKind.MUSIC_COVER -> t("Hraji ji v novém stylu")
@@ -146,7 +153,7 @@ fun stageText(stage: Stage, kind: RunKind): String = when (stage) {
         RunKind.SWAP -> t("Vlepuji tvář zpět")
         RunKind.INPAINT -> t("Vlepuji domalovaný kus zpět")
         RunKind.OUTPAINT -> t("Napojuji rozšíření na fotku")
-        RunKind.UPSCALE -> t("Slepuji dlaždice")
+        RunKind.UPSCALE, RunKind.CHYTRE -> t("Slepuji dlaždice")
         RunKind.MODEL3D -> t("Peču textury a rozbaluji UV")
         // Oprava: jediný uzel v téhle fázi je DLSS 5 (viz RestoreBuilder).
         RunKind.RESTORE -> t("Doostřuji fotku (RTX)")
@@ -174,6 +181,7 @@ fun stageDetailText(stage: Stage, kind: RunKind): String = when {
         RunKind.INPAINT, RunKind.OUTPAINT -> t("Model na domalování + textový enkodér")
         RunKind.UPSCALE -> "SeedVR2 + VAE"
         RunKind.DLSS -> t("NVIDIA Neural Rendering, žádný difuzní model")
+        RunKind.CHYTRE -> t("Z-Image Turbo + ControlNet Tile + Qwen3-VL")
         RunKind.MUSIC -> "ACE-Step 1.5 Turbo"
         RunKind.MUSIC_YUE2 -> "YuE2 3B"
         RunKind.MUSIC_COVER -> "YuE2 3B + SheetSage2"
@@ -187,6 +195,7 @@ fun stageDetailText(stage: Stage, kind: RunKind): String = when {
         RunKind.MUSIC_COVER -> t("Zpívá podle melodie přepisané z nahrávky")
         RunKind.UPSCALE -> t("Dlaždice po dlaždici na 3200 px")
         RunKind.DLSS -> t("Rekonstrukce na grafické kartě, jde to rychle")
+        RunKind.CHYTRE -> t("Každá dlaždice se svým promptem, jedna po druhé")
         RunKind.MODEL3D -> t("Čtyři průchody: struktura, tvar, zjemnění, textura")
         else -> t("Nejdelší část běhu")
     }
@@ -226,6 +235,7 @@ fun mainPhaseTitle(kind: RunKind): String = when (kind) {
     RunKind.OUTPAINT -> t("Rozšíření obrázku")
     RunKind.UPSCALE -> t("Zvětšování")
     RunKind.DLSS -> t("Doostření DLSS 5")
+    RunKind.CHYTRE -> t("Chytré zvětšení")
     RunKind.MUSIC -> t("Skládání hudby")
     RunKind.MUSIC_YUE2 -> t("Zpěv podle not")
     RunKind.MUSIC_COVER -> t("Předělání nahrávky")

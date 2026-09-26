@@ -25,6 +25,7 @@ chybí u tebe).
 | LSI-Minimax-Segment-Timeline | LSIMinimaxTimeline(+Render) | Časová osa |
 | ComfyUI-SeedVR2_VideoUpscaler | SeedVR2 nody | Zvětšit |
 | [praveen-tools](https://github.com/Praveenhalder/praveen-tools) | ImageTileSplit/Merge, LoadImageWithFilename | Zvětšit |
+| [ComfyUI-Smart-Upscaler](https://github.com/HallettVisual/ComfyUI-Smart-Upscaler) | SmartUpscaledTilePlanner, SmartCachedTextGenerate, SmartTileFinalizer… | Zvětšit — chytré zvětšení |
 | [ComfyUI-DLSS5-Enhancer](https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer) | DLSS5Settings, DLSS5EnhanceImages/VideoFile | Zvětšit — metoda DLSS 5 (po instalaci ještě `install_runtime.py`) |
 | [ComfyUI-H3-Motion-Context-MultiRef](https://github.com/seitanism/ComfyUI-H3-Motion-Context-MultiRef) | MiniMaxH3StartMaskedContext, MiniMaxH3GeneratedAVMaskedContext, MiniMaxH3CropTo32 aj. | Dlouhé video |
 | [Comfyui_Minimax_h3_latent_Upscaler](https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler) | MinimaxH3LatentUpscaler3D | Dlouhé video — rychlý první záběr (volitelné) |
@@ -230,6 +231,13 @@ dovoluje; její plné znění je v repozitáři jako
 Metoda **DLSS 5** na téže kartě žádný model nemá, ale po instalaci balíku
 je potřeba jednou spustit jeho `install_runtime.py` — stáhne runtime třetí
 strany (~470 MB) a zeptá se na licenci.
+
+**Chytré zvětšení** (karta Zvětšit) potřebuje vedle Z-Image Turbo ještě
+`qwen3vl_4b_fp8_scaled.safetensors` (models/text_encoders, 4,9 GB,
+[Comfy-Org/Krea-2](https://huggingface.co/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors))
+a `Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors`
+(models/model_patches, 2 GB,
+[alibaba-pai](https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1)).
 
 ## Volitelné
 

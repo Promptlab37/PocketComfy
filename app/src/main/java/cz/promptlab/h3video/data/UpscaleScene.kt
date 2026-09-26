@@ -32,6 +32,8 @@ data class UpscaleScene(
     val dlssSila: Float = 1f,
     /** DLSS: rekonstruovat pleť (zapíná automatickou masku kůže). */
     val dlssPlet: Boolean = true,
+    /** Chytré zvětšení: kolikrát se strana zvětší. */
+    val chytreNasobek: Float = 2f,
 ) {
     val uploadImages: List<File> get() = listOfNotNull(source)
 
@@ -56,6 +58,10 @@ enum class UpscaleMetoda(val stitek: String, val popis: String) {
     DLSS(
         "DLSS 5 (rychlé)",
         "NVIDIA Neural Rendering rekonstruuje, co ve fotce je. Sekundy, ale nic si nevymýšlí."
+    ),
+    CHYTRE(
+        "Chytré zvětšení",
+        "Vidoucí model napíše prompt každé dlaždici a Z-Image ji přegeneruje s novým detailem. Minuty."
     ),
 }
 

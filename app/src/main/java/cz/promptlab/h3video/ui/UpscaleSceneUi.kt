@@ -149,6 +149,22 @@ fun UpscaleSection(vm: MainViewModel) {
         }
     }
 
+    if (scene.metoda == UpscaleMetoda.CHYTRE) SectionCard(
+        title = t("Chytré zvětšení"),
+        subtitle = t("Vyšší zvětšení = víc dlaždic a víc času"),
+    ) {
+        Column {
+            Text(t("Zvětšení"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+            Spacer(Modifier.height(8.dp))
+            PillRow(
+                items = cz.promptlab.h3video.comfy.SmartUpscaleBuilder.NASOBKY,
+                selected = scene.chytreNasobek,
+                label = { "×" + (if (it % 1f == 0f) it.toInt().toString() else it.toString().replace('.', ',')) },
+                onSelect = { vm.setChytreNasobek(it) },
+            )
+        }
+    }
+
     if (scene.metoda == UpscaleMetoda.DLSS) SectionCard(
         title = t("Nastavení DLSS 5"),
         subtitle = t("Neural Rendering na grafické kartě, výsledek za pár sekund")

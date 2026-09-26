@@ -24,6 +24,7 @@ class UpscaleStore(private val ctx: Context) {
                 .put("grid", s.grid)
                 .put("metoda", s.metoda.name)
                 .put("dlssNasobek", s.dlssNasobek)
+                .put("chytreNasobek", s.chytreNasobek.toDouble())
                 .put("dlssStyl", s.dlssStyl.name)
                 .put("dlssSila", s.dlssSila.toDouble())
                 .put("dlssPlet", s.dlssPlet)
@@ -44,6 +45,8 @@ class UpscaleStore(private val ctx: Context) {
                 grid = root.optString("grid").takeIf { it in UpscaleScene.GRIDS } ?: "2x2",
                 metoda = UpscaleMetoda.entries
                     .firstOrNull { it.name == root.optString("metoda") } ?: UpscaleMetoda.SEEDVR2,
+                chytreNasobek = root.optDouble("chytreNasobek", 2.0).toFloat()
+                    .takeIf { it in cz.promptlab.h3video.comfy.SmartUpscaleBuilder.NASOBKY } ?: 2f,
                 dlssNasobek = root.optString("dlssNasobek")
                     .takeIf { it in UpscaleScene.DLSS_NASOBKY } ?: "1x",
                 dlssStyl = DlssStyl.entries

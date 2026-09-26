@@ -99,6 +99,12 @@ object Katalog {
         "https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler",
         "Dlouhé video — rychlý první záběr (volitelné)"
     )
+    private val SMART_UPSCALER = Balik(
+        "ComfyUI-Smart-Upscaler",
+        "https://github.com/HallettVisual/ComfyUI-Smart-Upscaler",
+        "Zvětšit — chytré zvětšení",
+    )
+
     private val DLSS5 = Balik(
         "ComfyUI-DLSS5-Enhancer",
         "https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer",
@@ -170,6 +176,14 @@ object Katalog {
         "MVEx_MaskToLatentSpace" to MASKVID,
         "MVEx_LatentMaskToMask" to MASKVID,
         "MinimaxH3LatentUpscaler3D" to H3UPSCALER,
+        "SmartUpscaledTilePlanner" to SMART_UPSCALER,
+        "SmartTileJobDirector" to SMART_UPSCALER,
+        "SmartCachedTextGenerate" to SMART_UPSCALER,
+        "SmartCachedTilePromptGenerator" to SMART_UPSCALER,
+        "SmartUnifiedPromptGuidance" to SMART_UPSCALER,
+        "SmartSamplerTileSelector" to SMART_UPSCALER,
+        "SmartTileColorMatch" to SMART_UPSCALER,
+        "SmartTileFinalizer" to SMART_UPSCALER,
         "DLSS5Settings" to DLSS5,
         "DLSS5EnhanceImages" to DLSS5,
         "DLSS5EnhanceVideoFile" to DLSS5,
@@ -251,6 +265,16 @@ object Katalog {
         "ae.sft" to Soubor(
             "models/vae", "Obrázek",
             "$HF/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors"
+        ),
+        // Chytré zvětšení (Smart Upscaler): vidoucí model pro prompty dlaždic
+        // a ControlNet Tile, který drží tvar dlaždice.
+        "qwen3vl_4b_fp8_scaled.safetensors" to Soubor(
+            "models/text_encoders", "Zvětšit — chytré zvětšení (4,9 GB)",
+            "$HF/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors"
+        ),
+        "Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors" to Soubor(
+            "models/model_patches", "Zvětšit — chytré zvětšení (2 GB)",
+            "$HF/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1/resolve/main/Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors"
         ),
         // Karta Dance — Wan-Dancer 14B. Dvě fáze: globální model rozvrhne
         // pohyb, lokální ho dopiluje. Obojí je samostatný soubor.

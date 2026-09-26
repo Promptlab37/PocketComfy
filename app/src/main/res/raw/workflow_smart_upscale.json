@@ -1,0 +1,423 @@
+{
+ "32": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "images": [
+    "1064",
+    1
+   ],
+   "filename_prefix": "PocketSmartUpscale"
+  },
+  "_meta": {
+   "title": "Save PNG with Embedded Comfy Workflow"
+  }
+ },
+ "1064": {
+  "class_type": "SmartTileFinalizer",
+  "inputs": {
+   "processed_images": [
+    "1065",
+    0
+   ],
+   "tile_references": [
+    "1221",
+    3
+   ],
+   "source_tiles": [
+    "1217",
+    0
+   ],
+   "tile_metadata_json": [
+    "1217",
+    4
+   ],
+   "blend_masks": [
+    "1217",
+    3
+   ],
+   "reference_mode": "Stay close to the original photo",
+   "structure_preservation": 50,
+   "detail_support": "Keep more new detail",
+   "fallback_method": "bilinear",
+   "cross_tile_consistency": 60,
+   "consistency_mode": "Fade the fix toward the edge that disagrees (best for seams)",
+   "finish_preset": "Photo upscale, seams hidden (start here)"
+  },
+  "_meta": {
+   "title": "Stitch the tiles back into one picture"
+  }
+ },
+ "1217": {
+  "class_type": "SmartUpscaledTilePlanner",
+  "inputs": {
+   "image": [
+    "1",
+    0
+   ],
+   "upscale_method": "Lanczos (sharp standard resize)",
+   "min_tile_size": 1024,
+   "max_tile_size": 1536,
+   "overlap": 32,
+   "feather": 16,
+   "scale_factor": 2,
+   "divisible_by": 64,
+   "upscale_batch_size": 1,
+   "padding_mode": "edge",
+   "cache_mode": "read_write",
+   "cache_tag": "auto",
+   "preview_max_size": 1600
+  },
+  "_meta": {
+   "title": "Tile Planner - how big, how many tiles"
+  }
+ },
+ "1": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "Source Image"
+  }
+ },
+ "1221": {
+  "class_type": "SmartSamplerTileSelector",
+  "inputs": {
+   "tile_images": [
+    "1218",
+    0
+   ],
+   "positive_prompts": [
+    "1061",
+    0
+   ],
+   "negative_prompts": [
+    "1061",
+    1
+   ],
+   "tile_references": [
+    "1218",
+    2
+   ],
+   "tile_seeds": [
+    "1218",
+    3
+   ],
+   "processing_mode": "All tiles (production)",
+   "tile_number": 6
+  },
+  "_meta": {
+   "title": "One-tile test"
+  }
+ },
+ "1218": {
+  "class_type": "SmartTileJobDirector",
+  "inputs": {
+   "upscaled_tiles": [
+    "1217",
+    0
+   ],
+   "tile_metadata_json": [
+    "1217",
+    4
+   ],
+   "global_context": [
+    "1219",
+    0
+   ],
+   "prompt_system": [
+    "1246",
+    1
+   ],
+   "selection_mode": "all_tiles",
+   "tile_number": 1,
+   "base_seed": 0,
+   "seed_mode": "fixed"
+  },
+  "_meta": {
+   "title": "SmartTileJobDirector"
+  }
+ },
+ "1246": {
+  "class_type": "SmartUnifiedPromptGuidance",
+  "inputs": {
+   "instructions": "TASK: Upscale / Detailer\n\nRebuild this image at higher resolution with real, generated detail. Nothing moves and nothing is added:\nthe same content, colors, lighting, and layout come back, but every surface should return with true,\nbelievable texture instead of soft, enlarged pixels.\n\nDescribe each area for what it IS. Name the thing, the material it is made of, its visible color, and how\nthat surface looks close up - grain, weave, roughness, wetness, and how its edges catch the light. The new\ndetail is generated from that description, so be specific and literal about materials rather than general\nabout the scene.\n\nBlur is part of the photo: out-of-focus areas stay just as soft, and only what is already sharp gains\ndetail. Thin real details that cross blurred areas are content, not blur, however fine: name them and\nkeep every one. If something is too blurry or small to identify for certain,\ndescribe it as soft shapes and colors - never guess what it might be. Don't redesign anything or add\nobjects that aren't there.",
+   "user_request": "",
+   "known_false_detections": "",
+   "prompt_suffix": "natural photographic detail",
+   "tile_detail": "Adaptive by Tile (recommended)",
+   "sampler_prompt_style": "Plain description (SDXL, Flux, denoise)",
+   "tile_colors": "Off - change nothing (default)",
+   "prompt_reuse": "Off - read the picture fresh (default)"
+  },
+  "_meta": {
+   "title": "Prompt Director - the master prompt"
+  }
+ },
+ "1219": {
+  "class_type": "SmartCachedTextGenerate",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "image": [
+    "1217",
+    2
+   ],
+   "prompt": [
+    "1246",
+    0
+   ],
+   "prompt_system": [
+    "1246",
+    1
+   ],
+   "max_length": 1024,
+   "sampling_mode": "Managed by Prompt Director (recommended)",
+   "thinking": false,
+   "use_default_template": true,
+   "cache_mode": "read_write",
+   "cache_tag": "qwen3vl_4b_fp8_master_scene_v22_uniform_surfaces_v13",
+   "analysis_max_side": 1344,
+   "key_context": ""
+  },
+  "_meta": {
+   "title": "Whole-picture read (runs once)"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3vl_4b_fp8_scaled.safetensors",
+   "type": "krea2",
+   "device": "default"
+  },
+  "_meta": {
+   "title": "Prompt Vision Model - Qwen3-VL 4B FP8"
+  }
+ },
+ "1061": {
+  "class_type": "SmartCachedTilePromptGenerator",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "image": [
+    "1218",
+    4
+   ],
+   "instruction": [
+    "1218",
+    1
+   ],
+   "tile_reference": [
+    "1218",
+    2
+   ],
+   "prompt_system": [
+    "1246",
+    1
+   ],
+   "caption_generation": "Managed by Prompt Director (recommended)",
+   "cache_mode": "read_write",
+   "cache_tag": "qwen3vl_4b_fp8_local_target_v29_structured_detail_v13",
+   "negative_prompt_fallback": "changed geometry, duplicated objects, artifacts, seams",
+   "caption_max_side": 0
+  },
+  "_meta": {
+   "title": "⚡Per-tile prompts (runs once per tile)⚡"
+  }
+ },
+ "1065": {
+  "class_type": "SmartTileColorMatch",
+  "inputs": {
+   "generated_tile": [
+    "1204",
+    0
+   ],
+   "source_tile": [
+    "1221",
+    0
+   ],
+   "color_match_method": "automatic",
+   "color_match_strength": 50,
+   "color_preset": "Automatic - original colors unless the task changes the look (recommended)"
+  },
+  "_meta": {
+   "title": "Colour match to the original (optional)"
+  }
+ },
+ "1204": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "1195",
+    0
+   ],
+   "vae": [
+    "1199",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Z-Turbo - finished tile"
+  }
+ },
+ "1199": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "ae.sft"
+  },
+  "_meta": {
+   "title": "VAELoader"
+  }
+ },
+ "1195": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "1194",
+    0
+   ],
+   "positive": [
+    "1198",
+    0
+   ],
+   "negative": [
+    "1200",
+    0
+   ],
+   "latent_image": [
+    "1202",
+    0
+   ],
+   "seed": [
+    "1221",
+    4
+   ],
+   "steps": 8,
+   "cfg": 1.4,
+   "sampler_name": "euler",
+   "scheduler": "beta",
+   "denoise": 0.6
+  },
+  "_meta": {
+   "title": "KSampler"
+  }
+ },
+ "1202": {
+  "class_type": "VAEEncode",
+  "inputs": {
+   "pixels": [
+    "1221",
+    0
+   ],
+   "vae": [
+    "1199",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "VAEEncode"
+  }
+ },
+ "1200": {
+  "class_type": "ConditioningZeroOut",
+  "inputs": {
+   "conditioning": [
+    "1198",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "ConditioningZeroOut"
+  }
+ },
+ "1198": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "1201",
+    0
+   ],
+   "text": [
+    "1221",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "CLIP Text Encode (Positive Prompt)"
+  }
+ },
+ "1201": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen_3_4b.safetensors",
+   "type": "lumina2",
+   "device": "default"
+  },
+  "_meta": {
+   "title": "CLIPLoader"
+  }
+ },
+ "1194": {
+  "class_type": "QwenImageDiffsynthControlnet",
+  "inputs": {
+   "model": [
+    "1206",
+    0
+   ],
+   "model_patch": [
+    "1197",
+    0
+   ],
+   "vae": [
+    "1199",
+    0
+   ],
+   "image": [
+    "1221",
+    0
+   ],
+   "strength": 0.6
+  },
+  "_meta": {
+   "title": "Tile Controlnet Amount"
+  }
+ },
+ "1197": {
+  "class_type": "ModelPatchLoader",
+  "inputs": {
+   "name": "Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors"
+  },
+  "_meta": {
+   "title": "ModelPatchLoader"
+  }
+ },
+ "1206": {
+  "class_type": "ModelSamplingAuraFlow",
+  "inputs": {
+   "model": [
+    "1205",
+    0
+   ],
+   "shift": 1.5,
+   "sampling": "flow"
+  },
+  "_meta": {
+   "title": "ModelSamplingAuraFlow"
+  }
+ },
+ "1205": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "z_image_turbo_bf16.safetensors",
+   "weight_dtype": "default"
+  },
+  "_meta": {
+   "title": "UNETLoader"
+  }
+ }
+}

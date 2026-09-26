@@ -5274,6 +5274,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setDlssNasobek(n: String) = updateUpscale { it.copy(dlssNasobek = n) }
 
+    fun setChytreNasobek(n: Float) = updateUpscale { it.copy(chytreNasobek = n) }
+
     fun setDlssStyl(s: cz.promptlab.h3video.data.DlssStyl) = updateUpscale { it.copy(dlssStyl = s) }
 
     fun setDlssSila(v: Float) = updateUpscale { it.copy(dlssSila = v) }

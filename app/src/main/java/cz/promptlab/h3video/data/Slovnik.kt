@@ -650,6 +650,14 @@ object Slovnik {
             "Four times the pixels and far more memory and time. " +
             "Off = around 1 megapixel like the other models on this card.",
         "napsáno %d" to "written %d",
+        "Chytré zvětšení" to "Smart upscale",
+        "Vidoucí model napíše prompt každé dlaždici a Z-Image ji přegeneruje s novým detailem. Minuty." to
+            "A vision model writes a prompt for every tile and Z-Image re-renders it with new detail. Minutes.",
+        "Vyšší zvětšení = víc dlaždic a víc času" to "Higher scale = more tiles and more time",
+        "Načítám Z-Image Turbo" to "Loading Z-Image Turbo",
+        "Čtu obrázek a píšu prompt pro každou dlaždici" to "Reading the image and writing a prompt for every tile",
+        "Přegenerovávám dlaždice" to "Re-rendering the tiles",
+        "Každá dlaždice se svým promptem, jedna po druhé" to "Each tile with its own prompt, one by one",
         "Nahota ani sex u nezletilých nejsou dovolené. Zadání se neodeslalo." to
             "Nudity or sex involving minors is not allowed. The prompt was not sent.",
         "Doostření RTX" to "RTX sharpening",
