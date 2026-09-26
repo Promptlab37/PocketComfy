@@ -71,7 +71,7 @@ fun ImageEditSection(vm: MainViewModel) {
     var pickFor by remember { mutableStateOf<String?>(null) }
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> pickFor?.let { vm.pickEditImage(it, uri) }; pickFor = null }
 
     SectionCard(

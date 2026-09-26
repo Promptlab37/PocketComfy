@@ -263,7 +263,7 @@ private fun SpeakerRow(
     canRemove: Boolean,
     vm: MainViewModel,
 ) {
-    val pickImage = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) {
+    val pickImage = rememberLauncherForActivityResult(cz.promptlab.h3video.ui.VyberMedii()) {
         vm.pickSpeakerImage(speaker.key, it)
     }
     val pickSample = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) {

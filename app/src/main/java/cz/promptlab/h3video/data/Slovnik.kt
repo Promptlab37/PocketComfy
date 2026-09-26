@@ -650,6 +650,10 @@ object Slovnik {
             "Four times the pixels and far more memory and time. " +
             "Off = around 1 megapixel like the other models on this card.",
         "napsáno %d" to "written %d",
+        "Výběr fotek" to "Photo picker",
+        "Ze souborů — naposledy upravené jsou nahoře" to "From files — most recently edited first",
+        "Systémový výběr — řazení podle data pořízení" to "System picker — sorted by date taken",
+        "Soubory" to "Files",
         "Server přepis ztratil (nejspíš se ComfyUI restartovalo). Zkus to znovu." to
             "The server lost the rewrite (ComfyUI probably restarted). Try again.",
         "Server je přes dvacet minut nedostupný. Zkontroluj počítač a Tailscale." to

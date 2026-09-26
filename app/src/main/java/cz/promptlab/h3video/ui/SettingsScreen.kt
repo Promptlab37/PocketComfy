@@ -422,6 +422,20 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             )
         }
 
+        val zeSouboru by vm.vyberZeSouboru.collectAsStateWithLifecycle()
+        SectionCard(
+            title = t("Výběr fotek"),
+            subtitle = if (zeSouboru) t("Ze souborů — naposledy upravené jsou nahoře")
+            else t("Systémový výběr — řazení podle data pořízení"),
+        ) {
+            PillRow(
+                items = listOf(false, true),
+                selected = zeSouboru,
+                label = { if (it) t("Soubory") else t("Galerie") },
+                onSelect = { vm.setVyberZeSouboru(it) },
+            )
+        }
+
         SectionCard(
             title = t("Ukládat vše do telefonu"),
             subtitle = t("Normálně vypnuté – stahuješ si jen to, co chceš"),

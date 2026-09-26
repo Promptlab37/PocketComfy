@@ -583,7 +583,7 @@ private fun ObrazekSlot(
 ) {
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> onPick(uri) }
 
     Column(modifier) {
@@ -653,7 +653,7 @@ private fun VideoRadek(
 ) {
     val videoOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> onPick(uri) }
 
     Row(

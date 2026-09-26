@@ -53,7 +53,7 @@ fun AngleSection(vm: MainViewModel) {
 
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> vm.pickAngleImage(uri) }
 
     SectionCard(

@@ -1820,6 +1820,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         get() = settings.autoSaveToGallery
         set(v) { settings.autoSaveToGallery = v; _autoSave.value = v }
 
+    /** Výběr fotek ze Souborů (nejnovější nahoře) místo systémového výběru. */
+    private val _vyberZeSouboru = MutableStateFlow(settings.vyberZeSouboru)
+    val vyberZeSouboru: StateFlow<Boolean> = _vyberZeSouboru.asStateFlow()
+
+    fun setVyberZeSouboru(v: Boolean) {
+        settings.vyberZeSouboru = v
+        cz.promptlab.h3video.ui.VyberFotek.zeSouboru = v
+        _vyberZeSouboru.value = v
+    }
+
     private val _autoSave = MutableStateFlow(settings.autoSaveToGallery)
     val autoSave: StateFlow<Boolean> = _autoSave.asStateFlow()
 

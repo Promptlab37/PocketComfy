@@ -56,7 +56,7 @@ fun RestoreSection(vm: MainViewModel) {
 
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> vm.pickRestoreImage(uri) }
 
     SectionCard(

@@ -97,6 +97,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("autoSave", false)
         set(v) = sp.edit().putBoolean("autoSave", v).apply()
 
+    /** Fotky a videa vybírat ze Souborů místo systémového výběru (viz ui.VyberFotek). */
+    var vyberZeSouboru: Boolean
+        get() = sp.getBoolean("vyber_ze_souboru", false)
+        set(v) = sp.edit().putBoolean("vyber_ze_souboru", v).apply()
+
     /** Jazyk rozhraní: `system` / `cs` / `en` (viz [Jazyk]). */
     var jazyk: String
         get() = sp.getString("jazyk", Jazyk.Volba.SYSTEM.kod)!!

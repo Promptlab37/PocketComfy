@@ -87,10 +87,10 @@ fun FaceSwapSection(vm: MainViewModel) {
 
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
     val pickTarget = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> vm.pickSwapTarget(uri) }
     val pickFace = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> vm.pickSwapFace(uri) }
 
     var maluje by remember { mutableStateOf(false) }

@@ -58,7 +58,7 @@ fun DanceSection(vm: MainViewModel) {
 
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
     val vyberFotky = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> vm.pickDanceFotku(uri) }
     val vyberHudby = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()

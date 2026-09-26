@@ -252,7 +252,7 @@ private fun DelkaRadek(seconds: Float, onChange: (Float) -> Unit) {
 @Composable
 private fun ZdrojoveVideo(vm: MainViewModel, scene: LongScene) {
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> vm.pickLongVideo(uri) }
     val videoOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
 
@@ -294,7 +294,7 @@ private fun RefDlazdice(
     onRemove: () -> Unit,
 ) {
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> onPick(uri) }
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
 

@@ -99,7 +99,7 @@ fun TimelineSceneSection(vm: MainViewModel) {
     var pickFor by remember { mutableStateOf<Int?>(null) }
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> pickFor?.let { vm.pickSegmentImage(it, uri) }; pickFor = null }
 
     // Segment mohl mezitím zmizet (odebrání) – výběr musí zůstat platný.

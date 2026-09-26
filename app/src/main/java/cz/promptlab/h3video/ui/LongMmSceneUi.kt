@@ -494,7 +494,7 @@ private fun ZdrojVideoRadek(
     zTelefonu: Boolean,
 ) {
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> vm.pickLongMmZdroj(uri) }
     val videoOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.VideoOnly)
 
@@ -537,10 +537,10 @@ private fun ZdrojVideoRadek(
 @Composable
 internal fun RefPridat(zbyva: Int, onPick: (List<android.net.Uri>) -> Unit) {
     val vice = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickMultipleVisualMedia(maxOf(2, zbyva))
+        cz.promptlab.h3video.ui.VyberViceMedii(maxOf(2, zbyva))
     ) { uris -> if (uris.isNotEmpty()) onPick(uris.take(zbyva)) }
     val jedna = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> if (uri != null) onPick(listOf(uri)) }
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
     Box(
@@ -565,7 +565,7 @@ internal fun RefDlazdicka(
     onRemove: () -> Unit,
 ) {
     val pick = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
+        cz.promptlab.h3video.ui.VyberMedii()
     ) { uri -> onPick(uri) }
     val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
 

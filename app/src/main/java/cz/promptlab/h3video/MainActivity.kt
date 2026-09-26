@@ -119,6 +119,11 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Odkud se vybírají fotky — čte se hned, ať platí i pro první výběr.
+        runCatching {
+            cz.promptlab.h3video.ui.VyberFotek.zeSouboru =
+                cz.promptlab.h3video.data.AppSettings(this).vyberZeSouboru
+        }
         // Nic z přípravy okna nesmí shodit start – obrazovka je důležitější než
         // hezké okraje i než dotaz na oprávnění.
         runCatching { enableEdgeToEdge() }
