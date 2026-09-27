@@ -23,7 +23,7 @@ enum class Mode(
     ALLINONE(
         titleCs = "All in One",
         shortCs = "All in One",
-        detailCs = "Z textu, obrázků i referencí, klíčové snímky, prodloužení a zvětšení"
+        detailCs = "Z textu, obrázků i referencí, klíčové snímky a prodloužení"
     ),
 
     /**
@@ -284,8 +284,10 @@ enum class Mode(
 }
 
 /**
- * Skupiny karet podle toho, co vzniká. Pořadí skupin i karet v nich je
- * pevné a platí všude, kde se karta vybírá (nabídka nahoře i Projekt).
+ * Skupiny karet podle toho, s čím se pracuje. Každá skupina má napřed karty,
+ * které tvoří, a za nimi karty, které upravují hotový výsledek — u videa
+ * stejně jako u obrázku. Pořadí je pevné a platí všude, kde se karta vybírá
+ * (nabídka nahoře i Projekt).
  */
 enum class Skupina(private val titleCs: String, val karty: List<Mode>) {
     PROJEKT("Projekt", listOf(Mode.PROJEKT)),
@@ -294,9 +296,9 @@ enum class Skupina(private val titleCs: String, val karty: List<Mode>) {
         listOf(
             Mode.ALLINONE, Mode.TALK, Mode.LONGMM, Mode.TIMELINE,
             Mode.THREESTEP, Mode.LTXAUDIO, Mode.POHYB,
+            Mode.UPRAVA_VIDEA, Mode.VYLEPSENI_VIDEA,
         ),
     ),
-    UPRAVY("Úpravy videa", listOf(Mode.UPRAVA_VIDEA, Mode.VYLEPSENI_VIDEA)),
     OBRAZEK(
         "Obrázek",
         listOf(

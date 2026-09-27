@@ -248,8 +248,8 @@ object Slovnik {
         "Tvar obrazu" to "Frame shape",
         "Poměr stran hotového videa" to "Aspect ratio of the finished video",
         "Vygenerovat video ze zvuku" to "Generate video from audio",
-        "Z textu, obrázků i referencí, klíčové snímky, prodloužení a zvětšení" to
-            "From text, images or references; keyframes, extension and upscale",
+        "Z textu, obrázků i referencí, klíčové snímky a prodloužení" to
+            "From text, images or references; keyframes and extension",
         "Postavy z fotek řeknou, co napíšeš" to "Characters from photos say what you type",
         "Delší video složené ze segmentů" to "A longer video assembled from segments",
         "Z-Image Turbo — nová fotka z textu za pár sekund" to
@@ -887,7 +887,6 @@ object Slovnik {
         "Změní obsah hotového videa, zbytek záběru zůstane" to "Changes the content of a finished video, the rest of the shot stays",
         "Vylepšit video" to "Enhance video",
         "Zvětší hotové video nebo ho zplynulí" to "Upscales a finished video or makes it smoother",
-        "Úpravy videa" to "Video edits",
         "Video" to "Video",
         "Přemalovat" to "Repaint",
         "Zplynulit" to "Smooth",

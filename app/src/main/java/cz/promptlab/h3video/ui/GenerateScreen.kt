@@ -1330,7 +1330,7 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
 
 /**
  * Výběr karty ve dvou patrech: nahoře skupina podle toho, co vzniká (Video,
- * Úpravy videa, Obrázek…), pod ní karty té skupiny. Skupina s jedinou kartou
+ * Obrázek…), pod ní karty té skupiny. Skupina s jedinou kartou
  * ji otevře rovnou a druhé patro se neukazuje.
  */
 @Composable
