@@ -162,41 +162,4 @@ fun model3dProblem(s: Model3dScene): String? =
     if (s.source == null) t("Vyber fotku předmětu, ze které se má model udělat.") else null
 
 /** Upozornění, která nebrání spuštění. */
-fun model3dHints(s: Model3dScene): List<String> {
-    val out = mutableListOf<String>()
-    // Fotka je CELÉ zadání — model žádný text nedostane. Podle autorů modelu
-    // z ní čte hloubku ze stínování a hran, takže na ní záleží víc než na
-    // všech přepínačích dohromady.
-    out += t(
-        "Nejlíp to funguje na JEDEN předmět na klidném pozadí. Skupinu věcí nebo " +
-            "celou scénu model rozumně nerozdělí."
-    )
-    out += t(
-        "Fotka je celé zadání — model k ní nedostane žádný popis. Vyplať se: " +
-            "aspoň 1024 px, jednolité světlé pozadí, měkké rovnoměrné světlo bez " +
-            "ostrých stínů a ostro. Lesklé a průhledné věci jsou pro model nejtěžší."
-    )
-    out += t(
-        "Foť z odstupu se zoomem, ne zblízka — přiblížený mobil předmět " +
-            "perspektivně vytáhne a model tu deformaci zabuduje do tvaru."
-    )
-    if (s.kvalita.jePbr) {
-        out += t(
-            "Po čtyřech průchodech modelu přijde ještě remesh, decimace, rozbalení UV " +
-                "a pečení map. Tahle část jede z velké části na procesoru, takže ji " +
-                "rychlejší grafika nezkrátí — počítej v desítkách minut."
-        )
-    }
-    if (s.kvalita == Model3dKvalita.MAXIMALNI) {
-        out += t(
-            "Maximální kvalita dělá 700 tisíc ploch místo 200 tisíc, normály 2048 " +
-                "místo 1024 a 20 kroků vzorkování místo 12. Kroky stojí čas, ne " +
-                "paměť — proto se dají zvednout bez rizika, že běh spadne."
-        )
-    }
-    out += t(
-        "Než to spustíš, zavři hry a další věci, co berou grafiku — model si " +
-            "bere skoro celou paměť karty."
-    )
-    return out
-}
+fun model3dHints(@Suppress("UNUSED_PARAMETER") s: Model3dScene): List<String> = emptyList()

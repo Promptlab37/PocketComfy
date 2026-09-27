@@ -189,11 +189,6 @@ fun TimelineSceneSection(vm: MainViewModel) {
                 minHeight = 64.dp,
                 onClear = { vm.setTimelineGlobal("") },
             )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                t("Přidá se ke každému segmentu – drží jednotný vzhled, světlo a barvy."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
         }
     }
 }

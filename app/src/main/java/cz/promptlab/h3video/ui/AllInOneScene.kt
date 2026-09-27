@@ -140,12 +140,6 @@ fun AllInOneSection(vm: MainViewModel) {
                                 }
                             }
                         }
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            t("Značka říká modelu, kterou fotku myslíš — klidně si ji ") +
-                                t("přesuň doprostřed věty („The woman from <Picture 1>…“)."),
-                            style = MaterialTheme.typography.bodySmall, color = TextLow
-                        )
                         Spacer(Modifier.height(10.dp))
                     }
                 }
@@ -208,12 +202,6 @@ fun AllInOneSection(vm: MainViewModel) {
                             style = MaterialTheme.typography.bodySmall, color = Danger
                         )
                     }
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        t("Napiš klidně česky pár slov — AI na tvém počítači z nich ") +
-                            t("složí plný anglický prompt (záběry, časování, zvuk)."),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
-                    )
                     // Přepisovač do promptu vždycky dopíše podkresovou hudbu —
                     // má ji v pevném formátu. Kdo ji nechce, nechá vypnuté.
                     val paramy by vm.params.collectAsStateWithLifecycle()
@@ -492,11 +480,6 @@ private fun PremalovatSekce(vm: MainViewModel, scene: AioScene) {
                 singleLine = true,
                 onClear = { vm.setAioMaskTarget("") },
             )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                t("Kolik objektů"),
-                style = MaterialTheme.typography.labelMedium, color = TextLow
-            )
             Spacer(Modifier.height(6.dp))
             PillRow(
                 items = listOf(1, 2, 3),
@@ -704,7 +687,6 @@ private fun PrepinacRadek(
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(titulek, style = MaterialTheme.typography.bodyMedium)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
         }
         androidx.compose.material3.Switch(
             checked = checked,

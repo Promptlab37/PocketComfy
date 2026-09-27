@@ -43,7 +43,6 @@ fun faceSwapProblem(s: FaceSwapScene): String? = when {
 fun faceSwapHints(s: FaceSwapScene): List<String> {
     val out = mutableListOf<String>()
     if (s.face != null) {
-        out += t("Nejlíp funguje ostrá tvář zepředu, bez brýlí a bez stínů.")
     }
     return out
 }

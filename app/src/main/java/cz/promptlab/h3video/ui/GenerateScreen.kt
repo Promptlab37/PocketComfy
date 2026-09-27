@@ -446,10 +446,6 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                         style = MaterialTheme.typography.bodySmall, color = TextLow,
                         modifier = Modifier.weight(1f)
                     )
-                    Text(
-                        t("trénováno na 5–15 s"),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
-                    )
                 }
             }
         }
@@ -486,13 +482,6 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             ) {
                 Column(Modifier.weight(1f)) {
                     Text("Spectrum", style = MaterialTheme.typography.bodyMedium, color = TextHi)
-                    Text(
-                        if (params.spectrum)
-                            t("Zrychluje generování, ale zvuk je jen přibližný")
-                        else t("Vypnuté – věrnější zvuk, o něco pomalejší"),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (params.spectrum) Amber else TextLow
-                    )
                 }
                 Switch(
                     checked = params.spectrum,
@@ -581,20 +570,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                         Text(
                             // Věta se skládá z jednoho kusu i s hodnotou (%s),
                             // aby v angličtině nevznikla půl česká věta.
-                            when {
-                                params.isNativeResolution ->
-                                    t("Přesně plátno, na kterém model vznikl (%s). Odsud je výsledek nejjistější.")
-                                        .format(nativni.label)
-                                params.aboveNative ->
-                                    t("O %d %% víc bodů než plátno modelu (%s). Jde to, ale bude to déle trvat a detaily bývají měkčí. Ostřejší HD spíš vyjde z nativu a karty All in One → Zvětšit.")
-                                        .format(params.nativeOverhead, nativni.label)
-                                params.resolution.pixels < nativni.pixels ->
-                                    t("Pod plátnem modelu (%s) – rychlejší, ale měkčí obraz a méně přesné tváře.")
-                                        .format(nativni.label)
-                                else ->
-                                    t("Prakticky plátno modelu (%s) – tenhle rozdíl na výsledku nepoznáš.")
-                                        .format(nativni.label)
-                            },
+                            t("Plátno modelu %s").format(nativni.label),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (params.aboveNative) Amber else TextLow
                         )
@@ -862,11 +838,6 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             }
         )
         if (busy) {
-            Text(
-                t("Generování běží. Klidně uprav zadání a přidej další běh do fronty."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-                modifier = Modifier.padding(top = 6.dp)
-            )
         }
         }
     }
@@ -1107,12 +1078,6 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     }
                 }
                 if (jeQwen21) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        t("Qwen je na tenhle model vycvičený a poradí i poměr stran, " +
-                            "ale odvážnější zadání sám zjemní. Odvázaný nepřepisuje nic."),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow,
-                    )
                 }
                 (stavPrepisu as? MainViewModel.RewriteState.Fail)?.let {
                     Spacer(Modifier.height(4.dp))
@@ -1145,11 +1110,6 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     selected = model,
                     label = { t(it.stitek) },
                     onSelect = { m -> vm.setImageModel(m.id) },
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    t(model.popis),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
                 Spacer(Modifier.height(8.dp))
                 Spacer(Modifier.height(10.dp))
@@ -1218,7 +1178,7 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
                         if (params.turboLoraOn)
                             TURBO.profileFor(params.turboLora)?.label
                                 ?: params.turboLora.removeSuffix(".safetensors")
-                        else t("Vypnutá – plný model, lepší hlas, ale pomalejší"),
+                        else t("Vypnutá"),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (params.turboLoraOn) TextLow else Amber,
                         maxLines = 2
@@ -1422,8 +1382,10 @@ private fun <T> PasKaret(
 ) {
     val stav = rememberLazyListState()
     val index = polozky.indexOf(vybrana)
+    // O jednu kartu dřív: vybraná pak nestojí přímo u okraje pod šipkou
+    // a je vidět, že vlevo ještě něco je.
     LaunchedEffect(index) {
-        stav.animateScrollToItem(index.coerceAtLeast(0))
+        stav.animateScrollToItem((index - 1).coerceAtLeast(0))
     }
     Box(
         Modifier
@@ -1530,9 +1492,7 @@ fun LabeledSlider(
             valueRange = range,
             colors = sliderColors()
         )
-        if (note != null) {
-            Text(note, style = MaterialTheme.typography.bodySmall, color = TextLow)
-        }
+        // Poznámka pod posuvníkem (`note`) se od 4.66 nezobrazuje — vysvětlivky v UI nejsou.
     }
 }
 
@@ -1542,7 +1502,6 @@ private fun ToggleRow(title: String, detail: String, checked: Boolean, onChange:
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyMedium)
             if (detail.isNotBlank()) {
-                Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
             }
         }
         Switch(checked = checked, onCheckedChange = onChange, colors = switchColors())
@@ -1841,12 +1800,6 @@ private fun UnetPicker(
             }
         }
         if (referencni) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                t("Na téhle kartě se generuje referenčními vahami z workflow. Výběr ") +
-                    t("výš se projeví na kartách Text → video, Obrázek → video a v All in One."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
         } else if (params.unetFl2va.isNotBlank()) {
             Spacer(Modifier.height(8.dp))
             Text(

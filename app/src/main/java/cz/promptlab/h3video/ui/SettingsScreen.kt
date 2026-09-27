@@ -82,11 +82,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                     minHeight = 58.dp,
                     singleLine = true,
                 )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    t("Adresa se ukládá sama při psaní – tlačítko níž ji jen otestuje."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                )
                 // Rychlé volby jsou jen v osobním sestavení (local.properties);
                 // veřejné žádné cizí adresy nenabízí.
                 if (AppSettings.SUGGESTED.isNotEmpty()) {
@@ -153,13 +148,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         ) {
             val audit by vm.audit.collectAsStateWithLifecycle()
             Column {
-                Text(
-                    t("Porovná workflow appky s tím, co tvůj ComfyUI opravdu nabízí — ") +
-                        t("vypíše chybějící custom nody a modely. Higgs Audio je ") +
-                        t("volitelný, bez něj nefunguje jen namlouvání replik."),
-                    style = MaterialTheme.typography.bodySmall, color = TextMid
-                )
-                Spacer(Modifier.height(12.dp))
                 GradientButton(
                     if (audit is AuditState.Running) t("Porovnávám…") else t("Zkontrolovat server"),
                     enabled = audit !is AuditState.Running,
@@ -206,12 +194,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                                     Toast.makeText(ctx, t("Zkopírováno"), Toast.LENGTH_SHORT).show()
                                 }
                             }
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                t("Pošli si seznam do počítače (e-mailem, chatem) a stahuj ") +
-                                    t("podle odkazů — nemusíš nic přepisovat."),
-                                style = MaterialTheme.typography.bodySmall, color = TextLow
-                            )
                         }
                     }
                 }
@@ -250,13 +232,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             val higgsServer by vm.higgsServer.collectAsStateWithLifecycle()
             val higgsCode by vm.higgsCode.collectAsStateWithLifecycle()
             Column {
-                Text(
-                    t("Prázdné pole = stejný počítač jako ComfyUI, port 7860. ") +
-                        t("Higgs se zapíná sám, když necháš namluvit repliku, a před ") +
-                        t("generováním videa se zase vypne – na grafiku se oba modely nevejdou."),
-                    style = MaterialTheme.typography.bodySmall, color = TextMid
-                )
-                Spacer(Modifier.height(12.dp))
                 DarkTextField(
                     value = higgsServer,
                     onValueChange = { vm.setHiggsServer(it) },
@@ -290,14 +265,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             var otevreno by remember { mutableStateOf(false) }
 
             Column {
-                Text(
-                    "Výchozí je model z workflow. Vlastní model (třeba komunitní " +
-                        "přetrénování) se týká jen karet Text, Obrázek a Osa – " +
-                        "Reference, Mluvící scéna a Režisér s referencemi jedou dál " +
-                        "na modelu z workflow, protože pro ně taková varianta neexistuje.",
-                    style = MaterialTheme.typography.bodySmall, color = TextMid
-                )
-                Spacer(Modifier.height(12.dp))
                 OutlineButton(
                     params.unetFl2va.ifBlank { t("Z workflow (výchozí)") },
                     modifier = Modifier.fillMaxWidth(),
@@ -344,13 +311,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         ) {
             val ctx = LocalContext.current
             Column {
-                Text(
-                    "Na počítači nic neběží, dokud nedáš Generovat – karta zůstává " +
-                        "volná na hry. Když ti generování doběhlo a chceš kartu zpátky " +
-                        "hned, vypni ComfyUI tady.",
-                    style = MaterialTheme.typography.bodySmall, color = TextMid
-                )
-                Spacer(Modifier.height(12.dp))
                 OutlineButton(
                     "Vypnout ComfyUI a uvolnit grafiku",
                     modifier = Modifier.fillMaxWidth(),
@@ -469,16 +429,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                 )
             }
         ) {
-            Text(
-                if (autoSave)
-                    t("Zapnuto: každé hotové video se rovnou uloží do Filmy/H3 Video. ") +
-                        t("Hodí se, když chceš mít úplně všechno v telefonu.")
-                else t("Videa zůstanou v Galerii aplikace a do telefonu se uloží až tehdy, ") +
-                    "když u konkrétního videa klepneš na „Uložit do galerie\". " +
-                    t("Jen pozor, že odinstalace aplikace neuložená videa smaže."),
-                style = MaterialTheme.typography.bodySmall,
-                color = TextMid
-            )
             Spacer(Modifier.height(10.dp))
             // Jednorázová záchrana: dohraje do telefonu všechno, co tam chybí –
             // třeba videa vygenerovaná před zapnutím přepínače.
@@ -508,7 +458,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             Column {
                 Text(
                     if (vramStav.isBlank())
-                        t("Zjisti, kolik je na grafice volno, a případně uvolni, co si drží ComfyUI.")
+                        ""
                     else vramStav,
                     style = MaterialTheme.typography.bodySmall, color = TextMid
                 )
@@ -523,11 +473,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                         modifier = Modifier.weight(1f),
                     ) { if (!vramPracuje) vm.zjistiVram(uvolnit = true) }
                 }
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    t("Uvolní se jen modely, které drží ComfyUI. Cizí programy appka nevypíná."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                )
             }
         }
 
@@ -579,16 +524,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
 
         SectionCard(title = t("O aplikaci")) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    "Pouští workflow MiniMax H3 Reference-to-Video přesně tak, jak je " +
-                        "uložené v ComfyUI. Aplikace mění jen prompt, referenční obrázky, " +
-                        "délku, rozlišení a pokročilé volby – zbytek grafu zůstává nedotčený.",
-                    style = MaterialTheme.typography.bodySmall, color = TextMid
-                )
-                Text(
-                    "Obraz i zvuk vznikají v jednom průchodu, 24 snímků za sekundu.",
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                )
             }
         }
 

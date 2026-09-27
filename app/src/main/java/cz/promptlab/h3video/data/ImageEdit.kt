@@ -260,8 +260,6 @@ fun imageEditHints(s: ImageEditScene): List<String> {
             t("Radši uprav v menším a zvětši potom v kartě All in One.")
     }
     if (s.groundingPx < 768) {
-        out += t("S nízkým viděním předlohy podoba lidí ujíždí — pro věrné obličeje ") +
-            t("autor doporučuje 1024. Nízké hodnoty se hodí jen na tvrdohlavé změny scény.")
     }
     return out
 }

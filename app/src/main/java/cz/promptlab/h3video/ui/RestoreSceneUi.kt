@@ -129,11 +129,6 @@ fun RestoreSection(vm: MainViewModel) {
                 onClear = { vm.updateRestore { it.copy(pokyn = "") } },
             )
             if (scene.pokyn.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    t("Vlastní zadání nahradí obecnou obnovu, Qwen 2.1 k němu přidá ochranu detailů."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                )
             }
         }
     }

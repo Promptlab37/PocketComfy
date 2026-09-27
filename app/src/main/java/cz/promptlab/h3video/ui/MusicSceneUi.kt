@@ -63,20 +63,11 @@ private fun PredlohaSekce(vm: MainViewModel, scene: MusicScene) {
             chyba?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, color = Amber)
             }
-            Text(
-                t("Z nahrávky se vezme jen melodie. Zpěv i doprovod vzniknou znovu ") +
-                    t("podle stylu a textu výš — z původního zvuku nezůstane nic."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         t("Převzít i akordy"),
                         style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        t("Drží i harmonii předlohy. Nový styl se pak prosadí míň."),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
                     )
                 }
                 Switch(
@@ -113,10 +104,6 @@ fun MusicSection(vm: MainViewModel) {
                 label = { it.title },
                 onSelect = { vm.setMusicMotor(it) },
             )
-            Text(
-                scene.motor.detail,
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
         }
     }
 
@@ -131,10 +118,6 @@ fun MusicSection(vm: MainViewModel) {
                     selected = scene.rezim,
                     label = { it.title },
                     onSelect = { vm.setMusicRezim(it) },
-                )
-                Text(
-                    scene.rezim.detail,
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
             }
         }
@@ -197,10 +180,6 @@ fun MusicSection(vm: MainViewModel) {
                         MusicScene.YUE2_MAX_SECONDS.toFloat(),
                     colors = sliderColors()
                 )
-                Text(
-                    t("Strop délky. Kratší text = kratší píseň, model skončí sám."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
-                )
             }
         }
 
@@ -221,10 +200,6 @@ fun MusicSection(vm: MainViewModel) {
                         selected = scene.plan,
                         label = { it.title },
                         onSelect = { vm.setMusicPlan(it) },
-                    )
-                    Text(
-                        scene.plan.detail,
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
                     )
                 }
             }

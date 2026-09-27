@@ -127,10 +127,6 @@ fun ImageEditSection(vm: MainViewModel) {
                     if (row.size == 1) Spacer(Modifier.weight(1f))
                 }
             }
-            Text(
-                t("První obrázek určuje velikost výsledku. Ostatní mohou mít jiný poměr stran."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-            )
         }
     }
 
@@ -204,11 +200,6 @@ fun ImageEditSection(vm: MainViewModel) {
                 label = { it.nazev },
                 onSelect = { vm.setEditMotor(it) },
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                scene.motor.popis,
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-            )
         }
     }
 
@@ -244,11 +235,6 @@ fun ImageEditSection(vm: MainViewModel) {
                     selected = scene.qwen21Resolution,
                     label = { it.label },
                     onSelect = { vm.setEditQwen21Resolution(it) },
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    t("1024 px je oficiální výchozí hodnota. 2K zachová víc detailu, ale spotřebuje výrazně víc paměti."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
                 )
             }
             EditToggleRow(
@@ -335,10 +321,6 @@ fun ImageEditSection(vm: MainViewModel) {
                         onSelect = { vm.setEditQwen21CachePrecision(it) },
                     )
                 }
-                Text(
-                    t("Automaticky je nejbezpečnější. INT8 cache zabere polovinu, INT4 čtvrtinu, ale může lehce snížit přesnost úpravy. Vypnutí cache šetří paměť za cenu pomalejšího běhu."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
-                )
             }
         }
 
@@ -356,10 +338,6 @@ fun ImageEditSection(vm: MainViewModel) {
                     selected = scene.zamer ?: EditZamer.VYVAZENE,
                     label = { it.nazev },
                     onSelect = { vm.setEditZamer(it) },
-                )
-                Text(
-                    (scene.zamer ?: EditZamer.VYVAZENE).popis,
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
                 )
                 if (scene.zamer == null) {
                     Text(
@@ -412,7 +390,6 @@ private fun EditToggleRow(
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.bodyMedium)
             if (detail.isNotBlank()) {
-                Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
             }
         }
         Switch(checked = checked, onCheckedChange = onChange, colors = switchColors())

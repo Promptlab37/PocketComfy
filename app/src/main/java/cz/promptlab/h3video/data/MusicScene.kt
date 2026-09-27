@@ -198,19 +198,13 @@ fun musicHints(s: MusicScene): List<String> {
             (if (s.motor == MusicMotor.YUE2) t("anglicky.") else t("klidně česky."))
     }
     if (s.predelava) {
-        out += t("Z nahrávky se bere jen melodie — žádný zvuk z ní ve výsledku nezůstane.")
-        out += t("Styl piš tak, jak má znít nová verze, ne jak zní původní nahrávka.")
         if (s.text.isNotBlank()) {
-            out += t("Text se lépe zpívá, když má podobný počet slabik jako původní.")
         }
         return out
     }
     if (s.motor == MusicMotor.YUE2) {
         if (s.plan.piseNoty) {
-            out += t("Než se rozezní první tón, model si napíše noty. ") +
-                t("Chvíli se nic neděje, to je v pořádku.")
         }
-        out += t("Délka je jen strop — model skončí tam, kde má píseň konec.")
     }
     return out
 }

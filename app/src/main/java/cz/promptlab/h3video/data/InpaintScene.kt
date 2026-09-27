@@ -192,10 +192,7 @@ fun inpaintHints(s: InpaintScene): List<String> {
         // Původní fotka se vlepí zpátky nezměněná (InpaintStitchImproved),
         // takže se není čeho bát u tváří — ale je dobré to říct, protože
         // u ostatních modelů appky to takhle nefunguje.
-        out += t("Původní fotka se nepřekresluje — model maluje jen to přilepené místo.")
         if (s.prompt.isBlank()) {
-            out += t("Zadání můžeš nechat prázdné — model scénu dotáhne podle fotky. " +
-                "Napiš ho, jen když tam má být něco konkrétního.")
         }
         if (s.procent > 60) {
             out += t("Nad 60 % už model nemá z čeho vycházet a scénu si vymýšlí. " +
@@ -208,17 +205,12 @@ fun inpaintHints(s: InpaintScene): List<String> {
         return out
     }
     if (s.maskPainted) {
-        out += t("Popiš celé místo i s okolím („muž v černé bundě na lavičce“), " +
-            "ne jen samotnou věc — model píše obraz, ne příkaz.")
     }
     // Bez tohohle to vypadá, že model „neposlechl". Neposlechl proto, že to
     // neumí: základní FLUX má nahotu i podrobnou anatomii vytrénovanou pryč
     // a bez adaptéru ji nenamaluje, ať se zadání napíše jakkoli. Volba LoRA
     // je ve sbaleném oddílu, takže o ní člověk nemusí vůbec vědět.
     if (s.lora.isBlank()) {
-        out += t("Základní model neumí nahotu ani podrobnou anatomii — ty z něj " +
-            "byly vytrénované pryč. Rozbal „Model a doladění“ a přimíchej LoRA, " +
-            "jinak to zadání nesplní, ať ho napíšeš jakkoli.")
     }
     return out
 }

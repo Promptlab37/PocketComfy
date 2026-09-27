@@ -145,7 +145,6 @@ fun ltxProblem(s: LtxScene): String? = when {
 fun ltxHints(s: LtxScene): List<String> {
     val out = mutableListOf<String>()
     if (s.rezim == LtxRezim.ZVUK) {
-        out += t("Délku videa určuje zvuk — model ji nemá jak useknout.")
         if (s.zvukSekund > LtxScene.ROZUMNY_STROP_S) {
             out += t("Zvuk je delší než 20 s. Běh poroste do desítek minut, ") +
                 t("protože se model nevejde do paměti grafiky celý.")
@@ -153,10 +152,7 @@ fun ltxHints(s: LtxScene): List<String> {
     } else {
         // LTX 2.5 skládá obraz i zvuk najednou. Kdo do zadání napíše jen to,
         // co je vidět, dostane zvuk odhadnutý ze scény — a bývá to šum.
-        out += t("Napiš i to, co má být slyšet — hlas, ruch, hudbu. ") +
-            t("Model skládá obraz a zvuk zároveň.")
     }
-    out += t("Popis piš anglicky — model je učený na anglické popisky.")
     return out
 }
 

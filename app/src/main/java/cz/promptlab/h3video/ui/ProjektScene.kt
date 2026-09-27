@@ -77,8 +77,7 @@ fun ProjektSection(vm: MainViewModel) {
             Column {
                 if (scene.projekty.isEmpty()) {
                     Text(
-                        t("Zatím tu nic není. Projekt drží pořadí záběrů, jejich popisy " +
-                            "a hotové výsledky — appka pak ví, co k čemu patří."),
+                        t("Zatím tu nic není."),
                         style = MaterialTheme.typography.bodySmall, color = TextLow,
                     )
                     Spacer(Modifier.height(12.dp))
@@ -149,11 +148,6 @@ fun ProjektSection(vm: MainViewModel) {
     ) {
         Column {
             if (projekt.zabery.isEmpty()) {
-                Text(
-                    t("Přidej první záběr. U každého napíšeš, co se v něm děje, " +
-                        "a vybereš kartu, která ho umí vyrobit."),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
-                )
                 Spacer(Modifier.height(12.dp))
             }
             projekt.zabery.forEachIndexed { i, z ->

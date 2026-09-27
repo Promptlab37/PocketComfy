@@ -273,23 +273,11 @@ fun aioProblem(s: AioScene): String? {
 fun aioHints(s: AioScene, p: GenParams): List<String> {
     val out = mutableListOf<String>()
     if (s.mode == AioMode.MASK) {
-        out += t(
-            "Délku výsledku určuje zdrojové video — posuvník říká jen to, kolik " +
-                "vteřin od začátku se přegeneruje."
-        )
         if (s.refsWithImage.isEmpty()) {
-            out += t(
-                "Bez fotky náhrady se model řídí jen popisem. Když má vzniknout " +
-                    "konkrétní člověk nebo věc, přilož ji."
-            )
         }
     }
     if (s.mode == AioMode.UPSCALE) {
-        out += "Zvětšování nic negeneruje – model MiniMax se vůbec nespustí, " +
-            "takže na profilu, krocích ani rozlišení tady nezáleží."
         if (s.upscaler == Upscaler.SEEDVR2) {
-            out += "SeedVR2 potřebuje své modely ve složce models/SEEDVR2. Když tam nejsou, " +
-                "ComfyUI si je při prvním použití stáhne a chvíli to trvá."
         }
     }
     if (s.mode == AioMode.EXTEND) {
@@ -304,33 +292,19 @@ fun aioHints(s: AioScene, p: GenParams): List<String> {
     // Jen režim Reference: list postavy má vzorkování i velikost referencí
     // pevně v šabloně, takže se ho tahle upozornění netýkají.
     if (s.mode == AioMode.REFERENCE && p.turboLoraOn) {
-        out += "Turbo LoRA je trénovaná na text a snímky, ne na reference. Tady se vyplatí " +
-            "profil Kvalita – podoba postav bývá věrnější."
     }
     if (!s.mode.usesRefWeights && p.profile.bezReferenci) {
-        out += "Profil Fast je čtyřkroková destilace FastH3. Je nejrychlejší, ale podle " +
-            "autorů může u složitého pohybu, jemných detailů a části zvuku zůstat pod " +
-            "základním modelem."
     }
     if (s.mode == AioMode.REFERENCE && p.refImageSize != "max") {
-        out += "Reference se posílají zmenšené na velikost výstupu („Vyvážené\"). " +
-            "Pro věrnou podobu lidí přepni v pokročilém nastavení na „Maximální detail\"."
     }
     if (s.mode == AioMode.REFERENCE && s.refsWithImage.isNotEmpty() && s.refVideo != null) {
-        out += "První referenční obrázek se připne jako snímek 0, aby obličej z videa " +
-            "nepřebil fotku."
     }
     if (s.mode == AioMode.KEYFRAMES) {
         val mimo = s.keysWithImage.filter { it.position !in 1..s.frames }
         if (mimo.isEmpty() && s.keysWithImage.size == 1) {
-            out += "S jediným klíčovým snímkem se karta chová jako „Z obrázku“ – " +
-                "smysl to dává od dvou nahoru."
         }
     }
     if (s.mode == AioMode.CHARSHEET) {
-        out += "První fotka určuje styl, další doplňují podobu (obličej, vlasy, oblečení). " +
-            "Délka, kamera i vzorkování jsou dané šablonou – profil ani pokročilé volby " +
-            "sem nesahají. Hotový list se uloží do Obrázky/H3 Video, otočka do galerie appky."
     }
     return out
 }

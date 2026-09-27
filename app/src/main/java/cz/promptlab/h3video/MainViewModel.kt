@@ -881,6 +881,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (p.mode == Mode.VYLEPSENI_VIDEA) return emptyList()
         if (p.mode == Mode.LONGMM) return cz.promptlab.h3video.data.longMmHints(_longMm.value)
         if (p.mode == Mode.RESTORE) return emptyList()
+        // 3D model nejede na videu — obecná upozornění k délce a plátnu se ho netýkají.
+        if (p.mode == Mode.MODEL3D) return emptyList()
         // Úhel kamery jede na vlastní předloze; upozornění k videu se ho netýkají.
         if (p.mode == Mode.ANGLE) return emptyList()
         if (p.mode == Mode.FACESWAP) return faceSwapHints(_swap.value)
@@ -889,13 +891,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // jen na text a snímky, takže se tam vyplatí profil Kvalita.
         val refCesta = p.mode.usesRefModel
         if (refCesta && p.turboLoraOn) {
-            out += "Turbo LoRA je trénovaná jen na text a snímky videa, ne na reference. " +
-                "Tady se vyplatí přepnout na Kvalitu – podoba postav i poslušnost zadání " +
-                "bývají výrazně věrnější."
         }
         if (refCesta && p.refImageSize != "max") {
-            out += "Reference se posílají zmenšené na velikost výstupu („Vyvážené\"). " +
-                "Pro věrnou podobu lidí přepni v pokročilém nastavení na „Maximální detail\"."
         }
         if (p.shiftVideo != p.profile.shiftVideo) {
             out += "Sigma shift je %.2f, workflow má u tohoto profilu %.2f. Odchylka mění celý průběh vzorkování."

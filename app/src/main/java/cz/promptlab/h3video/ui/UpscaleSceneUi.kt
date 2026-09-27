@@ -119,11 +119,6 @@ fun UpscaleSection(vm: MainViewModel) {
                 label = { t(it.stitek) },
                 onSelect = { vm.setUpscaleMetoda(it) },
             )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                t(scene.metoda.popis),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
         }
     }
 
@@ -140,11 +135,6 @@ fun UpscaleSection(vm: MainViewModel) {
                     "$it · ~${n * 3} tis. px"
                 },
                 onSelect = { vm.setUpscaleGrid(it) },
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                t("Víc dlaždic = větší výsledek, ale úměrně delší běh. 2×2 je vyladěné výchozí."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
             )
         }
     }
@@ -204,19 +194,11 @@ fun UpscaleSection(vm: MainViewModel) {
                     style = MaterialTheme.typography.labelMedium, color = TextMid
                 )
             }
-            Text(
-                t("Nad 1.00 už runtime nic nepřidá; níž se výsledek přimíchává zpátky k předloze."),
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
 
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(t("Rekonstruovat pleť"), style = MaterialTheme.typography.bodyMedium)
-                    Text(
-                        t("Model si sám najde kůži a dopočítá póry. Na fotky bez lidí to vypni."),
-                        style = MaterialTheme.typography.bodySmall, color = TextLow
-                    )
                 }
                 Switch(
                     checked = scene.dlssPlet,
@@ -225,10 +207,6 @@ fun UpscaleSection(vm: MainViewModel) {
                 )
             }
 
-            upscaleHints(scene).forEach { hint ->
-                Spacer(Modifier.height(6.dp))
-                Text(hint, style = MaterialTheme.typography.bodySmall, color = TextLow)
-            }
         }
     }
 }

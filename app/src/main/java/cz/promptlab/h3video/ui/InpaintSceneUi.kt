@@ -82,10 +82,6 @@ fun InpaintSection(vm: MainViewModel) {
                 label = { it.title },
                 onSelect = { vm.setInpaintRezim(it) },
             )
-            Text(
-                scene.rezim.detail,
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-            )
         }
     }
 
@@ -277,10 +273,6 @@ fun InpaintSection(vm: MainViewModel) {
                     selected = scene.model,
                     label = { it.title },
                     onSelect = { vm.setInpaintModel(it) },
-                )
-                Text(
-                    scene.model.detail,
-                    style = MaterialTheme.typography.bodySmall, color = TextLow
                 )
             }
         }

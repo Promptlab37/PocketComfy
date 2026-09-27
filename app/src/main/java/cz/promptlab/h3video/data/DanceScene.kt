@@ -131,17 +131,12 @@ fun danceHints(s: DanceScene): List<String> {
     val out = mutableListOf<String>()
     // Bez tohohle to vypadá jako chyba appky. Není — model si choreografii
     // vymýšlí a vzorové video vůbec nepřijímá.
-    out += t("Pohyb si model vymyslí sám podle rytmu. Video se vzorovým tancem se sem nedává.")
     // Změřeno 22. 9. 2026 na RTX 4060 Ti: 5 s videa v 480 × 832 = 22 min 20 s
     // (10:48 první fáze, 11:32 druhá). Číslo patří do karty, protože bez něj
     // to vypadá jako každý jiný běh a člověk si pustí třicet sekund.
-    out += t("Pět sekund v %d × %d trvalo při měření %s. ")
-        .format(s.kvalita.sirka, s.kvalita.vyska, s.kvalita.odhad) +
-        t("Vyšší rozlišení i delší video čas úměrně násobí.")
     if (s.sekundy > DanceScene.SEKUND_NA_USEK) {
         out += t("Zvolená délka je %d úseků po %d s a každý se počítá zvlášť. ")
-            .format(s.useku, DanceScene.SEKUND_NA_USEK) +
-            t("Napoprvé zkus jeden, ať víš, jak dlouho to u tebe trvá.")
+            .format(s.useku, DanceScene.SEKUND_NA_USEK)
     }
     return out
 }

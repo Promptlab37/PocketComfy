@@ -113,8 +113,6 @@ fun Model3dSection(vm: MainViewModel) {
                 label = { it.nazev },
                 onSelect = { vm.setModel3dKvalita(it) },
             )
-            Spacer(Modifier.height(8.dp))
-            Text(scene.kvalita.popis, style = MaterialTheme.typography.bodySmall, color = TextLow)
         }
     }
 
@@ -130,11 +128,6 @@ fun Model3dSection(vm: MainViewModel) {
                 selected = scene.motor,
                 label = { it.nazev },
                 onSelect = { vm.setModel3dMotor(it) },
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                scene.motor.popis,
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
             )
             Spacer(Modifier.height(14.dp))
 
@@ -174,10 +167,6 @@ fun Model3dSection(vm: MainViewModel) {
                 )
             }
 
-            model3dHints(scene).forEach { hint ->
-                Spacer(Modifier.height(8.dp))
-                Text(hint, style = MaterialTheme.typography.bodySmall, color = Amber)
-            }
         }
     }
 }

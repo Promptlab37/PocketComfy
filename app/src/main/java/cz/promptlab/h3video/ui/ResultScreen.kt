@@ -234,21 +234,11 @@ fun ResultScreen(
                         .clip(RoundedCornerShape(14.dp))
                         .clickable { naCelou = true },
                 )
-                Text(
-                    t("Klepni pro zvětšení"),
-                    style = MaterialTheme.typography.bodySmall, color = TextLow,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
                 if (naCelou) ZoomovaciObrazek(it) { naCelou = false }
             }
         } else if (item.isModel3d) {
             // Model jde otáčet tahem prstu a přibližovat štípnutím.
             Model3dPrehlizec(item.file(ctx))
-            Text(
-                t("Táhni prstem pro otáčení, štípnutím přiblížíš"),
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-                modifier = Modifier.padding(top = 4.dp)
-            )
         } else if (item.isAudio) {
             // Skladba nemá obraz – přehrávač zvládne MP3 taky, jen by ukázal
             // černý obdélník. Vlastní řádek s play/pauzou je srozumitelnější.

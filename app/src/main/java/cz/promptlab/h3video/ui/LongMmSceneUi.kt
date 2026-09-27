@@ -438,11 +438,6 @@ fun LongMmSection(vm: MainViewModel) {
                 minHeight = 56.dp,
                 onClear = { vm.setLongMmNazev("") },
             )
-            Text(
-                t("Uloží se jako %s_00001, %s_00002 …")
-                    .format(vm.longMmNazevSouboru(), vm.longMmNazevSouboru()),
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-            )
             // Nový řetěz začíná čistou kartou. Latenty na serveru se nemažou —
             // jsou jediná cesta, jak se k dřívější scéně ještě vrátit, a
             // v nabídce nepřekážejí: řadí se od nejnovějšího a nesou v názvu

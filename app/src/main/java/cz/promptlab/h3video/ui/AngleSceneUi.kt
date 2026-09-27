@@ -128,11 +128,6 @@ fun AngleSection(vm: MainViewModel) {
                 style = MaterialTheme.typography.bodyMedium, color = TextMid
             )
 
-            Spacer(Modifier.height(10.dp))
-            Text(
-                t("Zadání pro model") + ": " + scene.zadani,
-                style = MaterialTheme.typography.bodySmall, color = TextLow
-            )
         }
     }
 }

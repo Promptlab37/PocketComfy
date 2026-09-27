@@ -124,12 +124,16 @@ class AioSceneTest {
         )
     }
 
+    /**
+     * Od 4.66 karta neradí, co přepnout (profil, velikost referencí) — v UI
+     * nejsou vysvětlivky ani doporučení, jen varování podmíněná volbou.
+     */
     @Test
-    fun `upozorneni u referenci pripomene, ze Turbo LoRA na ne neni`() {
+    fun `upozorneni u referenci neradi prepnout profil`() {
         val hints = aioHints(
             AioScene(mode = AioMode.REFERENCE, prompt = "x"),
             GenParams(mode = Mode.ALLINONE, turboLoraOn = true),
         )
-        assertTrue(hints.any { it.contains("Turbo LoRA") })
+        assertTrue(hints.none { it.contains("Turbo LoRA") || it.contains("Kvalit") })
     }
 }

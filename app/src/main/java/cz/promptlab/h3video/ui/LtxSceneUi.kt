@@ -79,10 +79,6 @@ fun LtxSection(vm: MainViewModel) {
                 label = { it.title },
                 onSelect = { vm.setLtxRezim(it) },
             )
-            Text(
-                scene.rezim.detail,
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-            )
         }
     }
 
@@ -158,11 +154,6 @@ fun LtxSection(vm: MainViewModel) {
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            Text(
-                t("Délku videa určuje tenhle soubor — model ji nemá jak useknout."),
-                style = MaterialTheme.typography.bodySmall,
-                color = TextLow,
-            )
         }
     }
 

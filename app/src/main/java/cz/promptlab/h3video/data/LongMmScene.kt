@@ -498,20 +498,15 @@ fun longMmProblem(s: LongMmScene): String? = when {
 /** Upozornění, která nebrání spuštění. */
 fun longMmHints(s: LongMmScene): List<String> = buildList {
     if (s.rezim == LongMmRezim.PRVNI) {
-        add(t("Až záběr doběhne, zůstane na serveru jeho latent. Z něj se v režimu Navázat pokračuje bez ztráty kvality."))
         // Jen to číslo, které si člověk z hlavy nespočítá. Že plátno platí
         // pro celou scénu, stojí u volby samotné — opakovat to je vysvětlivka
         // navíc a ta jen zabírá místo.
         if (s.rozliseni != LongMmRozliseni.R480) {
-            add(t("%s má %.2f× víc bodů než 480p a úměrně tomu déle trvá.")
-                .format(s.rozliseni.title, s.rozliseni.nasobekPlochy))
         }
         if (s.reference.isNotEmpty()) {
             add(t("Na fotky se v zadání odkazuje značkami <Picture 1>, <Picture 2>… Bez zmínky si jich model nemusí všimnout."))
         }
     } else {
-        add(t("Rozlišení i poměr musí zůstat stejné jako u prvního záběru. Latent se nedá přepočítat na jiné plátno."))
-        add(t("Výsledkem je celé video od začátku, ne jen přidaný kus — příště navazuj na něj."))
     }
 }
 
