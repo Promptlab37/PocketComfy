@@ -368,6 +368,11 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             DanceSection(vm)
         }
 
+        // ------------------------------------------------------ wan animate
+        if (mode == Mode.ANIMATE) {
+            AnimateSection(vm)
+        }
+
         // ------------------------------------------------------ long minimax
         if (mode == Mode.LONGMM) {
             LongMmSection(vm)
@@ -1314,7 +1319,7 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
     // podle svého názvu, jak je to v mobilních aplikacích zvykem; vybraná se
     // sama posune do zorného pole, aby po přepnutí nezůstala za okrajem.
     val stav = rememberLazyListState()
-    val vybranyIndex = Mode.entries.indexOf(selected)
+    val vybranyIndex = cz.promptlab.h3video.data.NABIZENE_KARTY.indexOf(selected)
     LaunchedEffect(vybranyIndex) {
         stav.animateScrollToItem(vybranyIndex.coerceAtLeast(0))
     }
@@ -1338,8 +1343,8 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
             contentPadding = PaddingValues(horizontal = 30.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            items(Mode.entries.size) { i ->
-                val m = Mode.entries[i]
+            items(cz.promptlab.h3video.data.NABIZENE_KARTY.size) { i ->
+                val m = cz.promptlab.h3video.data.NABIZENE_KARTY[i]
                 val active = m == selected
                 Box(
                     Modifier
@@ -1392,7 +1397,7 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
             // Kolikátá karta z kolika — druhý (a nepřehlédnutelný) signál, že
             // jich je víc, než je zrovna vidět.
             Text(
-                "${vybranyIndex + 1}/${Mode.entries.size}",
+                "${vybranyIndex + 1}/${cz.promptlab.h3video.data.NABIZENE_KARTY.size}",
                 style = MaterialTheme.typography.labelMedium, color = TextMid,
                 modifier = Modifier.padding(start = 8.dp),
             )

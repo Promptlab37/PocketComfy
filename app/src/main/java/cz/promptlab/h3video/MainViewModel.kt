@@ -165,7 +165,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _tab = MutableStateFlow(Tab.CREATE)
     val tab: StateFlow<Tab> = _tab.asStateFlow()
 
-    private val _params = MutableStateFlow(settings.load())
+    // Uložená volba schované karty (Dlouhé video) se přesune na Long MiniMax,
+    // jinak by appka otevřela kartu, která v nabídce není.
+    private val _params = MutableStateFlow(
+        settings.load().let { if (it.mode.nabizena) it else it.copy(mode = Mode.LONGMM) }
+    )
     val params: StateFlow<GenParams> = _params.asStateFlow()
 
     private val _history = MutableStateFlow(historyStore.all())
@@ -763,6 +767,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.MUSIC -> musicProblem(_music.value)
             Mode.LTXAUDIO -> ltxProblem(_ltx.value)
             Mode.DANCE -> cz.promptlab.h3video.data.danceProblem(_dance.value)
+            Mode.ANIMATE -> cz.promptlab.h3video.data.animateProblem(_animate.value)
             Mode.LONGMM -> cz.promptlab.h3video.data.longMmProblem(_longMm.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
             Mode.ANGLE -> angleProblem(_angle.value)
@@ -805,7 +810,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private val vsechnySceny: List<StateFlow<Any?>> get() = listOf(
         _params, _scene, _timeline, _aio, _edit, _upscale, _music,
-        _restore, _angle, _swap, _inpaint, _long, _model3d, _ltx, _dance, _longMm, _projekt,
+        _restore, _angle, _swap, _inpaint, _long, _model3d, _ltx, _dance, _animate, _longMm, _projekt,
         _aioAvailable,
     )
 
@@ -842,6 +847,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (p.mode == Mode.MUSIC) return musicHints(_music.value)
         if (p.mode == Mode.LTXAUDIO) return ltxHints(_ltx.value)
         if (p.mode == Mode.DANCE) return cz.promptlab.h3video.data.danceHints(_dance.value)
+        if (p.mode == Mode.ANIMATE) return emptyList()
         if (p.mode == Mode.LONGMM) return cz.promptlab.h3video.data.longMmHints(_longMm.value)
         if (p.mode == Mode.RESTORE) return emptyList()
         // Úhel kamery jede na vlastní předloze; upozornění k videu se ho netýkají.
@@ -1125,6 +1131,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         ),
                         s.uploadImages,
                         danceScene = s,
+                    )
+                }
+            }
+
+            // Wan Animate: řídicí video má vlastní cestu nahrávání, v seznamu
+            // obrázků je jen fotka postavy.
+            Mode.ANIMATE -> {
+                val s = _animate.value
+                val zadani = listOf(s.zadani, s.pohyb.trim()).filter { it.isNotEmpty() }
+                    .joinToString(" ")
+                QueuedRun(id, p.mode.title, zadani) {
+                    GenerationEngine.start(
+                        p.copy(
+                            prompt = zadani,
+                            steps = cz.promptlab.h3video.comfy.AnimateBuilder.STEPS,
+                        ),
+                        s.uploadImages,
+                        animateScene = s,
                     )
                 }
             }
@@ -3291,6 +3315,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         // se o kartu pokusí.
                         R.raw.workflow_longmm_start,
                         R.raw.workflow_longmm_dalsi,
+                        R.raw.workflow_wan_animate2,
                     ).map { id ->
                         res.openRawResource(id).bufferedReader().use { it.readText() }
                     }
@@ -3721,6 +3746,99 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         it.hudba?.let { f -> runCatching { f.delete() } }
         it.copy(hudba = null, hudbaSekund = 0f)
     }
+
+    // ------------------------------------------------------------ wan animate
+
+    private val animateStore = cz.promptlab.h3video.data.AnimateStore(app)
+
+    private val _animate = MutableStateFlow(cz.promptlab.h3video.data.AnimateScene())
+    val animate: StateFlow<cz.promptlab.h3video.data.AnimateScene> = _animate.asStateFlow()
+
+    private val _animateVideoChyba = MutableStateFlow<String?>(null)
+    val animateVideoChyba: StateFlow<String?> = _animateVideoChyba.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val obnovene = withContext(Dispatchers.IO) { animateStore.load() }
+            if (obnovene == cz.promptlab.h3video.data.AnimateScene()) return@launch
+            val nahled = obnovene.fotka?.let {
+                withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(it) }
+            }
+            _animate.value = obnovene.copy(nahled = nahled)
+        }
+    }
+
+    private fun updateAnimate(block: (cz.promptlab.h3video.data.AnimateScene) -> cz.promptlab.h3video.data.AnimateScene) {
+        val next = block(_animate.value)
+        _animate.value = next
+        animateStore.save(next)
+    }
+
+    fun setAnimatePostava(v: String) = updateAnimate { it.copy(postava = v) }
+    fun setAnimateProstredi(v: String) = updateAnimate { it.copy(prostredi = v) }
+    fun setAnimatePohyb(v: String) = updateAnimate { it.copy(pohyb = v) }
+
+    fun pickAnimateFotku(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val cil = animateStore.fotkaFile()
+            val nahled = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), uri, cil)
+            } ?: return@launch
+            updateAnimate { it.copy(fotka = cil, nahled = nahled) }
+        }
+    }
+
+    fun clearAnimateFotku() = updateAnimate {
+        it.fotka?.let { f -> runCatching { f.delete() } }
+        it.copy(fotka = null, nahled = null)
+    }
+
+    fun pickAnimateVideo(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val soubor = importMedia(uri, "animate_video") ?: run {
+                _animateVideoChyba.value = t("Video se nepodařilo načíst. Zkus jiný soubor.")
+                return@launch
+            }
+            val info = withContext(Dispatchers.IO) { infoVidea(soubor) }
+            if (info == null) {
+                soubor.delete()
+                _animateVideoChyba.value = t("Z toho souboru nejde přečíst video. Zkus MP4.")
+                return@launch
+            }
+            _animateVideoChyba.value = null
+            updateAnimate {
+                it.copy(
+                    video = soubor, videoSekund = info.sekund, videoSnimku = info.snimku,
+                    naVysku = info.vyska >= info.sirka,
+                )
+            }
+        }
+    }
+
+    fun clearAnimateVideo() = updateAnimate {
+        it.video?.let { f -> runCatching { f.delete() } }
+        it.copy(video = null, videoSekund = 0f, videoSnimku = 0)
+    }
+
+    private class InfoVidea(val sirka: Int, val vyska: Int, val sekund: Float, val snimku: Int)
+
+    /** Rozměry (po otočení), délka a počet snímků videa; null když to není video. */
+    private fun infoVidea(file: java.io.File): InfoVidea? = runCatching {
+        val (w, h) = ImageUtils.rozmeryVidea(file) ?: return null
+        val mmr = android.media.MediaMetadataRetriever()
+        try {
+            mmr.setDataSource(file.absolutePath)
+            fun cislo(klic: Int) = mmr.extractMetadata(klic)?.toLongOrNull() ?: 0L
+            val ms = cislo(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)
+            val snimku = cislo(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_FRAME_COUNT)
+            InfoVidea(w, h, ms / 1000f, snimku.toInt())
+        } finally {
+            // AutoCloseable má MediaMetadataRetriever až od API 29.
+            runCatching { mmr.release() }
+        }
+    }.getOrNull()
 
     // ------------------------------------------------------------ long minimax
 
@@ -4736,7 +4854,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun pripravZaber(zaberId: Long) {
         val s = _projekt.value
         val z = s.projekt?.zabery?.firstOrNull { it.id == zaberId } ?: return
-        val karta = z.karta ?: return
+        // Záběr ze starého projektu může mít schovanou kartu (Dlouhé video).
+        val karta = z.karta?.let { if (it.nabizena) it else Mode.LONGMM } ?: return
         updateProjekt { it.copy(cekaZaber = zaberId) }
         update { it.copy(mode = karta) }
         if (z.popis.isNotBlank()) vlozPopisDoKarty(karta, z.popis)
@@ -4778,6 +4897,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         when (karta) {
             Mode.ALLINONE -> updateAio { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
             Mode.EDIT -> updateEdit { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
+            Mode.LONGMM -> updateLongMm { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
             // Dlouhé video nemá jeden prompt — popis patří prvnímu záběru.
             Mode.LONG -> updateLong {
                 if (it.startPrompt.isBlank()) it.copy(startPrompt = popis) else it

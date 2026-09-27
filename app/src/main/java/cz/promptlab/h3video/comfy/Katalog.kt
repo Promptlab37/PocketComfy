@@ -275,7 +275,7 @@ object Katalog {
         // Chytré zvětšení (Smart Upscaler): vidoucí model pro prompty dlaždic
         // a ControlNet Tile, který drží tvar dlaždice.
         "qwen3vl_4b_fp8_scaled.safetensors" to Soubor(
-            "models/text_encoders", "Zvětšit — chytré zvětšení (4,9 GB)",
+            "models/text_encoders", "Zvětšit — chytré zvětšení a Úprava obrázku (4,9 GB)",
             "$HF/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors"
         ),
         "Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors" to Soubor(
@@ -297,16 +297,25 @@ object Katalog {
             "$HF/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors"
         ),
         "Wan2_1_VAE_bf16.safetensors" to Soubor(
-            "models/vae", "Dance — VAE Wan 2.1",
+            "models/vae", "Dance a Wan Animate — VAE Wan 2.1",
             "$HF/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors"
         ),
         "clip_vision_h.safetensors" to Soubor(
-            "models/clip_vision", "Dance — obrazový enkodér (1,2 GB)",
+            "models/clip_vision", "Dance a Wan Animate — obrazový enkodér (1,2 GB)",
             "$HF/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
         ),
         "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors" to Soubor(
-            "models/loras", "Dance — zrychlení na 6 kroků (bez ní 25 kroků a cfg 5)",
+            "models/loras", "Dance a Wan Animate — zrychlení na 6 kroků",
             "$HF/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
+        ),
+        // Karta Wan Animate — Wan-Animate 2, nativně v jádře ComfyUI.
+        "wan_animate_2_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Wan Animate — Wan-Animate 2 (16,7 GB)",
+            "$HF/Comfy-Org/Wan-Animate-2/resolve/main/diffusion_models/wan_animate_2_int8_convrot.safetensors"
+        ),
+        "umt5_xxl_fp8_e4m3fn_scaled.safetensors" to Soubor(
+            "models/text_encoders", "Wan Animate — textový enkodér Wan (6,7 GB)",
+            "$HF/Comfy-Org/Wan-Animate-2/resolve/main/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
         ),
         "qwen_image_vae.safetensors" to Soubor(
             "models/vae", "Úprava obrázku — Krea 2",
@@ -419,10 +428,6 @@ object Katalog {
             "$HF/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_int8_convrot.safetensors"
         ),
         // Karta 3 kroky stojí na téhle LoRA; předloha ji hledá v podsložce h3.
-        "TaoMate-H3-3step-ComfyUI.safetensors" to Soubor(
-            "models/loras/h3", "3 kroky",
-            "$HF/TaoLiveAIGC/TaoMate-H3"
-        ),
         // Long MiniMax jede na referenčních vahách a na autorově Turbo LoRA;
         // základní model, enkodér i oba VAE sdílí s ostatními video kartami.
         // Volby modelu na kartě Long MiniMax. Turbo je výchozí, zbylé dvě
@@ -441,9 +446,6 @@ object Katalog {
         "10Eros_Max_H3_test2_pruned_r128.safetensors" to Soubor(
             "models/loras", "Long MiniMax — volba Eros Max"
         ),
-        "minimax_h3_latent_upscaler_3d_fp16.safetensors" to Soubor(
-            "models/latent_upscale_models", "Long MiniMax — volba 3 + 2 a Dlouhé video"
-        ),
         // Volitelná: karta bez ní jede, jen bez realističtějšího podání.
         "h3-realism-people-t2v-i2v-r2v.safetensors" to Soubor(
             "models/loras", "Long MiniMax — volba Realističtější podání"
@@ -458,7 +460,6 @@ object Katalog {
         ),
         "minimax_h3_video_vae_fp16.safetensors" to Soubor("models/vae", "video karty"),
         "minimax_h3_audio_vae_fp32.safetensors" to Soubor("models/vae", "video karty"),
-        "qwen3vl_4b_fp8_scaled.safetensors" to Soubor("models/text_encoders", "Úprava obrázku"),
         "taeh3.safetensors" to Soubor("models/vae_approx", "živý náhled u videa"),
         // Karta Obrázek, modely přidané ve 3.02. Váhy Kleina má Black Forest
         // Labs za souhlasem s licencí, encodér a VAE přebalil Comfy-Org —

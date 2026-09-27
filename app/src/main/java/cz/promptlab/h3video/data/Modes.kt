@@ -206,6 +206,16 @@ enum class Mode(
     ),
 
     /**
+     * Wan-Animate 2: postava z fotky zopakuje pohyb z videa (tělo, ruce,
+     * mimiku). Řídicí video jde do modelu přímo, délku určuje ono.
+     */
+    ANIMATE(
+        titleCs = "Wan Animate",
+        shortCs = "Animate",
+        detailCs = "Postava z fotky zopakuje pohyb z videa"
+    ),
+
+    /**
      * Navazující záběry přes latent (balík Minimax-H3-Latent-Continuation).
      * Jeden záběr = jeden běh: latent hotového kusu zůstane na serveru a další
      * běh z něj začne, takže mezi záběry nic neztmavne a paměť neroste s délkou
@@ -225,11 +235,21 @@ enum class Mode(
     /** Jede se na referenčních (ref2va) vahách? U dialogů a dlouhého videa ano. */
     val usesRefModel: Boolean get() = this == TALK || this == LONG
 
+    /**
+     * Ukazuje se karta v nabídce? Dlouhé video je od 4.61 schované, dlouhé
+     * záběry dělá Long MiniMax. Kód zůstává kvůli starým výsledkům a projektům.
+     */
+    val nabizena: Boolean get() = this != LONG
+
     /** Vyrábí tahle karta video? Obrázkové karty vrací PNG, Hudba MP3. */
     val isVideo: Boolean
         get() = this == ALLINONE || this == TALK || this == TIMELINE ||
-            this == LONG || this == LTXAUDIO || this == DANCE || this == LONGMM
+            this == LONG || this == LTXAUDIO || this == DANCE || this == LONGMM ||
+            this == ANIMATE
 }
+
+/** Karty v nabídce, v pořadí výčtu. */
+val NABIZENE_KARTY: List<Mode> get() = Mode.entries.filter { it.nabizena }
 
 /**
  * Co karta z „Nastavení" opravdu použije.
@@ -294,6 +314,9 @@ fun ovladaProKartu(
     // poměr stran si karta volí sama vlastním přepínačem.
     Mode.LTXAUDIO -> Ovlada.NIC
     Mode.DANCE -> Ovlada.NIC
+    // Wan Animate: kroky, LoRA i model jsou z oficiální předlohy, plátno
+    // se řídí orientací videa.
+    Mode.ANIMATE -> Ovlada.NIC
     // Long MiniMax: kroky, vzorkovač i Turbo LoRA jsou autorovy a plátno si
     // karta volí sama (a v navázání ho zamyká, protože latent se přepočítat nedá).
     Mode.LONGMM -> Ovlada.NIC

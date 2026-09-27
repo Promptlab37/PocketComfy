@@ -71,6 +71,7 @@ object RunModel {
             "minimax_h3" in s || "minimax-h3" in s -> "MiniMax H3"
             "ltx" in s -> "LTX 2.5"
             "dancer" in s -> "Wan 2.2 Dancer"
+            "wan_animate_2" in s -> "Wan-Animate 2"
             "wan" in s -> "Wan"
             "seedvr2" in s -> "SeedVR2"
             "trellis" in s -> "TRELLIS.2"

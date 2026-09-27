@@ -1,4 +1,4 @@
-﻿// Musí být úplně nahoře: v build.gradle.kts jinak `java.util.Properties`
+// Musí být úplně nahoře: v build.gradle.kts jinak `java.util.Properties`
 // naráží na Gradle rozšíření `java` a nepřeloží se.
 import java.util.Properties
 
@@ -35,8 +35,8 @@ android {
         applicationId = "cz.promptlab.h3video"
         minSdk = 26
         targetSdk = 35
-        versionCode = 272
-        versionName = "4.60"
+        versionCode = 273
+        versionName = "4.61"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "GITHUB_TOKEN", "\"\"")
         buildConfigField("String", "DEFAULT_SERVER", "\"\"")

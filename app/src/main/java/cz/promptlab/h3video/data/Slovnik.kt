@@ -878,6 +878,20 @@ object Slovnik {
             "The result is the whole video from the start, not just the added piece — continue from it next time.",
         "Vygenerovat první záběr" to "Generate the first shot",
         "Navázat další záběr" to "Continue with another shot",
+        // karta Wan Animate
+        "Wan Animate" to "Wan Animate",
+        "Animate" to "Animate",
+        "Postava z fotky zopakuje pohyb z videa" to "The character from the photo repeats the motion from the video",
+        "Postava" to "Character",
+        "Video s pohybem" to "Motion video",
+        "Vzhled postavy" to "Character look",
+        "Prostředí" to "Environment",
+        "Pohyb" to "Motion",
+        "%.1f s · %d × %d · %d úseků" to "%.1f s · %d × %d · %d segments",
+        "Vyber fotku postavy." to "Pick a photo of the character.",
+        "Vyber video s pohybem." to "Pick a motion video.",
+        "Video se nepodařilo načíst. Zkus jiný soubor." to "The video could not be loaded. Try another file.",
+        "Z toho souboru nejde přečíst video. Zkus MP4." to "No video can be read from that file. Try MP4.",
         // karta Dance (Wan-Dancer)
         "Dance" to "Dance",
         "Z fotky a hudby video, kde ten člověk tančí do rytmu" to

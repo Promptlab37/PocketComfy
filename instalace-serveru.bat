@@ -238,6 +238,19 @@ if /i "!ODP!"=="a" (
   echo   Pozn.: bez LoRA lightx2v jede karta na 25 kroku a cfg 5 misto 6 kroku.
 )
 
+REM ------------------------------------------------------------------
+REM  Karta Wan Animate - Wan-Animate 2. Postava z fotky zopakuje pohyb
+REM  z videa. VAE, clip_vision a LoRA lightx2v sdili s kartou Dance.
+REM ------------------------------------------------------------------
+set /p ODP="Karta Wan Animate - Wan-Animate 2, cca 23,4 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/Wan-Animate-2/resolve/main/diffusion_models/wan_animate_2_int8_convrot.safetensors" "models\diffusion_models\wan_animate_2_int8_convrot.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/Wan-Animate-2/resolve/main/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" "models\text_encoders\umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+  call :stahni "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors" "models\vae\Wan2_1_VAE_bf16.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors" "models\clip_vision\clip_vision_h.safetensors"
+  call :stahni "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors" "models\loras\lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
+)
+
 
 REM ------------------------------------------------------------------
 REM  Karta Long MiniMax - volitelne sestavy modelu. Bez nich karta jede

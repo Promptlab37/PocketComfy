@@ -211,6 +211,23 @@ in either of them; there is no need to move it.
 **vae_approx/**
 - `taeh3.safetensors` (live preview during video, optional)
 
+### Dance and Wan Animate cards (Wan)
+
+The `WanDancer*`, `WanAnimate2ToVideo` and `WanAnimate2Cache` nodes and the
+`StartLoop`/`EndLoop` loop are in the ComfyUI core (Wan Animate needs **0.36.0+**).
+
+- `diffusion_models/wan_animate_2_int8_convrot.safetensors` (Wan Animate, 16.7 GB),
+  from [Comfy-Org/Wan-Animate-2](https://huggingface.co/Comfy-Org/Wan-Animate-2)
+- `text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors` (Wan Animate, 6.7 GB),
+  from [Comfy-Org/Wan-Animate-2](https://huggingface.co/Comfy-Org/Wan-Animate-2)
+- `diffusion_models/wan2.2_dancer_14b_global_fp8_scaled.safetensors` and
+  `wan2.2_dancer_14b_local_fp8_scaled.safetensors` (Dance, 17.1 GB each),
+  from [Comfy-Org/Wan-Dancer](https://huggingface.co/Comfy-Org/Wan-Dancer)
+- `text_encoders/umt5_xxl_fp16.safetensors` (Dance, 11.4 GB)
+- `vae/Wan2_1_VAE_bf16.safetensors`, `clip_vision/clip_vision_h.safetensors`
+  and `loras/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors`
+  (both cards)
+
 ### Qwen Image 2.1 licence
 
 Qwen Image 2.1 is not under Apache 2.0. The weights were released under the

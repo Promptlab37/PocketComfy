@@ -72,7 +72,8 @@ class ProjektTest {
         // Jinak by šlo zacyklit záběr sám do sebe.
         assertFalse(Mode.PROJEKT in KARTY_PRO_ZABER)
         assertTrue(Mode.ALLINONE in KARTY_PRO_ZABER)
-        assertEquals(Mode.entries.size - 1, KARTY_PRO_ZABER.size)
+        assertEquals(cz.promptlab.h3video.data.NABIZENE_KARTY.size - 1, KARTY_PRO_ZABER.size)
+        assertFalse(Mode.LONG in KARTY_PRO_ZABER)
     }
 
     @Test

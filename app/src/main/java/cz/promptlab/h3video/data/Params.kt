@@ -187,6 +187,8 @@ data class GenParams(
             Mode.LTXAUDIO -> 1
             // Dance: jedna fotka tanečníka. Hudba má vlastní cestu, ne obrázkovou.
             Mode.DANCE -> 1
+            // Wan Animate: fotka postavy. Video má vlastní cestu nahrávání.
+            Mode.ANIMATE -> 1
             // Long MiniMax: reference prvního záběru. Zdrojové video se při
             // navazování nahrává vlastní cestou, ne jako obrázek.
             Mode.LONGMM -> LongMmScene.MAX_REFERENCI

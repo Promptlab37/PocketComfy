@@ -152,4 +152,4 @@ class ProjektStore(private val ctx: Context) {
  * Nabízet mezi nimi Projekt by byl kruh a Nastavení tam nepatří vůbec —
  * karta nemá ukazovat volby, které nikam nevedou.
  */
-val KARTY_PRO_ZABER: List<Mode> get() = Mode.entries.filter { it != Mode.PROJEKT }
+val KARTY_PRO_ZABER: List<Mode> get() = NABIZENE_KARTY.filter { it != Mode.PROJEKT }
