@@ -120,6 +120,7 @@ import cz.promptlab.h3video.ui.theme.Violet
  */
 @Composable
 private fun ServerBanner(status: ServerStatus, onRetry: () -> Unit) {
+    if (status.state != ServerState.OFFLINE) return
     val offline = status.state == ServerState.OFFLINE
     val color = when (status.state) {
         ServerState.ONLINE -> Ok
@@ -622,7 +623,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             }
             SectionCard(
                 title = t("Pokročilé"),
-                subtitle = if (advanced) null else
+                stav = if (advanced) null else
                     if (onWorkflowDefaults) "Nastaveno podle workflow"
                     else t("Změněno oproti workflow"),
                 trailing = {
@@ -806,9 +807,20 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         val fronta by vm.queue.collectAsStateWithLifecycle()
         val chybi = problem
         val blocked = chybi != null
+        // Co chybí, je krátký řádek NAD tlačítkem. V tlačítku samotném se
+        // dlouhá hláška nevešla a přetékala přes okraje.
+        if (chybi != null) {
+            Text(
+                chybi,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextMid,
+                maxLines = 2,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+            )
+        }
         GradientButton(
             text = when {
-                chybi != null -> chybi
                 busy -> t("Přidat do fronty") +
                     (if (fronta.isNotEmpty()) t(" (čeká %d)").format(fronta.size) else "")
                 mode == Mode.EDIT -> t("Upravit obrázek")
@@ -1188,7 +1200,7 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
     val turbo = params.mode != Mode.THREESTEP
     SectionCard(
         title = "LoRA",
-        subtitle = when {
+        stav = when {
             !turbo && active == 0 -> t("Jen zrychlovací z workflow")
             !turbo -> t("Zrychlovací z workflow + %d další").format(active)
             !params.turboLoraOn && active == 0 -> t("Žádná – model jede na plno")
@@ -1345,17 +1357,46 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
         selected.skupina?.let { posledni.value = posledni.value + (it.name to selected.name) }
     }
     Column {
-        PasKaret(
-            polozky = cz.promptlab.h3video.data.Skupina.entries,
-            vybrana = skupina,
-            popisek = { it.title },
-            onVyber = { sk ->
-                val karta = posledni.value[sk.name]
-                    ?.let { jmeno -> sk.karty.firstOrNull { it.name == jmeno } }
-                    ?: sk.karty.first()
-                onSelect(karta)
-            },
-        )
+        // Skupin je pět a vejdou se vedle sebe — pevné stejné šířky, nic se
+        // neposouvá a nic se neuřízne.
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Surface1)
+                .border(1.dp, Outline1, RoundedCornerShape(16.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            cz.promptlab.h3video.data.Skupina.entries.forEach { sk ->
+                val active = sk == skupina
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .then(
+                            if (active) Modifier.background(Brush.linearGradient(listOf(Violet, Cyan)))
+                            else Modifier
+                        )
+                        .clickable {
+                            val karta = posledni.value[sk.name]
+                                ?.let { jmeno -> sk.karty.firstOrNull { it.name == jmeno } }
+                                ?: sk.karty.first()
+                            onSelect(karta)
+                        }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        sk.title,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (active) Color.White else TextMid,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
         if (skupina.karty.size > 1) {
             Spacer(Modifier.height(6.dp))
             PasKaret(
@@ -1365,11 +1406,6 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
                 onVyber = onSelect,
             )
         }
-        Spacer(Modifier.height(6.dp))
-        Text(
-            selected.title + " — " + selected.detail,
-            style = MaterialTheme.typography.bodySmall, color = TextLow,
-        )
     }
 }
 
@@ -1399,7 +1435,7 @@ private fun <T> PasKaret(
         LazyRow(
             state = stav,
             modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 30.dp, vertical = 4.dp),
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             items(polozky.size) { i ->
@@ -1734,7 +1770,7 @@ private fun ModelCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPa
     val referencni = params.mode.usesRefModel
     SectionCard(
         title = t("Model"),
-        subtitle = when {
+        stav = when {
             referencni -> t("Tahle karta jede na referenčním modelu z workflow")
             params.unetFl2va.isBlank() -> t("Z workflow (výchozí)")
             else -> params.unetFl2va

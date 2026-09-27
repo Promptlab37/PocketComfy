@@ -232,8 +232,7 @@ fun InpaintSection(vm: MainViewModel) {
     @Composable
     fun LoraKarta(nabidka: List<String>) = SectionCard(
         title = t("Doplňková LoRA"),
-        subtitle = if (nabidka.isEmpty()) t("Na serveru není žádná LoRA pro tenhle model")
-        else t("Pomůže tam, kde model sám tápe — třeba na anatomii"),
+        stav = if (nabidka.isEmpty()) t("Na serveru není žádná LoRA pro tenhle model") else null,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             LoraRozbalovaci(

@@ -44,7 +44,7 @@ private fun PredlohaSekce(vm: MainViewModel, scene: MusicScene) {
     }
     SectionCard(
         title = t("Nahrávka"),
-        subtitle = scene.predloha?.name ?: t("Zatím žádná — vyber skladbu z telefonu")
+        stav = scene.predloha?.name
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(

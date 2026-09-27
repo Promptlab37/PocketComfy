@@ -130,7 +130,7 @@ fun LtxSection(vm: MainViewModel) {
 
     if (scene.rezim == LtxRezim.ZVUK) SectionCard(
         title = t("Zvuk"),
-        subtitle = scene.zvuk?.name ?: t("Řeč nebo zpěv — video se na něj napasuje")
+        stav = scene.zvuk?.name
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(

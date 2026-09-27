@@ -108,7 +108,7 @@ fun DanceSection(vm: MainViewModel) {
 
     SectionCard(
         title = t("Hudba"),
-        subtitle = scene.hudba?.name ?: t("Na tuhle skladbu se bude tančit"),
+        stav = scene.hudba?.name,
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             OutlineButton(

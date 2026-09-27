@@ -135,7 +135,7 @@ fun ProjektSection(vm: MainViewModel) {
 
     SectionCard(
         title = projekt.nazev,
-        subtitle = t("%d záběrů · %d hotových").format(projekt.zabery.size, projekt.hotovych),
+        stav = t("%d záběrů · %d hotových").format(projekt.zabery.size, projekt.hotovych),
         trailing = {
             Text(
                 t("Zpět na projekty"),

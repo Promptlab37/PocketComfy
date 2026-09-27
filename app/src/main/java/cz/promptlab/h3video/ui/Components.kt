@@ -76,26 +76,35 @@ object ZaostrenePole {
 @Composable
 fun SectionCard(
     title: String,
-    subtitle: String? = null,
+    /**
+     * Vysvětlivka pod nadpisem — od 4.65 se **nezobrazuje**. V rozhraní
+     * nejsou vysvětlivky, jen názvy voleb a hodnoty; parametr zůstává kvůli
+     * volajícím a textům ve slovníku.
+     */
+    @Suppress("UNUSED_PARAMETER") subtitle: String? = null,
+    /** Stav nebo hodnota pod nadpisem (vybraný soubor, počet, souhrn) — zobrazí se. */
+    stav: String? = null,
     trailing: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(18.dp))
             .background(Surface1)
-            .border(1.dp, Outline1, RoundedCornerShape(20.dp))
-            .padding(16.dp)
+            .border(1.dp, Outline1, RoundedCornerShape(18.dp))
+            .padding(horizontal = 14.dp, vertical = 12.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium)
-                if (subtitle != null) {
+                if (!stav.isNullOrBlank()) {
                     Text(
-                        subtitle,
+                        stav,
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextLow,
+                        color = TextMid,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 2.dp)
                     )
                 }
@@ -105,7 +114,7 @@ fun SectionCard(
         // Sloupec, ne Box: obsah sekce je svislý seznam. V Boxu se prvky
         // kreslily PŘES SEBE — sekce, která nemá vlastní Column, měla text
         // přes tlačítko (viditelné u „Ukládat vše do telefonu", 2. 9. 2026).
-        Column(Modifier.padding(top = 14.dp)) { content() }
+        Column(Modifier.padding(top = 10.dp)) { content() }
     }
 }
 
@@ -186,22 +195,19 @@ fun <T> PillRow(
     label: (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
-    pozadi: Color = Surface1,
+    @Suppress("UNUSED_PARAMETER") pozadi: Color = Surface1,
 ) {
-    val stav = rememberScrollState()
-    Box(modifier.fillMaxWidth()) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .horizontalScroll(stav),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items.forEach { item ->
-                Pill(label(item), item == selected) { onSelect(item) }
-            }
+    // Od 4.65 se řada zalamuje místo posouvání: vodorovné rolování schovávalo
+    // volby za okraj (poměr stran, modely, délky) a delší text se uřízl.
+    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+    androidx.compose.foundation.layout.FlowRow(
+        modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items.forEach { item ->
+            Pill(label(item), item == selected) { onSelect(item) }
         }
-        OkrajSNaznakem(stav.canScrollBackward, pozadi, doleva = true, Modifier.align(Alignment.CenterStart))
-        OkrajSNaznakem(stav.canScrollForward, pozadi, doleva = false, Modifier.align(Alignment.CenterEnd))
     }
 }
 
@@ -403,7 +409,7 @@ fun Pill(text: String, selected: Boolean, onClick: () -> Unit) {
             )
             .border(1.dp, border, RoundedCornerShape(50))
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 9.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
         Text(
             text,

@@ -311,7 +311,7 @@ private fun Root(vm: MainViewModel = viewModel()) {
             }
     ) {
         Column(Modifier.fillMaxSize()) {
-            Header(tab, vm.versionName)
+            Header(tab, vm.versionName, vm.serverStatus.collectAsStateWithLifecycle().value.state)
             // Nabídka aktualizace musí být vidět rovnou, ne až když někdo zabloudí
             // do nastavení – jinak by to žádná automatická aktualizace nebyla.
             (updateState as? UpdateState.Available)?.let { av ->
@@ -587,7 +587,7 @@ private fun Root(vm: MainViewModel = viewModel()) {
 }
 
 @Composable
-private fun Header(tab: Tab, version: String) {
+private fun Header(tab: Tab, version: String, server: ServerState) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -599,7 +599,15 @@ private fun Header(tab: Tab, version: String) {
                 Modifier
                     .size(10.dp)
                     .clip(RoundedCornerShape(50))
-                    .background(AccentBrush)
+                    // Tečka je zároveň stav počítače: zelená připravený,
+                    // oranžová vypnutý, šedá zjišťuje se.
+                    .background(
+                        when (server) {
+                            ServerState.ONLINE -> cz.promptlab.h3video.ui.theme.Ok
+                            ServerState.OFFLINE -> cz.promptlab.h3video.ui.theme.Amber
+                            else -> TextLow
+                        }
+                    )
             )
             Spacer(Modifier.size(9.dp))
             // Jméno vlastní, ne jméno cizího modelu — „MiniMax" je ochranná
@@ -611,17 +619,7 @@ private fun Header(tab: Tab, version: String) {
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.size(8.dp))
-            Text(
-                when (tab) {
-                    Tab.CREATE -> "ULTRA workflow"
-                    Tab.GALLERY -> t("galerie")
-                    Tab.SETTINGS -> t("nastavení")
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = TextLow,
-                fontSize = 12.sp,
-                modifier = Modifier.weight(1f)
-            )
+            Spacer(Modifier.weight(1f))
             // číslo verze má být vidět na první pohled, ne až v nastavení
             Text(
                 "v$version",

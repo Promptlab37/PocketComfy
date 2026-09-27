@@ -82,8 +82,6 @@ fun AllInOneSection(vm: MainViewModel) {
                 label = { it.nazev },
                 onSelect = { vm.setAioMode(it) },
             )
-            Spacer(Modifier.height(8.dp))
-            Text(scene.mode.popis, style = MaterialTheme.typography.bodySmall, color = TextLow)
         }
     }
 

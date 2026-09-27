@@ -626,7 +626,7 @@ private fun UpdateCard(vm: MainViewModel) {
 
     SectionCard(
         title = t("Aktualizace"),
-        subtitle = t("Verze %s (sestavení %d)").format(vm.versionName, vm.versionCode)
+        stav = t("Verze %s (sestavení %d)").format(vm.versionName, vm.versionCode)
     ) {
         Column {
             Text(
