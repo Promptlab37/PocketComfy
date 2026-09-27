@@ -1118,7 +1118,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     cz.promptlab.h3video.comfy.ZImageBuilder.sizeFor(params.aspect)
                 }
                 Text(
-                    t("Vyjde %d×%d px. Z výsledku se dá rovnou pokračovat do Úpravy obrázku nebo do Zvětšit.")
+                    t("Vyjde %d×%d px.")
                         .format(w, h),
                     style = MaterialTheme.typography.bodySmall,
                     color = TextLow
@@ -1129,7 +1129,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 Spacer(Modifier.height(8.dp))
                 val model = vybranyModel
                 PillRow(
-                    items = T2iModel.entries.toList(),
+                    items = T2iModel.NABIDKA,
                     selected = model,
                     label = { t(it.stitek) },
                     onSelect = { m -> vm.setImageModel(m.id) },

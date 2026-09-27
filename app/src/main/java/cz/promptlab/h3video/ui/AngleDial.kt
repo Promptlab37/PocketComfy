@@ -1,13 +1,19 @@
 package cz.promptlab.h3video.ui
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -58,23 +64,35 @@ fun PudorysKamery(
 ) {
     val mericTextu = rememberTextMeasurer()
     val hustota = LocalDensity.current
+    val aktualniSmer by rememberUpdatedState(smer)
+    val aktualniOdstup by rememberUpdatedState(odstup)
 
+    // Menší než celá šířka a na střed — přes celý telefon zabíral půl
+    // obrazovky a stránka se kolem něj špatně posouvala.
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
     Box(
         Modifier
             .fillMaxWidth()
+            .widthIn(max = 300.dp)
             .aspectRatio(1f)
-            .pointerInput(Unit) {
-                fun zPozice(p: Offset) {
-                    val stred = Offset(size.width / 2f, size.height / 2f)
-                    val polomer = minOf(size.width, size.height) / 2f - with(hustota) { 26.dp.toPx() }
-                    val d = p - stred
-                    // Opak [bodNaKruhu]: x = sin, y = cos. 0° je dole (zepředu)
-                    // a roste doprava, stejně jako azimut v uzlu.
-                    val stupne = Math.toDegrees(atan2(d.x, d.y).toDouble()).toFloat()
-                    val pomer = (hypot(d.x, d.y) / polomer).coerceIn(0f, 1.2f)
-                    onZmena(AngleBuilder.smerZUhlu(stupne), AngleBuilder.odstupZPomeru(pomer))
-                }
-                detectDragGestures { zmena, _ -> zPozice(zmena.position) }
+            .tahZaKameru(
+                kamera = { w, h ->
+                    val stred = Offset(w / 2f, h / 2f)
+                    val polomer = minOf(w, h) / 2f - with(hustota) { 26.dp.toPx() }
+                    bodNaKruhu(
+                        stred, polomer * AngleBuilder.pomerProOdstup(aktualniOdstup),
+                        AngleBuilder.uhelProSmer(aktualniSmer),
+                    )
+                },
+            ) { p, w, h ->
+                val stred = Offset(w / 2f, h / 2f)
+                val polomer = minOf(w, h) / 2f - with(hustota) { 26.dp.toPx() }
+                val d = p - stred
+                // Opak [bodNaKruhu]: x = sin, y = cos. 0° je dole (zepředu)
+                // a roste doprava, stejně jako azimut v uzlu.
+                val stupne = Math.toDegrees(atan2(d.x, d.y).toDouble()).toFloat()
+                val pomer = (hypot(d.x, d.y) / polomer).coerceIn(0f, 1.2f)
+                onZmena(AngleBuilder.smerZUhlu(stupne), AngleBuilder.odstupZPomeru(pomer))
             }
             .pointerInput(Unit) {
                 detectTapGestures { p ->
@@ -135,6 +153,7 @@ fun PudorysKamery(
             drawCircle(Surface1, radius = 4.dp.toPx(), center = kamera)
         }
     }
+    }
 }
 
 /**
@@ -145,23 +164,28 @@ fun PudorysKamery(
 fun BokorysKamery(vyska: Int, onZmena: (Int) -> Unit) {
     val mericTextu = rememberTextMeasurer()
     val hustota = LocalDensity.current
+    val aktualniVyska by rememberUpdatedState(vyska)
 
     Box(
         Modifier
             .fillMaxWidth()
             .height(170.dp)
-            .pointerInput(Unit) {
-                fun zPozice(p: Offset) {
-                    val zaklad = Offset(
-                        with(hustota) { 44.dp.toPx() },
-                        size.height - with(hustota) { 44.dp.toPx() },
-                    )
-                    val d = p - zaklad
-                    // y míří dolů, takže nahoru je záporné → otočit znaménko
-                    val stupne = Math.toDegrees(atan2(-d.y, abs(d.x)).toDouble()).toFloat()
-                    onZmena(AngleBuilder.vyskaZUhlu(stupne))
-                }
-                detectDragGestures { zmena, _ -> zPozice(zmena.position) }
+            .tahZaKameru(
+                kamera = { w, h ->
+                    with(hustota) {
+                        val zaklad = Offset(44.dp.toPx(), h - 44.dp.toPx())
+                        bodVBokorysu(
+                            zaklad, delkaRamene(w, zaklad, 96.dp.toPx(), 46.dp.toPx()),
+                            AngleBuilder.uhelProVysku(aktualniVyska),
+                        )
+                    }
+                },
+            ) { p, _, h ->
+                val zaklad = Offset(with(hustota) { 44.dp.toPx() }, h - with(hustota) { 44.dp.toPx() })
+                val d = p - zaklad
+                // y míří dolů, takže nahoru je záporné → otočit znaménko
+                val stupne = Math.toDegrees(atan2(-d.y, abs(d.x)).toDouble()).toFloat()
+                onZmena(AngleBuilder.vyskaZUhlu(stupne))
             }
             .pointerInput(Unit) {
                 detectTapGestures { p ->
@@ -180,10 +204,7 @@ fun BokorysKamery(vyska: Int, onZmena: (Int) -> Unit) {
             // Délka ramene se musí vejít i NA VÝŠKU. Do 3.80 se počítala jen
             // ze šířky, takže nadhled (60°) vystřelil rameno o stovky pixelů
             // nad plátno — a kreslilo se přes půdorys nad ním.
-            val nejvyssi = AngleBuilder.VYSKA_STUPNE.max()
-            val stropVys = (zaklad.y - 46.dp.toPx()) /
-                sin(Math.toRadians(nejvyssi.toDouble())).toFloat()
-            val delka = minOf(size.width - 96.dp.toPx(), stropVys)
+            val delka = delkaRamene(size.width, zaklad, 96.dp.toPx(), 46.dp.toPx())
 
             // obzor
             drawLine(
@@ -224,6 +245,36 @@ fun BokorysKamery(vyska: Int, onZmena: (Int) -> Unit) {
 }
 
 // ------------------------------------------------------------------ kreslení
+
+/** Délka ramene v bokorysu — vejde se na šířku i na výšku plátna. */
+private fun delkaRamene(sirka: Float, zaklad: Offset, okraj: Float, strop: Float): Float {
+    val nejvyssi = AngleBuilder.VYSKA_STUPNE.max()
+    val stropVys = (zaklad.y - strop) / sin(Math.toRadians(nejvyssi.toDouble())).toFloat()
+    return minOf(sirka - okraj, stropVys)
+}
+
+/**
+ * Tah prstem, který začne **u kamery**, ji vede. Tah začatý jinde se nechá
+ * být, takže stránka se přes nákres normálně posouvá — dřív celý nákres
+ * chytal každý tah a přes ovladač úhlu nešlo rolovat dolů.
+ */
+private fun Modifier.tahZaKameru(
+    kamera: (sirka: Float, vyska: Float) -> Offset,
+    onPohyb: (poloha: Offset, sirka: Float, vyska: Float) -> Unit,
+): Modifier = pointerInput(Unit) {
+    val dosah = 48.dp.toPx()
+    awaitEachGesture {
+        val dolu = awaitFirstDown(requireUnconsumed = false)
+        val w = size.width.toFloat()
+        val h = size.height.toFloat()
+        if ((dolu.position - kamera(w, h)).getDistance() > dosah) return@awaitEachGesture
+        dolu.consume()
+        drag(dolu.id) { zmena ->
+            zmena.consume()
+            onPohyb(zmena.position, w, h)
+        }
+    }
+}
 
 /**
  * Bod na půdorysu pro úhel ve stupních (0° = zepředu, roste doprava).

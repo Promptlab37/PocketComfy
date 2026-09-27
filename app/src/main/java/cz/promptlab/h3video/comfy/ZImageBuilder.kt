@@ -101,6 +101,13 @@ enum class T2iModel(
          * Model z uložené hodnoty. Snese i staré zápisy z verzí do 3.01, kde se
          * ukládal rovnou název souboru modelu.
          */
+        /**
+         * Pořadí v nabídce karty: Qwen Image 2.1 první — umí text v obraze
+         * i 2K. Výchozí je pro nové instalace ([GenParams.zimageModel]);
+         * výčet sám se nepřeskládává, uložené volby jdou podle `id`.
+         */
+        val NABIDKA: List<T2iModel> get() = listOf(QWEN21, TURBO, PHOTOREAL, BASE, KLEIN, ERNIE)
+
         fun zId(id: String): T2iModel = when {
             id.isBlank() -> TURBO
             id == ZImageBuilder.NSFW_MODEL_FILE -> PHOTOREAL

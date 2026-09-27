@@ -20,7 +20,8 @@ class ImageLorasTest {
     @Test fun choicesPersistPerModelAndMigrateLegacyTurboOnly() {
         val choices = mapOf("klein" to listOf(EditLora("klein9b.safetensors", .6f)), "turbo" to emptyList())
         assertEquals(choices, ImageLoras.decode(ImageLoras.encode(choices)))
-        val legacy = GenParams(zimageNsfw = true, zimageNsfwLora = "old.safetensors")
+        // Stará nastavení mají model uložený prázdný (= Turbo); nové instalace začínají na Qwen 2.1.
+        val legacy = GenParams(zimageModel = "", zimageNsfw = true, zimageNsfwLora = "old.safetensors")
         assertEquals("old.safetensors", ImageLoras.selected(legacy).first().name)
         assertTrue(ImageLoras.selected(legacy.copy(zimageModel = "klein")).isEmpty())
         assertTrue(ImageLoras.selected(legacy.copy(imageLoras = choices)).isEmpty())

@@ -33,6 +33,10 @@ class T2iModelTest {
         assertEquals(T2iModel.KLEIN, T2iModel.zId("klein"))
         // Nesmysl v nastavení nesmí appku shodit — spadne se na Turbo.
         assertEquals(T2iModel.TURBO, T2iModel.zId("neznamy_model"))
+        // Qwen 2.1 je v nabídce první a výchozí pro nové instalace (4.63).
+        assertEquals(T2iModel.QWEN21, T2iModel.NABIDKA.first())
+        assertEquals(T2iModel.QWEN21, T2iModel.zId(cz.promptlab.h3video.data.GenParams().zimageModel))
+        assertEquals(T2iModel.entries.toSet(), T2iModel.NABIDKA.toSet())
         T2iModel.entries.forEach { assertEquals(it, T2iModel.zId(it.id)) }
     }
 

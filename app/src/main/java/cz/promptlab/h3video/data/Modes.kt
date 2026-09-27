@@ -79,7 +79,7 @@ enum class Mode(
     IMAGE(
         titleCs = "Obrázek",
         shortCs = "Obrázek",
-        detailCs = "Z-Image Turbo — nová fotka z textu za pár sekund"
+        detailCs = "Nová fotka z textu"
     ),
 
     /**

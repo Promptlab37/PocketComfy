@@ -908,6 +908,7 @@ object Slovnik {
         "prvních %.0f s videa" to "first %.0f s of the video",
         "Video je na zplynulení moc dlouhé nebo velké. Zkrať ho nebo zmenši." to "The video is too long or too large to smooth. Shorten or downscale it.",
         "Tenhle násobek se do paměti nevejde. Vyber menší." to "This multiplier does not fit in memory. Pick a smaller one.",
+        "Nová fotka z textu" to "A new photo from text",
         // karta Wan Animate
         "Wan Animate" to "Wan Animate",
         "Animate" to "Animate",
@@ -1453,8 +1454,7 @@ object Slovnik {
         "Prakticky plátno modelu (%s) – tenhle rozdíl na výsledku nepoznáš." to
             "Practically the model's canvas (%s) — you will not see this difference.",
         " (čeká %d)" to " (%d waiting)",
-        "Vyjde %d×%d px. Z výsledku se dá rovnou pokračovat do Úpravy obrázku nebo do Zvětšit." to
-            "Comes out at %d×%d px. From the result you can go straight to Image edit or Upscale.",
+        "Vyjde %d×%d px." to "Result: %d×%d px.",
         "Uloženo %d videí do Filmy/H3 Video." to "Saved %d videos to Movies/H3 Video.",
         "Verze %s (sestavení %d)" to "Version %s (build %d)",
         "Vygenerovat video" to "Generate video",

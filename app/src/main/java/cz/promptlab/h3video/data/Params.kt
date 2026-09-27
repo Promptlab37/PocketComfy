@@ -96,7 +96,7 @@ data class GenParams(
      * `T2iModel` („turbo", „photoreal", „base", „klein", „ernie"). Prázdno
      * a starý zápis názvem souboru se čtou dál jako Turbo / Photoreal.
      */
-    val zimageModel: String = "",
+    val zimageModel: String = "qwen21",
     /**
      * Volba „Vlastní model": který soubor z `models/diffusion_models` (nebo
      * `models/unet`) se má použít. Nabídka se čte ze serveru, takže appka
