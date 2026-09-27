@@ -39,8 +39,9 @@ internal fun minSek(s: Long): String = "%d:%02d".format(s / 60, s % 60)
  * se děje" (25. 9. 2026) — přepis umí stát minuty ve frontě za generováním
  * nebo při načítání jazykového modelu.
  *
- * Odhad zbývajícího času bere, kolik trval tentýž přepisovač minule (bez
- * čekání ve frontě). Při prvním použití odhad není, jen uběhlý čas.
+ * Odhad zbývajícího času počítá [cz.promptlab.h3video.data.OdhadPrepisu] z živé
+ * rychlosti psaní a z délky minulého přepisu. Při prvním použití je vidět jen
+ * uběhlý čas a počet napsaných tokenů.
  */
 @Composable
 fun PrubehPrepisu(
@@ -69,17 +70,23 @@ fun PrubehPrepisu(
         FazePrepisu.MODEL -> t("Načítám jazykový model")
         FazePrepisu.PSANI -> t("Píšu zadání")
     }
-    val beziS = if (prubeh.beziOd > 0L) ((ted - prubeh.beziOd) / 1000).coerceAtLeast(0) else 0L
-    val odhad = prubeh.obvykleS.toLong()
-    val maOdhad = odhad > 0 && prubeh.beziOd > 0L
+    val odhad = cz.promptlab.h3video.data.OdhadPrepisu.spocitej(
+        ted = ted,
+        beziOd = prubeh.beziOd,
+        prvniTokenOd = prubeh.prvniTokenOd,
+        prvniHodnota = prubeh.prvniHodnota,
+        napsano = napsano?.first ?: 0,
+        strop = napsano?.second ?: 0,
+        obvykleTokeny = prubeh.obvykleTokeny,
+        obvyklaRychlost = prubeh.obvyklaRychlost,
+        obvykleNacitaniS = prubeh.obvykleNacitaniS,
+        obvykleCelkemS = prubeh.obvykleCelkemS,
+    )
     val detail = buildString {
         append(t("uběhlo %s").format(minSek(ubehlo)))
-        if (maOdhad) {
+        odhad.zbyvaS?.let {
             append(" · ")
-            append(
-                if (beziS < odhad) t("zbývá asi %s").format(minSek(odhad - beziS))
-                else t("trvá déle než minule (%s)").format(minSek(odhad))
-            )
+            append(t("zbývá asi %s").format(minSek(it)))
         }
         napsano?.let { (kolik, _) ->
             append(" · ")
@@ -96,10 +103,10 @@ fun PrubehPrepisu(
             Text(detail, style = MaterialTheme.typography.bodySmall, color = TextLow)
         }
     }
-    if (maOdhad) {
+    odhad.podil?.let { podil ->
         Spacer(Modifier.height(6.dp))
         LinearProgressIndicator(
-            progress = { (beziS.toFloat() / odhad).coerceIn(0f, 0.97f) },
+            progress = { podil },
             color = barva,
             modifier = Modifier.fillMaxWidth(),
         )

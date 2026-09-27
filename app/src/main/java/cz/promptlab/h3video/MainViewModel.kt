@@ -1986,14 +1986,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /**
      * Průběh přepisu pro UI: fáze, počet úloh před ním ve frontě serveru
-     * a kolik sekund trval minule stejný přepisovač (odhad délky).
+     * a podklady pro odhad času ([cz.promptlab.h3video.data.OdhadPrepisu]).
      */
     data class PrubehPrepisu(
         val faze: FazePrepisu = FazePrepisu.PRIPRAVA,
         val predTebou: Int = 0,
-        val obvykleS: Int = 0,
-        /** Kdy server přepis opravdu začal (0 = ještě ne) — odhad běží od tud. */
+        /** Kdy server přepis opravdu začal (0 = ještě ne). */
         val beziOd: Long = 0L,
+        /** Kdy přišel první napsaný token (0 = ještě se nepíše) a kolik jich bylo. */
+        val prvniTokenOd: Long = 0L,
+        val prvniHodnota: Int = 0,
+        /** Minule u téhož přepisovače: napsané tokeny, tokeny/s, načítání v s. */
+        val obvykleTokeny: Int = 0,
+        val obvyklaRychlost: Double = 0.0,
+        val obvykleNacitaniS: Int = 0,
+        /** Minulá délka celého přepisu — náhrada, když server tokeny nehlásí. */
+        val obvykleCelkemS: Int = 0,
     )
 
     private val _prubehPrepisu = MutableStateFlow(PrubehPrepisu())
@@ -2183,7 +2191,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val clientId = java.util.UUID.randomUUID().toString()
         _rewriteProgress.value = null
         val klic = klicTrvani(wf)
-        _prubehPrepisu.value = PrubehPrepisu(obvykleS = trvaniPrepisu.getInt(klic, 0))
+        _prubehPrepisu.value = PrubehPrepisu(
+            obvykleTokeny = trvaniPrepisu.getInt(klic + "_tokeny", 0),
+            obvyklaRychlost = trvaniPrepisu.getFloat(klic + "_rychlost", 0f).toDouble(),
+            obvykleNacitaniS = trvaniPrepisu.getInt(klic + "_nacitani", 0),
+            obvykleCelkemS = trvaniPrepisu.getInt(klic, 0),
+        )
         val zivot = java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis())
         val ws = runCatching {
             client.openWebSocket(clientId, object : okhttp3.WebSocketListener() {
@@ -2197,10 +2210,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     when (zprava.optString("type")) {
                         "progress" -> {
                             val max = data.optInt("max", 0)
-                            if (max > 0) _rewriteProgress.value = data.optInt("value", 0) to max
+                            val hodnota = data.optInt("value", 0)
+                            if (max > 0) _rewriteProgress.value = hodnota to max
                             prepisBezi(FazePrepisu.PSANI)
-                            _prubehPrepisu.value =
-                                _prubehPrepisu.value.copy(faze = FazePrepisu.PSANI)
+                            val p = _prubehPrepisu.value
+                            _prubehPrepisu.value = p.copy(
+                                faze = FazePrepisu.PSANI,
+                                prvniTokenOd = if (p.prvniTokenOd == 0L) System.currentTimeMillis() else p.prvniTokenOd,
+                                prvniHodnota = if (p.prvniTokenOd == 0L) hodnota else p.prvniHodnota,
+                            )
                         }
                         // Který uzel právě běží: načítač modelu, nebo už psaní.
                         "executing" -> {
@@ -2238,11 +2256,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         ?.optJSONObject(uzelNahledu)
                         ?.optJSONArray("text")
                     if (text != null && text.length() > 0) {
-                        // Délka bez čekání ve frontě — ta bude příště jiná.
-                        val od = _prubehPrepisu.value.beziOd
-                        if (od > 0L) trvaniPrepisu.edit()
-                            .putInt(klic, ((System.currentTimeMillis() - od) / 1000).toInt())
-                            .apply()
+                        // Podklady pro příští odhad: kolik tokenů to napsalo,
+                        // jak rychle, a jak dlouho trvalo načítání do prvního.
+                        val p = _prubehPrepisu.value
+                        val napsano = _rewriteProgress.value?.first ?: 0
+                        val konec = System.currentTimeMillis()
+                        val ed = trvaniPrepisu.edit()
+                        if (napsano > 0) ed.putInt(klic + "_tokeny", napsano)
+                        if (p.prvniTokenOd > 0L) {
+                            val s = (konec - p.prvniTokenOd) / 1000.0
+                            val pribylo = napsano - p.prvniHodnota
+                            if (s >= cz.promptlab.h3video.data.OdhadPrepisu.MIN_SEKUND &&
+                                pribylo >= cz.promptlab.h3video.data.OdhadPrepisu.MIN_TOKENU
+                            ) ed.putFloat(klic + "_rychlost", (pribylo / s).toFloat())
+                            if (p.beziOd > 0L) ed.putInt(klic + "_nacitani", ((p.prvniTokenOd - p.beziOd) / 1000).toInt())
+                        }
+                        if (p.beziOd > 0L) ed.putInt(klic, ((konec - p.beziOd) / 1000).toInt())
+                        ed.apply()
                         val hotovy = text.getString(0)
                         if (hotovy.contains(cz.promptlab.h3video.data.NezletiliPojistka.ZNACKA))
                             throw ComfyException(
