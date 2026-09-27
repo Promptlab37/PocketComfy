@@ -318,12 +318,21 @@ private fun ZaberRadek(
             Spacer(Modifier.height(10.dp))
             Text(t("Čím vyrobit"), style = MaterialTheme.typography.labelMedium, color = TextLow)
             Spacer(Modifier.height(6.dp))
-            PillRow(
-                items = KARTY_PRO_ZABER,
-                selected = zaber.karta,
-                label = { it?.short ?: "" },
-                onSelect = { k -> vm.upravZaber(zaber.id) { it.copy(karta = k) } },
-            )
+            // Stejné skupiny jako nabídka karet nahoře, ať se karta hledá
+            // na jednom a tom samém místě.
+            cz.promptlab.h3video.data.Skupina.entries
+                .filter { sk -> sk.karty.any { it in KARTY_PRO_ZABER } }
+                .forEach { sk ->
+                    Text(sk.title, style = MaterialTheme.typography.labelSmall, color = TextLow)
+                    Spacer(Modifier.height(4.dp))
+                    PillRow(
+                        items = sk.karty.filter { it in KARTY_PRO_ZABER },
+                        selected = zaber.karta?.nahradniKarta,
+                        label = { it?.short ?: "" },
+                        onSelect = { k -> vm.upravZaber(zaber.id) { it.copy(karta = k) } },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (zaber.karta != null) {

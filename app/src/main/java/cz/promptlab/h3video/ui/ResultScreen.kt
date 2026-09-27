@@ -92,8 +92,18 @@ fun ResultScreen(
     onInpaint: (() -> Unit)? = null,
     /** Rozhýbat obrázek — poslat do All in One → Z obrázku (jen u obrázků). */
     onAnimate: (() -> Unit)? = null,
-    /** Zvětšit hotové video — poslat do All in One → Zvětšit (jen u videí). */
+    /** Zvětšit hotové video — poslat do Vylepšit video → Zvětšit (jen u videí). */
     onUpscaleVideo: (() -> Unit)? = null,
+    /** Zplynulit hotové video — Vylepšit video → Zplynulit. */
+    onSmoothVideo: (() -> Unit)? = null,
+    /** Upravit hotové video — karta Upravit video. */
+    onEditVideo: (() -> Unit)? = null,
+    /** Prodloužit hotové video — All in One → Prodloužit. */
+    onExtendVideo: (() -> Unit)? = null,
+    /** Hotová hudba → LTX 2.5 Ze zvuku. */
+    onMusicToVideo: (() -> Unit)? = null,
+    /** Hotová hudba → Pohyb postavy → Podle hudby. */
+    onMusicToDance: (() -> Unit)? = null,
     /**
      * Zahodit tenhle záběr a zkusit ho znovu — jen u řetězu Long MiniMax.
      *
@@ -315,24 +325,22 @@ fun ResultScreen(
             }
         }
 
-        // Totéž pro video: zvětšení umí karta All in One → Zvětšit, tohle je
-        // jen zkratka, aby se video nemuselo hledat znovu v galerii telefonu.
-        if (item.isVideoFile && onUpscaleVideo != null) {
-            Spacer(Modifier.height(16.dp))
-            Text(
-                t("Pokračuj s videem"),
-                style = MaterialTheme.typography.labelMedium,
-                color = TextLow,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(8.dp))
-            OutlineButton(
-                t("Zvětšit video"),
-                modifier = Modifier.fillMaxWidth(),
-                color = Cyan,
-                onClick = onUpscaleVideo,
-            )
-        }
+        // Co dál s videem: čtyři akce, každá jen předvyplní kartu — nic se
+        // samo nespouští. Přemalovat a výměna postavy jsou režimy karty
+        // Upravit video, proto tu nejsou zvlášť.
+        val videoAkce = listOfNotNull(
+            onUpscaleVideo?.let { t("Zvětšit video") to it },
+            onSmoothVideo?.let { t("Zplynulit") to it },
+            onEditVideo?.let { t("Upravit video") to it },
+            onExtendVideo?.let { t("Prodloužit") to it },
+        )
+        if (item.isVideoFile && videoAkce.isNotEmpty()) AkceRada(t("Pokračuj s videem"), videoAkce)
+
+        val hudbaAkce = listOfNotNull(
+            onMusicToVideo?.let { t("Video ze zvuku") to it },
+            onMusicToDance?.let { t("Tanec na hudbu") to it },
+        )
+        if (item.isAudio && hudbaAkce.isNotEmpty()) AkceRada(t("Pokračuj s hudbou"), hudbaAkce)
 
         // Rozcestník: z hotového obrázku se pokračuje jedním klepnutím —
         // rozhýbat do videa, upravit, nebo zvětšit. Bez stahování a
@@ -351,7 +359,7 @@ fun ResultScreen(
             if (onAnimate != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    t("Rozhýbat — video z obrázku"),
+                    t("Rozhýbat"),
                     modifier = Modifier.fillMaxWidth(),
                     color = Cyan,
                     onClick = onAnimate,
@@ -360,7 +368,7 @@ fun ResultScreen(
             if (onEdit != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    t("Upravit (Qwen Image 2.1 — popiš změnu)"),
+                    t("Upravit obrázek"),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onEdit,
                 )
@@ -389,7 +397,7 @@ fun ResultScreen(
             if (onUpscale != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    t("Zvětšit (SeedVR2 gigapixel)"),
+                    t("Zvětšit fotku"),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onUpscale,
                 )
@@ -397,7 +405,7 @@ fun ResultScreen(
             if (onSharpen != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    t("Doostřit (DLSS 5 — pár sekund)"),
+                    t("Doostřit fotku"),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onSharpen,
                 )
@@ -671,6 +679,29 @@ private fun ZoomovaciObrazek(bmp: android.graphics.Bitmap, onClose: () -> Unit) 
             ) {
                 Icon(Icons.Default.Close, t("Zavřít"), Modifier.size(26.dp), Color.White)
             }
+        }
+    }
+}
+
+/** Nadpis a tlačítka akcí v řádcích, které se zalamují (FlowRow). */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun AkceRada(nadpis: String, akce: List<Pair<String, () -> Unit>>) {
+    Spacer(Modifier.height(16.dp))
+    Text(
+        nadpis,
+        style = MaterialTheme.typography.labelMedium,
+        color = TextLow,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(8.dp))
+    androidx.compose.foundation.layout.FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        akce.forEachIndexed { i, (popisek, akce) ->
+            OutlineButton(popisek, color = if (i == 0) Cyan else TextMid, onClick = akce)
         }
     }
 }

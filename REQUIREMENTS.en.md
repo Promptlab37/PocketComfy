@@ -211,6 +211,12 @@ in either of them; there is no need to move it.
 **vae_approx/**
 - `taeh3.safetensors` (live preview during video, optional)
 
+### Enhance video → Smooth
+
+- `frame_interpolation/film_net_fp16.safetensors` (0.07 GB), from
+  [Comfy-Org/frame_interpolation](https://huggingface.co/Comfy-Org/frame_interpolation).
+  The `FrameInterpolate` and `FrameInterpolationModelLoader` nodes are in the ComfyUI core.
+
 ### Dance and Wan Animate cards (Wan)
 
 The `WanDancer*`, `WanAnimate2ToVideo` and `WanAnimate2Cache` nodes and the

@@ -211,6 +211,12 @@ v kterékoli z nich, stěhovat ho nemusíš.
 **vae_approx/**
 - `taeh3.safetensors` (živý náhled u videa, volitelné)
 
+### Vylepšit video → Zplynulit
+
+- `frame_interpolation/film_net_fp16.safetensors` (0,07 GB), z
+  [Comfy-Org/frame_interpolation](https://huggingface.co/Comfy-Org/frame_interpolation).
+  Uzly `FrameInterpolate` a `FrameInterpolationModelLoader` jsou v jádře ComfyUI.
+
 ### Karty Dance a Wan Animate (Wan)
 
 Uzly `WanDancer*`, `WanAnimate2ToVideo`, `WanAnimate2Cache` a smyčka

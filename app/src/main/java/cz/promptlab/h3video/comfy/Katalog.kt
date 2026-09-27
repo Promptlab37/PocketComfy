@@ -308,6 +308,11 @@ object Katalog {
             "models/loras", "Dance a Wan Animate — zrychlení na 6 kroků",
             "$HF/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
         ),
+        // Vylepšit video → Zplynulit: interpolace FILM z jádra ComfyUI.
+        "film_net_fp16.safetensors" to Soubor(
+            "models/frame_interpolation", "Vylepšit video — zplynulení (0,07 GB)",
+            "$HF/Comfy-Org/frame_interpolation/resolve/main/frame_interpolation/film_net_fp16.safetensors"
+        ),
         // Karta Wan Animate — Wan-Animate 2, nativně v jádře ComfyUI.
         "wan_animate_2_int8_convrot.safetensors" to Soubor(
             "models/diffusion_models", "Wan Animate — Wan-Animate 2 (16,7 GB)",

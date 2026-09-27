@@ -168,8 +168,24 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // Uložená volba schované karty (Dlouhé video) se přesune na Long MiniMax,
     // jinak by appka otevřela kartu, která v nabídce není.
     private val _params = MutableStateFlow(
-        settings.load().let { if (it.mode.nabizena) it else it.copy(mode = Mode.LONGMM) }
+        settings.load().let { p ->
+            if (p.mode.nabizena) p
+            else {
+                // Dance a Wan Animate jsou od 4.62 režimy karty Pohyb postavy.
+                pohybRezimPro(p.mode)?.let {
+                    cz.promptlab.h3video.data.VideoKartyStore(app).savePohyb(it)
+                }
+                p.copy(mode = p.mode.nahradniKarta)
+            }
+        }
     )
+
+    /** Režim karty Pohyb postavy, který odpovídá schované kartě. */
+    private fun pohybRezimPro(m: Mode): cz.promptlab.h3video.data.PohybRezim? = when (m) {
+        Mode.DANCE -> cz.promptlab.h3video.data.PohybRezim.HUDBA
+        Mode.ANIMATE -> cz.promptlab.h3video.data.PohybRezim.VIDEO
+        else -> null
+    }
     val params: StateFlow<GenParams> = _params.asStateFlow()
 
     private val _history = MutableStateFlow(historyStore.all())
@@ -737,7 +753,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // All in One i Dialogy jedou na šablonách balíku ze serveru – když tam
         // balík prokazatelně chybí, ať to uživatel ví hned, ne až po nahrání fotek.
         // Balík ALLinONE potřebují jen karty All in One a Dialogy.
-        if ((p.mode == Mode.ALLINONE || p.mode == Mode.TALK) && _aioAvailable.value == false) {
+        val naAio = p.mode == Mode.ALLINONE || p.mode == Mode.TALK || p.mode == Mode.UPRAVA_VIDEA ||
+            (p.mode == Mode.VYLEPSENI_VIDEA &&
+                _vylepseni.value.rezim == cz.promptlab.h3video.data.VylepseniRezim.ZVETSIT)
+        if (naAio && _aioAvailable.value == false) {
             return "Na serveru chybí balík ComfyUI-ALLinONE-MinimaxH3 – nainstaluj ho " +
                 "v ComfyUI a restartuj server."
         }
@@ -768,6 +787,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.LTXAUDIO -> ltxProblem(_ltx.value)
             Mode.DANCE -> cz.promptlab.h3video.data.danceProblem(_dance.value)
             Mode.ANIMATE -> cz.promptlab.h3video.data.animateProblem(_animate.value)
+            Mode.POHYB -> when (_pohyb.value) {
+                cz.promptlab.h3video.data.PohybRezim.HUDBA ->
+                    cz.promptlab.h3video.data.danceProblem(_dance.value)
+                cz.promptlab.h3video.data.PohybRezim.VIDEO ->
+                    cz.promptlab.h3video.data.animateProblem(_animate.value)
+            }
+            Mode.UPRAVA_VIDEA -> cz.promptlab.h3video.data.upravaProblem(_uprava.value)
+            Mode.VYLEPSENI_VIDEA -> cz.promptlab.h3video.data.vylepseniProblem(_vylepseni.value)
             Mode.LONGMM -> cz.promptlab.h3video.data.longMmProblem(_longMm.value)
             Mode.RESTORE -> restoreProblem(_restore.value)
             Mode.ANGLE -> angleProblem(_angle.value)
@@ -811,6 +838,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val vsechnySceny: List<StateFlow<Any?>> get() = listOf(
         _params, _scene, _timeline, _aio, _edit, _upscale, _music,
         _restore, _angle, _swap, _inpaint, _long, _model3d, _ltx, _dance, _animate, _longMm, _projekt,
+        _uprava, _vylepseni, _pohyb,
         _aioAvailable,
     )
 
@@ -848,6 +876,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (p.mode == Mode.LTXAUDIO) return ltxHints(_ltx.value)
         if (p.mode == Mode.DANCE) return cz.promptlab.h3video.data.danceHints(_dance.value)
         if (p.mode == Mode.ANIMATE) return emptyList()
+        if (p.mode == Mode.POHYB) return hints(p.copy(mode = _pohyb.value.karta))
+        if (p.mode == Mode.UPRAVA_VIDEA) return aioHints(_uprava.value.doAio(), p)
+        if (p.mode == Mode.VYLEPSENI_VIDEA) return emptyList()
         if (p.mode == Mode.LONGMM) return cz.promptlab.h3video.data.longMmHints(_longMm.value)
         if (p.mode == Mode.RESTORE) return emptyList()
         // Úhel kamery jede na vlastní předloze; upozornění k videu se ho netýkají.
@@ -959,6 +990,34 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         s.withImage.mapNotNull { it.image },
                         timelineScene = s,
                     )
+                }
+            }
+
+            // Pohyb postavy je rozcestník: běh jede pod kartou režimu, takže
+            // v galerii i historii zůstane Dance / Wan Animate jako dřív.
+            Mode.POHYB -> makeRunner(p.copy(mode = _pohyb.value.karta))
+
+            // Přemalovat jede na šabloně All in One; úloha se skládá teď.
+            Mode.UPRAVA_VIDEA -> {
+                val aio = _uprava.value.doAio()
+                QueuedRun(id, p.mode.title, aio.prompt) {
+                    GenerationEngine.start(p.copy(prompt = aio.prompt), aio.uploadImages, aioScene = aio)
+                }
+            }
+
+            Mode.VYLEPSENI_VIDEA -> {
+                val s = _vylepseni.value
+                when (s.rezim) {
+                    cz.promptlab.h3video.data.VylepseniRezim.ZVETSIT -> {
+                        val aio = s.doAio()
+                        QueuedRun(id, p.mode.title, "") {
+                            GenerationEngine.start(p.copy(prompt = ""), emptyList(), aioScene = aio)
+                        }
+                    }
+                    cz.promptlab.h3video.data.VylepseniRezim.ZPLYNULIT ->
+                        QueuedRun(id, p.mode.title, "") {
+                            GenerationEngine.start(p.copy(prompt = "", steps = 1), emptyList(), interpScene = s)
+                        }
                 }
             }
 
@@ -1882,7 +1941,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     init {
         viewModelScope.launch {
+            // Zvětšit a Přemalovat se od 4.62 dělají v kartách Vylepšit video
+            // a Upravit video; uložený režim by kartu otevřel bez čipu.
             _aio.value = withContext(Dispatchers.IO) { aioStore.load() }
+                .let { if (it.mode in AioMode.VKARTE) it else it.copy(mode = AioMode.TEXT) }
         }
     }
 
@@ -2837,6 +2899,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setAioMode(mode: AioMode) {
+        if (mode !in AioMode.VKARTE) return
         updateAio { it.copy(mode = mode) }
         hlidejProfilKCeste()
         doplnReferencniZnacky()
@@ -3050,27 +3113,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Soubor se kopíruje do složky karty — kdyby se odkazovalo na položku
      * historie a ta se smazala, zvětšení by spadlo na chybějícím souboru.
      */
-    fun posliVideoDoZvetseni(item: VideoItem) {
-        viewModelScope.launch {
-            val kopie = withContext(Dispatchers.IO) {
-                runCatching {
-                    val zdroj = item.file(getApplication())
-                    val ext = item.fileName.substringAfterLast('.', "mp4")
-                    val target = File(mediaDir(), "aio_source.$ext")
-                    mediaDir().listFiles { f -> f.nameWithoutExtension == "aio_source" }
-                        ?.forEach { it.delete() }
-                    zdroj.copyTo(target, overwrite = true)
-                    target
-                }.getOrNull()
-            } ?: return@launch
-            updateAio { it.copy(mode = AioMode.UPSCALE, sourceVideo = kopie) }
-            // Plátno u zvětšení neurčuje appka (Ovlada.NIC), ale poměr stran
-            // ať v kartě sedí s tím, co do ní přišlo.
-            prevezmiPomerZeVstupu("source", kopie, video = true)
-            setMode(Mode.ALLINONE)
-            selectTab(Tab.CREATE)
-        }
-    }
+    fun posliVideoDoZvetseni(item: VideoItem) =
+        posliVideoDoVylepseni(item, cz.promptlab.h3video.data.VylepseniRezim.ZVETSIT)
 
     /** Video do karty: „source" (prodloužit / zvětšit) nebo „refvideo" (reference). */
     fun pickAioVideo(druh: String, uri: Uri?) {
@@ -3316,6 +3360,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         R.raw.workflow_longmm_start,
                         R.raw.workflow_longmm_dalsi,
                         R.raw.workflow_wan_animate2,
+                        R.raw.workflow_interpolace,
                     ).map { id ->
                         res.openRawResource(id).bufferedReader().use { it.readText() }
                     }
@@ -3839,6 +3884,239 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             runCatching { mmr.release() }
         }
     }.getOrNull()
+
+    // ------------------------------------------- upravit / vylepšit video, pohyb
+
+    private val videoKartyStore = cz.promptlab.h3video.data.VideoKartyStore(app)
+
+    private val _uprava = MutableStateFlow(cz.promptlab.h3video.data.UpravaScene())
+    val uprava: StateFlow<cz.promptlab.h3video.data.UpravaScene> = _uprava.asStateFlow()
+
+    private val _vylepseni = MutableStateFlow(cz.promptlab.h3video.data.VylepseniScene())
+    val vylepseni: StateFlow<cz.promptlab.h3video.data.VylepseniScene> = _vylepseni.asStateFlow()
+
+    private val _pohyb = MutableStateFlow(videoKartyStore.loadPohyb())
+    val pohyb: StateFlow<cz.promptlab.h3video.data.PohybRezim> = _pohyb.asStateFlow()
+
+    private val _videoKartyChyba = MutableStateFlow<String?>(null)
+    val videoKartyChyba: StateFlow<String?> = _videoKartyChyba.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val u = withContext(Dispatchers.IO) {
+                videoKartyStore.loadUprava().let { s ->
+                    s.copy(refs = s.refs.map { slot ->
+                        slot.copy(thumb = slot.image?.let { ImageUtils.loadFileThumb(it) })
+                    })
+                }
+            }
+            _uprava.value = u
+            _vylepseni.value = withContext(Dispatchers.IO) { videoKartyStore.loadVylepseni() }
+        }
+    }
+
+    private fun updateUprava(block: (cz.promptlab.h3video.data.UpravaScene) -> cz.promptlab.h3video.data.UpravaScene) {
+        val next = block(_uprava.value)
+        _uprava.value = next
+        videoKartyStore.saveUprava(next)
+    }
+
+    private fun updateVylepseni(block: (cz.promptlab.h3video.data.VylepseniScene) -> cz.promptlab.h3video.data.VylepseniScene) {
+        val next = block(_vylepseni.value)
+        _vylepseni.value = next
+        videoKartyStore.saveVylepseni(next)
+    }
+
+    fun setPohybRezim(r: cz.promptlab.h3video.data.PohybRezim) {
+        _pohyb.value = r
+        videoKartyStore.savePohyb(r)
+    }
+
+    fun setUpravaRezim(r: cz.promptlab.h3video.data.UpravaRezim) = updateUprava { it.copy(rezim = r) }
+    fun setUpravaPopis(v: String) = updateUprava { it.copy(popis = v) }
+    fun setUpravaMaskTarget(v: String) = updateUprava { it.copy(maskTarget = v) }
+    fun setUpravaMaskObjects(v: Int) = updateUprava { it.copy(maskObjects = v.coerceIn(1, 3)) }
+    fun setUpravaSekundy(v: Float) = updateUprava { it.copy(sekundy = v.coerceIn(2f, 15f)) }
+
+    fun setVylepseniRezim(r: cz.promptlab.h3video.data.VylepseniRezim) = updateVylepseni { it.copy(rezim = r) }
+    fun setVylepseniUpscaler(v: Upscaler) = updateVylepseni { it.copy(upscaler = v) }
+    fun setVylepseniRozliseni(v: Int) = updateVylepseni { it.copy(upscaleResolution = v.coerceIn(720, 2160)) }
+    fun setVylepseniNasobekRtx(v: Int) = updateVylepseni { it.copy(upscaleMultiplier = v.coerceIn(2, 4)) }
+    fun setVylepseniNasobek(v: Int) = updateVylepseni { it.copy(nasobek = v) }
+    fun setVylepseniZpomalit(v: Boolean) = updateVylepseni { it.copy(zpomalit = v) }
+
+    /** Video do karty Upravit / Vylepšit — kopie u sebe, vlastní jméno pro každou kartu. */
+    private suspend fun videoDoKarty(uri: Uri, jmeno: String): File? {
+        val f = importMedia(uri, jmeno)
+        val cte = f != null && withContext(Dispatchers.IO) { ImageUtils.rozmeryVidea(f) } != null
+        if (!cte) {
+            f?.delete()
+            _videoKartyChyba.value = t("Z toho souboru nejde přečíst video. Zkus MP4.")
+            return null
+        }
+        _videoKartyChyba.value = null
+        return f
+    }
+
+    fun pickUpravaVideo(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val f = videoDoKarty(uri, "uprava_video") ?: return@launch
+            updateUprava { it.copy(video = f) }
+        }
+    }
+
+    fun clearUpravaVideo() = updateUprava { s ->
+        s.video?.takeIf { it.name.startsWith("uprava_video") }?.let { runCatching { it.delete() } }
+        _videoKartyChyba.value = null
+        s.copy(video = null)
+    }
+
+    fun pickVylepseniVideo(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val f = videoDoKarty(uri, "vylepseni_video") ?: return@launch
+            nastavVylepseniVideo(f, null)
+        }
+    }
+
+    /** Video do Vylepšit video i s rozměry — z nich se počítá paměť zplynulení. */
+    private suspend fun nastavVylepseniVideo(
+        f: File, rezim: cz.promptlab.h3video.data.VylepseniRezim?,
+    ) {
+        val info = withContext(Dispatchers.IO) { infoVidea(f) }
+        _videoKartyChyba.value = null
+        updateVylepseni { s ->
+            val snimku = info?.snimku?.takeIf { it > 0 }
+                ?: info?.let { (it.sekund * 30).toInt() } ?: 0
+            val nove = s.copy(
+                video = f, rezim = rezim ?: s.rezim,
+                sirka = info?.sirka ?: 0, vyska = info?.vyska ?: 0, snimku = snimku,
+            )
+            // Násobek, který se u nového videa nevejde, se srazí na největší možný.
+            val vejde = nove.nasobkyKtereSeVejdou
+            if (nove.nasobek in vejde || vejde.isEmpty()) nove else nove.copy(nasobek = vejde.last())
+        }
+    }
+
+    fun clearVylepseniVideo() = updateVylepseni { s ->
+        s.video?.takeIf { it.name.startsWith("vylepseni_video") }?.let { runCatching { it.delete() } }
+        _videoKartyChyba.value = null
+        s.copy(video = null, sirka = 0, vyska = 0, snimku = 0)
+    }
+
+    /** Fotky náhrady pro Přemalovat — doplňují se do volných míst, pak se přidávají. */
+    fun pickUpravaRefs(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        viewModelScope.launch {
+            for (uri in uris) {
+                val s = _uprava.value
+                val volny = s.refs.firstOrNull { it.image == null }
+                if (volny == null && !s.canAddRef) break
+                val key = volny?.key ?: ((s.refs.maxOfOrNull { it.key } ?: 0) + 1)
+                val cil = videoKartyStore.refFile(key)
+                val nahled = withContext(Dispatchers.IO) {
+                    ImageUtils.importToApp(getApplication(), uri, cil)
+                } ?: continue
+                updateUprava { st ->
+                    val slot = AioSlot(key = key, image = cil, thumb = nahled)
+                    val refs = if (st.refs.any { it.key == key })
+                        st.refs.map { if (it.key == key) slot else it }
+                    else st.refs + slot
+                    st.copy(refs = refs)
+                }
+            }
+        }
+    }
+
+    fun clearUpravaRef(key: Int) = updateUprava { s ->
+        runCatching { videoKartyStore.refFile(key).delete() }
+        val zbyle = s.refs.filterNot { it.key == key }
+        s.copy(refs = zbyle.ifEmpty { listOf(AioSlot(key = 1)) })
+    }
+
+    /**
+     * Kopie výsledku z galerie do karty. Odkaz na položku historie nestačí —
+     * kdyby se smazala, běh by spadl na chybějícím souboru.
+     */
+    private suspend fun kopieVysledku(item: VideoItem, jmeno: String): File? = withContext(Dispatchers.IO) {
+        runCatching {
+            val zdroj = item.file(getApplication())
+            val ext = item.fileName.substringAfterLast('.', "mp4")
+            mediaDir().listFiles { f -> f.nameWithoutExtension == jmeno }?.forEach { it.delete() }
+            val cil = File(mediaDir(), "$jmeno.$ext")
+            zdroj.copyTo(cil, overwrite = true)
+            cil
+        }.getOrNull()
+    }
+
+    private fun otevriKartu(m: Mode) {
+        setMode(m)
+        selectTab(Tab.CREATE)
+    }
+
+    /** Výsledek → Vylepšit video v daném režimu (Zvětšit / Zplynulit). */
+    fun posliVideoDoVylepseni(item: VideoItem, rezim: cz.promptlab.h3video.data.VylepseniRezim) {
+        viewModelScope.launch {
+            val f = kopieVysledku(item, "vylepseni_video") ?: return@launch
+            nastavVylepseniVideo(f, rezim)
+            otevriKartu(Mode.VYLEPSENI_VIDEA)
+        }
+    }
+
+    /** Výsledek → Upravit video (v naposledy použitém režimu). */
+    fun posliVideoDoUpravy(item: VideoItem) {
+        viewModelScope.launch {
+            val f = kopieVysledku(item, "uprava_video") ?: return@launch
+            _videoKartyChyba.value = null
+            updateUprava { it.copy(video = f) }
+            otevriKartu(Mode.UPRAVA_VIDEA)
+        }
+    }
+
+    /** Výsledek → All in One → Prodloužit. */
+    fun posliVideoDoProdlouzeni(item: VideoItem) {
+        viewModelScope.launch {
+            val f = kopieVysledku(item, "aio_source") ?: return@launch
+            updateAio { it.copy(mode = AioMode.EXTEND, sourceVideo = f) }
+            prevezmiPomerZeVstupu("source", f, video = true)
+            otevriKartu(Mode.ALLINONE)
+        }
+    }
+
+    /** Hudba z výsledku → LTX 2.5 Ze zvuku. */
+    fun posliHudbuDoVidea(item: VideoItem) {
+        viewModelScope.launch {
+            val f = kopieVysledku(item, "ltx_zvuk_vysledek") ?: return@launch
+            val sekund = withContext(Dispatchers.IO) { delkaZvuku(f) }
+            if (sekund <= 0f) {
+                f.delete()
+                _ltxZvukChyba.value = t("Z toho souboru nejde přečíst délka zvuku. Zkus MP3 nebo WAV.")
+            } else {
+                _ltxZvukChyba.value = null
+                setLtxZvuk(f, sekund)
+            }
+            setLtxRezim(cz.promptlab.h3video.data.LtxRezim.ZVUK)
+            otevriKartu(Mode.LTXAUDIO)
+        }
+    }
+
+    /** Hudba z výsledku → Pohyb postavy → Podle hudby. */
+    fun posliHudbuDoTance(item: VideoItem) {
+        viewModelScope.launch {
+            val f = kopieVysledku(item, "dance_hudba_vysledek") ?: return@launch
+            val sekund = withContext(Dispatchers.IO) { delkaZvuku(f) }
+            if (sekund <= 0f) {
+                f.delete()
+                _danceHudbaChyba.value = t("Z toho souboru nejde přečíst délka zvuku. Zkus MP3 nebo WAV.")
+            } else {
+                _danceHudbaChyba.value = null
+                updateDance { it.copy(hudba = f, hudbaSekund = sekund) }
+            }
+            setPohybRezim(cz.promptlab.h3video.data.PohybRezim.HUDBA)
+            otevriKartu(Mode.POHYB)
+        }
+    }
 
     // ------------------------------------------------------------ long minimax
 
@@ -4854,8 +5132,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun pripravZaber(zaberId: Long) {
         val s = _projekt.value
         val z = s.projekt?.zabery?.firstOrNull { it.id == zaberId } ?: return
-        // Záběr ze starého projektu může mít schovanou kartu (Dlouhé video).
-        val karta = z.karta?.let { if (it.nabizena) it else Mode.LONGMM } ?: return
+        // Záběr ze starého projektu může mít schovanou kartu.
+        val puvodni = z.karta ?: return
+        pohybRezimPro(puvodni)?.let { setPohybRezim(it) }
+        val karta = puvodni.nahradniKarta
         updateProjekt { it.copy(cekaZaber = zaberId) }
         update { it.copy(mode = karta) }
         if (z.popis.isNotBlank()) vlozPopisDoKarty(karta, z.popis)
@@ -4898,6 +5178,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             Mode.ALLINONE -> updateAio { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
             Mode.EDIT -> updateEdit { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
             Mode.LONGMM -> updateLongMm { if (it.prompt.isBlank()) it.copy(prompt = popis) else it }
+            Mode.UPRAVA_VIDEA -> updateUprava { if (it.popis.isBlank()) it.copy(popis = popis) else it }
+            Mode.POHYB -> when (_pohyb.value) {
+                cz.promptlab.h3video.data.PohybRezim.HUDBA ->
+                    updateDance { if (it.popis.isBlank()) it.copy(popis = popis) else it }
+                cz.promptlab.h3video.data.PohybRezim.VIDEO ->
+                    updateAnimate { if (it.prostredi.isBlank()) it.copy(prostredi = popis) else it }
+            }
+            Mode.VYLEPSENI_VIDEA -> Unit
             // Dlouhé video nemá jeden prompt — popis patří prvnímu záběru.
             Mode.LONG -> updateLong {
                 if (it.startPrompt.isBlank()) it.copy(startPrompt = popis) else it

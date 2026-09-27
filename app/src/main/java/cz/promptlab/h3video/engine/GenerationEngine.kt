@@ -260,6 +260,7 @@ object GenerationEngine {
     @Volatile private var ltxRun: Boolean = false
     @Volatile private var danceRun: Boolean = false
     @Volatile private var animateRun: Boolean = false
+    @Volatile private var interpRun: Boolean = false
 
     /** Běží Long MiniMax? Jeden záběr na běh, navazuje se přes uložený latent. */
     @Volatile private var longMmRun: Boolean = false
@@ -283,6 +284,7 @@ object GenerationEngine {
         model3dRun -> Trellis2Builder.stageForClass(nodeClasses[node])
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.stageForClass(nodeClasses[node])
         animateRun -> cz.promptlab.h3video.comfy.AnimateBuilder.stageForClass(nodeClasses[node])
+        interpRun -> cz.promptlab.h3video.comfy.InterpolaceBuilder.stageForClass(nodeClasses[node])
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.stageForClass(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.stageForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.stageForClass(nodeClasses[node])
@@ -316,6 +318,7 @@ object GenerationEngine {
         model3dRun -> Trellis2Builder.rangeForClass(nodeClasses[node])
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.rangeForClass(nodeClasses[node])
         animateRun -> cz.promptlab.h3video.comfy.AnimateBuilder.rangeForClass(nodeClasses[node])
+        interpRun -> cz.promptlab.h3video.comfy.InterpolaceBuilder.rangeForClass(nodeClasses[node])
         // Dva průchody mají vlastní dělení pásma, jinak by ukazatel skákal zpět.
         // Rozlišují se podle ID uzlu — oba jsou `SamplerCustomAdvanced`.
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.rangeForNode(
@@ -353,6 +356,7 @@ object GenerationEngine {
         model3dRun -> Trellis2Builder.reportsSteps(nodeClasses[node])
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.reportsSteps(nodeClasses[node])
         animateRun -> cz.promptlab.h3video.comfy.AnimateBuilder.reportsSteps(nodeClasses[node])
+        interpRun -> cz.promptlab.h3video.comfy.InterpolaceBuilder.reportsSteps(nodeClasses[node])
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.reportsSteps(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.reportsSteps(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.reportsSteps(nodeClasses[node])
@@ -453,6 +457,8 @@ object GenerationEngine {
         longMmScene: cz.promptlab.h3video.data.LongMmScene? = null,
         /** Wan Animate: fotka postavy + video s pohybem. */
         animateScene: cz.promptlab.h3video.data.AnimateScene? = null,
+        /** Vylepšit video → Zplynulit: interpolace snímků FILM. */
+        interpScene: cz.promptlab.h3video.data.VylepseniScene? = null,
     ) {
         if (isRunning) return
         job?.cancel()
@@ -476,11 +482,12 @@ object GenerationEngine {
         ltxRun = ltxScene != null
         danceRun = danceScene != null
         animateRun = animateScene != null
+        interpRun = interpScene != null
         longMmRun = longMmScene != null
         longMmRetez = longMmScene
             ?.let { cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(it) }.orEmpty()
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun && !swapRun &&
-            !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun && !longMmRun && !animateRun &&
+            !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun && !longMmRun && !animateRun && !interpRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
         settings.activeEdit = editRun
@@ -510,6 +517,8 @@ object GenerationEngine {
                 else "")
         } else if (danceScene != null) {
             "Dance · " + danceScene.styl.title + " · " + danceScene.sekundy + " s"
+        } else if (interpScene != null) {
+            "Zplynulit · " + interpScene.nasobek + "×" + (if (interpScene.zpomalit) " · zpomaleně" else "")
         } else if (animateScene != null) {
             "Wan Animate · " + "%.1f s".format(animateScene.videoSekund)
         } else if (longMmScene != null) {
@@ -539,7 +548,7 @@ object GenerationEngine {
                     upscaleScene, t2i, musicScene, restoreScene, angleScene, swapScene,
                     inpaintScene,
                     longScene, model3dScene, ltxScene, danceScene, longMmScene,
-                    animateScene,
+                    animateScene, interpScene,
                 )
             }
                 .onFailure { e ->
@@ -732,6 +741,7 @@ object GenerationEngine {
         danceScene: cz.promptlab.h3video.data.DanceScene? = null,
         longMmScene: cz.promptlab.h3video.data.LongMmScene? = null,
         animateScene: cz.promptlab.h3video.data.AnimateScene? = null,
+        interpScene: cz.promptlab.h3video.data.VylepseniScene? = null,
     ) {
         val client = ComfyClient(settings.serverUrl)
 
@@ -797,6 +807,7 @@ object GenerationEngine {
             model3dScene != null -> null   // dtto
             ltxScene != null -> null       // dtto
             animateScene != null -> null   // dtto
+            interpScene != null -> null    // dtto
             aioScene != null -> aioScene.sablona
             params.mode == cz.promptlab.h3video.data.Mode.TALK -> "r2v.json"
             else -> null
@@ -845,6 +856,8 @@ object GenerationEngine {
             ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
         // Wan Animate: řídicí video celé, délku výsledku určuje ono.
         val animateVideo = animateScene?.video
+            ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
+        val interpVideo = interpScene?.video
             ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
         // Namluvené repliky (dialogy). Pořadí je závazné – podle něj se
         // v promptu číslují značky <Audio N>.
@@ -935,6 +948,10 @@ object GenerationEngine {
                 cz.promptlab.h3video.comfy.DanceBuilder.build(
                     app, danceScene, seed, names.firstOrNull().orEmpty(), danceHudba,
                 )
+
+            // Vylepšit video → Zplynulit: interpolace FILM z APK.
+            interpScene != null ->
+                cz.promptlab.h3video.comfy.InterpolaceBuilder.build(app, interpScene, interpVideo)
 
             // Wan Animate: Wan-Animate 2 z APK, fotka postavy + řídicí video.
             animateScene != null ->
@@ -1076,6 +1093,8 @@ object GenerationEngine {
             cz.promptlab.h3video.comfy.LongMmBuilder.nodeClasses(workflow)
         if (animateScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.AnimateBuilder.nodeClasses(workflow)
+        if (interpScene != null) nodeClasses =
+            cz.promptlab.h3video.comfy.InterpolaceBuilder.nodeClasses(workflow)
 
         val promptId = UUID.randomUUID().toString().lowercase()
         // Značka do logu: od téhle chvíle patří hlášky uzlů našemu běhu.

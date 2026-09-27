@@ -189,6 +189,11 @@ data class GenParams(
             Mode.DANCE -> 1
             // Wan Animate: fotka postavy. Video má vlastní cestu nahrávání.
             Mode.ANIMATE -> 1
+            // Pohyb postavy: fotka postavy v obou režimech.
+            Mode.POHYB -> 1
+            // Upravit video → Přemalovat: fotky náhrady jako v All in One.
+            Mode.UPRAVA_VIDEA -> AioScene.MAX_REFS
+            Mode.VYLEPSENI_VIDEA -> 0
             // Long MiniMax: reference prvního záběru. Zdrojové video se při
             // navazování nahrává vlastní cestou, ne jako obrázek.
             Mode.LONGMM -> LongMmScene.MAX_REFERENCI

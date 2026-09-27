@@ -239,6 +239,14 @@ if /i "!ODP!"=="a" (
 )
 
 REM ------------------------------------------------------------------
+REM  Karta Vylepsit video - Zplynulit: interpolace snimku FILM (0,07 GB).
+REM ------------------------------------------------------------------
+set /p ODP="Vylepsit video - zplynuleni FILM, cca 0,07 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/frame_interpolation/resolve/main/frame_interpolation/film_net_fp16.safetensors" "models\frame_interpolation\film_net_fp16.safetensors"
+)
+
+REM ------------------------------------------------------------------
 REM  Karta Wan Animate - Wan-Animate 2. Postava z fotky zopakuje pohyb
 REM  z videa. VAE, clip_vision a LoRA lightx2v sdili s kartou Dance.
 REM ------------------------------------------------------------------

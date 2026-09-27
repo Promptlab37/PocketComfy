@@ -1,11 +1,8 @@
 package cz.promptlab.h3video.data
 
 /**
- * Aplikace má tři způsoby generování.
- *
- * Do verze 2.61 jich bylo sedm a každý si nesl vlastní obrazovku i vlastní
- * větev ve stavbě grafu. Od 2.62 zbyly tři, protože ostatní uměla karta
- * All in One taky — jen líp a bez rizika, že se appka rozejde s ComfyUI.
+ * Karty aplikace. V nabídce jsou seskupené podle toho, co vzniká
+ * ([Skupina]); pořadí výčtu se kvůli uloženým datům nemění, jen přibývá.
  */
 enum class Mode(
     private val titleCs: String,
@@ -74,8 +71,8 @@ enum class Mode(
      * modelem a dva kroky ho dotáhnou. Řádově rychlejší než dvacet kroků.
      */
     THREESTEP(
-        titleCs = "3 kroky",
-        shortCs = "3 kroky",
+        titleCs = "Rychlé video",
+        shortCs = "Rychlé video",
         detailCs = "Rychlé video z textu — tři kroky, zvětšení v latentu, dva kroky navrch"
     ),
 
@@ -163,8 +160,8 @@ enum class Mode(
      * a seed. Druhá karta, která nevyrábí video.
      */
     UPSCALE(
-        titleCs = "Zvětšit",
-        shortCs = "Zvětšit",
+        titleCs = "Zvětšit fotku",
+        shortCs = "Zvětšit fotku",
         detailCs = "SeedVR2 gigapixel — fotka ve velkém rozlišení"
     ),
 
@@ -225,6 +222,31 @@ enum class Mode(
         titleCs = "Long MiniMax",
         shortCs = "Long MM",
         detailCs = "Záběr po záběru na jednu scénu, navazuje se přes latent"
+    ),
+
+    /**
+     * Postava z fotky se hýbe — do rytmu hudby (Wan-Dancer, dřív karta Dance),
+     * nebo podle videa (Wan-Animate 2). Stavitele i scény zůstávají
+     * samostatné, karta je jen rozcestník mezi nimi.
+     */
+    POHYB(
+        titleCs = "Pohyb postavy",
+        shortCs = "Pohyb postavy",
+        detailCs = "Postava z fotky tančí do hudby nebo zopakuje pohyb z videa"
+    ),
+
+    /** Mění obsah hotového videa. Zdrojové video je jedno pro všechny režimy. */
+    UPRAVA_VIDEA(
+        titleCs = "Upravit video",
+        shortCs = "Upravit video",
+        detailCs = "Změní obsah hotového videa, zbytek záběru zůstane"
+    ),
+
+    /** Technické vylepšení hotového videa — nic nového se nevymýšlí. */
+    VYLEPSENI_VIDEA(
+        titleCs = "Vylepšit video",
+        shortCs = "Vylepšit video",
+        detailCs = "Zvětší hotové video nebo ho zplynulí"
     );
 
     /** Název karty v jazyce rozhraní (překlad až při čtení). */
@@ -235,21 +257,61 @@ enum class Mode(
     /** Jede se na referenčních (ref2va) vahách? U dialogů a dlouhého videa ano. */
     val usesRefModel: Boolean get() = this == TALK || this == LONG
 
+    /** Skupina v nabídce; null = karta se nenabízí (viz [nahradniKarta]). */
+    val skupina: Skupina? get() = Skupina.entries.firstOrNull { this in it.karty }
+
     /**
-     * Ukazuje se karta v nabídce? Dlouhé video je od 4.61 schované, dlouhé
-     * záběry dělá Long MiniMax. Kód zůstává kvůli starým výsledkům a projektům.
+     * Ukazuje se karta v nabídce? Dlouhé video je od 4.61 schované (dlouhé
+     * záběry dělá Long MiniMax), Dance a Wan Animate jsou od 4.62 režimy karty
+     * Pohyb postavy. Kód zůstává kvůli starým výsledkům a projektům.
      */
-    val nabizena: Boolean get() = this != LONG
+    val nabizena: Boolean get() = skupina != null
+
+    /** Kam vést uloženou volbu nebo záběr projektu se schovanou kartou. */
+    val nahradniKarta: Mode
+        get() = when (this) {
+            LONG -> LONGMM
+            DANCE, ANIMATE -> POHYB
+            else -> this
+        }
 
     /** Vyrábí tahle karta video? Obrázkové karty vrací PNG, Hudba MP3. */
     val isVideo: Boolean
         get() = this == ALLINONE || this == TALK || this == TIMELINE ||
             this == LONG || this == LTXAUDIO || this == DANCE || this == LONGMM ||
-            this == ANIMATE
+            this == ANIMATE || this == THREESTEP || this == POHYB ||
+            this == UPRAVA_VIDEA || this == VYLEPSENI_VIDEA
 }
 
-/** Karty v nabídce, v pořadí výčtu. */
-val NABIZENE_KARTY: List<Mode> get() = Mode.entries.filter { it.nabizena }
+/**
+ * Skupiny karet podle toho, co vzniká. Pořadí skupin i karet v nich je
+ * pevné a platí všude, kde se karta vybírá (nabídka nahoře i Projekt).
+ */
+enum class Skupina(private val titleCs: String, val karty: List<Mode>) {
+    PROJEKT("Projekt", listOf(Mode.PROJEKT)),
+    VIDEO(
+        "Video",
+        listOf(
+            Mode.ALLINONE, Mode.TALK, Mode.LONGMM, Mode.TIMELINE,
+            Mode.THREESTEP, Mode.LTXAUDIO, Mode.POHYB,
+        ),
+    ),
+    UPRAVY("Úpravy videa", listOf(Mode.UPRAVA_VIDEA, Mode.VYLEPSENI_VIDEA)),
+    OBRAZEK(
+        "Obrázek",
+        listOf(
+            Mode.IMAGE, Mode.EDIT, Mode.INPAINT, Mode.ANGLE,
+            Mode.RESTORE, Mode.FACESWAP, Mode.UPSCALE,
+        ),
+    ),
+    ZVUK("Zvuk", listOf(Mode.MUSIC)),
+    TRID("3D", listOf(Mode.MODEL3D));
+
+    val title: String get() = t(titleCs)
+}
+
+/** Karty v nabídce, v pořadí skupin. */
+val NABIZENE_KARTY: List<Mode> get() = Skupina.entries.flatMap { it.karty }
 
 /**
  * Co karta z „Nastavení" opravdu použije.
@@ -295,7 +357,15 @@ fun ovladaProKartu(
     mode: Mode,
     aioRezim: AioMode = AioMode.TEXT,
     dlouheNavazuje: Boolean = false,
+    upravaRezim: UpravaRezim = UpravaRezim.PREMALOVAT,
 ): Ovlada = when (mode) {
+    // Přemalovat jede na šabloně All in One (mask.json) — stejně jako dřív.
+    Mode.UPRAVA_VIDEA -> when (upravaRezim) {
+        UpravaRezim.PREMALOVAT -> Ovlada(rozliseni = false)
+    }
+    // Zvětšení nespouští model, zplynulení taky ne.
+    Mode.VYLEPSENI_VIDEA -> Ovlada.NIC
+    Mode.POHYB -> Ovlada.NIC
     Mode.ALLINONE -> when (aioRezim) {
         // Zvětšení nespouští model vůbec — šablona nemá ani UNET, ani prompt.
         AioMode.UPSCALE -> Ovlada.NIC

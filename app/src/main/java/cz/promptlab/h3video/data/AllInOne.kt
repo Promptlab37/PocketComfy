@@ -71,6 +71,14 @@ enum class AioMode(
      * si přestaly odpovídat a vlepení zpátky by sedlo mimo.
      */
     val fixedSize: Boolean get() = this == MASK
+
+    companion object {
+        /**
+         * Režimy nabízené v kartě All in One. Zvětšit a Přemalovat jsou od 4.62
+         * v kartách Vylepšit video a Upravit video — šablony zůstávají stejné.
+         */
+        val VKARTE: List<AioMode> = listOf(TEXT, IMAGE, REFERENCE, KEYFRAMES, EXTEND, CHARSHEET)
+    }
 }
 
 /** Zvětšovač v režimu [AioMode.UPSCALE]. */

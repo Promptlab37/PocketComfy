@@ -301,6 +301,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             mode, aioScene.mode,
             dlouheNavazuje = longScene.zacatek ==
                 cz.promptlab.h3video.data.LongStart.EXISTING_VIDEO,
+            upravaRezim = vm.uprava.collectAsStateWithLifecycle().value.rezim,
         )
 
         val referencniCesta = mode == Mode.TALK || mode == Mode.LONG ||
@@ -371,6 +372,17 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // ------------------------------------------------------ wan animate
         if (mode == Mode.ANIMATE) {
             AnimateSection(vm)
+        }
+
+        // ---------------------------------------- pohyb postavy, úpravy videa
+        if (mode == Mode.POHYB) {
+            PohybSection(vm)
+        }
+        if (mode == Mode.UPRAVA_VIDEA) {
+            UpravaVideaSection(vm)
+        }
+        if (mode == Mode.VYLEPSENI_VIDEA) {
+            VylepseniVideaSection(vm)
         }
 
         // ------------------------------------------------------ long minimax
@@ -800,7 +812,12 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 busy -> t("Přidat do fronty") +
                     (if (fronta.isNotEmpty()) t(" (čeká %d)").format(fronta.size) else "")
                 mode == Mode.EDIT -> t("Upravit obrázek")
-                mode == Mode.UPSCALE -> t("Zvětšit obrázek")
+                mode == Mode.UPSCALE -> t("Zvětšit fotku")
+                mode == Mode.UPRAVA_VIDEA -> t("Upravit video")
+                mode == Mode.VYLEPSENI_VIDEA ->
+                    if (vm.vylepseni.collectAsStateWithLifecycle().value.rezim ==
+                        cz.promptlab.h3video.data.VylepseniRezim.ZPLYNULIT
+                    ) t("Zplynulit video") else t("Zvětšit video")
                 mode == Mode.IMAGE -> t("Vygenerovat obrázek")
                 mode == Mode.THREESTEP -> t("Vygenerovat video")
                 mode == Mode.MUSIC -> t("Vygenerovat skladbu")
@@ -1311,41 +1328,83 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
     }
 }
 
+/**
+ * Výběr karty ve dvou patrech: nahoře skupina podle toho, co vzniká (Video,
+ * Úpravy videa, Obrázek…), pod ní karty té skupiny. Skupina s jedinou kartou
+ * ji otevře rovnou a druhé patro se neukazuje.
+ */
 @Composable
 private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
-    // Karty se NEDĚLÍ o šířku obrazovky. Při pěti režimech vycházelo na jednu
-    // ~66 dp, do kterých se „Reference" ani „Mluvení" nevejde – text se lámal
-    // a karty vypadaly slepené. Pás se proto roluje a každá karta je široká
-    // podle svého názvu, jak je to v mobilních aplikacích zvykem; vybraná se
-    // sama posune do zorného pole, aby po přepnutí nezůstala za okrajem.
-    val stav = rememberLazyListState()
-    val vybranyIndex = cz.promptlab.h3video.data.NABIZENE_KARTY.indexOf(selected)
-    LaunchedEffect(vybranyIndex) {
-        stav.animateScrollToItem(vybranyIndex.coerceAtLeast(0))
+    val skupina = selected.skupina ?: cz.promptlab.h3video.data.Skupina.VIDEO
+    // Poslední karta každé skupiny, ať se po návratu do skupiny otevře ta,
+    // se kterou člověk pracoval, a ne vždycky první.
+    val posledni = androidx.compose.runtime.saveable.rememberSaveable {
+        mutableStateOf(mapOf<String, String>())
     }
-
+    LaunchedEffect(selected) {
+        selected.skupina?.let { posledni.value = posledni.value + (it.name to selected.name) }
+    }
     Column {
-        // Že se pás dá posouvat, musí být vidět na první pohled: na kraji, kde
-        // ještě něco je, se obsah vytrácí do pozadí a svítí tam šipka. Jakmile
-        // uživatel dojede na konec, náznak zmizí — je to tedy i ukazatel polohy.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface1)
-                .border(1.dp, Outline1, RoundedCornerShape(16.dp))
-        ) {
+        PasKaret(
+            polozky = cz.promptlab.h3video.data.Skupina.entries,
+            vybrana = skupina,
+            popisek = { it.title },
+            onVyber = { sk ->
+                val karta = posledni.value[sk.name]
+                    ?.let { jmeno -> sk.karty.firstOrNull { it.name == jmeno } }
+                    ?: sk.karty.first()
+                onSelect(karta)
+            },
+        )
+        if (skupina.karty.size > 1) {
+            Spacer(Modifier.height(6.dp))
+            PasKaret(
+                polozky = skupina.karty,
+                vybrana = selected,
+                popisek = { it.short },
+                onVyber = onSelect,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            selected.title + " — " + selected.detail,
+            style = MaterialTheme.typography.bodySmall, color = TextLow,
+        )
+    }
+}
+
+/**
+ * Vodorovný pás voleb. Roluje se a na kraji, kde ještě něco je, svítí šipka —
+ * že jde posouvat, musí být vidět na první pohled.
+ */
+@Composable
+private fun <T> PasKaret(
+    polozky: List<T>,
+    vybrana: T,
+    popisek: (T) -> String,
+    onVyber: (T) -> Unit,
+) {
+    val stav = rememberLazyListState()
+    val index = polozky.indexOf(vybrana)
+    LaunchedEffect(index) {
+        stav.animateScrollToItem(index.coerceAtLeast(0))
+    }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Surface1)
+            .border(1.dp, Outline1, RoundedCornerShape(16.dp))
+    ) {
         LazyRow(
             state = stav,
             modifier = Modifier.fillMaxWidth(),
-            // Postranní mezera je přesně tak široká jako náznak s šipkou —
-            // karta v klidu nikdy neleží pod ní, jen jí při rolování projede.
             contentPadding = PaddingValues(horizontal = 30.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            items(cz.promptlab.h3video.data.NABIZENE_KARTY.size) { i ->
-                val m = cz.promptlab.h3video.data.NABIZENE_KARTY[i]
-                val active = m == selected
+            items(polozky.size) { i ->
+                val p = polozky[i]
+                val active = p == vybrana
                 Box(
                     Modifier
                         .clip(RoundedCornerShape(12.dp))
@@ -1354,12 +1413,12 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
                                 Brush.linearGradient(listOf(Violet, Cyan))
                             ) else Modifier
                         )
-                        .clickable { onSelect(m) }
+                        .clickable { onVyber(p) }
                         .padding(horizontal = 16.dp, vertical = 11.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        m.short,
+                        popisek(p),
                         style = MaterialTheme.typography.labelLarge,
                         color = if (active) Color.White else TextMid,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
@@ -1368,39 +1427,21 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
                 }
             }
         }
-
-            // Levý a pravý náznak. Zobrazují se jen tím směrem, kam se dá jet.
-            androidx.compose.animation.AnimatedVisibility(
-                visible = stav.canScrollBackward,
-                enter = androidx.compose.animation.fadeIn(),
-                exit = androidx.compose.animation.fadeOut(),
-                modifier = Modifier.align(Alignment.CenterStart),
-            ) {
-                OkrajPasu(doleva = true)
-            }
-            androidx.compose.animation.AnimatedVisibility(
-                visible = stav.canScrollForward,
-                enter = androidx.compose.animation.fadeIn(),
-                exit = androidx.compose.animation.fadeOut(),
-                modifier = Modifier.align(Alignment.CenterEnd),
-            ) {
-                OkrajPasu(doleva = false)
-            }
+        androidx.compose.animation.AnimatedVisibility(
+            visible = stav.canScrollBackward,
+            enter = androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.fadeOut(),
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            OkrajPasu(doleva = true)
         }
-        Spacer(Modifier.height(6.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                selected.title + " — " + selected.detail,
-                style = MaterialTheme.typography.bodySmall, color = TextLow,
-                modifier = Modifier.weight(1f),
-            )
-            // Kolikátá karta z kolika — druhý (a nepřehlédnutelný) signál, že
-            // jich je víc, než je zrovna vidět.
-            Text(
-                "${vybranyIndex + 1}/${cz.promptlab.h3video.data.NABIZENE_KARTY.size}",
-                style = MaterialTheme.typography.labelMedium, color = TextMid,
-                modifier = Modifier.padding(start = 8.dp),
-            )
+        androidx.compose.animation.AnimatedVisibility(
+            visible = stav.canScrollForward,
+            enter = androidx.compose.animation.fadeIn(),
+            exit = androidx.compose.animation.fadeOut(),
+            modifier = Modifier.align(Alignment.CenterEnd),
+        ) {
+            OkrajPasu(doleva = false)
         }
     }
 }

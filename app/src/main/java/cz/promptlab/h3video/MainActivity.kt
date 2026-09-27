@@ -465,6 +465,26 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             GenerationEngine.dismissResult()
                             vm.posliVideoDoZvetseni(s.item)
                         },
+                        onSmoothVideo = {
+                            GenerationEngine.dismissResult()
+                            vm.posliVideoDoVylepseni(s.item, cz.promptlab.h3video.data.VylepseniRezim.ZPLYNULIT)
+                        },
+                        onEditVideo = {
+                            GenerationEngine.dismissResult()
+                            vm.posliVideoDoUpravy(s.item)
+                        },
+                        onExtendVideo = {
+                            GenerationEngine.dismissResult()
+                            vm.posliVideoDoProdlouzeni(s.item)
+                        },
+                        onMusicToVideo = {
+                            GenerationEngine.dismissResult()
+                            vm.posliHudbuDoVidea(s.item)
+                        },
+                        onMusicToDance = {
+                            GenerationEngine.dismissResult()
+                            vm.posliHudbuDoTance(s.item)
+                        },
                     )
                 }
             }
@@ -539,6 +559,26 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onUpscaleVideo = {
                         opened = null
                         vm.posliVideoDoZvetseni(open)
+                    },
+                    onSmoothVideo = {
+                        opened = null
+                        vm.posliVideoDoVylepseni(open, cz.promptlab.h3video.data.VylepseniRezim.ZPLYNULIT)
+                    },
+                    onEditVideo = {
+                        opened = null
+                        vm.posliVideoDoUpravy(open)
+                    },
+                    onExtendVideo = {
+                        opened = null
+                        vm.posliVideoDoProdlouzeni(open)
+                    },
+                    onMusicToVideo = {
+                        opened = null
+                        vm.posliHudbuDoVidea(open)
+                    },
+                    onMusicToDance = {
+                        opened = null
+                        vm.posliHudbuDoTance(open)
                     },
                 )
             }

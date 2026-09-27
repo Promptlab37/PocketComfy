@@ -77,7 +77,7 @@ fun AllInOneSection(vm: MainViewModel) {
     ) {
         Column {
             PillRow(
-                items = AioMode.entries.toList(),
+                items = AioMode.VKARTE,
                 selected = scene.mode,
                 label = { it.nazev },
                 onSelect = { vm.setAioMode(it) },

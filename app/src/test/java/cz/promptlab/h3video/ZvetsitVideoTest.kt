@@ -9,8 +9,7 @@ import java.io.File
 /**
  * Zkratka „Zvětšit video" pod hotovým výsledkem.
  *
- * Zvětšení samo o sobě nic nového neumí — dělá ho karta All in One → Zvětšit
- * (SeedVR2 i RTX Video SR) od začátku. Tenhle test hlídá jen to, komu se
+ * Zvětšení dělá karta Vylepšit video → Zvětšit (SeedVR2 i RTX Video SR). Tenhle test hlídá jen to, komu se
  * tlačítko nabídne: musí to být video, ne obrázek, skladba ani 3D model,
  * protože ty by režim Zvětšit vůbec nenačetl (`LoadVideo`).
  */
@@ -53,16 +52,20 @@ class ZvetsitVideoTest {
     /**
      * Zkratka kopíruje soubor do složky karty. Kdyby brala rovnou soubor
      * z historie a uživatel položku smazal, zvětšení by spadlo na chybějícím
-     * vstupu — proto se v `posliVideoDoZvetseni` kopíruje.
+     * vstupu. Od 4.62 vede do karty Vylepšit video (režim Zvětšit).
      */
     @Test
     fun `zkratka kopiruje soubor, neodkazuje na historii`() {
         val zdroj = File("src/main/java/cz/promptlab/h3video/MainViewModel.kt").readText()
-        val i = zdroj.indexOf("fun posliVideoDoZvetseni")
-        assertTrue("zkratka ve zdrojáku není", i >= 0)
-        val telo = zdroj.substring(i, minOf(i + 1400, zdroj.length))
-        assertTrue("chybí kopie souboru", telo.contains("copyTo"))
-        assertTrue("nepřepíná do režimu Zvětšit", telo.contains("AioMode.UPSCALE"))
-        assertTrue("nepřepíná na kartu All in One", telo.contains("Mode.ALLINONE"))
+        fun telo(fn: String): String {
+            val i = zdroj.indexOf("fun $fn")
+            assertTrue("$fn ve zdrojáku není", i >= 0)
+            return zdroj.substring(i, minOf(i + 900, zdroj.length))
+        }
+        assertTrue("nepřepíná do režimu Zvětšit", telo("posliVideoDoZvetseni").contains("VylepseniRezim.ZVETSIT"))
+        val vylepseni = telo("posliVideoDoVylepseni")
+        assertTrue("chybí kopie souboru", vylepseni.contains("kopieVysledku"))
+        assertTrue("nepřepíná na kartu Vylepšit video", vylepseni.contains("Mode.VYLEPSENI_VIDEA"))
+        assertTrue("kopie nepoužívá copyTo", telo("kopieVysledku").contains("copyTo"))
     }
 }

@@ -1,0 +1,9 @@
+{
+ "901": {"class_type": "LoadVideo", "inputs": {"file": ""}, "_meta": {"title": "Video"}},
+ "1": {"class_type": "FrameInterpolationModelLoader", "inputs": {"model_name": "film_net_fp16.safetensors"}},
+ "3": {"class_type": "GetVideoComponents", "inputs": {"video": ["901", 0]}},
+ "2": {"class_type": "FrameInterpolate", "inputs": {"interp_model": ["1", 0], "images": ["3", 0], "multiplier": 2}},
+ "11": {"class_type": "ComfyMathExpression", "inputs": {"expression": "a * b", "values.a": ["3", 2], "values.b": 2}},
+ "5": {"class_type": "CreateVideo", "inputs": {"images": ["2", 0], "audio": ["3", 1], "fps": ["11", 0]}},
+ "911": {"class_type": "SaveVideo", "inputs": {"video": ["5", 0], "filename_prefix": "PocketPlynule", "format": "auto", "codec": "auto"}, "_meta": {"title": "Hotove video"}}
+}
