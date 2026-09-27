@@ -65,7 +65,9 @@ class RestoreFaceSwapBuilderTest {
         // 26. 9. 2026: výsledky byly málo barevné — obarvení je výslovný úkol,
         // identita se drží odkazem na fotku a „střídmá sytost" je pryč.
         val p = wf.inputs(RestoreBuilder.N_PROMPT).getString("prompt")
-        assertTrue(p.startsWith("Restore <image1> into a full-color professional photograph"))
+        assertTrue(p.startsWith("<image1> is a photo of a damaged physical print"))
+        assertTrue(p.contains("Remove every crack, tear"))
+        assertTrue(p.contains("Restore <image1> into a full-color professional photograph"))
         assertTrue(p.contains("same person as in <image1>"))
         assertTrue(p.contains("rich vivid true-to-life colors"))
         assertTrue(!p.contains("restrained saturation"))

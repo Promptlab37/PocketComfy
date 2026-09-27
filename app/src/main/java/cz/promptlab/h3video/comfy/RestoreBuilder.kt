@@ -39,12 +39,21 @@ object RestoreBuilder {
             "photography look, detailed sharp hair, focus on eyes."
 
     /**
-     * Úvod před uživatelovým promptem: obarvení jako výslovný úkol a identita
+     * Úvod před uživatelovým promptem. Nejdřív poškození: u hodně zničené fotky
+     * vyfocené i se stolem (27. 9. 2026) model praskliny, odloupnutou emulzi
+     * a bílý papír v trhlinách věrně zachoval — bral je jako obsah „fotky
+     * roztrhaného papíru". Teprve pak obarvení jako výslovný úkol a identita
      * odkazem na fotku. Qwen ve svých pravidlech přepisu (qwen21_pe_system_i2i)
      * radí identitu držet odkazem na obrázek, ne popisem tváře slovy.
      */
     const val UVOD =
-        "Restore <image1> into a full-color professional photograph. Turn black-and-white, " +
+        "<image1> is a photo of a damaged physical print. Output only the picture itself, " +
+            "restored as if it had never been damaged: crop away the paper edges, the border " +
+            "and anything around the print (table, background). Remove every crack, tear, " +
+            "crease line, peeling emulsion, white paper showing through, stain, mould spot " +
+            "and water damage, and rebuild what is missing underneath them — faces, bodies, " +
+            "clothing, ground and background — so no trace of the damage remains. " +
+            "Restore <image1> into a full-color professional photograph. Turn black-and-white, " +
             "sepia or faded tones into rich, vivid, natural colors: lifelike skin tones, " +
             "colorful clothing, saturated sky and greenery. Every person stays exactly the " +
             "same person as in <image1> — same face, age, expression and features."

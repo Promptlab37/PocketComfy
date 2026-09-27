@@ -1302,6 +1302,13 @@ object GenerationEngine {
         }
     }
 
+    /** „Š×V" hotového obrázku nebo videa; null, když se nedá přečíst. */
+    private fun skutecneRozmery(soubor: File, obrazek: Boolean): String? = runCatching {
+        val r = if (obrazek) cz.promptlab.h3video.util.ImageUtils.rozmery(soubor)
+        else cz.promptlab.h3video.util.ImageUtils.rozmeryVidea(soubor)
+        r?.let { (w, h) -> "${w}×$h" }
+    }.getOrNull()
+
     private fun refName(bytes: ByteArray): String {
         val digest = java.security.MessageDigest.getInstance("SHA-1").digest(bytes)
         val hex = digest.take(8).joinToString("") { "%02x".format(it) }
@@ -1693,7 +1700,9 @@ object GenerationEngine {
                 // celek, ne jen přidaný kus.
                 else -> delkaVidea(target) ?: params?.realSeconds ?: 0f
             },
-            resolution = params?.resolution?.label ?: label,
+            // Skutečné rozměry hotového souboru. Do 4.58 se brala volba plátna
+            // pro video — u Opravy tak u fotky 1792×2368 svítilo „480×864".
+            resolution = skutecneRozmery(target, jenObrazek) ?: params?.resolution?.label ?: label,
             seed = params?.seed ?: 0L,
             twoImages = false,
             inGallery = saved,
