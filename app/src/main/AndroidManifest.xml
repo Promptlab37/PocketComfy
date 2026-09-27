@@ -54,6 +54,14 @@
             </intent-filter>
         </activity>
 
+        <!-- Výběr obrázku: z telefonu, nebo hledání na internetu. Průhledné okno,
+             aby pod nabídkou zůstala vidět karta. -->
+        <activity
+            android:name=".ui.VyberObrazkuActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/Theme.H3Video.Vyber" />
+
         <service
             android:name=".engine.GenerationService"
             android:exported="false"

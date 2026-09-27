@@ -17,7 +17,14 @@ import androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia
  */
 object VyberFotek {
     @Volatile var zeSouboru: Boolean = false
+
+    /** U obrázků nabídnout i hledání na internetu ([VyberObrazkuActivity]). */
+    @Volatile var hledatNaInternetu: Boolean = true
 }
+
+/** Jen obrázky (ne video) a zapnuté hledání — pak se nejdřív nabídne volba zdroje. */
+private fun sVolbou(input: PickVisualMediaRequest): Boolean =
+    VyberFotek.hledatNaInternetu && input.mediaType is PickVisualMedia.ImageOnly
 
 /** Typy souborů podle žádosti — stejné, jaké pustí systémový výběr. */
 private fun typy(input: PickVisualMediaRequest): Array<String> = when (val t = input.mediaType) {
@@ -40,14 +47,18 @@ private fun dokument(input: PickVisualMediaRequest, vice: Boolean): Intent {
 
 /** Náhrada `PickVisualMedia` — podle [VyberFotek] Galerie, nebo Soubory. */
 class VyberMedii : PickVisualMedia() {
-    override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent =
-        if (VyberFotek.zeSouboru) dokument(input, vice = false)
+    override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
+        val zdroj = if (VyberFotek.zeSouboru) dokument(input, vice = false)
         else super.createIntent(context, input)
+        return if (sVolbou(input)) VyberObrazkuActivity.intent(context, zdroj, max = 1) else zdroj
+    }
 }
 
 /** Náhrada `PickMultipleVisualMedia` — podle [VyberFotek] Galerie, nebo Soubory. */
-class VyberViceMedii(max: Int) : PickMultipleVisualMedia(max) {
-    override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent =
-        if (VyberFotek.zeSouboru) dokument(input, vice = true)
+class VyberViceMedii(private val max: Int) : PickMultipleVisualMedia(max) {
+    override fun createIntent(context: Context, input: PickVisualMediaRequest): Intent {
+        val zdroj = if (VyberFotek.zeSouboru) dokument(input, vice = true)
         else super.createIntent(context, input)
+        return if (sVolbou(input)) VyberObrazkuActivity.intent(context, zdroj, max) else zdroj
+    }
 }

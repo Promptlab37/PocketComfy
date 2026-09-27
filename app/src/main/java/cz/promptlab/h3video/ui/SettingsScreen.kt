@@ -436,6 +436,23 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             )
         }
 
+        val hledat by vm.hledatNaInternetu.collectAsStateWithLifecycle()
+        SectionCard(
+            title = t("Hledat obrázky na internetu"),
+            trailing = {
+                Switch(
+                    checked = hledat,
+                    onCheckedChange = { vm.setHledatNaInternetu(it) },
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = Color.White,
+                        checkedTrackColor = Violet,
+                        uncheckedTrackColor = Surface2,
+                        uncheckedBorderColor = Outline1,
+                    )
+                )
+            }
+        ) {}
+
         SectionCard(
             title = t("Ukládat vše do telefonu"),
             subtitle = t("Normálně vypnuté – stahuješ si jen to, co chceš"),

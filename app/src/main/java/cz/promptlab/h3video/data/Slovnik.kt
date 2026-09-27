@@ -1739,5 +1739,22 @@ object Slovnik {
         "Uložit a zkontrolovat" to "Save and check",
         "Přejít na veřejná vydání" to "Switch to public releases",
         "Soukromá vydání" to "Private releases",
+        // Hledání obrázků na internetu (VyberObrazkuActivity)
+        "Z telefonu" to "From phone",
+        "Hledat na internetu" to "Search the internet",
+        "Hledat obrázky na internetu" to "Search images on the internet",
+        "Hledám a stahuji obrázky" to "Searching and downloading images",
+        "Přenáším do telefonu %d / %d" to "Transferring to phone %d / %d",
+        "Nejdřív v Nastavení vyplň adresu serveru." to "Enter the server address in Settings first.",
+        "Nic se nenašlo." to "Nothing found.",
+        "Server neodpovídá. Zkontroluj, že je počítač zapnutý a v telefonu běží Tailscale." to "The server is not responding. Check that the computer is on and Tailscale is running on the phone.",
+        "Obrázek se nepodařilo přenést. Zkus hledat znovu." to "The image could not be transferred. Try searching again.",
+        "Co hledáš" to "What are you looking for",
+        "Hledat" to "Search",
+        "Použít (%d)" to "Use (%d)",
+        "Použít" to "Use",
+        "Uběhlo %s · zbývá asi %s" to "%s elapsed · about %s left",
+        "Uběhlo %s" to "%s elapsed",
+        "Na serveru chybí balík ComfyUI-BingImageSelector, nebo ComfyUI od jeho instalace neproběhl restart." to "The ComfyUI-BingImageSelector package is missing on the server, or ComfyUI has not been restarted since it was installed.",
     )
 }

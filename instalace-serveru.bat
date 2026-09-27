@@ -40,6 +40,8 @@ call :klon https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler
 call :klon https://github.com/Praveenhalder/praveen-tools
 REM Metoda Chytre zvetseni na karte Zvetsit (modely viz nize).
 call :klon https://github.com/HallettVisual/ComfyUI-Smart-Upscaler
+REM Vyber obrazku: Hledat na internetu (Bing). Zavislosti (Pillow, numpy) ComfyUI uz ma.
+call :klon https://github.com/concarne000/ComfyUI-BingImageSelector
 REM Volitelne: metoda DLSS 5 na karte Zvetsit. Po naklonovani je potreba
 REM jeste jednou spustit install_runtime.py - viz konec skriptu.
 call :klon https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer

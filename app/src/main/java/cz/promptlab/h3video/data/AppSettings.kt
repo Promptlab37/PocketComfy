@@ -102,6 +102,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("vyber_ze_souboru", false)
         set(v) = sp.edit().putBoolean("vyber_ze_souboru", v).apply()
 
+    /** U výběru obrázku nabídnout i hledání na internetu (viz ui.VyberFotek). */
+    var hledatNaInternetu: Boolean
+        get() = sp.getBoolean("hledat_na_internetu", true)
+        set(v) = sp.edit().putBoolean("hledat_na_internetu", v).apply()
+
     /** Jazyk rozhraní: `system` / `cs` / `en` (viz [Jazyk]). */
     var jazyk: String
         get() = sp.getString("jazyk", Jazyk.Volba.SYSTEM.kod)!!

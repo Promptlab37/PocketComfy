@@ -59,6 +59,9 @@ object ServerAudit {
         "LoadAudio",
         "GetVideoComponents",
         "VAEEncode",
+        // Hledání obrázků na internetu: appka volá jen HTTP adresy balíku,
+        // v žádné předloze uzel není.
+        BingHledani.UZEL,
     )
 
     /** Z předloh: třída uzlu → textové vstupy (název → hodnota). */

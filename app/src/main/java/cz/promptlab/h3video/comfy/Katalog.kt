@@ -104,6 +104,11 @@ object Katalog {
         "https://github.com/HallettVisual/ComfyUI-Smart-Upscaler",
         "Zvětšit — chytré zvětšení",
     )
+    private val BING = Balik(
+        "ComfyUI-BingImageSelector",
+        "https://github.com/concarne000/ComfyUI-BingImageSelector",
+        "Hledat obrázky na internetu",
+    )
 
     private val DLSS5 = Balik(
         "ComfyUI-DLSS5-Enhancer",
@@ -184,6 +189,7 @@ object Katalog {
         "SmartSamplerTileSelector" to SMART_UPSCALER,
         "SmartTileColorMatch" to SMART_UPSCALER,
         "SmartTileFinalizer" to SMART_UPSCALER,
+        BingHledani.UZEL to BING,
         "DLSS5Settings" to DLSS5,
         "DLSS5EnhanceImages" to DLSS5,
         "DLSS5EnhanceVideoFile" to DLSS5,

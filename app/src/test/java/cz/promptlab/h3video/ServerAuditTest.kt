@@ -132,6 +132,8 @@ class ServerAuditTest {
                 "MiniMaxH3MemoryEfficientSageAttentionPatch",
                 "LoraLoaderModelOnly", "LoadVideo", "LoadAudio",
                 "GetVideoComponents", "VAEEncode",
+                // hledání obrázků na internetu — appka volá jen HTTP adresy balíku
+                "BingImageSelector",
             ),
             ServerAudit.PRIDAVANE_ZA_BEHU
         )

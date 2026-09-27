@@ -1835,6 +1835,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _vyberZeSouboru.value = v
     }
 
+    /** U výběru obrázku nabídnout i hledání na internetu. */
+    private val _hledatNaInternetu = MutableStateFlow(settings.hledatNaInternetu)
+    val hledatNaInternetu: StateFlow<Boolean> = _hledatNaInternetu.asStateFlow()
+
+    fun setHledatNaInternetu(v: Boolean) {
+        settings.hledatNaInternetu = v
+        cz.promptlab.h3video.ui.VyberFotek.hledatNaInternetu = v
+        _hledatNaInternetu.value = v
+    }
+
     private val _autoSave = MutableStateFlow(settings.autoSaveToGallery)
     val autoSave: StateFlow<Boolean> = _autoSave.asStateFlow()
 

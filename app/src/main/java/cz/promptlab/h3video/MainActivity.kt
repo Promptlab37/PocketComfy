@@ -121,8 +121,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Odkud se vybírají fotky — čte se hned, ať platí i pro první výběr.
         runCatching {
-            cz.promptlab.h3video.ui.VyberFotek.zeSouboru =
-                cz.promptlab.h3video.data.AppSettings(this).vyberZeSouboru
+            val s = cz.promptlab.h3video.data.AppSettings(this)
+            cz.promptlab.h3video.ui.VyberFotek.zeSouboru = s.vyberZeSouboru
+            cz.promptlab.h3video.ui.VyberFotek.hledatNaInternetu = s.hledatNaInternetu
         }
         // Nic z přípravy okna nesmí shodit start – obrazovka je důležitější než
         // hezké okraje i než dotaz na oprávnění.
