@@ -217,6 +217,57 @@ in either of them; there is no need to move it.
   [Comfy-Org/frame_interpolation](https://huggingface.co/Comfy-Org/frame_interpolation).
   The `FrameInterpolate` and `FrameInterpolationModelLoader` nodes are in the ComfyUI core.
 
+### Edit video → Replace character
+
+The `WanSCAILToVideo`, `SCAIL2ColoredMask` and `SAM3_VideoTrack` nodes are in
+the ComfyUI core (verified on 0.37.4).
+
+- **SCAIL-2:** `diffusion_models/wan2.1_14B_SCAIL_2_int8_convrot.safetensors`
+  (16.7 GB) and `loras/wan2.1_SCAIL_2_DPO_lora_bf16.safetensors` (1.2 GB),
+  from [Comfy-Org/SCAIL-2](https://huggingface.co/Comfy-Org/SCAIL-2). Plus
+  `sam3.1_multiplex_fp16.safetensors` and the shared Wan files from the section
+  below (`umt5_xxl_fp8_e4m3fn_scaled`, `Wan2_1_VAE_bf16`, `clip_vision_h`,
+  `lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16`).
+- **MiniMax H3:** `loras/h3_character_swap_pro4500_1000.safetensors` (0.16 GB),
+  from [akatz-ai/MiniMax-H3-Character-Swap-LoRA](https://huggingface.co/akatz-ai/MiniMax-H3-Character-Swap-LoRA);
+  otherwise the MiniMax H3 models, as for the All in One card.
+
+### Edit video → Follow a video
+
+MiniMax H3 with Fun ControlNet-Union; the `MiniMaxH3FunControlNetApply`,
+`SDPoseKeypointExtractor`, `SDPoseDrawKeypoints` and `RTDETR_detect` nodes are in
+the ComfyUI core (verified on 0.37.4).
+
+- `model_patches/minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors`
+  (2.3 GB), from [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3)
+- `checkpoints/sdpose_wholebody_fp16.safetensors` (1.9 GB) and
+  `diffusion_models/rt_detr_v4-x-hgnet_fp16.safetensors` (0.12 GB) for pose,
+  from [Comfy-Org/SDPose](https://huggingface.co/Comfy-Org/SDPose)
+- the MiniMax H3 models (`minimax_h3_ref2va_pruned_int8_convrot`, encoder, both VAEs)
+  and, for Fast, `loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors`
+
+### Edit video → By instruction
+
+Bernini-R on Wan 2.2; the `BerniniConditioning` node is in the ComfyUI core
+(verified on 0.37.4).
+
+- `diffusion_models/wan2.2_bernini_r_high_noise_int8_convrot.safetensors` and
+  `wan2.2_bernini_r_low_noise_int8_convrot.safetensors` (14.5 GB each),
+  from [Comfy-Org/Bernini-R](https://huggingface.co/Comfy-Org/Bernini-R)
+- `loras/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors`
+  for Fast, from [Kijai/WanVideo_comfy](https://huggingface.co/Kijai/WanVideo_comfy)
+- `umt5_xxl_fp8_e4m3fn_scaled` and `Wan2_1_VAE_bf16` from the section below
+
+### Music → MiniMax Music 3
+
+The `MiniMaxMusic3TextEncode` and `EmptyMiniMaxMusic3LatentAudio` nodes are in
+the ComfyUI core (verified on 0.37.4). All from
+[Comfy-Org/MiniMax-Music-3](https://huggingface.co/Comfy-Org/MiniMax-Music-3):
+
+- `diffusion_models/minimax_music3_dit_fp16.safetensors` (4.9 GB)
+- `text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors` (9.2 GB)
+- `vae/minimax_music3_dav.safetensors` (0.22 GB)
+
 ### Dance and Wan Animate cards (Wan)
 
 The `WanDancer*`, `WanAnimate2ToVideo` and `WanAnimate2Cache` nodes and the

@@ -111,20 +111,19 @@ fun ImageEditSection(vm: MainViewModel) {
             if (refs.size < ImageEditScene.MAX_QWEN21_REFERENCES) add(Triple(refs.size, null, false))
         }
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            slots.chunked(2).forEach { row ->
+            slots.chunked(3).forEach { row ->
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     row.forEach { (index, thumb, filled) ->
                         val kind = "reference${index + 2}"
                         EditSlot(
                             thumb = thumb,
-                            popisek = if (filled) t("Obrázek %d").format(index + 2)
-                                else t("Přidat obrázek %d").format(index + 2),
+                            popisek = t("Obrázek %d").format(index + 2),
                             modifier = Modifier.weight(1f),
                             onPick = { pickFor = kind; pick.launch(imageOnly) },
                             onClear = { vm.clearEditImage(kind) },
                         )
                     }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
                 }
             }
         }
@@ -157,11 +156,7 @@ fun ImageEditSection(vm: MainViewModel) {
                 //    odvážnější zadání potichu zjemní (ověřeno 21. 9. 2026),
                 //  - odvázaný nepřepisuje nic, zato fotku nevidí a píše jen
                 //    z toho, co napsal uživatel.
-                androidx.compose.foundation.layout.FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                PrekladPromptu(vm, cz.promptlab.h3video.MainViewModel.PromptPole.UPRAVA, vylepseni = {
                     OutlineButton(
                         if (bezi) t("Přepisuji…") else t("✨ Vylepšit (Qwen)"),
                         color = Cyan,
@@ -170,7 +165,7 @@ fun ImageEditSection(vm: MainViewModel) {
                         if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
                         color = cz.promptlab.h3video.ui.theme.Amber,
                     ) { if (!bezi) vm.vylepsiUpravuOdvazane() }
-                }
+                })
                 PrubehPrepisu(vm)
                 (stavPrepisu as? cz.promptlab.h3video.MainViewModel.RewriteState.Fail)
                     ?.takeIf {
@@ -184,8 +179,11 @@ fun ImageEditSection(vm: MainViewModel) {
                     )
                 }
             }
-            Spacer(Modifier.height(10.dp))
-            PrekladPromptu(vm, cz.promptlab.h3video.MainViewModel.PromptPole.UPRAVA)
+            // U Qwenu je Přeložit v řadě s vylepšením výš; ostatní modely ho mají samotné.
+            if (scene.motor != EditMotor.QWEN21) {
+                Spacer(Modifier.height(10.dp))
+                PrekladPromptu(vm, cz.promptlab.h3video.MainViewModel.PromptPole.UPRAVA)
+            }
         }
     }
 
@@ -248,7 +246,7 @@ fun ImageEditSection(vm: MainViewModel) {
     // Rozlišení a jemné páčky nikdo nemění při každém běhu – jsou sbalené,
     // ať na obrazovce zbyde jen fotka, zadání a tlačítko.
     SkladaciSekce(
-        title = t("Nastavení úpravy"),
+        title = t("Nastavení"),
         // Klein páčky na věrnost ani vidění předlohy nemá — vypisovat je
         // v souhrnu by tvrdilo, že něco dělají.
         souhrn = if (scene.motor == EditMotor.QWEN21) {

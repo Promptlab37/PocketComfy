@@ -101,6 +101,8 @@ sealed interface GenState {
         val isMusic: Boolean = false,
         /** Hudba jede na YuE2, ne na ACE-Step — jiné fáze i jiné hlášky. */
         val isMusicYue2: Boolean = false,
+        /** Hudba jede na MiniMax Music 3. */
+        val isMusicMm3: Boolean = false,
         /** Předělání nahrávky (YuE2 + SheetSage2) — jiné fáze než nová skladba. */
         val isMusicCover: Boolean = false,
         /** Běh opravuje starou fotku (Qwen 2.1) — texty „Opravuji“. */
@@ -231,6 +233,8 @@ object GenerationEngine {
      */
     @Volatile private var musicYue2: Boolean = false
 
+    @Volatile private var musicMm3: Boolean = false
+
     /**
      * Předělává se nahrávka (YuE2 + SheetSage2)? Proti nové skladbě se liší
      * dvěma fázemi: něco se odesílá a noty se přepisují, ne píšou.
@@ -261,6 +265,9 @@ object GenerationEngine {
     @Volatile private var danceRun: Boolean = false
     @Volatile private var animateRun: Boolean = false
     @Volatile private var interpRun: Boolean = false
+    @Volatile private var scailRun: Boolean = false
+    @Volatile private var cnRun: Boolean = false
+    @Volatile private var berniniRun: Boolean = false
 
     /** Běží Long MiniMax? Jeden záběr na běh, navazuje se přes uložený latent. */
     @Volatile private var longMmRun: Boolean = false
@@ -285,9 +292,13 @@ object GenerationEngine {
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.stageForClass(nodeClasses[node])
         animateRun -> cz.promptlab.h3video.comfy.AnimateBuilder.stageForClass(nodeClasses[node])
         interpRun -> cz.promptlab.h3video.comfy.InterpolaceBuilder.stageForClass(nodeClasses[node])
+        scailRun -> cz.promptlab.h3video.comfy.ScailBuilder.stageForClass(nodeClasses[node])
+        cnRun -> cz.promptlab.h3video.comfy.H3ControlNetBuilder.stageForClass(nodeClasses[node])
+        berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.stageForClass(nodeClasses[node])
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.stageForClass(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.stageForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.stageForClass(nodeClasses[node])
+            else if (musicMm3) cz.promptlab.h3video.comfy.MiniMaxMusic3Builder.stageForClass(nodeClasses[node])
             else AceMusicBuilder.stageForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.stageForClass(nodeClasses[node])
         upscaleRun -> DlssBuilder.stageForClass(nodeClasses[node])
@@ -319,6 +330,9 @@ object GenerationEngine {
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.rangeForClass(nodeClasses[node])
         animateRun -> cz.promptlab.h3video.comfy.AnimateBuilder.rangeForClass(nodeClasses[node])
         interpRun -> cz.promptlab.h3video.comfy.InterpolaceBuilder.rangeForClass(nodeClasses[node])
+        scailRun -> cz.promptlab.h3video.comfy.ScailBuilder.rangeForClass(nodeClasses[node])
+        cnRun -> cz.promptlab.h3video.comfy.H3ControlNetBuilder.rangeForClass(nodeClasses[node])
+        berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.rangeForNode(node, nodeClasses[node])
         // Dva průchody mají vlastní dělení pásma, jinak by ukazatel skákal zpět.
         // Rozlišují se podle ID uzlu — oba jsou `SamplerCustomAdvanced`.
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.rangeForNode(
@@ -327,6 +341,7 @@ object GenerationEngine {
         )
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.rangeForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.rangeForClass(nodeClasses[node])
+            else if (musicMm3) cz.promptlab.h3video.comfy.MiniMaxMusic3Builder.rangeForClass(nodeClasses[node])
             else AceMusicBuilder.rangeForClass(nodeClasses[node])
         t2iRun -> ZImageBuilder.rangeForClass(nodeClasses[node])
         upscaleRun -> DlssBuilder.rangeForClass(nodeClasses[node])
@@ -357,9 +372,13 @@ object GenerationEngine {
         danceRun -> cz.promptlab.h3video.comfy.DanceBuilder.reportsSteps(nodeClasses[node])
         animateRun -> cz.promptlab.h3video.comfy.AnimateBuilder.reportsSteps(nodeClasses[node])
         interpRun -> cz.promptlab.h3video.comfy.InterpolaceBuilder.reportsSteps(nodeClasses[node])
+        scailRun -> cz.promptlab.h3video.comfy.ScailBuilder.reportsSteps(nodeClasses[node])
+        cnRun -> cz.promptlab.h3video.comfy.H3ControlNetBuilder.reportsSteps(nodeClasses[node])
+        berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.reportsSteps(nodeClasses[node])
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.reportsSteps(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.reportsSteps(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.reportsSteps(nodeClasses[node])
+            else if (musicMm3) cz.promptlab.h3video.comfy.MiniMaxMusic3Builder.reportsSteps(nodeClasses[node])
             else AceMusicBuilder.reportsSteps(nodeClasses[node])
         t2iRun -> ZImageBuilder.reportsSteps(nodeClasses[node])
         upscaleRun -> if (chytreBeh()) false
@@ -392,12 +411,25 @@ object GenerationEngine {
     private val zobrazenyPocetKroku: Int
         get() = if (plannedSteps > 0) plannedSteps else srvMax
 
+    /**
+     * Bernini-R má dva vzorkovače za sebou, každý s polovinou kroků a každý
+     * hlásí kroky od nuly. Kroky prvního se proto připočítají k druhému.
+     */
+    private val dvaVzorkovace: Boolean get() = berniniRun && plannedSteps > 1
+
+    private val krokuNaVzorkovac: Int
+        get() = if (dvaVzorkovace) plannedSteps / 2 else plannedSteps
+
+    private val hotoveVzorkovace: Int
+        get() = if (dvaVzorkovace && currentNode == cz.promptlab.h3video.comfy.BerniniBuilder.N_LOW)
+            plannedSteps / 2 else 0
+
     /** Krok přepočtený na to, co uživatel vidí (1..[zobrazenyPocetKroku]). */
     private val displayedStep: Int
         get() = when {
             srvMax <= 0 -> 0
-            plannedSteps > 0 -> Math.ceil(srvStep.toDouble() / srvMax * plannedSteps)
-                .toInt().coerceIn(0, plannedSteps)
+            plannedSteps > 0 -> hotoveVzorkovace + Math.ceil(srvStep.toDouble() / srvMax * krokuNaVzorkovac)
+                .toInt().coerceIn(0, krokuNaVzorkovac)
             else -> srvStep
         }
 
@@ -405,7 +437,7 @@ object GenerationEngine {
     private val displayedSecondsPerStep: Double
         get() = when {
             secPerServerStep <= 0 || srvMax <= 0 -> 0.0
-            plannedSteps > 0 -> secPerServerStep * srvMax / plannedSteps
+            plannedSteps > 0 -> secPerServerStep * srvMax / krokuNaVzorkovac
             else -> secPerServerStep
         }
 
@@ -459,6 +491,12 @@ object GenerationEngine {
         animateScene: cz.promptlab.h3video.data.AnimateScene? = null,
         /** Vylepšit video → Zplynulit: interpolace snímků FILM. */
         interpScene: cz.promptlab.h3video.data.VylepseniScene? = null,
+        /** Upravit video → Vyměnit postavu: SCAIL-2. */
+        scailScene: cz.promptlab.h3video.data.UpravaScene? = null,
+        /** Upravit video → Podle předlohy: MiniMax H3 + Fun ControlNet. */
+        cnScene: cz.promptlab.h3video.data.UpravaScene? = null,
+        /** Upravit video → Podle zadání: Bernini-R. */
+        berniniScene: cz.promptlab.h3video.data.UpravaScene? = null,
     ) {
         if (isRunning) return
         job?.cancel()
@@ -470,6 +508,7 @@ object GenerationEngine {
         t2iRun = t2i
         musicRun = musicScene != null
         musicYue2 = musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2
+        musicMm3 = musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.MM3
         musicCover = musicScene?.predelava == true
         restoreRun = restoreScene != null
         angleRun = angleScene != null
@@ -483,11 +522,14 @@ object GenerationEngine {
         danceRun = danceScene != null
         animateRun = animateScene != null
         interpRun = interpScene != null
+        scailRun = scailScene != null
+        cnRun = cnScene != null
+        berniniRun = berniniScene != null
         longMmRun = longMmScene != null
         longMmRetez = longMmScene
             ?.let { cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(it) }.orEmpty()
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun && !swapRun &&
-            !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun && !longMmRun && !animateRun && !interpRun &&
+            !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun && !longMmRun && !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
         settings.activeEdit = editRun
@@ -495,6 +537,7 @@ object GenerationEngine {
         settings.activeT2i = t2iRun
         settings.activeMusic = musicRun
         settings.activeMusicYue2 = musicYue2
+        settings.activeMusicMm3 = musicMm3
         settings.activeMusicCover = musicCover
         settings.activeRestore = restoreRun
         settings.activeAngle = angleRun
@@ -503,6 +546,16 @@ object GenerationEngine {
         settings.activeLong = longRun
         settings.activeModel3d = model3dRun
         settings.activeLtx = ltxRun
+        settings.activeDruh = when {
+            danceRun -> "dance"
+            animateRun -> "animate"
+            interpRun -> "interp"
+            scailRun -> "scail"
+            cnRun -> "controlnet"
+            berniniRun -> "bernini"
+            longMmRun -> "longmm"
+            else -> ""
+        }
         startedAt = System.currentTimeMillis()
         label = if (restoreScene != null) {
             "Oprava fotky"
@@ -517,6 +570,12 @@ object GenerationEngine {
                 else "")
         } else if (danceScene != null) {
             "Dance · " + danceScene.styl.title + " · " + danceScene.sekundy + " s"
+        } else if (berniniScene != null) {
+            "Podle zadání · " + "%.1f s".format(cz.promptlab.h3video.comfy.BerniniBuilder.sekund(berniniScene))
+        } else if (cnScene != null) {
+            "Podle předlohy · " + cnScene.predlohaDruh.title + " · " + "%.0f s".format(cnScene.predlohaDelka)
+        } else if (scailScene != null) {
+            "Vyměnit postavu"
         } else if (interpScene != null) {
             "Zplynulit · " + interpScene.nasobek + "×" + (if (interpScene.zpomalit) " · zpomaleně" else "")
         } else if (animateScene != null) {
@@ -548,7 +607,7 @@ object GenerationEngine {
                     upscaleScene, t2i, musicScene, restoreScene, angleScene, swapScene,
                     inpaintScene,
                     longScene, model3dScene, ltxScene, danceScene, longMmScene,
-                    animateScene, interpScene,
+                    animateScene, interpScene, scailScene, cnScene, berniniScene,
                 )
             }
                 .onFailure { e ->
@@ -566,6 +625,17 @@ object GenerationEngine {
         // nepustil. Stav Running tak naskočí okamžitě, ne až s prvním hlášením
         // zevnitř běhu.
         publish(Stage.UPLOADING, 0.01f)
+    }
+
+    /** Druh běhu po restartu appky — karty, které nemají vlastní příznak. */
+    private fun obnovDruh(druh: String) {
+        danceRun = druh == "dance"
+        animateRun = druh == "animate"
+        interpRun = druh == "interp"
+        scailRun = druh == "scail"
+        cnRun = druh == "controlnet"
+        berniniRun = druh == "bernini"
+        longMmRun = druh == "longmm"
     }
 
     /** Znovu se přilepí na rozdělanou úlohu po restartu aplikace. */
@@ -599,6 +669,7 @@ object GenerationEngine {
             t2iRun = settings.activeT2i
             musicRun = settings.activeMusic
             musicYue2 = settings.activeMusicYue2
+            musicMm3 = settings.activeMusicMm3
             musicCover = settings.activeMusicCover
             restoreRun = settings.activeRestore
             angleRun = settings.activeAngle
@@ -607,10 +678,13 @@ object GenerationEngine {
             longRun = settings.activeLong
             model3dRun = settings.activeModel3d
             ltxRun = settings.activeLtx
+            obnovDruh(settings.activeDruh)
             aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun &&
-                !swapRun && !inpaintRun && !longRun && !model3dRun && !ltxRun && settings.activeAio
+                !swapRun && !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun &&
+                !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun && !longMmRun && settings.activeAio
             nodeClasses = if (aioRun || editRun || upscaleRun || t2iRun || musicRun ||
-                restoreRun || angleRun || swapRun || inpaintRun || longRun || model3dRun || ltxRun
+                restoreRun || angleRun || swapRun || inpaintRun || longRun || model3dRun || ltxRun ||
+                danceRun || animateRun || interpRun || scailRun || cnRun || berniniRun || longMmRun
             ) {
                 withContext(Dispatchers.IO) {
                     runCatching {
@@ -687,6 +761,7 @@ object GenerationEngine {
         t2iRun = settings.activeT2i
         musicRun = settings.activeMusic
         musicYue2 = settings.activeMusicYue2
+        musicMm3 = settings.activeMusicMm3
         musicCover = settings.activeMusicCover
         restoreRun = settings.activeRestore
         angleRun = settings.activeAngle
@@ -695,8 +770,10 @@ object GenerationEngine {
         longRun = settings.activeLong
         model3dRun = settings.activeModel3d
         ltxRun = settings.activeLtx
+        obnovDruh(settings.activeDruh)
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun &&
-            !swapRun && !inpaintRun && !longRun && !model3dRun && !ltxRun && settings.activeAio
+            !swapRun && !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun &&
+            !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun && !longMmRun && settings.activeAio
         label = settings.activeLabel
         startedAt = System.currentTimeMillis()
         // Službu na popředí nesmí appka odnést pádem, když ji systém odmítne
@@ -742,6 +819,9 @@ object GenerationEngine {
         longMmScene: cz.promptlab.h3video.data.LongMmScene? = null,
         animateScene: cz.promptlab.h3video.data.AnimateScene? = null,
         interpScene: cz.promptlab.h3video.data.VylepseniScene? = null,
+        scailScene: cz.promptlab.h3video.data.UpravaScene? = null,
+        cnScene: cz.promptlab.h3video.data.UpravaScene? = null,
+        berniniScene: cz.promptlab.h3video.data.UpravaScene? = null,
     ) {
         val client = ComfyClient(settings.serverUrl)
 
@@ -775,9 +855,17 @@ object GenerationEngine {
                 danceScene != null ||
                 // Wan Animate: model má 16,7 GB, víc než celá karta.
                 animateScene != null ||
+                // Vyměnit postavu: SCAIL-2 14B má v int8 16,7 GB.
+                scailScene != null ||
+                // Podle předlohy: MiniMax H3 + ControlNet, stejně těžké jako H3.
+                cnScene != null ||
+                // Podle zadání: Bernini-R, dva modely Wan 2.2 14B po 14,5 GB.
+                berniniScene != null ||
                 // Long MiniMax jede na stejných vahách jako dlouhé video.
                 longMmScene != null ||
-                musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2,
+                musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2 ||
+                // MiniMax Music 3: enkodér 9,2 GB + model 4,9 GB.
+                musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.MM3,
         )
 
         // --- 0b3. složka temp na serveru. Uzly, které streamují dekódování po
@@ -808,6 +896,9 @@ object GenerationEngine {
             ltxScene != null -> null       // dtto
             animateScene != null -> null   // dtto
             interpScene != null -> null    // dtto
+            scailScene != null -> null     // dtto
+            cnScene != null -> null        // dtto
+            berniniScene != null -> null   // dtto
             aioScene != null -> aioScene.sablona
             params.mode == cz.promptlab.h3video.data.Mode.TALK -> "r2v.json"
             else -> null
@@ -858,6 +949,12 @@ object GenerationEngine {
         val animateVideo = animateScene?.video
             ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
         val interpVideo = interpScene?.video
+            ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
+        val scailVideo = scailScene?.video
+            ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
+        val cnVideo = cnScene?.video
+            ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
+        val berniniVideo = berniniScene?.video
             ?.let { uploadMediaWithRetry(client, it, 0.05f) }.orEmpty()
         // Namluvené repliky (dialogy). Pořadí je závazné – podle něj se
         // v promptu číslují značky <Audio N>.
@@ -949,6 +1046,22 @@ object GenerationEngine {
                     app, danceScene, seed, names.firstOrNull().orEmpty(), danceHudba,
                 )
 
+            // Upravit video → Podle zadání: Bernini-R z APK.
+            berniniScene != null ->
+                cz.promptlab.h3video.comfy.BerniniBuilder.build(
+                    app, berniniScene, seed, berniniVideo, names.firstOrNull(),
+                )
+
+            // Upravit video → Podle předlohy: MiniMax H3 + Fun ControlNet z APK.
+            cnScene != null ->
+                cz.promptlab.h3video.comfy.H3ControlNetBuilder.build(app, cnScene, seed, cnVideo)
+
+            // Upravit video → Vyměnit postavu: SCAIL-2 z APK.
+            scailScene != null ->
+                cz.promptlab.h3video.comfy.ScailBuilder.build(
+                    app, scailScene, seed, names.firstOrNull().orEmpty(), scailVideo,
+                )
+
             // Vylepšit video → Zplynulit: interpolace FILM z APK.
             interpScene != null ->
                 cz.promptlab.h3video.comfy.InterpolaceBuilder.build(app, interpScene, interpVideo)
@@ -968,10 +1081,13 @@ object GenerationEngine {
 
             // Hudba: buď uživatelovo ACE-Step 1.5 workflow, nebo oficiální
             // předloha YuE2 — obojí z APK, obojí končí u MP3.
-            musicScene != null ->
-                if (musicScene.motor == cz.promptlab.h3video.data.MusicMotor.YUE2)
+            musicScene != null -> when (musicScene.motor) {
+                cz.promptlab.h3video.data.MusicMotor.YUE2 ->
                     Yue2MusicBuilder.build(app, musicScene, seed, hudbaPredloha)
-                else AceMusicBuilder.build(app, musicScene, seed)
+                cz.promptlab.h3video.data.MusicMotor.MM3 ->
+                    cz.promptlab.h3video.comfy.MiniMaxMusic3Builder.build(app, musicScene, seed)
+                cz.promptlab.h3video.data.MusicMotor.ACE -> AceMusicBuilder.build(app, musicScene, seed)
+            }
 
             // Úhel kamery: Qwen Image Edit 2511 s LoRA multiple-angles.
             // Schopnost změnit pohled je v TÉ LORA, ne v základním modelu —
@@ -1095,6 +1211,12 @@ object GenerationEngine {
             cz.promptlab.h3video.comfy.AnimateBuilder.nodeClasses(workflow)
         if (interpScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.InterpolaceBuilder.nodeClasses(workflow)
+        if (scailScene != null) nodeClasses =
+            cz.promptlab.h3video.comfy.ScailBuilder.nodeClasses(workflow)
+        if (cnScene != null) nodeClasses =
+            cz.promptlab.h3video.comfy.H3ControlNetBuilder.nodeClasses(workflow)
+        if (berniniScene != null) nodeClasses =
+            cz.promptlab.h3video.comfy.BerniniBuilder.nodeClasses(workflow)
 
         val promptId = UUID.randomUUID().toString().lowercase()
         // Značka do logu: od téhle chvíle patří hlášky uzlů našemu běhu.
@@ -2027,7 +2149,9 @@ object GenerationEngine {
         }
         if (!reportsSteps(currentNode)) return null
         if (secPerServerStep <= 0.0 || srvMax <= 0) return null
-        val remaining = (srvMax - srvStep).coerceAtLeast(0)
+        // U Bernini čeká po prvním vzorkovači ještě druhý se stejným počtem kroků.
+        val zbyvaVzorkovac = if (dvaVzorkovace && currentNode == cz.promptlab.h3video.comfy.BerniniBuilder.N_HIGH) srvMax else 0
+        val remaining = (srvMax - srvStep).coerceAtLeast(0) + zbyvaVzorkovac
         // dekódování obrazu i zvuku a složení videa po vzorkování; u změřeného
         // ostrého běhu to bylo kolem minuty, proto strop 90 s
         val tail = (0.05 * srvMax * secPerServerStep).coerceAtMost(90.0)
@@ -2089,6 +2213,7 @@ object GenerationEngine {
             isT2i = t2iRun,
             isMusic = musicRun,
             isMusicYue2 = musicRun && musicYue2,
+            isMusicMm3 = musicRun && musicMm3,
             isMusicCover = musicRun && musicCover,
             isRestore = restoreRun,
             isAngle = angleRun,

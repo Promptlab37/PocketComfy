@@ -85,7 +85,7 @@ fun LongMmSection(vm: MainViewModel) {
         if (scene.rezim == LongMmRezim.NAVAZANI) vm.predvyberLongMmZdroj()
     }
 
-    SectionCard(title = t("Co se dělá"), subtitle = scene.rezim.popis) {
+    SectionCard(title = t("Co udělat"), subtitle = scene.rezim.popis) {
       Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PillRow(
             items = LongMmRezim.entries.toList(),
@@ -124,25 +124,13 @@ fun LongMmSection(vm: MainViewModel) {
                 label = { it.title },
                 onSelect = { vm.setLongMmModel(it) },
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    t("Kroky"),
-                    style = MaterialTheme.typography.labelMedium, color = TextLow,
-                )
-                androidx.compose.material3.Slider(
-                    value = scene.kroky.toFloat(),
-                    onValueChange = { vm.setLongMmKroky(Math.round(it)) },
-                    valueRange = LongMmScene.MIN_KROKU.toFloat()..LongMmScene.MAX_KROKU.toFloat(),
-                    steps = LongMmScene.MAX_KROKU - LongMmScene.MIN_KROKU - 1,
-                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                    colors = sliderColors(),
-                )
-                Text(
-                    "${scene.kroky}",
-                    style = MaterialTheme.typography.labelMedium, color = TextMid,
-                    modifier = Modifier.width(26.dp),
-                )
-            }
+            LabeledSlider(
+                label = t("Kroky"),
+                value = "${scene.kroky}",
+                position = scene.kroky.toFloat(),
+                range = LongMmScene.MIN_KROKU.toFloat()..LongMmScene.MAX_KROKU.toFloat(),
+                onChange = { vm.setLongMmKroky(Math.round(it)) },
+            )
             // Přepínač „Dva průchody" tu byl a je pryč (4.24). Zapnutý
             // u Turba dal rozmazaný obraz s artefakty — sigmy zjemnění
             // jsou součást receptu pro LoRA TaoMate, ne obecná volba.
@@ -166,47 +154,23 @@ fun LongMmSection(vm: MainViewModel) {
             // Ostrost detailů. Autorovo vlastní ovládání (Detail Daemon),
             // které jsme měli celou dobu na nule — a výsledky vypadaly
             // „trochu mázle". V nápovědě uzlu doporučuje 0,1–0,3.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    t("Ostrost detailů"),
-                    style = MaterialTheme.typography.labelMedium, color = TextLow,
-                )
-                androidx.compose.material3.Slider(
-                    value = scene.ostrost,
-                    onValueChange = { vm.setLongMmOstrost(Math.round(it * 20f) / 20f) },
-                    valueRange = -0.5f..0.5f,
-                    steps = 19,
-                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                    colors = sliderColors(),
-                )
-                Text(
-                    if (scene.ostrost == 0f) t("vyp") else "%+.2f".format(scene.ostrost),
-                    style = MaterialTheme.typography.labelMedium, color = TextMid,
-                    modifier = Modifier.width(46.dp),
-                )
-            }
+            LabeledSlider(
+                label = t("Ostrost detailů"),
+                value = if (scene.ostrost == 0f) t("vyp") else "%+.2f".format(scene.ostrost),
+                position = scene.ostrost,
+                range = -0.5f..0.5f,
+                onChange = { vm.setLongMmOstrost(Math.round(it * 20f) / 20f) },
+            )
             // Vlastní posuvník, ne sdílený: ten jede od 0,5 a tady je potřeba
             // dosáhnout i na nulu (= bez LoRA) a na rozsah 0,2–0,6, který
             // u konceptových LoRA doporučuje autor modelu Eros.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    t("Síla LoRA"),
-                    style = MaterialTheme.typography.labelMedium, color = TextLow,
-                )
-                androidx.compose.material3.Slider(
-                    value = scene.silaLory,
-                    onValueChange = { vm.setLongMmLoraSila(Math.round(it * 20f) / 20f) },
-                    valueRange = 0f..1.2f,
-                    steps = 23,
-                    modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-                    colors = sliderColors(),
-                )
-                Text(
-                    if (scene.silaLory <= 0f) t("bez") else "%.2f".format(scene.silaLory),
-                    style = MaterialTheme.typography.labelMedium, color = TextMid,
-                    modifier = Modifier.width(38.dp),
-                )
-            }
+            LabeledSlider(
+                label = t("Síla LoRA"),
+                value = if (scene.silaLory <= 0f) t("bez") else "%.2f".format(scene.silaLory),
+                position = scene.silaLory,
+                range = 0f..1.2f,
+                onChange = { vm.setLongMmLoraSila(Math.round(it * 20f) / 20f) },
+            )
         }
     }
 
@@ -393,34 +357,26 @@ fun LongMmSection(vm: MainViewModel) {
             // Tentýž přepisovač, na kterém jede All in One: psací příručky
             // MiniMaxu zná, takže z pár českých slov udělá zadání v tvaru,
             // na který je H3 trénovaný.
-            OutlineButton(
-                text = if (prepisujeSe) t("Přepisuji…") else t("✨ Vylepšit zadání"),
-                color = Cyan,
-                modifier = Modifier.fillMaxWidth(),
-            ) { if (!prepisujeSe) vm.vylepsiLongMmPrompt() }
+            // Vylepšit, Přeložit a „Vrátit původní" v jedné řadě jako na
+            // ostatních kartách.
+            PrekladPromptu(vm, MainViewModel.PromptPole.LONGMM, vylepseni = {
+                OutlineButton(
+                    text = if (prepisujeSe) t("Přepisuji…") else t("✨ Vylepšit"),
+                    color = Cyan,
+                ) { if (!prepisujeSe) vm.vylepsiLongMmPrompt() }
+            })
             PrubehPrepisu(vm)
-            // Překlad do angličtiny a hlavně „Vrátit původní" — po vylepšení
-            // se zadání přepíše a bez tohohle by se k němu člověk nedostal.
-            PrekladPromptu(vm, MainViewModel.PromptPole.LONGMM)
         }
     }
 
-    SectionCard(title = t("Délka záběru"), subtitle = t("Týká se jen tohohle kusu, ne celku")) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            androidx.compose.material3.Slider(
-                value = scene.sekundy.toFloat(),
-                onValueChange = { vm.setLongMmSekundy(Math.round(it)) },
-                valueRange = LongMmScene.MIN_S.toFloat()..LongMmScene.MAX_S.toFloat(),
-                steps = LongMmScene.MAX_S - LongMmScene.MIN_S - 1,
-                modifier = Modifier.weight(1f),
-                colors = sliderColors(),
-            )
-            Text(
-                "%d s".format(scene.sekundy),
-                style = MaterialTheme.typography.labelMedium, color = TextMid,
-                modifier = Modifier.width(44.dp).padding(start = 10.dp),
-            )
-        }
+    SectionCard(title = t("Délka záběru")) {
+        LabeledSlider(
+            label = t("Sekundy"),
+            value = "%d s".format(scene.sekundy),
+            position = scene.sekundy.toFloat(),
+            range = LongMmScene.MIN_S.toFloat()..LongMmScene.MAX_S.toFloat(),
+            onChange = { vm.setLongMmSekundy(Math.round(it)) },
+        )
     }
 
     // Jméno se zadává jen tam, kde řetěz vzniká. Při navazování ho určuje

@@ -1,0 +1,328 @@
+{
+ "901": {
+  "class_type": "VHS_LoadVideo",
+  "inputs": {
+   "video": "",
+   "force_rate": 24.0,
+   "custom_width": 0,
+   "custom_height": 864,
+   "frame_load_cap": 124,
+   "skip_first_frames": 0,
+   "select_every_nth": 1,
+   "format": "None"
+  },
+  "_meta": {
+   "title": "Predloha"
+  }
+ },
+ "800": {
+  "class_type": "Canny",
+  "inputs": {
+   "image": [
+    "901",
+    0
+   ],
+   "low_threshold": 0.4,
+   "high_threshold": 0.8
+  },
+  "_meta": {
+   "title": "Obrysy"
+  }
+ },
+ "810": {
+  "class_type": "ResizeImageMaskNode",
+  "inputs": {
+   "input": [
+    "901",
+    0
+   ],
+   "resize_type": "scale longer dimension",
+   "resize_type.longer_size": 1024,
+   "scale_method": "lanczos"
+  }
+ },
+ "811": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "sdpose_wholebody_fp16.safetensors"
+  }
+ },
+ "812": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "rt_detr_v4-x-hgnet_fp16.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "813": {
+  "class_type": "RTDETR_detect",
+  "inputs": {
+   "model": [
+    "812",
+    0
+   ],
+   "image": [
+    "810",
+    0
+   ],
+   "threshold": 0.51,
+   "class_name": "person",
+   "max_detections": 2
+  }
+ },
+ "814": {
+  "class_type": "SDPoseKeypointExtractor",
+  "inputs": {
+   "model": [
+    "811",
+    0
+   ],
+   "vae": [
+    "811",
+    2
+   ],
+   "image": [
+    "810",
+    0
+   ],
+   "batch_size": 16,
+   "bboxes": [
+    "813",
+    0
+   ]
+  }
+ },
+ "815": {
+  "class_type": "SDPoseDrawKeypoints",
+  "inputs": {
+   "keypoints": [
+    "814",
+    0
+   ],
+   "draw_body": true,
+   "draw_hands": true,
+   "draw_face": true,
+   "draw_feet": true,
+   "stick_width": 4,
+   "face_point_size": 2,
+   "score_threshold": 0.5,
+   "draw_head": true
+  },
+  "_meta": {
+   "title": "Poza"
+  }
+ },
+ "127": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "minimax_h3_ref2va_pruned_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "145": {
+  "class_type": "LoraLoaderModelOnly",
+  "inputs": {
+   "model": [
+    "127",
+    0
+   ],
+   "lora_name": "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
+   "strength_model": 1.0
+  },
+  "_meta": {
+   "title": "Rychle"
+  }
+ },
+ "173": {
+  "class_type": "ModelPatchLoader",
+  "inputs": {
+   "name": "minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors"
+  }
+ },
+ "119": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "minimax_h3_video_vae_int8_convrot.safetensors"
+  }
+ },
+ "120": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "minimax_h3_audio_vae_fp32.safetensors"
+  }
+ },
+ "172": {
+  "class_type": "MiniMaxH3FunControlNetApply",
+  "inputs": {
+   "model": [
+    "145",
+    0
+   ],
+   "model_patch": [
+    "173",
+    0
+   ],
+   "vae": [
+    "119",
+    0
+   ],
+   "control_video": [
+    "800",
+    0
+   ],
+   "strength": 1.0,
+   "start_percent": 0.0,
+   "end_percent": 1.0
+  }
+ },
+ "128": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3vl_32b_minimax_h3_int8_convrot.safetensors",
+   "type": "minimax",
+   "device": "default"
+  }
+ },
+ "136": {
+  "class_type": "MiniMaxH3ReferenceToVideo",
+  "inputs": {
+   "clip": [
+    "128",
+    0
+   ],
+   "vae": [
+    "119",
+    0
+   ],
+   "audio_vae": [
+    "120",
+    0
+   ],
+   "prompt": "",
+   "width": 864,
+   "height": 480,
+   "length": 124,
+   "ref_image_size": "match"
+  },
+  "_meta": {
+   "title": "Zadani"
+  }
+ },
+ "129": {
+  "class_type": "RandomNoise",
+  "inputs": {
+   "noise_seed": 0
+  }
+ },
+ "123": {
+  "class_type": "KSamplerSelect",
+  "inputs": {
+   "sampler_name": "res_multistep"
+  }
+ },
+ "124": {
+  "class_type": "BasicScheduler",
+  "inputs": {
+   "model": [
+    "172",
+    0
+   ],
+   "scheduler": "simple",
+   "steps": 4,
+   "denoise": 1.0
+  }
+ },
+ "126": {
+  "class_type": "BasicGuider",
+  "inputs": {
+   "model": [
+    "172",
+    0
+   ],
+   "conditioning": [
+    "136",
+    0
+   ]
+  }
+ },
+ "125": {
+  "class_type": "SamplerCustomAdvanced",
+  "inputs": {
+   "noise": [
+    "129",
+    0
+   ],
+   "guider": [
+    "126",
+    0
+   ],
+   "sampler": [
+    "123",
+    0
+   ],
+   "sigmas": [
+    "124",
+    0
+   ],
+   "latent_image": [
+    "136",
+    1
+   ]
+  }
+ },
+ "122": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "125",
+    0
+   ],
+   "vae": [
+    "119",
+    0
+   ]
+  }
+ },
+ "121": {
+  "class_type": "VAEDecodeAudio",
+  "inputs": {
+   "samples": [
+    "125",
+    0
+   ],
+   "vae": [
+    "120",
+    0
+   ]
+  }
+ },
+ "130": {
+  "class_type": "CreateVideo",
+  "inputs": {
+   "images": [
+    "122",
+    0
+   ],
+   "audio": [
+    "121",
+    0
+   ],
+   "fps": 24.0
+  }
+ },
+ "911": {
+  "class_type": "SaveVideo",
+  "inputs": {
+   "video": [
+    "130",
+    0
+   ],
+   "filename_prefix": "PocketPredloha",
+   "format": "auto",
+   "codec": "auto"
+  },
+  "_meta": {
+   "title": "Hotove video"
+  }
+ }
+}

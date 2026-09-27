@@ -172,7 +172,7 @@ fun LongVideoSection(vm: MainViewModel) {
         trailing = {
             Text(
                 "%.0f s".format(scene.odhadSekund),
-                style = MaterialTheme.typography.headlineSmall, color = Cyan
+                style = MaterialTheme.typography.titleMedium, color = Cyan
             )
         }
     ) {

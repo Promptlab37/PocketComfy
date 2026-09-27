@@ -27,11 +27,17 @@ object NodeWarnings {
      *    v `qwen_3_8b_fp8mixed.safetensors` klíč `lm_head` opravdu není
      *    (ověřeno v hlavičce souboru, 935 klíčů) a být nemá — z enkodéru se
      *    berou skryté stavy, ne slova. ComfyUI to jen ohlásí a jede dál.
+     * 4. `No VAE weights detected, VAE not initalized.` — SAM 3.1 (Přemalovat,
+     *    Vyměnit postavu) se načítá přes CheckpointLoaderSimple a VAE nemá:
+     *    `sam3.1_multiplex_fp16.safetensors` má jen klíče `detector.*`
+     *    a `tracker.*` (1590 klíčů, ověřeno v hlavičce 27. 9. 2026) a grafy
+     *    z něj berou jen model a clip.
      */
     private val NESKODNE = listOf(
         Regex("""lora .*img_in\.weight shape .* is invalid for input of size""", RegexOption.IGNORE_CASE),
         Regex("""clip missing: \['text_projection\.weight'\]""", RegexOption.IGNORE_CASE),
         Regex("""Missing weight for layer model\.lm_head""", RegexOption.IGNORE_CASE),
+        Regex("""No VAE weights detected, VAE not initalized""", RegexOption.IGNORE_CASE),
     )
 
     /** Je hláška známá a neškodná (tedy se uživateli neukazuje)? */

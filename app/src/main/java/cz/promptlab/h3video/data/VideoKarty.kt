@@ -6,7 +6,26 @@ import java.io.File
 
 /** Režim karty Upravit video. */
 enum class UpravaRezim(private val titleCs: String) {
-    PREMALOVAT("Přemalovat");
+    PREMALOVAT("Přemalovat"),
+    POSTAVA("Vyměnit postavu"),
+    PREDLOHA("Podle předlohy"),
+    ZADANI("Podle zadání");
+
+    val title: String get() = t(titleCs)
+}
+
+/** Co se z videa bere jako předloha pro nové video (Fun ControlNet). */
+enum class PredlohaDruh(private val titleCs: String) {
+    OBRYSY("Obrysy"),
+    POZA("Póza");
+
+    val title: String get() = t(titleCs)
+}
+
+/** Čím se vyměňuje postava ve videu. */
+enum class PostavaMotor(private val titleCs: String) {
+    SCAIL("SCAIL-2"),
+    H3("MiniMax H3");
 
     val title: String get() = t(titleCs)
 }
@@ -48,9 +67,86 @@ data class UpravaScene(
     val refs: List<AioSlot> = listOf(AioSlot(key = 1)),
     /** Přemalovat: kolik sekund od začátku videa zpracovat. */
     val sekundy: Float = 5f,
+    /** Vyměnit postavu: fotka nové postavy. */
+    val postava: File? = null,
+    val postavaNahled: android.graphics.Bitmap? = null,
+    /** Vyměnit postavu: koho ve videu (SAM 3 podle textu, anglicky). */
+    val kohoVymenit: String = "",
+    /** Je video na výšku? Podle toho se volí plátno. */
+    val naVysku: Boolean = true,
+    /** Délka videa v sekundách (0 = neznámá). */
+    val videoSekund: Float = 0f,
+    val motorPostavy: PostavaMotor = PostavaMotor.SCAIL,
+    /** Podle předlohy: co se z videa bere a jestli rychle (4 kroky). */
+    val predlohaDruh: PredlohaDruh = PredlohaDruh.POZA,
+    val predlohaRychle: Boolean = true,
+    /** Podle předlohy: kolik sekund videa (vlastní pole, ne [sekundy] Přemalovat). */
+    val predlohaSekundy: Float = PREDLOHA_MIN_S,
+    /** Podle zadání (Bernini-R): turbo LoRA a 6 kroků, nebo 40 bez ní. */
+    val zadaniRychle: Boolean = true,
+    /** Podle zadání: nepovinná fotka jako reference (vlastní, ne fotka nové postavy). */
+    val zadaniReference: File? = null,
+    val zadaniReferenceNahled: android.graphics.Bitmap? = null,
+    /** Rozměry (po otočení) a počet snímků videa; 0 = neznámé. */
+    val videoSirka: Int = 0,
+    val videoVyska: Int = 0,
+    val videoSnimku: Int = 0,
 ) {
     val refsWithImage: List<AioSlot> get() = refs.filter { it.image != null }
     val canAddRef: Boolean get() = refs.size < AioScene.MAX_REFS
+
+    /** Fotky, které se nahrávají — podle režimu. */
+    val uploadImages: List<File>
+        get() = when (rezim) {
+            UpravaRezim.PREMALOVAT -> doAio().uploadImages
+            UpravaRezim.POSTAVA -> listOfNotNull(postava)
+            UpravaRezim.PREDLOHA -> emptyList()
+            // Fotka je u zadání nepovinná reference (úloha rv2v).
+            UpravaRezim.ZADANI -> listOfNotNull(zadaniReference)
+        }
+
+    companion object {
+        /** Koho hledat, když uživatel nic nenapíše — výchozí hodnota předlohy. */
+        const val KOHO_VYCHOZI = "human"
+        /** H3 Character Swap: tvar zadání z návodu LoRA („Replace only the person…"). */
+        const val KOHO_VYCHOZI_H3 = "person"
+        /** H3 Ref2VA bere referenční video 2–15 s. */
+        const val H3_MAX_S = 15f
+        const val SWAP_LORA = "h3_character_swap_pro4500_1000.safetensors"
+        /** Podle předlohy: MiniMax H3 bere 5–15 s. */
+        const val PREDLOHA_MIN_S = 5f
+        const val PREDLOHA_MAX_S = 15f
+    }
+
+    /** Podle předlohy: nejdelší volitelný úsek — 15 s, nebo celé kratší video. */
+    val predlohaMax: Float
+        get() = if (videoSekund > 0f) videoSekund.coerceIn(PREDLOHA_MIN_S, PREDLOHA_MAX_S) else PREDLOHA_MAX_S
+
+    /** Podle předlohy: sekundy, které se opravdu použijí. */
+    val predlohaDelka: Float get() = predlohaSekundy.coerceIn(PREDLOHA_MIN_S, predlohaMax)
+
+    /**
+     * Vyměnit postavu motorem MiniMax H3: Reference se zdrojovým videem
+     * `<Video 1>` a fotkou `<Picture 1>` + LoRA H3 Character Swap. Zadání má
+     * tvar z návodu LoRA (akatz-ai/MiniMax-H3-Character-Swap-LoRA).
+     */
+    fun doSwapAio(): AioScene {
+        val koho = kohoVymenit.trim().ifEmpty { KOHO_VYCHOZI_H3 }
+        val zadani = buildString {
+            append("Replace only the $koho in <Video 1> with the character in <Picture 1>. ")
+            append("Keep the motion, pose and timing from <Video 1>. ")
+            append("Preserve the source video's camera, background, lighting and other people.")
+            popis.trim().takeIf { it.isNotEmpty() }?.let { append(" ").append(it) }
+        }
+        return AioScene(
+            mode = AioMode.REFERENCE,
+            prompt = zadani,
+            seconds = (if (videoSekund > 0f) videoSekund else 5f).coerceIn(2f, H3_MAX_S),
+            refs = listOf(AioSlot(key = 1, image = postava)),
+            refVideo = video,
+            kotva = false,
+        )
+    }
 
     /** Úloha pro šablonu balíku All in One. */
     fun doAio(): AioScene = AioScene(
@@ -122,6 +218,19 @@ fun upravaProblem(s: UpravaScene): String? = when {
     s.video == null -> t("Vyber video, které se má upravit.")
     else -> when (s.rezim) {
         UpravaRezim.PREMALOVAT -> aioProblem(s.doAio())
+        UpravaRezim.POSTAVA -> when {
+            s.postava == null -> t("Vyber fotku nové postavy.")
+            s.motorPostavy == PostavaMotor.H3 && s.videoSekund > UpravaScene.H3_MAX_S ->
+                t("MiniMax H3 bere video nejvýš 15 s. Zkrať ho, nebo zvol SCAIL-2.")
+            else -> null
+        }
+        UpravaRezim.PREDLOHA -> when {
+            s.videoSekund in 0.01f..(UpravaScene.PREDLOHA_MIN_S - 0.05f) -> t("Video je kratší než 5 s.")
+            s.popis.isBlank() -> t("Napiš, co má ve videu být.")
+            else -> null
+        }
+        UpravaRezim.ZADANI ->
+            if (s.popis.isBlank()) t("Napiš, co se má ve videu změnit.") else null
     }
 }
 
@@ -146,6 +255,10 @@ class VideoKartyStore(private val ctx: Context) {
 
     fun refFile(key: Int): File = File(dir(), "ref_$key.jpg")
 
+    fun postavaFile(): File = File(dir(), "postava.png")
+
+    fun zadaniReferenceFile(): File = File(dir(), "zadani_reference.png")
+
     private fun soubor(cesta: String): File? =
         cesta.takeIf { it.isNotBlank() }?.let { File(it) }?.takeIf { it.exists() }
 
@@ -166,6 +279,22 @@ class VideoKartyStore(private val ctx: Context) {
             maskObjects = j.optInt("maskObjects", 1).coerceIn(1, 3),
             refs = refs,
             sekundy = j.optDouble("sekundy", 5.0).toFloat().coerceIn(2f, 15f),
+            postava = soubor(j.optString("postava")),
+            kohoVymenit = j.optString("kohoVymenit"),
+            naVysku = j.optBoolean("naVysku", true),
+            videoSekund = j.optDouble("videoSekund", 0.0).toFloat(),
+            motorPostavy = runCatching { PostavaMotor.valueOf(j.optString("motorPostavy")) }
+                .getOrDefault(PostavaMotor.SCAIL),
+            predlohaDruh = runCatching { PredlohaDruh.valueOf(j.optString("predlohaDruh")) }
+                .getOrDefault(PredlohaDruh.POZA),
+            predlohaRychle = j.optBoolean("predlohaRychle", true),
+            zadaniRychle = j.optBoolean("zadaniRychle", true),
+            zadaniReference = soubor(j.optString("zadaniReference")),
+            predlohaSekundy = j.optDouble("predlohaSekundy", 5.0).toFloat()
+                .coerceIn(UpravaScene.PREDLOHA_MIN_S, UpravaScene.PREDLOHA_MAX_S),
+            videoSirka = j.optInt("videoSirka", 0),
+            videoVyska = j.optInt("videoVyska", 0),
+            videoSnimku = j.optInt("videoSnimku", 0),
         )
     }.getOrDefault(UpravaScene())
 
@@ -184,6 +313,19 @@ class VideoKartyStore(private val ctx: Context) {
                 .put("maskObjects", s.maskObjects)
                 .put("refs", refs)
                 .put("sekundy", s.sekundy.toDouble())
+                .put("postava", s.postava?.absolutePath ?: "")
+                .put("kohoVymenit", s.kohoVymenit)
+                .put("naVysku", s.naVysku)
+                .put("videoSekund", s.videoSekund.toDouble())
+                .put("motorPostavy", s.motorPostavy.name)
+                .put("predlohaDruh", s.predlohaDruh.name)
+                .put("predlohaRychle", s.predlohaRychle)
+                .put("zadaniRychle", s.zadaniRychle)
+                .put("zadaniReference", s.zadaniReference?.absolutePath ?: "")
+                .put("predlohaSekundy", s.predlohaSekundy.toDouble())
+                .put("videoSirka", s.videoSirka)
+                .put("videoVyska", s.videoVyska)
+                .put("videoSnimku", s.videoSnimku)
                 .toString()
         ).apply()
     }

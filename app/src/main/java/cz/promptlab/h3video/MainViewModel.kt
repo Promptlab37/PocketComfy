@@ -753,7 +753,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // All in One i Dialogy jedou na šablonách balíku ze serveru – když tam
         // balík prokazatelně chybí, ať to uživatel ví hned, ne až po nahrání fotek.
         // Balík ALLinONE potřebují jen karty All in One a Dialogy.
-        val naAio = p.mode == Mode.ALLINONE || p.mode == Mode.TALK || p.mode == Mode.UPRAVA_VIDEA ||
+        val naAio = p.mode == Mode.ALLINONE || p.mode == Mode.TALK ||
+            (p.mode == Mode.UPRAVA_VIDEA &&
+                (_uprava.value.rezim == cz.promptlab.h3video.data.UpravaRezim.PREMALOVAT ||
+                    _uprava.value.motorPostavy == cz.promptlab.h3video.data.PostavaMotor.H3)) ||
             (p.mode == Mode.VYLEPSENI_VIDEA &&
                 _vylepseni.value.rezim == cz.promptlab.h3video.data.VylepseniRezim.ZVETSIT)
         if (naAio && _aioAvailable.value == false) {
@@ -877,7 +880,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (p.mode == Mode.DANCE) return cz.promptlab.h3video.data.danceHints(_dance.value)
         if (p.mode == Mode.ANIMATE) return emptyList()
         if (p.mode == Mode.POHYB) return hints(p.copy(mode = _pohyb.value.karta))
-        if (p.mode == Mode.UPRAVA_VIDEA) return aioHints(_uprava.value.doAio(), p)
+        if (p.mode == Mode.UPRAVA_VIDEA) return when (_uprava.value.rezim) {
+            cz.promptlab.h3video.data.UpravaRezim.PREMALOVAT -> aioHints(_uprava.value.doAio(), p)
+            cz.promptlab.h3video.data.UpravaRezim.POSTAVA -> emptyList()
+            cz.promptlab.h3video.data.UpravaRezim.PREDLOHA -> emptyList()
+            cz.promptlab.h3video.data.UpravaRezim.ZADANI -> emptyList()
+        }
         if (p.mode == Mode.VYLEPSENI_VIDEA) return emptyList()
         if (p.mode == Mode.LONGMM) return cz.promptlab.h3video.data.longMmHints(_longMm.value)
         if (p.mode == Mode.RESTORE) return emptyList()
@@ -950,11 +958,73 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // Vše jde přes frontu: když je volno, spustí se hned; když se generuje,
         // běh počká se zadáním zmrazeným teď (prompt, volby; náhodný seed se
         // losuje až při startu běhu, takže série dá pokaždé jiný výsledek).
+        val cekaVeFronte = GenerationEngine.isRunning || RunQueue.queue.value.isNotEmpty()
+        val karta = if (p.mode == Mode.POHYB) _pohyb.value.karta else p.mode
+        if (cekaVeFronte && karta in KARTY_SE_SOUBORY) {
+            // Soubory karty (video, fotky, hudba) se při dalším výběru
+            // přepisují na stejném místě. Běh, který čeká, by pak nahrál
+            // to nové — proto dostane vlastní kopie.
+            viewModelScope.launch {
+                val zmrazene = withContext(Dispatchers.IO) { zmrazSoubory(karta) }
+                RunQueue.add(makeRunner(p, zmrazene))
+            }
+            return
+        }
         RunQueue.add(makeRunner(p))
     }
 
+    /** Karty, jejichž vstupní soubory se musí pro frontu zkopírovat. */
+    private val KARTY_SE_SOUBORY = setOf(Mode.UPRAVA_VIDEA, Mode.VYLEPSENI_VIDEA, Mode.ANIMATE, Mode.DANCE)
+
+    /** Scény s vlastními kopiemi souborů pro běh, který čeká ve frontě. */
+    private data class ZmrazeneSceny(
+        val uprava: cz.promptlab.h3video.data.UpravaScene? = null,
+        val vylepseni: cz.promptlab.h3video.data.VylepseniScene? = null,
+        val animate: cz.promptlab.h3video.data.AnimateScene? = null,
+        val dance: cz.promptlab.h3video.data.DanceScene? = null,
+    )
+
+    private fun frontaDir(): File = File(getApplication<Application>().cacheDir, "fronta").apply { mkdirs() }
+
+    private fun kopieProFrontu(f: File?, znacka: Long): File? = f?.takeIf { it.exists() }?.let {
+        val cil = File(frontaDir(), "${znacka}_${it.name}")
+        runCatching { it.copyTo(cil, overwrite = true) }.getOrNull() ?: it
+    }
+
+    private fun zmrazSoubory(karta: Mode): ZmrazeneSceny {
+        val z = System.nanoTime()
+        return when (karta) {
+            Mode.UPRAVA_VIDEA -> _uprava.value.let { s ->
+                ZmrazeneSceny(uprava = s.copy(
+                    video = kopieProFrontu(s.video, z),
+                    refs = s.refs.map { r -> r.copy(image = kopieProFrontu(r.image, z)) },
+                    postava = kopieProFrontu(s.postava, z),
+                    zadaniReference = kopieProFrontu(s.zadaniReference, z),
+                ))
+            }
+            Mode.VYLEPSENI_VIDEA -> _vylepseni.value.let { s ->
+                ZmrazeneSceny(vylepseni = s.copy(video = kopieProFrontu(s.video, z)))
+            }
+            Mode.ANIMATE -> _animate.value.let { s ->
+                ZmrazeneSceny(animate = s.copy(fotka = kopieProFrontu(s.fotka, z), video = kopieProFrontu(s.video, z)))
+            }
+            Mode.DANCE -> _dance.value.let { s ->
+                ZmrazeneSceny(dance = s.copy(fotka = kopieProFrontu(s.fotka, z), hudba = kopieProFrontu(s.hudba, z)))
+            }
+            else -> ZmrazeneSceny()
+        }
+    }
+
+    // Kopie pro frontu starší než dva dny pryč — běhy z nich dávno doběhly.
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val mez = System.currentTimeMillis() - 2 * 24 * 3600 * 1000L
+            frontaDir().listFiles()?.filter { it.lastModified() < mez }?.forEach { it.delete() }
+        }
+    }
+
     /** Zmrazí aktuální zadání karty do spustitelného běhu pro frontu. */
-    private fun makeRunner(p: GenParams): QueuedRun {
+    private fun makeRunner(p: GenParams, zmrazene: ZmrazeneSceny? = null): QueuedRun {
         val id = System.nanoTime()
         return when (p.mode) {
             // Projekt nemá co spouštět; sem se nikdy nedostane, protože ho
@@ -992,18 +1062,64 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
             // Pohyb postavy je rozcestník: běh jede pod kartou režimu, takže
             // v galerii i historii zůstane Dance / Wan Animate jako dřív.
-            Mode.POHYB -> makeRunner(p.copy(mode = _pohyb.value.karta))
+            Mode.POHYB -> makeRunner(p.copy(mode = _pohyb.value.karta), zmrazene)
 
             // Přemalovat jede na šabloně All in One; úloha se skládá teď.
+            // Vyměnit postavu jede na SCAIL-2 z APK.
             Mode.UPRAVA_VIDEA -> {
-                val aio = _uprava.value.doAio()
-                QueuedRun(id, p.mode.title, aio.prompt) {
-                    GenerationEngine.start(p.copy(prompt = aio.prompt), aio.uploadImages, aioScene = aio)
+                val s = zmrazene?.uprava ?: _uprava.value
+                when (s.rezim) {
+                    cz.promptlab.h3video.data.UpravaRezim.PREMALOVAT -> {
+                        val aio = s.doAio()
+                        QueuedRun(id, p.mode.title, aio.prompt) {
+                            GenerationEngine.start(p.copy(prompt = aio.prompt), aio.uploadImages, aioScene = aio)
+                        }
+                    }
+                    cz.promptlab.h3video.data.UpravaRezim.ZADANI ->
+                        QueuedRun(id, p.mode.title, s.popis) {
+                            GenerationEngine.start(
+                                p.copy(prompt = s.popis, steps = cz.promptlab.h3video.comfy.BerniniBuilder.kroky(s)),
+                                s.uploadImages, berniniScene = s,
+                            )
+                        }
+                    cz.promptlab.h3video.data.UpravaRezim.PREDLOHA ->
+                        QueuedRun(id, p.mode.title, s.popis) {
+                            GenerationEngine.start(
+                                p.copy(prompt = s.popis, steps = cz.promptlab.h3video.comfy.H3ControlNetBuilder.kroky(s)),
+                                emptyList(), cnScene = s,
+                            )
+                        }
+                    cz.promptlab.h3video.data.UpravaRezim.POSTAVA -> when (s.motorPostavy) {
+                        cz.promptlab.h3video.data.PostavaMotor.SCAIL ->
+                            QueuedRun(id, p.mode.title, s.popis) {
+                                GenerationEngine.start(
+                                    p.copy(prompt = s.popis, steps = cz.promptlab.h3video.comfy.ScailBuilder.STEPS),
+                                    s.uploadImages, scailScene = s,
+                                )
+                            }
+                        // H3: Reference All in One + LoRA Character Swap (síla 1,0 podle autora).
+                        cz.promptlab.h3video.data.PostavaMotor.H3 -> {
+                            val aio = s.doSwapAio()
+                            val lora = LoraEntry(cz.promptlab.h3video.data.UpravaScene.SWAP_LORA, true, 1f)
+                            QueuedRun(id, p.mode.title, aio.prompt) {
+                                GenerationEngine.start(
+                                    p.copy(
+                                        prompt = aio.prompt,
+                                        extraLoras = p.extraLoras.filterNot { it.name == lora.name } + lora,
+                                        aspect = cz.promptlab.h3video.data.Aspect.nejblizsi(s.videoSirka, s.videoVyska)
+                                            ?: if (s.naVysku) cz.promptlab.h3video.data.Aspect.PORTRAIT_9_16
+                                            else cz.promptlab.h3video.data.Aspect.LANDSCAPE_16_9,
+                                    ),
+                                    aio.uploadImages, aioScene = aio,
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
             Mode.VYLEPSENI_VIDEA -> {
-                val s = _vylepseni.value
+                val s = zmrazene?.vylepseni ?: _vylepseni.value
                 when (s.rezim) {
                     cz.promptlab.h3video.data.VylepseniRezim.ZVETSIT -> {
                         val aio = s.doAio()
@@ -1098,7 +1214,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             // aby položka historie ukazovala, o jakou skladbu šlo.
             Mode.MUSIC -> {
                 val s = _music.value
-                val yue2 = s.motor == cz.promptlab.h3video.data.MusicMotor.YUE2
+
                 QueuedRun(id, p.mode.title, s.styl) {
                     GenerationEngine.start(
                         p.copy(
@@ -1106,8 +1222,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             // U YuE2 je to strop, ne přesná délka — do popisku
                             // v galerii jde stejně jako u ACE-Step ta zadaná.
                             seconds = s.delka,
-                            steps = if (yue2) cz.promptlab.h3video.comfy.Yue2MusicBuilder.STEPS
-                            else cz.promptlab.h3video.comfy.AceMusicBuilder.STEPS,
+                            steps = when (s.motor) {
+                                cz.promptlab.h3video.data.MusicMotor.YUE2 -> cz.promptlab.h3video.comfy.Yue2MusicBuilder.STEPS
+                                cz.promptlab.h3video.data.MusicMotor.MM3 -> cz.promptlab.h3video.comfy.MiniMaxMusic3Builder.STEPS
+                                cz.promptlab.h3video.data.MusicMotor.ACE -> cz.promptlab.h3video.comfy.AceMusicBuilder.STEPS
+                            },
                         ),
                         emptyList(),
                         musicScene = s,
@@ -1178,7 +1297,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             // Dance: do fronty jde popis tance. Hudba se nenahrává jako
             // obrázek — má vlastní cestu, proto je seznam jen s fotkou.
             Mode.DANCE -> {
-                val s = _dance.value
+                val s = zmrazene?.dance ?: _dance.value
                 QueuedRun(id, p.mode.title, s.styl.title) {
                     GenerationEngine.start(
                         p.copy(
@@ -1194,7 +1313,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             // Wan Animate: řídicí video má vlastní cestu nahrávání, v seznamu
             // obrázků je jen fotka postavy.
             Mode.ANIMATE -> {
-                val s = _animate.value
+                val s = zmrazene?.animate ?: _animate.value
                 val zadani = listOf(s.zadani, s.pohyb.trim()).filter { it.isNotEmpty() }
                     .joinToString(" ")
                 QueuedRun(id, p.mode.title, zadani) {
@@ -3388,6 +3507,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         R.raw.workflow_longmm_dalsi,
                         R.raw.workflow_wan_animate2,
                         R.raw.workflow_interpolace,
+                        R.raw.workflow_scail_postava,
+                        R.raw.workflow_h3_controlnet,
+                        R.raw.workflow_bernini_edit,
+                        R.raw.workflow_minimax_music3,
                     ).map { id ->
                         res.openRawResource(id).bufferedReader().use { it.readText() }
                     }
@@ -3932,9 +4055,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val u = withContext(Dispatchers.IO) {
                 videoKartyStore.loadUprava().let { s ->
-                    s.copy(refs = s.refs.map { slot ->
-                        slot.copy(thumb = slot.image?.let { ImageUtils.loadFileThumb(it) })
-                    })
+                    s.copy(
+                        refs = s.refs.map { slot ->
+                            slot.copy(thumb = slot.image?.let { ImageUtils.loadFileThumb(it) })
+                        },
+                        postavaNahled = s.postava?.let { ImageUtils.loadFileThumb(it) },
+                        zadaniReferenceNahled = s.zadaniReference?.let { ImageUtils.loadFileThumb(it) },
+                    )
                 }
             }
             _uprava.value = u
@@ -3964,6 +4091,46 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setUpravaMaskTarget(v: String) = updateUprava { it.copy(maskTarget = v) }
     fun setUpravaMaskObjects(v: Int) = updateUprava { it.copy(maskObjects = v.coerceIn(1, 3)) }
     fun setUpravaSekundy(v: Float) = updateUprava { it.copy(sekundy = v.coerceIn(2f, 15f)) }
+    fun setUpravaKoho(v: String) = updateUprava { it.copy(kohoVymenit = v) }
+    fun setUpravaMotorPostavy(v: cz.promptlab.h3video.data.PostavaMotor) = updateUprava { it.copy(motorPostavy = v) }
+    fun setUpravaPredlohaDruh(v: cz.promptlab.h3video.data.PredlohaDruh) = updateUprava { it.copy(predlohaDruh = v) }
+    fun setUpravaPredlohaRychle(v: Boolean) = updateUprava { it.copy(predlohaRychle = v) }
+    fun setUpravaZadaniRychle(v: Boolean) = updateUprava { it.copy(zadaniRychle = v) }
+    fun setUpravaPredlohaSekundy(v: Float) = updateUprava {
+        it.copy(predlohaSekundy = v.coerceIn(cz.promptlab.h3video.data.UpravaScene.PREDLOHA_MIN_S, it.predlohaMax))
+    }
+
+    fun pickUpravaPostava(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val cil = videoKartyStore.postavaFile()
+            val nahled = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), uri, cil)
+            } ?: return@launch
+            updateUprava { it.copy(postava = cil, postavaNahled = nahled) }
+        }
+    }
+
+    fun clearUpravaPostava() = updateUprava {
+        it.postava?.let { f -> runCatching { f.delete() } }
+        it.copy(postava = null, postavaNahled = null)
+    }
+
+    fun pickUpravaReference(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val cil = videoKartyStore.zadaniReferenceFile()
+            val nahled = withContext(Dispatchers.IO) {
+                ImageUtils.importToApp(getApplication(), uri, cil)
+            } ?: return@launch
+            updateUprava { it.copy(zadaniReference = cil, zadaniReferenceNahled = nahled) }
+        }
+    }
+
+    fun clearUpravaReference() = updateUprava {
+        it.zadaniReference?.let { f -> runCatching { f.delete() } }
+        it.copy(zadaniReference = null, zadaniReferenceNahled = null)
+    }
 
     fun setVylepseniRezim(r: cz.promptlab.h3video.data.VylepseniRezim) = updateVylepseni { it.copy(rezim = r) }
     fun setVylepseniUpscaler(v: Upscaler) = updateVylepseni { it.copy(upscaler = v) }
@@ -3971,6 +4138,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setVylepseniNasobekRtx(v: Int) = updateVylepseni { it.copy(upscaleMultiplier = v.coerceIn(2, 4)) }
     fun setVylepseniNasobek(v: Int) = updateVylepseni { it.copy(nasobek = v) }
     fun setVylepseniZpomalit(v: Boolean) = updateVylepseni { it.copy(zpomalit = v) }
+
+    /** Karta Upravit video s novým videem: orientace, délka, rozměry a počet snímků. */
+    private suspend fun sNovymVideem(f: File): (cz.promptlab.h3video.data.UpravaScene) -> cz.promptlab.h3video.data.UpravaScene {
+        val info = withContext(Dispatchers.IO) { infoVidea(f) }
+        val sekund = info?.sekund?.takeIf { it > 0f } ?: withContext(Dispatchers.IO) { delkaVidea(f) } ?: 0f
+        return { s ->
+            s.copy(
+                video = f,
+                naVysku = info?.let { it.vyska >= it.sirka } ?: true,
+                videoSekund = sekund,
+                videoSirka = info?.sirka ?: 0,
+                videoVyska = info?.vyska ?: 0,
+                videoSnimku = info?.snimku ?: 0,
+            )
+        }
+    }
 
     /** Video do karty Upravit / Vylepšit — kopie u sebe, vlastní jméno pro každou kartu. */
     private suspend fun videoDoKarty(uri: Uri, jmeno: String): File? {
@@ -3989,7 +4172,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (uri == null) return
         viewModelScope.launch {
             val f = videoDoKarty(uri, "uprava_video") ?: return@launch
-            updateUprava { it.copy(video = f) }
+            val zmena = sNovymVideem(f)
+            updateUprava(zmena)
         }
     }
 
@@ -4096,7 +4280,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val f = kopieVysledku(item, "uprava_video") ?: return@launch
             _videoKartyChyba.value = null
-            updateUprava { it.copy(video = f) }
+            val zmena = sNovymVideem(f)
+            updateUprava(zmena)
             otevriKartu(Mode.UPRAVA_VIDEA)
         }
     }

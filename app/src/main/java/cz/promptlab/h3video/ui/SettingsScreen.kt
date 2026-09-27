@@ -69,6 +69,8 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
+        // Vždy vidět jen to, co se řeší nejčastěji; zbytek je ve sbalených
+        // skupinách (dřív šest obrazovek sekcí pod sebou).
         SectionCard(
             title = t("Server ComfyUI"),
             subtitle = t("Adresa počítače, na kterém běží generování")
@@ -142,64 +144,6 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             }
         }
 
-        SectionCard(
-            title = t("Co serveru chybí"),
-            subtitle = t("Nody a modely, které karty appky potřebují")
-        ) {
-            val audit by vm.audit.collectAsStateWithLifecycle()
-            Column {
-                GradientButton(
-                    if (audit is AuditState.Running) t("Porovnávám…") else t("Zkontrolovat server"),
-                    enabled = audit !is AuditState.Running,
-                    onClick = { vm.runServerAudit() }
-                )
-                when (val a = audit) {
-                    AuditState.Idle -> {}
-                    AuditState.Running -> {
-                        Spacer(Modifier.height(12.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
-                            Text(
-                                t("  Čtu definice uzlů ze serveru…"),
-                                style = MaterialTheme.typography.bodySmall, color = TextMid
-                            )
-                        }
-                    }
-                    is AuditState.Failed -> {
-                        Spacer(Modifier.height(12.dp))
-                        VysledekRamecek(ok = false, text = a.message)
-                    }
-                    is AuditState.Done -> {
-                        Spacer(Modifier.height(12.dp))
-                        val r = a.report
-                        // Zpráva se skládá na jednom místě (ServerAudit.zprava),
-                        // ať je v rámečku přesně to, co si uživatel zkopíruje
-                        // na počítač — včetně balíků, složek a odkazů.
-                        val zprava = remember(r) { cz.promptlab.h3video.comfy.ServerAudit.zprava(r) }
-                        VysledekRamecek(ok = r.ok, text = zprava)
-                        if (!r.ok) {
-                            Spacer(Modifier.height(10.dp))
-                            val ctx = LocalContext.current
-                            OutlineButton(
-                                t("Zkopírovat seznam"),
-                                modifier = Modifier.fillMaxWidth(),
-                                color = Cyan,
-                            ) {
-                                val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
-                                cm.setPrimaryClip(
-                                    android.content.ClipData.newPlainText("PocketComfy", zprava)
-                                )
-                                // Android 13+ ukazuje vlastní bublinu o zkopírování sám.
-                                if (android.os.Build.VERSION.SDK_INT < 33) {
-                                    Toast.makeText(ctx, t("Zkopírováno"), Toast.LENGTH_SHORT).show()
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         // Výpis posledního pádu. Ukáže se jen tehdy, když appka opravdu spadla –
         // jinak by tu trvale strašila sekce, která nikoho nezajímá.
         val crash by vm.crash.collectAsStateWithLifecycle()
@@ -225,305 +169,372 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             }
         }
 
-        SectionCard(
-            title = "Higgs Audio",
-            subtitle = t("Namlouvání replik pro kartu Mluvící scéna")
+        UpdateCard(vm)
+
+
+        SkladaciSekce(
+            title = t("Server a modely"),
+            souhrn = t("Kontrola serveru, model, Higgs, grafická karta"),
+            klic = "nastaveni-server",
         ) {
-            val higgsServer by vm.higgsServer.collectAsStateWithLifecycle()
-            val higgsCode by vm.higgsCode.collectAsStateWithLifecycle()
-            Column {
-                DarkTextField(
-                    value = higgsServer,
-                    onValueChange = { vm.setHiggsServer(it) },
-                    placeholder = "http://192.168.1.23:7860",
-                    minHeight = 58.dp,
-                    singleLine = true,
-                )
-                Spacer(Modifier.height(10.dp))
-                DarkTextField(
-                    value = higgsCode,
-                    onValueChange = { vm.setHiggsCode(it) },
-                    placeholder = t("Přístupový kód (jen když si ho Higgs vyžádá)"),
-                    minHeight = 58.dp,
-                    singleLine = true,
-                    secret = true,
-                )
-                Spacer(Modifier.height(12.dp))
-                GradientButton(t("Uložit"), onClick = { vm.saveHiggs() })
-            }
-        }
-
-        // Model patří k nastavení serveru, ne mezi pokročilé volby generování –
-        // uživatel ho hledal právě tady. Na obrazovce generování zůstává taky,
-        // aby se dal přehodit bez odcházení z rozdělané práce.
-        SectionCard(
-            title = t("Model"),
-            subtitle = t("Který MiniMax H3 se použije pro text a snímky")
-        ) {
-            val params by vm.params.collectAsStateWithLifecycle()
-            val modely by vm.availableUnets.collectAsStateWithLifecycle()
-            var otevreno by remember { mutableStateOf(false) }
-
-            Column {
-                OutlineButton(
-                    params.unetFl2va.ifBlank { t("Z workflow (výchozí)") },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { otevreno = !otevreno; if (otevreno) vm.loadUnets() }
-
-                if (otevreno) {
-                    Spacer(Modifier.height(8.dp))
-                    if (modely.isEmpty()) {
-                        Text(
-                            "Seznam se načítá ze serveru… když se neobjeví, " +
-                                t("ComfyUI neodpovídá."),
-                            style = MaterialTheme.typography.bodySmall, color = TextLow
-                        )
-                    }
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        val nabidka = listOf("") + modely.filter {
-                            it.contains("h3", ignoreCase = true)
-                        }
-                        nabidka.forEach { jmeno ->
-                            val vybrano = params.unetFl2va == jmeno
-                            Row(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .background(if (vybrano) Violet.copy(alpha = .16f) else Surface2)
-                                    .clickable { vm.setUnet(jmeno); otevreno = false }
-                                    .padding(horizontal = 12.dp, vertical = 10.dp)
-                            ) {
+            SectionCard(
+                title = t("Co serveru chybí"),
+                subtitle = t("Nody a modely, které karty appky potřebují")
+            ) {
+                val audit by vm.audit.collectAsStateWithLifecycle()
+                Column {
+                    OutlineButton(
+                        if (audit is AuditState.Running) t("Porovnávám…") else t("Zkontrolovat server"),
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Cyan,
+                        enabled = audit !is AuditState.Running,
+                        onClick = { vm.runServerAudit() }
+                    )
+                    when (val a = audit) {
+                        AuditState.Idle -> {}
+                        AuditState.Running -> {
+                            Spacer(Modifier.height(12.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
                                 Text(
-                                    jmeno.ifBlank { t("Z workflow (výchozí)") },
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (vybrano) Cyan else TextMid,
+                                    t("  Čtu definice uzlů ze serveru…"),
+                                    style = MaterialTheme.typography.bodySmall, color = TextMid
                                 )
+                            }
+                        }
+                        is AuditState.Failed -> {
+                            Spacer(Modifier.height(12.dp))
+                            VysledekRamecek(ok = false, text = a.message)
+                        }
+                        is AuditState.Done -> {
+                            Spacer(Modifier.height(12.dp))
+                            val r = a.report
+                            // Zpráva se skládá na jednom místě (ServerAudit.zprava),
+                            // ať je v rámečku přesně to, co si uživatel zkopíruje
+                            // na počítač — včetně balíků, složek a odkazů.
+                            val zprava = remember(r) { cz.promptlab.h3video.comfy.ServerAudit.zprava(r) }
+                            VysledekRamecek(ok = r.ok, text = zprava)
+                            if (!r.ok) {
+                                Spacer(Modifier.height(10.dp))
+                                val ctx = LocalContext.current
+                                OutlineButton(
+                                    t("Zkopírovat seznam"),
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = Cyan,
+                                ) {
+                                    val cm = ctx.getSystemService(android.content.ClipboardManager::class.java)
+                                    cm.setPrimaryClip(
+                                        android.content.ClipData.newPlainText("PocketComfy", zprava)
+                                    )
+                                    // Android 13+ ukazuje vlastní bublinu o zkopírování sám.
+                                    if (android.os.Build.VERSION.SDK_INT < 33) {
+                                        Toast.makeText(ctx, t("Zkopírováno"), Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        SectionCard(
-            title = t("Grafická karta"),
-            subtitle = "ComfyUI se zapíná samo při generování"
-        ) {
-            val ctx = LocalContext.current
-            Column {
-                OutlineButton(
-                    "Vypnout ComfyUI a uvolnit grafiku",
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Amber,
-                ) {
-                    vm.stopServer { msg ->
-                        Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                OutlineButton(
-                    "Vypnout Higgs Audio",
-                    modifier = Modifier.fillMaxWidth(),
-                    color = Amber,
-                ) {
-                    vm.stopHiggs { msg ->
-                        Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
-                    }
-                }
-            }
-        }
+            // Model patří k nastavení serveru, ne mezi pokročilé volby generování –
+            // uživatel ho hledal právě tady. Na obrazovce generování zůstává taky,
+            // aby se dal přehodit bez odcházení z rozdělané práce.
+            SectionCard(
+                title = t("Model"),
+                subtitle = t("Který MiniMax H3 se použije pro text a snímky")
+            ) {
+                val params by vm.params.collectAsStateWithLifecycle()
+                val modely by vm.availableUnets.collectAsStateWithLifecycle()
+                var otevreno by remember { mutableStateOf(false) }
 
-        SectionCard(
-            title = "Aby to fungovalo z mobilu",
-            subtitle = "Krátký seznam, když se appka nemůže spojit"
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Step(
-                    "1",
-                    "Počítač musí být zapnutý a přihlášený. ComfyUI se pak spouští samo " +
-                        "(úloha „H3 ComfyUI autostart\") – náběh po zapnutí trvá asi 3 minuty."
-                )
-                Step(
-                    "2",
-                    "Telefon musí mít zapnutý Tailscale na stejném účtu, nebo být " +
-                        "ve stejné Wi-Fi jako počítač."
-                )
-                Step(
-                    "3",
-                    "Přes Tailscale se používá port 8189, po domácí síti 8188 – " +
-                        "rychlá volba níž nastaví obojí správně."
-                )
-                Step(
-                    "4",
-                    "Modely MiniMax H3 (ref2va, qwen3vl enkodér a oba VAE) musí být " +
-                        "v ComfyUI stažené – appka je nedoinstaluje."
-                )
-            }
-        }
-
-        val autoSave by vm.autoSave.collectAsStateWithLifecycle()
-        // Jazyk rozhraní. Výchozí „Podle telefonu" = čeština na českém
-        // telefonu, jinak angličtina — cizí uživatel tak nic hledat nemusí.
-        SectionCard(
-            title = t("Jazyk"),
-            subtitle = t("Jazyk rozhraní; nepřeložené části zůstanou česky.")
-        ) {
-            PillRow(
-                items = cz.promptlab.h3video.data.Jazyk.Volba.entries.toList(),
-                selected = cz.promptlab.h3video.data.Jazyk.volba,
-                label = {
-                    when (it) {
-                        cz.promptlab.h3video.data.Jazyk.Volba.SYSTEM -> t("Podle telefonu")
-                        cz.promptlab.h3video.data.Jazyk.Volba.CS -> t("Čeština")
-                        cz.promptlab.h3video.data.Jazyk.Volba.EN -> t("Angličtina")
-                    }
-                },
-                onSelect = { vm.setJazyk(it) },
-            )
-        }
-
-        val zeSouboru by vm.vyberZeSouboru.collectAsStateWithLifecycle()
-        SectionCard(
-            title = t("Výběr fotek"),
-            subtitle = if (zeSouboru) t("Ze souborů — naposledy upravené jsou nahoře")
-            else t("Systémový výběr — řazení podle data pořízení"),
-        ) {
-            PillRow(
-                items = listOf(false, true),
-                selected = zeSouboru,
-                label = { if (it) t("Soubory") else t("Galerie") },
-                onSelect = { vm.setVyberZeSouboru(it) },
-            )
-        }
-
-        val hledat by vm.hledatNaInternetu.collectAsStateWithLifecycle()
-        SectionCard(
-            title = t("Hledat obrázky na internetu"),
-            trailing = {
-                Switch(
-                    checked = hledat,
-                    onCheckedChange = { vm.setHledatNaInternetu(it) },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Violet,
-                        uncheckedTrackColor = Surface2,
-                        uncheckedBorderColor = Outline1,
-                    )
-                )
-            }
-        ) {}
-
-        SectionCard(
-            title = t("Ukládat vše do telefonu"),
-            subtitle = t("Normálně vypnuté – stahuješ si jen to, co chceš"),
-            trailing = {
-                Switch(
-                    checked = autoSave,
-                    onCheckedChange = { vm.autoSaveToGallery = it },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Violet,
-                        uncheckedTrackColor = Surface2,
-                        uncheckedBorderColor = Outline1,
-                    )
-                )
-            }
-        ) {
-            Spacer(Modifier.height(10.dp))
-            // Jednorázová záchrana: dohraje do telefonu všechno, co tam chybí –
-            // třeba videa vygenerovaná před zapnutím přepínače.
-            var dohrano by remember { mutableStateOf<Int?>(null) }
-            OutlineButton(t("Doplnit chybějící videa do galerie telefonu")) {
-                vm.saveAllToGallery { dohrano = it }
-            }
-            dohrano?.let {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    if (it == 0) t("Nic nechybělo – všechna videa už v telefonu jsou.")
-                    else t("Uloženo %d videí do Filmy/H3 Video.").format(it),
-                    style = MaterialTheme.typography.bodySmall, color = Ok
-                )
-            }
-        }
-
-        // Když je grafika plná, model se dohrává po částech z RAM a stejné
-        // generování trvá i několikrát déle. Appka umí říct ComfyUI, ať pustí
-        // svoje modely; na cizí programy nesahá.
-        val vramStav by vm.vramStav.collectAsStateWithLifecycle()
-        val vramPracuje by vm.vramPracuje.collectAsStateWithLifecycle()
-        SectionCard(
-            title = t("Paměť grafiky"),
-            subtitle = t("Když je plná, generování se táhne")
-        ) {
-            Column {
-                Text(
-                    if (vramStav.isBlank())
-                        ""
-                    else vramStav,
-                    style = MaterialTheme.typography.bodySmall, color = TextMid
-                )
-                Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column {
                     OutlineButton(
-                        if (vramPracuje) t("Zjišťuji…") else t("Zjistit stav"),
-                        modifier = Modifier.weight(1f),
-                    ) { if (!vramPracuje) vm.zjistiVram(uvolnit = false) }
+                        params.unetFl2va.ifBlank { t("Z workflow (výchozí)") },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) { otevreno = !otevreno; if (otevreno) vm.loadUnets() }
+
+                    if (otevreno) {
+                        Spacer(Modifier.height(8.dp))
+                        if (modely.isEmpty()) {
+                            Text(
+                                "Seznam se načítá ze serveru… když se neobjeví, " +
+                                    t("ComfyUI neodpovídá."),
+                                style = MaterialTheme.typography.bodySmall, color = TextLow
+                            )
+                        }
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            val nabidka = listOf("") + modely.filter {
+                                it.contains("h3", ignoreCase = true)
+                            }
+                            nabidka.forEach { jmeno ->
+                                val vybrano = params.unetFl2va == jmeno
+                                Row(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .background(if (vybrano) Violet.copy(alpha = .16f) else Surface2)
+                                        .clickable { vm.setUnet(jmeno); otevreno = false }
+                                        .padding(horizontal = 12.dp, vertical = 10.dp)
+                                ) {
+                                    Text(
+                                        jmeno.ifBlank { t("Z workflow (výchozí)") },
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (vybrano) Cyan else TextMid,
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            SectionCard(
+                title = "Higgs Audio",
+                subtitle = t("Namlouvání replik pro kartu Mluvící scéna")
+            ) {
+                val higgsServer by vm.higgsServer.collectAsStateWithLifecycle()
+                val higgsCode by vm.higgsCode.collectAsStateWithLifecycle()
+                Column {
+                    DarkTextField(
+                        value = higgsServer,
+                        onValueChange = { vm.setHiggsServer(it) },
+                        placeholder = "http://192.168.1.23:7860",
+                        minHeight = 58.dp,
+                        singleLine = true,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    DarkTextField(
+                        value = higgsCode,
+                        onValueChange = { vm.setHiggsCode(it) },
+                        placeholder = t("Přístupový kód (jen když si ho Higgs vyžádá)"),
+                        minHeight = 58.dp,
+                        singleLine = true,
+                        secret = true,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    OutlineButton(t("Uložit"), modifier = Modifier.fillMaxWidth(), color = Cyan, onClick = { vm.saveHiggs() })
+                }
+            }
+
+            SectionCard(
+                title = t("Grafická karta"),
+                subtitle = "ComfyUI se zapíná samo při generování"
+            ) {
+                val ctx = LocalContext.current
+                Column {
                     OutlineButton(
-                        t("Uvolnit paměť"),
-                        modifier = Modifier.weight(1f),
-                    ) { if (!vramPracuje) vm.zjistiVram(uvolnit = true) }
+                        "Vypnout ComfyUI a uvolnit grafiku",
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Amber,
+                    ) {
+                        vm.stopServer { msg ->
+                            Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    OutlineButton(
+                        "Vypnout Higgs Audio",
+                        modifier = Modifier.fillMaxWidth(),
+                        color = Amber,
+                    ) {
+                        vm.stopHiggs { msg ->
+                            Toast.makeText(ctx, msg, Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
+
+            // Když je grafika plná, model se dohrává po částech z RAM a stejné
+            // generování trvá i několikrát déle. Appka umí říct ComfyUI, ať pustí
+            // svoje modely; na cizí programy nesahá.
+            val vramStav by vm.vramStav.collectAsStateWithLifecycle()
+            val vramPracuje by vm.vramPracuje.collectAsStateWithLifecycle()
+            SectionCard(
+                title = t("Paměť grafiky"),
+                subtitle = t("Když je plná, generování se táhne")
+            ) {
+                Column {
+                    Text(
+                        if (vramStav.isBlank())
+                            ""
+                        else vramStav,
+                        style = MaterialTheme.typography.bodySmall, color = TextMid
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlineButton(
+                            if (vramPracuje) t("Zjišťuji…") else t("Zjistit stav"),
+                            modifier = Modifier.weight(1f),
+                        ) { if (!vramPracuje) vm.zjistiVram(uvolnit = false) }
+                        OutlineButton(
+                            t("Uvolnit paměť"),
+                            modifier = Modifier.weight(1f),
+                        ) { if (!vramPracuje) vm.zjistiVram(uvolnit = true) }
+                    }
                 }
             }
         }
 
-        // Spodní systémová tlačítka ukusují kus obrazovky přímo pod tlačítkem
-        // Generovat. Schovaná se vytáhnou přejetím od spodního okraje, takže
-        // se z telefonu nikam neztratí — proto je to zapnuté ve výchozím stavu.
-        val kontext = androidx.compose.ui.platform.LocalContext.current
-        var skryvat by remember {
-            mutableStateOf(cz.promptlab.h3video.data.AppSettings(kontext).skryvatNavigaci)
-        }
-        SectionCard(
-            title = t("Schovat navigační tlačítka"),
-            subtitle = t("Víc místa na obrazovce; vytáhneš je přejetím zespodu"),
-            trailing = {
-                Switch(
-                    checked = skryvat,
-                    onCheckedChange = { zapnuto ->
-                        skryvat = zapnuto
-                        cz.promptlab.h3video.data.AppSettings(kontext).skryvatNavigaci = zapnuto
-                        // Projeví se hned, ne až po přepnutí aplikace.
-                        (kontext as? android.app.Activity)?.let { a ->
-                            val rizeni = androidx.core.view.WindowCompat
-                                .getInsetsController(a.window, a.window.decorView)
-                            rizeni.systemBarsBehavior = androidx.core.view
-                                .WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                            val lista = androidx.core.view.WindowInsetsCompat.Type.navigationBars()
-                            if (zapnuto) rizeni.hide(lista) else rizeni.show(lista)
+        SkladaciSekce(
+            title = t("Aplikace"),
+            souhrn = t("Jazyk, výběr fotek, ukládání, navigace"),
+            klic = "nastaveni-aplikace",
+        ) {
+            val autoSave by vm.autoSave.collectAsStateWithLifecycle()
+            // Jazyk rozhraní. Výchozí „Podle telefonu" = čeština na českém
+            // telefonu, jinak angličtina — cizí uživatel tak nic hledat nemusí.
+            SectionCard(
+                title = t("Jazyk"),
+                subtitle = t("Jazyk rozhraní; nepřeložené části zůstanou česky.")
+            ) {
+                PillRow(
+                    items = cz.promptlab.h3video.data.Jazyk.Volba.entries.toList(),
+                    selected = cz.promptlab.h3video.data.Jazyk.volba,
+                    label = {
+                        when (it) {
+                            cz.promptlab.h3video.data.Jazyk.Volba.SYSTEM -> t("Podle telefonu")
+                            cz.promptlab.h3video.data.Jazyk.Volba.CS -> t("Čeština")
+                            cz.promptlab.h3video.data.Jazyk.Volba.EN -> t("Angličtina")
                         }
                     },
-                    colors = SwitchDefaults.colors(
-                        checkedThumbColor = Color.White,
-                        checkedTrackColor = Violet,
-                        uncheckedTrackColor = Surface2,
-                        uncheckedBorderColor = Outline1,
-                    )
+                    onSelect = { vm.setJazyk(it) },
                 )
             }
-        ) {
-            Text(
-                if (skryvat)
-                    t("Lišta s tlačítky je pryč, dokud ji nepotřebuješ — přejeď prstem " +
-                        "od spodního okraje a na chvíli se ukáže.")
-                else t("Lišta s tlačítky zůstává vidět pořád."),
-                style = MaterialTheme.typography.bodySmall, color = TextMid
-            )
+
+            val zeSouboru by vm.vyberZeSouboru.collectAsStateWithLifecycle()
+            SectionCard(
+                title = t("Výběr fotek"),
+                subtitle = if (zeSouboru) t("Ze souborů — naposledy upravené jsou nahoře")
+                else t("Systémový výběr — řazení podle data pořízení"),
+            ) {
+                PillRow(
+                    items = listOf(false, true),
+                    selected = zeSouboru,
+                    label = { if (it) t("Soubory") else t("Galerie") },
+                    onSelect = { vm.setVyberZeSouboru(it) },
+                )
+            }
+
+            val hledat by vm.hledatNaInternetu.collectAsStateWithLifecycle()
+            SectionCard(
+                title = t("Hledat obrázky na internetu"),
+                trailing = {
+                    Switch(
+                        checked = hledat,
+                        onCheckedChange = { vm.setHledatNaInternetu(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Violet,
+                            uncheckedTrackColor = Surface2,
+                            uncheckedBorderColor = Outline1,
+                        )
+                    )
+                }
+            ) {}
+
+            SectionCard(
+                title = t("Ukládat vše do telefonu"),
+                subtitle = t("Normálně vypnuté – stahuješ si jen to, co chceš"),
+                trailing = {
+                    Switch(
+                        checked = autoSave,
+                        onCheckedChange = { vm.autoSaveToGallery = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Violet,
+                            uncheckedTrackColor = Surface2,
+                            uncheckedBorderColor = Outline1,
+                        )
+                    )
+                }
+            ) {
+                Spacer(Modifier.height(10.dp))
+                // Jednorázová záchrana: dohraje do telefonu všechno, co tam chybí –
+                // třeba videa vygenerovaná před zapnutím přepínače.
+                var dohrano by remember { mutableStateOf<Int?>(null) }
+                OutlineButton(t("Doplnit chybějící videa do galerie telefonu")) {
+                    vm.saveAllToGallery { dohrano = it }
+                }
+                dohrano?.let {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        if (it == 0) t("Nic nechybělo – všechna videa už v telefonu jsou.")
+                        else t("Uloženo %d videí do Filmy/H3 Video.").format(it),
+                        style = MaterialTheme.typography.bodySmall, color = Ok
+                    )
+                }
+            }
+
+            // Spodní systémová tlačítka ukusují kus obrazovky přímo pod tlačítkem
+            // Generovat. Schovaná se vytáhnou přejetím od spodního okraje, takže
+            // se z telefonu nikam neztratí — proto je to zapnuté ve výchozím stavu.
+            val kontext = androidx.compose.ui.platform.LocalContext.current
+            var skryvat by remember {
+                mutableStateOf(cz.promptlab.h3video.data.AppSettings(kontext).skryvatNavigaci)
+            }
+            SectionCard(
+                title = t("Schovat navigační tlačítka"),
+                subtitle = t("Víc místa na obrazovce; vytáhneš je přejetím zespodu"),
+                trailing = {
+                    Switch(
+                        checked = skryvat,
+                        onCheckedChange = { zapnuto ->
+                            skryvat = zapnuto
+                            cz.promptlab.h3video.data.AppSettings(kontext).skryvatNavigaci = zapnuto
+                            // Projeví se hned, ne až po přepnutí aplikace.
+                            (kontext as? android.app.Activity)?.let { a ->
+                                val rizeni = androidx.core.view.WindowCompat
+                                    .getInsetsController(a.window, a.window.decorView)
+                                rizeni.systemBarsBehavior = androidx.core.view
+                                    .WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                                val lista = androidx.core.view.WindowInsetsCompat.Type.navigationBars()
+                                if (zapnuto) rizeni.hide(lista) else rizeni.show(lista)
+                            }
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Violet,
+                            uncheckedTrackColor = Surface2,
+                            uncheckedBorderColor = Outline1,
+                        )
+                    )
+                }
+            ) {
+            }
         }
 
-        UpdateCard(vm)
-
-        SectionCard(title = t("O aplikaci")) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        SkladaciSekce(
+            title = t("Připojení z mobilu"),
+            souhrn = t("Když se appka nemůže spojit"),
+            klic = "nastaveni-pripojeni",
+        ) {
+            SectionCard(
+                title = "Aby to fungovalo z mobilu",
+                subtitle = "Krátký seznam, když se appka nemůže spojit"
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Step(
+                        "1",
+                        "Počítač musí být zapnutý a přihlášený. ComfyUI se pak spouští samo " +
+                            "(úloha „H3 ComfyUI autostart\") – náběh po zapnutí trvá asi 3 minuty."
+                    )
+                    Step(
+                        "2",
+                        "Telefon musí mít zapnutý Tailscale na stejném účtu, nebo být " +
+                            "ve stejné Wi-Fi jako počítač."
+                    )
+                    Step(
+                        "3",
+                        "Přes Tailscale se používá port 8189, po domácí síti 8188 – " +
+                            "rychlá volba níž nastaví obojí správně."
+                    )
+                    Step(
+                        "4",
+                        "Modely MiniMax H3 (ref2va, qwen3vl enkodér a oba VAE) musí být " +
+                            "v ComfyUI stažené – appka je nedoinstaluje."
+                    )
+                }
             }
         }
 

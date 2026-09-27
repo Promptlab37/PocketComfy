@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -58,6 +59,14 @@ import cz.promptlab.h3video.ui.theme.Surface1
 import cz.promptlab.h3video.ui.theme.TextLow
 import cz.promptlab.h3video.ui.theme.TextMid
 import cz.promptlab.h3video.ui.theme.Violet
+
+/**
+ * Plocha pro výběr fotky. Prázdná je nízký pruh s ikonou — dřív měla poměr 4:3
+ * přes celou šířku a prázdná zabrala čtvrt obrazovky. S vybranou fotkou se
+ * ukazuje náhled 4:3.
+ */
+fun Modifier.plochaFotky(prazdna: Boolean): Modifier =
+    if (prazdna) this.height(110.dp) else this.aspectRatio(4f / 3f)
 
 /** Karta jedné sekce zadání. */
 /**

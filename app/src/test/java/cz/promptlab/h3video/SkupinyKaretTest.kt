@@ -135,4 +135,21 @@ class SkupinyKaretTest {
         val obri = VylepseniScene(video = File("a.mp4"), sirka = 3840, vyska = 2160, snimku = 600)
         assertTrue(obri.nasobkyKtereSeVejdou.isEmpty())
     }
+
+    @Test fun `vymena postavy motorem H3 jede pres reference bez kotvy`() {
+        val s = UpravaScene(
+            video = File("v.mp4"), rezim = cz.promptlab.h3video.data.UpravaRezim.POSTAVA,
+            postava = File("p.png"), kohoVymenit = "man in purple shirt", videoSekund = 22f,
+            motorPostavy = cz.promptlab.h3video.data.PostavaMotor.H3,
+        )
+        val aio = s.doSwapAio()
+        assertEquals(AioMode.REFERENCE, aio.mode)
+        assertFalse(aio.kotva)
+        assertEquals(File("v.mp4"), aio.uploadVideo)
+        assertTrue(aio.prompt.contains("<Video 1>") && aio.prompt.contains("<Picture 1>"))
+        assertTrue(aio.prompt.contains("man in purple shirt"))
+        assertEquals(15f, aio.seconds)
+        // přes 15 s to H3 nevezme — karta to řekne dřív, než se něco nahraje
+        assertNotNull(cz.promptlab.h3video.data.upravaProblem(s))
+    }
 }

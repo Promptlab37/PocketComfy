@@ -178,6 +178,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeMusicYue2", false)
         set(v) = sp.edit().putBoolean("activeMusicYue2", v).apply()
 
+    /** Rozdělaná hudba jede na MiniMax Music 3 — texty a fáze po restartu. */
+    var activeMusicMm3: Boolean
+        get() = sp.getBoolean("activeMusicMm3", false)
+        set(v) = sp.edit().putBoolean("activeMusicMm3", v).apply()
+
     /** Předělává rozdělaná hudba nahrávku? Rozlišuje fáze i texty po restartu. */
     var activeMusicCover: Boolean
         get() = sp.getBoolean("activeMusicCover", false)
@@ -225,6 +230,14 @@ class AppSettings(ctx: Context) {
     var activeModel3d: Boolean
         get() = sp.getBoolean("activeModel3d", false)
         set(v) = sp.edit().putBoolean("activeModel3d", v).apply()
+
+    /**
+     * Druh běhu u karet, které nemají vlastní příznak výš: "dance", "animate",
+     * "interp", "longmm"; prázdné = žádný z nich. Kvůli průběhu po restartu.
+     */
+    var activeDruh: String
+        get() = sp.getString("activeDruh", "") ?: ""
+        set(v) = sp.edit().putString("activeDruh", v).apply()
 
     /** Běží Video ze zvuku (LTX 2.5)? Kvůli ukazateli průběhu po restartu. */
     var activeLtx: Boolean

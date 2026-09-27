@@ -71,7 +71,7 @@ fun LtxSection(vm: MainViewModel) {
         ActivityResultContracts.GetContent()
     ) { uri -> vm.pickLtxZvuk(uri) }
 
-    SectionCard(title = t("Co se dělá"), subtitle = t("Jeden model, tři způsoby zadání")) {
+    SectionCard(title = t("Co udělat"), subtitle = t("Jeden model, tři způsoby zadání")) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             PillRow(
                 items = LtxRezim.entries.toList(),
@@ -89,7 +89,7 @@ fun LtxSection(vm: MainViewModel) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(4f / 3f)
+                .plochaFotky(prazdna = scene.nahled == null)
                 .clip(RoundedCornerShape(14.dp))
                 .background(Surface2)
                 .border(1.dp, Outline1, RoundedCornerShape(14.dp))

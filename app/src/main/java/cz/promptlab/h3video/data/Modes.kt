@@ -360,10 +360,22 @@ fun ovladaProKartu(
     aioRezim: AioMode = AioMode.TEXT,
     dlouheNavazuje: Boolean = false,
     upravaRezim: UpravaRezim = UpravaRezim.PREMALOVAT,
+    postavaMotor: PostavaMotor = PostavaMotor.SCAIL,
 ): Ovlada = when (mode) {
     // Přemalovat jede na šabloně All in One (mask.json) — stejně jako dřív.
     Mode.UPRAVA_VIDEA -> when (upravaRezim) {
         UpravaRezim.PREMALOVAT -> Ovlada(rozliseni = false)
+        // SCAIL-2: kroky, LoRA i plátno jsou z předlohy.
+        UpravaRezim.POSTAVA -> when (postavaMotor) {
+            PostavaMotor.SCAIL -> Ovlada.NIC
+            // H3 jede přes Reference All in One — nastavení MiniMax platí,
+            // jen poměr stran plátna se bere z videa (jiný by obraz roztáhl).
+            PostavaMotor.H3 -> Ovlada(rozliseni = false)
+        }
+        // Fun ControlNet: kroky, model i plátno jsou ze šablony.
+        UpravaRezim.PREDLOHA -> Ovlada.NIC
+        // Bernini-R: kroky, cfg i plátno jsou ze šablony a z videa.
+        UpravaRezim.ZADANI -> Ovlada.NIC
     }
     // Zvětšení nespouští model, zplynulení taky ne.
     Mode.VYLEPSENI_VIDEA -> Ovlada.NIC

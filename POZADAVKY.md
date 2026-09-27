@@ -217,6 +217,57 @@ v kterékoli z nich, stěhovat ho nemusíš.
   [Comfy-Org/frame_interpolation](https://huggingface.co/Comfy-Org/frame_interpolation).
   Uzly `FrameInterpolate` a `FrameInterpolationModelLoader` jsou v jádře ComfyUI.
 
+### Upravit video → Vyměnit postavu
+
+Uzly `WanSCAILToVideo`, `SCAIL2ColoredMask` a `SAM3_VideoTrack` jsou v jádře
+ComfyUI (ověřeno na 0.37.4).
+
+- **SCAIL-2:** `diffusion_models/wan2.1_14B_SCAIL_2_int8_convrot.safetensors`
+  (16,7 GB) a `loras/wan2.1_SCAIL_2_DPO_lora_bf16.safetensors` (1,2 GB),
+  z [Comfy-Org/SCAIL-2](https://huggingface.co/Comfy-Org/SCAIL-2). K tomu
+  `sam3.1_multiplex_fp16.safetensors` a sdílené soubory Wan z oddílu níže
+  (`umt5_xxl_fp8_e4m3fn_scaled`, `Wan2_1_VAE_bf16`, `clip_vision_h`,
+  `lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16`).
+- **MiniMax H3:** `loras/h3_character_swap_pro4500_1000.safetensors` (0,16 GB),
+  z [akatz-ai/MiniMax-H3-Character-Swap-LoRA](https://huggingface.co/akatz-ai/MiniMax-H3-Character-Swap-LoRA);
+  jinak modely MiniMax H3 jako karta All in One.
+
+### Upravit video → Podle předlohy
+
+MiniMax H3 s Fun ControlNet-Union; uzly `MiniMaxH3FunControlNetApply`,
+`SDPoseKeypointExtractor`, `SDPoseDrawKeypoints` a `RTDETR_detect` jsou
+v jádře ComfyUI (ověřeno na 0.37.4).
+
+- `model_patches/minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors`
+  (2,3 GB), z [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3)
+- `checkpoints/sdpose_wholebody_fp16.safetensors` (1,9 GB) a
+  `diffusion_models/rt_detr_v4-x-hgnet_fp16.safetensors` (0,12 GB) pro pózu,
+  z [Comfy-Org/SDPose](https://huggingface.co/Comfy-Org/SDPose)
+- modely MiniMax H3 (`minimax_h3_ref2va_pruned_int8_convrot`, enkodér, obě VAE)
+  a pro volbu Rychle `loras/minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors`
+
+### Upravit video → Podle zadání
+
+Bernini-R na Wan 2.2; uzel `BerniniConditioning` je v jádře ComfyUI
+(ověřeno na 0.37.4).
+
+- `diffusion_models/wan2.2_bernini_r_high_noise_int8_convrot.safetensors` a
+  `wan2.2_bernini_r_low_noise_int8_convrot.safetensors` (po 14,5 GB),
+  z [Comfy-Org/Bernini-R](https://huggingface.co/Comfy-Org/Bernini-R)
+- `loras/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors`
+  pro volbu Rychle, z [Kijai/WanVideo_comfy](https://huggingface.co/Kijai/WanVideo_comfy)
+- `umt5_xxl_fp8_e4m3fn_scaled` a `Wan2_1_VAE_bf16` z oddílu níže
+
+### Hudba → MiniMax Music 3
+
+Uzly `MiniMaxMusic3TextEncode` a `EmptyMiniMaxMusic3LatentAudio` jsou v jádře
+ComfyUI (ověřeno na 0.37.4). Vše z
+[Comfy-Org/MiniMax-Music-3](https://huggingface.co/Comfy-Org/MiniMax-Music-3):
+
+- `diffusion_models/minimax_music3_dit_fp16.safetensors` (4,9 GB)
+- `text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors` (9,2 GB)
+- `vae/minimax_music3_dav.safetensors` (0,22 GB)
+
 ### Karty Dance a Wan Animate (Wan)
 
 Uzly `WanDancer*`, `WanAnimate2ToVideo`, `WanAnimate2Cache` a smyčka

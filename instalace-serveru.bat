@@ -261,6 +261,54 @@ if /i "!ODP!"=="a" (
 
 
 REM ------------------------------------------------------------------
+REM  Karta Upravit video - Vymenit postavu (SCAIL-2 a MiniMax H3).
+REM  VAE, enkoder, clip_vision a LoRA lightx2v sdili s kartou Wan Animate.
+REM ------------------------------------------------------------------
+set /p ODP="Upravit video - vymenit postavu SCAIL-2, cca 18 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/SCAIL-2/resolve/main/diffusion_models/wan2.1_14B_SCAIL_2_int8_convrot.safetensors" "models\diffusion_models\wan2.1_14B_SCAIL_2_int8_convrot.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/SCAIL-2/resolve/main/loras/wan2.1_SCAIL_2_DPO_lora_bf16.safetensors" "models\loras\wan2.1_SCAIL_2_DPO_lora_bf16.safetensors"
+)
+set /p ODP="Upravit video - vymenit postavu MiniMax H3 (LoRA), cca 0,16 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/akatz-ai/MiniMax-H3-Character-Swap-LoRA/resolve/main/h3_character_swap_pro4500_1000.safetensors" "models\loras\h3_character_swap_pro4500_1000.safetensors"
+)
+
+REM ------------------------------------------------------------------
+REM  Karta Upravit video - Podle predlohy (MiniMax H3 + Fun ControlNet).
+REM ------------------------------------------------------------------
+set /p ODP="Upravit video - podle predlohy, cca 4,3 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/MiniMax-H3/resolve/main/model_patches/minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors" "models\model_patches\minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/SDPose/resolve/main/checkpoints/sdpose_wholebody_fp16.safetensors" "models\checkpoints\sdpose_wholebody_fp16.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/SDPose/resolve/main/diffusion_models/rt_detr_v4-x-hgnet_fp16.safetensors" "models\diffusion_models\rt_detr_v4-x-hgnet_fp16.safetensors"
+)
+
+REM ------------------------------------------------------------------
+REM  Karta Upravit video - Podle zadani (Bernini-R na Wan 2.2).
+REM  Enkoder a VAE Wan sdili s kartou Wan Animate.
+REM ------------------------------------------------------------------
+set /p ODP="Upravit video - podle zadani Bernini-R, cca 29,4 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/Bernini-R/resolve/main/diffusion_models/wan2.2_bernini_r_high_noise_int8_convrot.safetensors" "models\diffusion_models\wan2.2_bernini_r_high_noise_int8_convrot.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/Bernini-R/resolve/main/diffusion_models/wan2.2_bernini_r_low_noise_int8_convrot.safetensors" "models\diffusion_models\wan2.2_bernini_r_low_noise_int8_convrot.safetensors"
+  call :stahni "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors" "models\loras\lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/Wan-Animate-2/resolve/main/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" "models\text_encoders\umt5_xxl_fp8_e4m3fn_scaled.safetensors"
+  call :stahni "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors" "models\vae\Wan2_1_VAE_bf16.safetensors"
+)
+
+REM ------------------------------------------------------------------
+REM  Karta Hudba - MiniMax Music 3.
+REM ------------------------------------------------------------------
+set /p ODP="Hudba - MiniMax Music 3, cca 14,3 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/diffusion_models/minimax_music3_dit_fp16.safetensors" "models\diffusion_models\minimax_music3_dit_fp16.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors" "models\text_encoders\minimax_music3_text_encoder_pruned_int8_convrot.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/MiniMax-Music-3/resolve/main/vae/minimax_music3_dav.safetensors" "models\vae\minimax_music3_dav.safetensors"
+)
+
+
+REM ------------------------------------------------------------------
 REM  Karta Long MiniMax - volitelne sestavy modelu. Bez nich karta jede
 REM  dal, jen tu volbu nenabidne. Eros Max neni verejne ke stazeni.
 REM ------------------------------------------------------------------

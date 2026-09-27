@@ -1,0 +1,289 @@
+{
+ "901": {
+  "class_type": "LoadVideo",
+  "inputs": {
+   "file": ""
+  },
+  "_meta": {
+   "title": "Video"
+  }
+ },
+ "705": {
+  "class_type": "Video Slice",
+  "inputs": {
+   "video": [
+    "901",
+    0
+   ],
+   "start_time": 0.0,
+   "duration": 0.0,
+   "strict_duration": false
+  }
+ },
+ "353": {
+  "class_type": "GetVideoComponents",
+  "inputs": {
+   "video": [
+    "705",
+    0
+   ]
+  }
+ },
+ "338": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "umt5_xxl_fp8_e4m3fn_scaled.safetensors",
+   "type": "wan",
+   "device": "default"
+  }
+ },
+ "339": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "Wan2_1_VAE_bf16.safetensors"
+  }
+ },
+ "344": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "wan2.2_bernini_r_high_noise_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "345": {
+  "class_type": "LoraLoaderModelOnly",
+  "inputs": {
+   "model": [
+    "344",
+    0
+   ],
+   "lora_name": "lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors",
+   "strength_model": 3.0
+  },
+  "_meta": {
+   "title": "Rychle high"
+  }
+ },
+ "346": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "wan2.2_bernini_r_low_noise_int8_convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "340": {
+  "class_type": "LoraLoaderModelOnly",
+  "inputs": {
+   "model": [
+    "346",
+    0
+   ],
+   "lora_name": "lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors",
+   "strength_model": 1.5
+  },
+  "_meta": {
+   "title": "Rychle low"
+  }
+ },
+ "341": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "338",
+    0
+   ],
+   "text": "色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走"
+  }
+ },
+ "354": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "338",
+    0
+   ],
+   "text": ""
+  },
+  "_meta": {
+   "title": "Zadani"
+  }
+ },
+ "352": {
+  "class_type": "BerniniConditioning",
+  "inputs": {
+   "positive": [
+    "354",
+    0
+   ],
+   "negative": [
+    "341",
+    0
+   ],
+   "vae": [
+    "339",
+    0
+   ],
+   "source_video": [
+    "353",
+    0
+   ],
+   "width": 480,
+   "height": 832,
+   "length": 81,
+   "batch_size": 1,
+   "ref_max_size": 848
+  }
+ },
+ "902": {
+  "class_type": "LoadImage",
+  "inputs": {
+   "image": ""
+  },
+  "_meta": {
+   "title": "Reference"
+  }
+ },
+ "343": {
+  "class_type": "KSamplerSelect",
+  "inputs": {
+   "sampler_name": "res_multistep"
+  }
+ },
+ "350": {
+  "class_type": "BasicScheduler",
+  "inputs": {
+   "model": [
+    "346",
+    0
+   ],
+   "scheduler": "simple",
+   "steps": 6,
+   "denoise": 1.0
+  }
+ },
+ "342": {
+  "class_type": "SplitSigmas",
+  "inputs": {
+   "sigmas": [
+    "350",
+    0
+   ],
+   "step": 3
+  }
+ },
+ "349": {
+  "class_type": "SamplerCustom",
+  "inputs": {
+   "model": [
+    "345",
+    0
+   ],
+   "add_noise": true,
+   "noise_seed": 0,
+   "cfg": 1.0,
+   "positive": [
+    "352",
+    0
+   ],
+   "negative": [
+    "352",
+    1
+   ],
+   "sampler": [
+    "343",
+    0
+   ],
+   "sigmas": [
+    "342",
+    0
+   ],
+   "latent_image": [
+    "352",
+    2
+   ]
+  },
+  "_meta": {
+   "title": "High noise"
+  }
+ },
+ "351": {
+  "class_type": "SamplerCustom",
+  "inputs": {
+   "model": [
+    "340",
+    0
+   ],
+   "add_noise": false,
+   "noise_seed": 0,
+   "cfg": 1.0,
+   "positive": [
+    "352",
+    0
+   ],
+   "negative": [
+    "352",
+    1
+   ],
+   "sampler": [
+    "343",
+    0
+   ],
+   "sigmas": [
+    "342",
+    1
+   ],
+   "latent_image": [
+    "349",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Low noise"
+  }
+ },
+ "347": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "351",
+    0
+   ],
+   "vae": [
+    "339",
+    0
+   ]
+  }
+ },
+ "348": {
+  "class_type": "CreateVideo",
+  "inputs": {
+   "images": [
+    "347",
+    0
+   ],
+   "audio": [
+    "353",
+    1
+   ],
+   "fps": [
+    "353",
+    2
+   ]
+  }
+ },
+ "911": {
+  "class_type": "SaveVideo",
+  "inputs": {
+   "video": [
+    "348",
+    0
+   ],
+   "filename_prefix": "PocketZadani",
+   "format": "auto",
+   "codec": "auto"
+  },
+  "_meta": {
+   "title": "Hotove video"
+  }
+ }
+}

@@ -86,26 +86,17 @@ fun HistoryScreen(
     Box(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(t("Knihovna obsahu"), style = MaterialTheme.typography.headlineSmall, color = TextHi)
-                Text("${polozkyCount(items.size)} · ${formatStorage(totalBytes)} ${t("v aplikaci")}",
-                    style = MaterialTheme.typography.bodySmall, color = TextMid)
-                if (items.isNotEmpty()) {
-                    DarkTextField(value = query, onValueChange = { query = it },
-                        placeholder = t("Hledat název, zadání nebo seed…"),
-                        minHeight = 48.dp, singleLine = true, onClear = { query = "" })
-                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(selected = kind == null, onClick = { kind = null }, label = { Text(t("Vše")) })
-                        MediaKind.entries.filter { (counts[it] ?: 0) > 0 || kind == it }.forEach { media ->
-                            FilterChip(selected = kind == media, onClick = { kind = media },
-                                label = { Text("${media.label()} · ${counts[media] ?: 0}") })
-                        }
-                    }
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        FilterChip(selected = favoritesOnly, onClick = { favoritesOnly = !favoritesOnly },
-                            label = { Text("${t("Oblíbené")} · $favorites") },
-                            leadingIcon = { Icon(Icons.Default.Star, null, Modifier.size(16.dp)) })
-                        Spacer(Modifier.weight(1f))
+                // Souhrn a ovládání v jednom řádku; filtry pod hledáním v jedné
+                // zalamovací řadě. Dřív tu byl velký nadpis, počet položek dvakrát
+                // a Oblíbené na samostatném řádku.
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        if (selecting) t("Vybráno: %d").format(selected.size)
+                        else "${polozkyCount(items.size)} · ${formatStorage(totalBytes)}",
+                        style = MaterialTheme.typography.bodySmall, color = TextMid,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (items.isNotEmpty()) {
                         Box {
                             IconButton(onClick = { sorting = true }) {
                                 Icon(Icons.AutoMirrored.Filled.Sort, t("Řazení") + ": " + order.label(), tint = TextMid)
@@ -122,14 +113,28 @@ fun HistoryScreen(
                             Icon(if (grid) Icons.AutoMirrored.Filled.ViewList else Icons.Default.GridView,
                                 if (grid) t("Zobrazit seznam") else t("Zobrazit mřížku"), tint = TextMid)
                         }
-                    }
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (selecting) t("Vybráno: %d").format(selected.size)
-                            else "${polozkyCount(visible.size)} · ${order.label()}", color = TextLow,
-                            style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
                         TextButton(onClick = { selecting = !selecting; selectedIds = arrayListOf() }) {
                             Text(t(if (selecting) "Zrušit výběr" else "Vybrat"))
                         }
+                    }
+                }
+                if (items.isNotEmpty()) {
+                    DarkTextField(value = query, onValueChange = { query = it },
+                        placeholder = t("Hledat název, zadání nebo seed…"),
+                        minHeight = 48.dp, singleLine = true, onClear = { query = "" })
+                    @OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+                    androidx.compose.foundation.layout.FlowRow(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilterChip(selected = kind == null, onClick = { kind = null }, label = { Text(t("Vše")) })
+                        MediaKind.entries.filter { (counts[it] ?: 0) > 0 || kind == it }.forEach { media ->
+                            FilterChip(selected = kind == media, onClick = { kind = media },
+                                label = { Text("${media.label()} · ${counts[media] ?: 0}") })
+                        }
+                        FilterChip(selected = favoritesOnly, onClick = { favoritesOnly = !favoritesOnly },
+                            label = { Text("${t("Oblíbené")} · $favorites") },
+                            leadingIcon = { Icon(Icons.Default.Star, null, Modifier.size(16.dp)) })
                     }
                     if (selecting) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         val allSelected = visible.isNotEmpty() && selected.size == visible.size

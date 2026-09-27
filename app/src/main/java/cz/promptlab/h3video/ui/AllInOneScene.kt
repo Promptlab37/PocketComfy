@@ -72,7 +72,7 @@ fun AllInOneSection(vm: MainViewModel) {
     val scene by vm.aio.collectAsStateWithLifecycle()
 
     SectionCard(
-        title = t("Co se má udělat"),
+        title = t("Co udělat"),
         subtitle = t("Šablonu si appka stáhne z ComfyUI, z balíku All in One")
     ) {
         Column {
@@ -299,7 +299,8 @@ private fun ImageSekce(vm: MainViewModel, scene: AioScene) {
 @Composable
 private fun RefsMrizka(vm: MainViewModel, scene: AioScene) {
     Column {
-        scene.refs.chunked(2).forEach { dvojice ->
+        // Po třech: dvě dlaždice na řádek byly přes půl obrazovky vysoké.
+        scene.refs.chunked(3).forEach { dvojice ->
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 dvojice.forEach { slot ->
                     ObrazekSlot(
@@ -315,7 +316,7 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene) {
                 }
                 // Lichý počet: druhá polovina řádku zůstane prázdná, aby
                 // dlaždice nebyly různě velké.
-                if (dvojice.size == 1) Spacer(Modifier.weight(1f))
+                repeat(3 - dvojice.size) { Spacer(Modifier.weight(1f)) }
             }
             Spacer(Modifier.height(12.dp))
         }
@@ -610,11 +611,13 @@ private fun ObrazekSlot(
                 popisek,
                 style = MaterialTheme.typography.labelMedium,
                 color = if (ztlumeny) TextLow else TextMid,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
             if (onRemove != null) {
                 Text(
-                    "Odebrat",
+                    t("Odebrat"),
                     style = MaterialTheme.typography.labelMedium,
                     color = TextLow,
                     modifier = Modifier.clickable(onClick = onRemove),

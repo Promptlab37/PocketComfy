@@ -59,7 +59,7 @@ fun AnimateSection(vm: MainViewModel) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(4f / 3f)
+                .plochaFotky(prazdna = scene.nahled == null)
                 .clip(RoundedCornerShape(14.dp))
                 .background(Surface2)
                 .border(1.dp, Outline1, RoundedCornerShape(14.dp))
@@ -143,33 +143,33 @@ fun AnimateSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(title = t("Vzhled postavy")) {
-        DarkTextField(
-            value = scene.postava,
-            onValueChange = { vm.setAnimatePostava(it) },
-            placeholder = t("young woman with short red hair, black leather jacket"),
-            minHeight = 80.dp,
-            onClear = { vm.setAnimatePostava("") },
-        )
-    }
-
-    SectionCard(title = t("Prostředí")) {
-        DarkTextField(
-            value = scene.prostredi,
-            onValueChange = { vm.setAnimateProstredi(it) },
-            placeholder = t("night city street with neon signs"),
-            minHeight = 80.dp,
-            onClear = { vm.setAnimateProstredi("") },
-        )
-    }
-
-    SectionCard(title = t("Pohyb")) {
-        DarkTextField(
-            value = scene.pohyb,
-            onValueChange = { vm.setAnimatePohyb(it) },
-            placeholder = t("a person dancing"),
-            minHeight = 64.dp,
-            onClear = { vm.setAnimatePohyb("") },
-        )
+    // Tři pole jedné věci (zadání) v jedné sekci — dřív tři karty po jednom poli.
+    SectionCard(title = t("Popis")) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(t("Vzhled postavy"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+            DarkTextField(
+                value = scene.postava,
+                onValueChange = { vm.setAnimatePostava(it) },
+                placeholder = t("young woman with short red hair, black leather jacket"),
+                minHeight = 64.dp,
+                onClear = { vm.setAnimatePostava("") },
+            )
+            Text(t("Prostředí"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+            DarkTextField(
+                value = scene.prostredi,
+                onValueChange = { vm.setAnimateProstredi(it) },
+                placeholder = t("night city street with neon signs"),
+                minHeight = 64.dp,
+                onClear = { vm.setAnimateProstredi("") },
+            )
+            Text(t("Pohyb"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+            DarkTextField(
+                value = scene.pohyb,
+                onValueChange = { vm.setAnimatePohyb(it) },
+                placeholder = t("a person dancing"),
+                minHeight = 52.dp,
+                onClear = { vm.setAnimatePohyb("") },
+            )
+        }
     }
 }

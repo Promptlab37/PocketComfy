@@ -74,7 +74,7 @@ fun InpaintSection(vm: MainViewModel) {
     var maluje by remember { mutableStateOf(false) }
     val masku = scene.rezim.chceMasku
 
-    SectionCard(title = t("Co se dělá"), subtitle = t("Dvě úlohy nad stejnou fotkou")) {
+    SectionCard(title = t("Co udělat"), subtitle = t("Dvě úlohy nad stejnou fotkou")) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             PillRow(
                 items = InpaintRezim.entries.toList(),
@@ -96,7 +96,7 @@ fun InpaintSection(vm: MainViewModel) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(4f / 3f)
+                .plochaFotky(prazdna = scene.source == null)
                 .clip(RoundedCornerShape(14.dp))
                 .background(Surface2)
                 .border(
@@ -254,7 +254,7 @@ fun InpaintSection(vm: MainViewModel) {
 
     // U rozšíření se model nevybírá — vlastní předlohu má jen Qwen 2.1.
     if (masku) SkladaciSekce(
-        title = t("Model a doladění"),
+        title = t("Nastavení"),
         souhrn = scene.model.title +
             // Jen když LoRA k modelu opravdu patří — volbu z jiného modelu
             // graf nedostane a ve shrnutí by strašila.

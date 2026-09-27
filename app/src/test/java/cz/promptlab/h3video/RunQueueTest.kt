@@ -24,7 +24,8 @@ class RunQueueTest {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val stav = MutableStateFlow<GenState>(GenState.Idle)
     private var bezi = false
-    private val spustene = mutableListOf<String>()
+    // Beh zapisuje z vlakna fronty, test cte z hlavniho — seznam musi snest oboji naraz.
+    private val spustene: MutableList<String> = java.util.concurrent.CopyOnWriteArrayList()
 
     private fun jadro() = QueueCore(
         stav = stav,

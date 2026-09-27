@@ -44,7 +44,12 @@ import cz.promptlab.h3video.ui.theme.Violet
 fun PrekladPromptu(
     vm: MainViewModel,
     pole: MainViewModel.PromptPole,
-    popisek: String = t("🌐 Přeložit do angličtiny"),
+    popisek: String = t("🌐 Přeložit"),
+    /**
+     * Tlačítka vylepšení zadání. Stojí ve stejné zalamovací řadě před
+     * Přeložit — na každé kartě tedy stejné pořadí a stejný vzhled.
+     */
+    vylepseni: (@Composable () -> Unit)? = null,
 ) {
     val stav by vm.rewriteState.collectAsStateWithLifecycle()
     val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
@@ -61,6 +66,7 @@ fun PrekladPromptu(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxWidth(),
     ) {
+        vylepseni?.invoke()
         OutlineButton(
             if (bezi) t("Překládám…") else popisek,
             color = Violet,

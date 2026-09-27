@@ -1,0 +1,113 @@
+{
+ "6": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "minimax_music3_dit_fp16.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "3": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "minimax_music3_text_encoder_pruned_int8_convrot.safetensors",
+   "type": "minimax",
+   "device": "default"
+  }
+ },
+ "7": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "minimax_music3_dav.safetensors"
+  }
+ },
+ "13": {
+  "class_type": "MiniMaxMusic3TextEncode",
+  "inputs": {
+   "clip": [
+    "3",
+    0
+   ],
+   "caption": "",
+   "lyrics": "",
+   "seed": 0,
+   "max_duration": 60.0,
+   "cfg_scale": 1.7,
+   "top_k": 50
+  },
+  "_meta": {
+   "title": "Zadani"
+  }
+ },
+ "10": {
+  "class_type": "ConditioningZeroOut",
+  "inputs": {
+   "conditioning": [
+    "13",
+    0
+   ]
+  }
+ },
+ "15": {
+  "class_type": "EmptyMiniMaxMusic3LatentAudio",
+  "inputs": {
+   "seconds": [
+    "13",
+    1
+   ],
+   "batch_size": 1
+  }
+ },
+ "9": {
+  "class_type": "KSampler",
+  "inputs": {
+   "model": [
+    "6",
+    0
+   ],
+   "positive": [
+    "13",
+    0
+   ],
+   "negative": [
+    "10",
+    0
+   ],
+   "latent_image": [
+    "15",
+    0
+   ],
+   "seed": 0,
+   "steps": 30,
+   "cfg": 1.7,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 1.0
+  }
+ },
+ "42": {
+  "class_type": "VAEDecodeAudioTiled",
+  "inputs": {
+   "samples": [
+    "9",
+    0
+   ],
+   "vae": [
+    "7",
+    0
+   ],
+   "tile_size": 1536,
+   "overlap": 64
+  }
+ },
+ "44": {
+  "class_type": "SaveAudioMP3",
+  "inputs": {
+   "audio": [
+    "42",
+    0
+   ],
+   "filename_prefix": "audio/H3Video",
+   "quality": "V0"
+  }
+ }
+}

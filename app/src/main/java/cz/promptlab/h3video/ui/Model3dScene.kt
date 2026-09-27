@@ -67,7 +67,7 @@ fun Model3dSection(vm: MainViewModel) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(4f / 3f)
+                .plochaFotky(prazdna = scene.thumb == null)
                 .clip(RoundedCornerShape(14.dp))
                 .background(Surface2)
                 .border(1.dp, Outline1, RoundedCornerShape(14.dp))

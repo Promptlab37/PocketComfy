@@ -192,7 +192,7 @@ object AioBuilder {
                 // Bez ní mluvící referenční video přebije stojící fotku (v balíku je
                 // to ověřené poměrem zhruba 2:1) a ve výsledku je vidět obličej
                 // z videa, ne z fotky.
-                firstImageId?.let { imgId ->
+                firstImageId?.takeIf { scene.kotva }?.let { imgId ->
                     val cond = wf.inputs(N_COND)
                     val kf = newId()
                     wf.put(

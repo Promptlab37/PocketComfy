@@ -140,6 +140,11 @@ data class AioScene(
     val maskTarget: String = "",
     /** Přemalování: kolik objektů se má sledovat (nejčastěji jeden). */
     val maskObjects: Int = 1,
+    /**
+     * Reference: připnout první fotku jako snímek 0 (H3IdentityAnchor)?
+     * U výměny postavy (Upravit video) ne — první snímek má být z videa.
+     */
+    val kotva: Boolean = true,
 ) {
     /** Šablona, kterou je potřeba stáhnout ze serveru. */
     val sablona: String

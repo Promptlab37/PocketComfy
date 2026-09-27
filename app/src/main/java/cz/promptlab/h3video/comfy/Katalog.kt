@@ -308,6 +308,58 @@ object Katalog {
             "models/loras", "Dance a Wan Animate — zrychlení na 6 kroků",
             "$HF/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
         ),
+        // Upravit video → Vyměnit postavu: SCAIL-2 (Comfy-Org/SCAIL-2).
+        "wan2.1_14B_SCAIL_2_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Upravit video — vyměnit postavu (16,7 GB)",
+            "$HF/Comfy-Org/SCAIL-2/resolve/main/diffusion_models/wan2.1_14B_SCAIL_2_int8_convrot.safetensors"
+        ),
+        "wan2.1_SCAIL_2_DPO_lora_bf16.safetensors" to Soubor(
+            "models/loras", "Upravit video — vyměnit postavu, LoRA (1,2 GB)",
+            "$HF/Comfy-Org/SCAIL-2/resolve/main/loras/wan2.1_SCAIL_2_DPO_lora_bf16.safetensors"
+        ),
+        "h3_character_swap_pro4500_1000.safetensors" to Soubor(
+            "models/loras", "Upravit video — vyměnit postavu, motor MiniMax H3 (0,16 GB)",
+            "$HF/akatz-ai/MiniMax-H3-Character-Swap-LoRA/resolve/main/h3_character_swap_pro4500_1000.safetensors"
+        ),
+        // Upravit video → Podle předlohy: Fun ControlNet-Union + SDPose (Comfy-Org).
+        "minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors" to Soubor(
+            "models/model_patches", "Upravit video — podle předlohy (2,3 GB)",
+            "$HF/Comfy-Org/MiniMax-H3/resolve/main/model_patches/minimax_h3_fun_controlnet_union_pruned_int8_convrot.safetensors"
+        ),
+        "sdpose_wholebody_fp16.safetensors" to Soubor(
+            "models/checkpoints", "Upravit video — podle předlohy, póza (1,9 GB)",
+            "$HF/Comfy-Org/SDPose/resolve/main/checkpoints/sdpose_wholebody_fp16.safetensors"
+        ),
+        "rt_detr_v4-x-hgnet_fp16.safetensors" to Soubor(
+            "models/diffusion_models", "Upravit video — podle předlohy, hledání lidí (0,12 GB)",
+            "$HF/Comfy-Org/SDPose/resolve/main/diffusion_models/rt_detr_v4-x-hgnet_fp16.safetensors"
+        ),
+        // Upravit video → Podle zadání: Bernini-R na Wan 2.2 (Comfy-Org/Bernini-R).
+        "wan2.2_bernini_r_high_noise_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Upravit video — podle zadání, první půlka (14,5 GB)",
+            "$HF/Comfy-Org/Bernini-R/resolve/main/diffusion_models/wan2.2_bernini_r_high_noise_int8_convrot.safetensors"
+        ),
+        "wan2.2_bernini_r_low_noise_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Upravit video — podle zadání, druhá půlka (14,5 GB)",
+            "$HF/Comfy-Org/Bernini-R/resolve/main/diffusion_models/wan2.2_bernini_r_low_noise_int8_convrot.safetensors"
+        ),
+        "lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors" to Soubor(
+            "models/loras", "Upravit video — podle zadání, zrychlení na 6 kroků",
+            "$HF/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors"
+        ),
+        // Hudba → MiniMax Music 3 (Comfy-Org/MiniMax-Music-3).
+        "minimax_music3_dit_fp16.safetensors" to Soubor(
+            "models/diffusion_models", "Hudba — MiniMax Music 3 (4,9 GB)",
+            "$HF/Comfy-Org/MiniMax-Music-3/resolve/main/diffusion_models/minimax_music3_dit_fp16.safetensors"
+        ),
+        "minimax_music3_text_encoder_pruned_int8_convrot.safetensors" to Soubor(
+            "models/text_encoders", "Hudba — MiniMax Music 3, skladatel (9,2 GB)",
+            "$HF/Comfy-Org/MiniMax-Music-3/resolve/main/text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors"
+        ),
+        "minimax_music3_dav.safetensors" to Soubor(
+            "models/vae", "Hudba — MiniMax Music 3, zvuk (0,22 GB)",
+            "$HF/Comfy-Org/MiniMax-Music-3/resolve/main/vae/minimax_music3_dav.safetensors"
+        ),
         // Vylepšit video → Zplynulit: interpolace FILM z jádra ComfyUI.
         "film_net_fp16.safetensors" to Soubor(
             "models/frame_interpolation", "Vylepšit video — zplynulení (0,07 GB)",

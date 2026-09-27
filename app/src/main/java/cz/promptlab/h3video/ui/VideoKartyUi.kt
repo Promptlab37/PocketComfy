@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material3.Icon
@@ -91,6 +92,108 @@ fun UpravaVideaSection(vm: MainViewModel) {
         }
     }
     when (s.rezim) {
+        UpravaRezim.PREDLOHA -> {
+            SectionCard(title = t("Co z videa vzít")) {
+                PillRow(
+                    items = cz.promptlab.h3video.data.PredlohaDruh.entries.toList(),
+                    selected = s.predlohaDruh,
+                    label = { it.title },
+                    onSelect = { vm.setUpravaPredlohaDruh(it) },
+                )
+            }
+            SectionCard(title = t("Popis scény")) {
+                DarkTextField(
+                    value = s.popis,
+                    onValueChange = { vm.setUpravaPopis(it) },
+                    placeholder = "A knight in silver armor dances in a misty forest",
+                    minHeight = 100.dp,
+                    onClear = { vm.setUpravaPopis("") },
+                )
+            }
+            SectionCard(title = t("Nastavení")) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Posuvník jen když je z čeho vybírat (aspoň o sekundu delší video).
+                    if (s.predlohaMax >= cz.promptlab.h3video.data.UpravaScene.PREDLOHA_MIN_S + 1f) LabeledSlider(
+                        label = t("Sekundy"),
+                        value = t("prvních %.0f s videa").format(s.predlohaDelka),
+                        position = s.predlohaDelka,
+                        range = cz.promptlab.h3video.data.UpravaScene.PREDLOHA_MIN_S..s.predlohaMax,
+                        onChange = { vm.setUpravaPredlohaSekundy(Math.round(it).toFloat()) },
+                    )
+                    PillRow(
+                        items = listOf(true, false),
+                        selected = s.predlohaRychle,
+                        label = { if (it) t("Rychle") else t("Kvalitně") },
+                        onSelect = { vm.setUpravaPredlohaRychle(it) },
+                    )
+                }
+            }
+        }
+        UpravaRezim.ZADANI -> {
+            val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            val vyberFotky = rememberLauncherForActivityResult(VyberMedii()) { vm.pickUpravaReference(it) }
+            SectionCard(title = t("Co změnit")) {
+                DarkTextField(
+                    value = s.popis,
+                    onValueChange = { vm.setUpravaPopis(it) },
+                    placeholder = "Replace the background with a busy city street at night",
+                    minHeight = 100.dp,
+                    onClear = { vm.setUpravaPopis("") },
+                )
+            }
+            SectionCard(title = t("Reference")) {
+                UpravaFotka(s.zadaniReferenceNahled, t("Reference"), { vyberFotky.launch(imageOnly) }, { vm.clearUpravaReference() })
+            }
+            SectionCard(
+                title = t("Nastavení"),
+                stav = t("prvních %.1f s videa").format(cz.promptlab.h3video.comfy.BerniniBuilder.sekund(s)),
+            ) {
+                PillRow(
+                    items = listOf(true, false),
+                    selected = s.zadaniRychle,
+                    label = { if (it) t("Rychle") else t("Kvalitně") },
+                    onSelect = { vm.setUpravaZadaniRychle(it) },
+                )
+            }
+        }
+        UpravaRezim.POSTAVA -> {
+            val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+            val vyberFotky = rememberLauncherForActivityResult(VyberMedii()) { vm.pickUpravaPostava(it) }
+            SectionCard(title = t("Čím")) {
+                PillRow(
+                    items = cz.promptlab.h3video.data.PostavaMotor.entries.toList(),
+                    selected = s.motorPostavy,
+                    label = { it.title },
+                    onSelect = { vm.setUpravaMotorPostavy(it) },
+                )
+            }
+            SectionCard(title = t("Nová postava")) {
+                UpravaFotka(s.postavaNahled, t("Nová postava"), { vyberFotky.launch(imageOnly) }, { vm.clearUpravaPostava() })
+            }
+            SectionCard(title = t("Popis")) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(t("Koho ve videu vyměnit"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                    DarkTextField(
+                        value = s.kohoVymenit,
+                        onValueChange = { vm.setUpravaKoho(it) },
+                        placeholder = if (s.motorPostavy == cz.promptlab.h3video.data.PostavaMotor.H3)
+                            cz.promptlab.h3video.data.UpravaScene.KOHO_VYCHOZI_H3
+                        else cz.promptlab.h3video.data.UpravaScene.KOHO_VYCHOZI,
+                        minHeight = 52.dp,
+                        singleLine = true,
+                        onClear = { vm.setUpravaKoho("") },
+                    )
+                    Text(t("Scéna"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                    DarkTextField(
+                        value = s.popis,
+                        onValueChange = { vm.setUpravaPopis(it) },
+                        placeholder = "A woman in a red dress dancing on a sunny terrace",
+                        minHeight = 90.dp,
+                        onClear = { vm.setUpravaPopis("") },
+                    )
+                }
+            }
+        }
         UpravaRezim.PREMALOVAT -> {
             SectionCard(title = t("Co ve videu sledovat")) {
                 Column {
@@ -225,13 +328,17 @@ fun VylepseniVideaSection(vm: MainViewModel) {
         }
         VylepseniRezim.ZPLYNULIT -> SectionCard(title = t("Plynulost")) {
             Column {
-                PillRow(
-                    items = s.nasobkyKtereSeVejdou,
-                    selected = s.nasobek,
-                    label = { "$it×" },
-                    onSelect = { vm.setVylepseniNasobek(it) },
-                )
-                Spacer(Modifier.height(10.dp))
+                // Jediná možnost se nenabízí — nedá se změnit.
+                // …ledaže je uložená volba mimo ni, pak se musí dát přepnout.
+                if (s.nasobkyKtereSeVejdou.size > 1 || s.nasobek !in s.nasobkyKtereSeVejdou) {
+                    PillRow(
+                        items = s.nasobkyKtereSeVejdou,
+                        selected = s.nasobek,
+                        label = { "$it×" },
+                        onSelect = { vm.setVylepseniNasobek(it) },
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         t("Zpomalit"),
@@ -287,6 +394,48 @@ internal fun VideoVyber(
         }
         if (chyba != null) {
             Text(chyba, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+/** Fotka v kartě Upravit video (nová postava / reference): klepnutí vybere, křížek odebere. */
+@Composable
+private fun UpravaFotka(
+    nahledFotky: android.graphics.Bitmap?,
+    popisek: String,
+    onPick: () -> Unit,
+    onClear: () -> Unit,
+) {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .plochaFotky(prazdna = nahledFotky == null)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Surface2)
+            .border(1.dp, Outline1, RoundedCornerShape(14.dp))
+            .clickable { onPick() }
+    ) {
+        val nahled = nahledFotky
+        if (nahled != null) {
+            Image(
+                nahled.asImageBitmap(), popisek,
+                contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize(),
+            )
+            Box(
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(6.dp)
+                    .size(28.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Surface2)
+                    .clickable { onClear() },
+                contentAlignment = Alignment.Center,
+            ) { Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextMid) }
+        } else {
+            Icon(
+                Icons.Default.AddPhotoAlternate, t("Vybrat fotku"),
+                Modifier.align(Alignment.Center).size(30.dp), TextMid
+            )
         }
     }
 }

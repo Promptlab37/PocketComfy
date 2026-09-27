@@ -31,6 +31,16 @@ enum class MusicMotor(
     YUE2(
         titleCs = "YuE2 3B",
         detailCs = "Muzikálnější — nejdřív si napíše noty. Zpívá anglicky a čínsky, běh je delší",
+    ),
+
+    /**
+     * MiniMax Music 3 (blueprint ComfyUI). Celá píseň do pěti minut podle
+     * popisu hudby a textu se značkami sekcí; délku si řídí sám, appka zadává
+     * strop (`max_duration`).
+     */
+    MM3(
+        titleCs = "MiniMax Music 3",
+        detailCs = "Celá píseň do pěti minut podle popisu a textu se značkami sekcí",
     );
 
     val title: String get() = t(titleCs)
@@ -147,8 +157,15 @@ data class MusicScene(
      */
     val predlohaAkordy: Boolean = false,
 ) {
+    /** Zadává se jen strop délky (YuE2, MiniMax Music 3), ne přesná délka. */
+    val jenStrop: Boolean get() = motor != MusicMotor.ACE
+
+    /** Nejvyšší strop pro vybraný motor. */
+    val stropMax: Int
+        get() = if (motor == MusicMotor.MM3) MM3_MAX_SECONDS else YUE2_MAX_SECONDS
+
     /** Délka, kterou má smysl ukázat u karty a v historii. */
-    val delka: Int get() = if (motor == MusicMotor.YUE2) maxSeconds else seconds
+    val delka: Int get() = if (jenStrop) maxSeconds.coerceAtMost(stropMax) else seconds
 
     /** Jede teď předělávání nahrávky? Jen YuE2 to umí. */
     val predelava: Boolean get() = motor == MusicMotor.YUE2 && rezim == MusicRezim.PREDELAT
@@ -166,6 +183,9 @@ data class MusicScene(
         /** YuE2 zvládne delší skladbu; strop je z předlohy (`max_duration`). */
         const val YUE2_MIN_SECONDS = 30
         const val YUE2_MAX_SECONDS = 360
+
+        /** MiniMax Music 3: „complete songs up to five minutes" (README autorů). */
+        const val MM3_MAX_SECONDS = 300
 
         /** Jazyky zpěvu, které zná ACE-Step (výběr těch nejbližších). */
         val LANGUAGES = listOf("cs", "sk", "en", "de", "es", "fr", "it", "pl", "ru")
@@ -193,7 +213,7 @@ fun musicProblem(s: MusicScene): String? = when {
 /** Upozornění, která nebrání spuštění. */
 fun musicHints(s: MusicScene): List<String> {
     val out = mutableListOf<String>()
-    if (s.text.isBlank()) {
+    if (s.text.isBlank() && s.motor != MusicMotor.MM3) {
         out += t("Bez textu písně vyjde instrumentálka. Text piš po slokách, ") +
             (if (s.motor == MusicMotor.YUE2) t("anglicky.") else t("klidně česky."))
     }

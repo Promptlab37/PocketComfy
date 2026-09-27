@@ -231,7 +231,13 @@ fun TalkSceneSection(vm: MainViewModel) {
         )
     }
 
-    SectionCard(title = t("Prompt pro model"), subtitle = t("Skládá se sám z postav a replik. Můžeš do něj sáhnout.")) {
+    // Skládá se sám z postav a replik — sbalený, s prvním řádkem jako souhrnem.
+    SkladaciSekce(
+        title = t("Prompt pro model"),
+        souhrn = scene.prompt.lineSequence().firstOrNull { it.isNotBlank() }?.take(70)
+            ?: t("Doplní se, jakmile přidáš fotku a repliku"),
+        klic = "talk-prompt",
+    ) {
         Column {
             DarkTextField(
                 value = scene.prompt,

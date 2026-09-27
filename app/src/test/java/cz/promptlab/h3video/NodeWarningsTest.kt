@@ -48,4 +48,9 @@ class NodeWarningsTest {
         )
         assertEquals(listOf("Dialogue line 1 was skipped."), NodeWarnings.filtruj(vstup))
     }
+
+    @Test
+    fun `SAM 3_1 bez VAE se neukazuje`() {
+        assertTrue(NodeWarnings.jeNeskodna("WARNING: No VAE weights detected, VAE not initalized."))
+    }
 }

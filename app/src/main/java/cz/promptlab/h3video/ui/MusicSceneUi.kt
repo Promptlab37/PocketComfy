@@ -95,7 +95,7 @@ fun MusicSection(vm: MainViewModel) {
 
     SectionCard(
         title = t("Čím skládat"),
-        subtitle = t("Dva různé modely — každý skládá jinak a bere jiné zadání")
+        subtitle = null
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             PillRow(
@@ -126,8 +126,7 @@ fun MusicSection(vm: MainViewModel) {
 
     SectionCard(
         title = "Skladba",
-        subtitle = if (yue2) t("YuE2 3B — nejdřív noty, pak zpěv")
-        else t("ACE-Step 1.5 — celá píseň za pár desítek sekund")
+        subtitle = null
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column {
@@ -150,9 +149,12 @@ fun MusicSection(vm: MainViewModel) {
                 DarkTextField(
                     value = scene.text,
                     onValueChange = { vm.setMusicText(it) },
-                    placeholder = if (yue2)
-                        t("Sloky a refrén anglicky; prázdné = instrumentálka")
-                    else t("Sloky a refrén; prázdné = instrumentálka"),
+                    placeholder = when (scene.motor) {
+                        MusicMotor.YUE2 -> t("Sloky a refrén anglicky; prázdné = instrumentálka")
+                        // Značky sekcí podle README MiniMax Music 3.
+                        MusicMotor.MM3 -> "[Verse]\n…\n[Chorus]\n…"
+                        MusicMotor.ACE -> t("Sloky a refrén; prázdné = instrumentálka")
+                    },
                     minHeight = 140.dp,
                     onClear = { vm.setMusicText("") },
                 )
@@ -160,24 +162,23 @@ fun MusicSection(vm: MainViewModel) {
         }
     }
 
-    if (yue2) {
-        // U YuE2 je délka jen strop: model dozpívá, kde má píseň konec, a
+    if (scene.jenStrop) {
+        // U YuE2 a MiniMax Music 3 je délka jen strop: model dozpívá, kde má píseň konec, a
         // latent si podle toho sám určí. Slibovat přesnou délku by bylo lhaní.
         SectionCard(
             title = t("Nejvýše"),
             trailing = {
                 Text(
-                    "${scene.maxSeconds} s",
-                    style = MaterialTheme.typography.headlineSmall, color = Cyan
+                    "${scene.delka} s",
+                    style = MaterialTheme.typography.titleMedium, color = Cyan
                 )
             }
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Slider(
-                    value = scene.maxSeconds.toFloat(),
+                    value = scene.delka.toFloat(),
                     onValueChange = { vm.setMusicMaxSeconds(it.toInt()) },
-                    valueRange = MusicScene.YUE2_MIN_SECONDS.toFloat()..
-                        MusicScene.YUE2_MAX_SECONDS.toFloat(),
+                    valueRange = MusicScene.YUE2_MIN_SECONDS.toFloat()..scene.stropMax.toFloat(),
                     colors = sliderColors()
                 )
             }
@@ -185,7 +186,7 @@ fun MusicSection(vm: MainViewModel) {
 
         // Při předělávání noty přicházejí z nahrávky a uzel `YuE2GenerateABC`
         // v grafu vůbec není — plán by byl knoflík, který graf zahodí.
-        if (!scene.predelava) SkladaciSekce(
+        if (yue2 && !scene.predelava) SkladaciSekce(
             title = t("Plán skladby"),
             souhrn = scene.plan.title,
             klic = "plan-yue2",
@@ -210,7 +211,7 @@ fun MusicSection(vm: MainViewModel) {
             trailing = {
                 Text(
                     "${scene.seconds} s",
-                    style = MaterialTheme.typography.headlineSmall, color = Cyan
+                    style = MaterialTheme.typography.titleMedium, color = Cyan
                 )
             }
         ) {

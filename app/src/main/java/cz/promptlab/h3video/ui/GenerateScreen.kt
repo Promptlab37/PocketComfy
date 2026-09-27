@@ -303,6 +303,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             dlouheNavazuje = longScene.zacatek ==
                 cz.promptlab.h3video.data.LongStart.EXISTING_VIDEO,
             upravaRezim = vm.uprava.collectAsStateWithLifecycle().value.rezim,
+            postavaMotor = vm.uprava.collectAsStateWithLifecycle().value.motorPostavy,
         )
 
         val referencniCesta = mode == Mode.TALK || mode == Mode.LONG ||
@@ -428,7 +429,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             trailing = {
                 Text(
                     "%.1f s".format(params.realSeconds),
-                    style = MaterialTheme.typography.headlineSmall, color = Cyan
+                    style = MaterialTheme.typography.titleMedium, color = Cyan
                 )
             }
         ) {
@@ -960,7 +961,7 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
     // pozornosti (přebíjí i sage attention nastavené na serveru).
     val aktivniLory = params.extraLoras.count { it.enabled }
     SkladaciSekce(
-        title = t("Modely a doladění"),
+        title = t("Nastavení"),
         souhrn = listOf(
             if (aktivniLory == 0) t("Jen zrychlovací z workflow")
             else t("Zrychlovací z workflow + %d další").format(aktivniLory),
@@ -1045,7 +1046,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                         ) { if (!bezi) vm.vylepsiObrazovyPrompt() }
                     } else {
                         OutlineButton(
-                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
+                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit"),
                             color = Cyan,
                         ) { if (!bezi) vm.vylepsiObrazovyPrompt() }
                     }
