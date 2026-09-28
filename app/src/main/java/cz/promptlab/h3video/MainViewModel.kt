@@ -4420,6 +4420,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setUpravaPredlohaDruh(v: cz.promptlab.h3video.data.PredlohaDruh) = updateUprava { it.copy(predlohaDruh = v) }
     fun setUpravaPredlohaRychle(v: Boolean) = updateUprava { it.copy(predlohaRychle = v) }
     fun setUpravaZadaniRychle(v: Boolean) = updateUprava { it.copy(zadaniRychle = v) }
+    fun setUpravaPostavaUsek(od: Float, doS: Float) = updateUprava { it.copy(postavaOd = od, postavaDo = doS) }
     fun setUpravaPredlohaSekundy(v: Float) = updateUprava {
         it.copy(predlohaSekundy = v.coerceIn(cz.promptlab.h3video.data.UpravaScene.PREDLOHA_MIN_S, it.predlohaMax))
     }
@@ -4472,6 +4473,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 video = f,
                 naVysku = info?.let { it.vyska >= it.sirka } ?: true,
                 videoSekund = sekund,
+                // Nové video = úsek zase od začátku.
+                postavaOd = 0f, postavaDo = 0f,
                 videoSirka = info?.sirka ?: 0,
                 videoVyska = info?.vyska ?: 0,
                 videoSnimku = info?.snimku ?: 0,

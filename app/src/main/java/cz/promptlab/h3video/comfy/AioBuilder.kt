@@ -220,7 +220,15 @@ object AioBuilder {
                                 .put("file", video).put("video-preview", "")
                         )
                     )
-                    wf.put(gc, node("GetVideoComponents", "Rozklad videa", JSONObject().put("video", link(lv))))
+                    // Zkrácení na serveru (Vyměnit postavu s delším videem než 15 s).
+                    val zdroj = if (scene.refVideoSekund > 0f) {
+                        val sl = newId()
+                        wf.put(sl, node("Video Slice", "Zkrácení videa", JSONObject()
+                            .put("video", link(lv)).put("start_time", scene.refVideoOd.toDouble())
+                            .put("duration", scene.refVideoSekund.toDouble()).put("strict_duration", false)))
+                        sl
+                    } else lv
+                    wf.put(gc, node("GetVideoComponents", "Rozklad videa", JSONObject().put("video", link(zdroj))))
                     wf.inputs(N_COND).put("ref_videos.ref_video_0", link(gc))
                     // Zvuk z referenčního videa jde do modelu jen když ho uživatel chce –
                     // jinak by si model bral i ruchy, které do nové scény nepatří.

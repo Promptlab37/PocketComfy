@@ -49,6 +49,7 @@ import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.ui.theme.Cyan
 import cz.promptlab.h3video.ui.theme.Outline1
 import cz.promptlab.h3video.ui.theme.Surface2
+import cz.promptlab.h3video.ui.theme.TextHi
 import cz.promptlab.h3video.ui.theme.TextLow
 import cz.promptlab.h3video.ui.theme.TextMid
 import java.io.File
@@ -173,6 +174,27 @@ fun UpravaVideaSection(vm: MainViewModel) {
             }
             SectionCard(title = t("Nová postava")) {
                 UpravaFotka(s.postavaNahled, t("Nová postava"), { vyberFotky.launch(imageOnly) }, { vm.clearUpravaPostava() })
+            }
+            // Úsek videa od–do: uřízne začátek i konec (na serveru, v telefonu
+            // zůstane celé). Delší úsek, než motor unese, se sám zkrátí.
+            if (s.videoSekund >= 3f) SectionCard(title = t("Úsek videa")) {
+                Column {
+                    Text(
+                        "%s – %s · %.0f s".format(cas(s.postavaZacatek), cas(s.postavaKonec), s.postavaDelka),
+                        style = MaterialTheme.typography.labelLarge, color = TextHi,
+                    )
+                    androidx.compose.material3.RangeSlider(
+                        value = s.postavaZacatek..s.postavaKonec,
+                        onValueChange = { r ->
+                            vm.setUpravaPostavaUsek(Math.round(r.start).toFloat(), Math.round(r.endInclusive).toFloat())
+                        },
+                        valueRange = 0f..s.videoSekund,
+                        colors = androidx.compose.material3.SliderDefaults.colors(
+                            thumbColor = cz.promptlab.h3video.ui.theme.Violet,
+                            activeTrackColor = cz.promptlab.h3video.ui.theme.Violet,
+                        ),
+                    )
+                }
             }
             SectionCard(title = t("Popis")) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -443,4 +465,10 @@ private fun UpravaFotka(
             )
         }
     }
+}
+
+/** 0:05 */
+private fun cas(sekundy: Float): String {
+    val c = Math.round(sekundy)
+    return "%d:%02d".format(c / 60, c % 60)
 }

@@ -119,6 +119,9 @@ data class AioScene(
     /** Reference: referenční video (pohyb), volitelně i s jeho zvukem. */
     val refVideo: File? = null,
     val refVideoAudio: Boolean = false,
+    /** Reference: z referenčního videa jen úsek od [refVideoOd], [refVideoSekund] dlouhý (0 = celé). */
+    val refVideoOd: Float = 0f,
+    val refVideoSekund: Float = 0f,
     /** Klíčové snímky. */
     val keys: List<AioSlot> = listOf(AioSlot(key = 1, position = 1)),
     /** Prodloužení a zvětšení: zdrojové video z telefonu. */

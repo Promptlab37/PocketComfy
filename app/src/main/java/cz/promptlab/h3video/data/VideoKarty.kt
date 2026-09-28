@@ -30,7 +30,7 @@ enum class PredlohaDruh(private val titleCs: String) {
  */
 enum class PostavaMotor(private val titleCs: String, private val delkaCs: String) {
     SCAIL("SCAIL-2", "celé video"),
-    H3("MiniMax H3", "do 15 s");
+    H3("MiniMax H3", "do 20 s");
 
     val title: String get() = t(titleCs)
     val delka: String get() = t(delkaCs)
@@ -83,6 +83,13 @@ data class UpravaScene(
     /** Délka videa v sekundách (0 = neznámá). */
     val videoSekund: Float = 0f,
     val motorPostavy: PostavaMotor = PostavaMotor.SCAIL,
+    /**
+     * Vyměnit postavu: úsek videa od–do v sekundách (do 0 = co motor unese —
+     * SCAIL do konce, H3 [H3_POSTAVA_MAX_S] od začátku úseku). Video se
+     * ořízne na serveru uzlem jádra `Video Slice`, v telefonu zůstane celé.
+     */
+    val postavaOd: Float = 0f,
+    val postavaDo: Float = 0f,
     /** Podle předlohy: co se z videa bere a jestli rychle (4 kroky). */
     val predlohaDruh: PredlohaDruh = PredlohaDruh.POZA,
     val predlohaRychle: Boolean = true,
@@ -118,11 +125,41 @@ data class UpravaScene(
         const val KOHO_VYCHOZI_H3 = "person"
         /** H3 Ref2VA bere referenční video 2–15 s. */
         const val H3_MAX_S = 15f
+        /**
+         * Výměna postavy přes H3: oficiálně 15 s, uživatel ale 20 s úspěšně
+         * vyzkoušel (28. 9. 2026: „H3 umí delší videa, dělal jsem 20 sekund“).
+         */
+        const val H3_POSTAVA_MAX_S = 20f
         const val SWAP_LORA = "h3_character_swap_pro4500_1000.safetensors"
         /** Podle předlohy: MiniMax H3 bere 5–15 s. */
         const val PREDLOHA_MIN_S = 5f
         const val PREDLOHA_MAX_S = 15f
     }
+
+    /** Vyměnit postavu: nejdelší úsek, který motor zpracuje. */
+    val postavaMax: Float
+        get() = if (motorPostavy == PostavaMotor.H3) H3_POSTAVA_MAX_S else Float.MAX_VALUE
+
+    /** Délka celého videa (neznámá = 5 s). */
+    private val celkem: Float get() = if (videoSekund > 0f) videoSekund else 5f
+
+    /** Začátek úseku. */
+    val postavaZacatek: Float get() = postavaOd.coerceIn(0f, maxOf(0f, celkem - 2f))
+
+    /** Konec úseku: zvolený, nebo co motor unese; vždy aspoň 2 s po začátku. */
+    val postavaKonec: Float
+        get() {
+            val strop = minOf(celkem, postavaZacatek + postavaMax)
+            val k = if (postavaDo <= 0f) strop else postavaDo.coerceIn(postavaZacatek, strop)
+            return maxOf(k, minOf(celkem, postavaZacatek + 2f))
+        }
+
+    /** Sekundy, které se opravdu zpracují. */
+    val postavaDelka: Float get() = postavaKonec - postavaZacatek
+
+    /** Ořezává se video? Jen když je známá délka a úsek není celé video. */
+    val postavaOrez: Boolean
+        get() = videoSekund > 0f && (postavaZacatek > 0.05f || postavaKonec < videoSekund - 0.05f)
 
     /** Podle předlohy: nejdelší volitelný úsek — 15 s, nebo celé kratší video. */
     val predlohaMax: Float
@@ -147,9 +184,12 @@ data class UpravaScene(
         return AioScene(
             mode = AioMode.REFERENCE,
             prompt = zadani,
-            seconds = (if (videoSekund > 0f) videoSekund else 5f).coerceIn(2f, H3_MAX_S),
+            seconds = (if (videoSekund > 0f) postavaDelka else 5f).coerceIn(2f, H3_POSTAVA_MAX_S),
             refs = listOf(AioSlot(key = 1, image = postava)),
             refVideo = video,
+            // Delší video se na serveru zkrátí na zvolenou délku (dřív ho karta odmítla).
+            refVideoOd = if (postavaOrez) postavaZacatek else 0f,
+            refVideoSekund = if (postavaOrez) postavaDelka else 0f,
             kotva = false,
         )
     }
@@ -226,8 +266,6 @@ fun upravaProblem(s: UpravaScene): String? = when {
         UpravaRezim.PREMALOVAT -> aioProblem(s.doAio())
         UpravaRezim.POSTAVA -> when {
             s.postava == null -> t("Vyber fotku nové postavy.")
-            s.motorPostavy == PostavaMotor.H3 && s.videoSekund > UpravaScene.H3_MAX_S ->
-                t("MiniMax H3 bere video nejvýš 15 s. Zkrať ho, nebo zvol SCAIL-2.")
             else -> null
         }
         UpravaRezim.PREDLOHA -> when {
@@ -296,7 +334,9 @@ class VideoKartyStore(private val ctx: Context) {
             predlohaRychle = j.optBoolean("predlohaRychle", true),
             zadaniRychle = j.optBoolean("zadaniRychle", true),
             zadaniReference = soubor(j.optString("zadaniReference")),
-            predlohaSekundy = j.optDouble("predlohaSekundy", 5.0).toFloat()
+            predlohaSekundy = j.optDouble("predlohaSekundy", 5.0).toFloat(),
+            postavaOd = j.optDouble("postavaOd", 0.0).toFloat(),
+            postavaDo = j.optDouble("postavaDo", 0.0).toFloat()
                 .coerceIn(UpravaScene.PREDLOHA_MIN_S, UpravaScene.PREDLOHA_MAX_S),
             videoSirka = j.optInt("videoSirka", 0),
             videoVyska = j.optInt("videoVyska", 0),
@@ -329,6 +369,8 @@ class VideoKartyStore(private val ctx: Context) {
                 .put("zadaniRychle", s.zadaniRychle)
                 .put("zadaniReference", s.zadaniReference?.absolutePath ?: "")
                 .put("predlohaSekundy", s.predlohaSekundy.toDouble())
+                .put("postavaOd", s.postavaOd.toDouble())
+                .put("postavaDo", s.postavaDo.toDouble())
                 .put("videoSirka", s.videoSirka)
                 .put("videoVyska", s.videoVyska)
                 .put("videoSnimku", s.videoSnimku)

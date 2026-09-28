@@ -66,8 +66,32 @@ object ScailBuilder {
         wf.inputs(N_SEED).put("noise_seed", seed)
         wf.inputs(N_PLATNO).put("resize_type.width", if (scene.naVysku) KRATSI else DELSI)
         wf.inputs(N_PLATNO).put("resize_type.height", if (scene.naVysku) DELSI else KRATSI)
+        // Zvolená délka: video se ořízne hned za načtením a všechno, co četlo
+        // načtené video, čte ořezané (smyčka úseků, zvuk, SAM 3).
+        if (scene.postavaOrez) {
+            wf.put(N_OREZ, JSONObject()
+                .put("class_type", "Video Slice")
+                .put("inputs", JSONObject()
+                    .put("video", org.json.JSONArray().put(N_VIDEO).put(0))
+                    .put("start_time", scene.postavaZacatek.toDouble())
+                    .put("duration", scene.postavaDelka.toDouble())
+                    .put("strict_duration", false))
+                .put("_meta", JSONObject().put("title", "Zkrácení videa")))
+            wf.keys().asSequence().toList().filter { it != N_OREZ }.forEach { id ->
+                val ins = wf.getJSONObject(id).optJSONObject("inputs") ?: return@forEach
+                ins.keys().asSequence().toList().forEach { k ->
+                    val v = ins.opt(k)
+                    if (v is org.json.JSONArray && v.length() == 2 && v.opt(0) == N_VIDEO) {
+                        ins.put(k, org.json.JSONArray().put(N_OREZ).put(v.getInt(1)))
+                    }
+                }
+            }
+        }
         return wf
     }
+
+    /** Uzel zkrácení videa (vkládá se jen při kratší zvolené délce). */
+    const val N_OREZ = "912"
 
     private fun JSONObject.inputs(node: String): JSONObject =
         getJSONObject(node).getJSONObject("inputs")

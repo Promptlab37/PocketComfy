@@ -148,8 +148,10 @@ class SkupinyKaretTest {
         assertEquals(File("v.mp4"), aio.uploadVideo)
         assertTrue(aio.prompt.contains("<Video 1>") && aio.prompt.contains("<Picture 1>"))
         assertTrue(aio.prompt.contains("man in purple shirt"))
-        assertEquals(15f, aio.seconds)
-        // přes 15 s to H3 nevezme — karta to řekne dřív, než se něco nahraje
-        assertNotNull(cz.promptlab.h3video.data.upravaProblem(s))
+        // Od 4.90: delší video se na serveru zkrátí na prvních 20 s
+        // (uživatel ověřil, že H3 20 s zvládne) — karta ho už neodmítá.
+        assertEquals(20f, aio.seconds)
+        assertEquals(20f, aio.refVideoSekund)
+        assertEquals(null, cz.promptlab.h3video.data.upravaProblem(s))
     }
 }
