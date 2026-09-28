@@ -3162,7 +3162,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _aio.value
         val p = _params.value
-        val zadani = s.prompt.trim()
+        // Se storyboardem stačí prázdné zadání — děj se vezme z panelů
+        // (ověřeno 28. 9. 2026: 4 panely → 4 záběry po řadě).
+        val zadani = s.prompt.trim().ifBlank {
+            if (s.storyboardUcinny) cz.promptlab.h3video.comfy.H3RefWriteBuilder.ZADANI_JEN_STORYBOARD else ""
+        }
         if (zadani.isBlank()) {
             _rewriteState.value = RewriteState.Fail("Nejdřív napiš aspoň pár slov o tom, co chceš.", PraceNaPromptu.VYLEPSENI)
             return

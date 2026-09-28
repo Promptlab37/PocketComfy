@@ -112,6 +112,14 @@ object H3RefWriteBuilder {
             .toString()
     }
 
+    /**
+     * Zadání, když uživatel se storyboardem nenapíše nic: děj se pak bere
+     * jen z panelů mřížky (popisovač je projde po řadě).
+     */
+    const val ZADANI_JEN_STORYBOARD =
+        "Turn the storyboard in <Picture 1> into a video: tell the story its panels show, " +
+            "in the panel order"
+
     const val ROLE_PICTURE = "Picture"
     const val ROLE_SUBJECT = "Subject"
 
