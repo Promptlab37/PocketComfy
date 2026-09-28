@@ -217,6 +217,22 @@ object SbFilmBuilder {
 
     fun reportsSteps(cls: String?): Boolean = cls == "MiniMaxH3EasySegmentStep_SatoDive"
 
+    /**
+     * Krok úseku → krok celého filmu. Každý `SegmentStep` hlásí vlastní
+     * `value/max` od nuly, takže počítadlo i odhad času šly u každého úseku
+     * znovu od začátku (uživatel 28. 9. 2026: „ať to počítá celé video“).
+     * Úsek k posune krok o k × max, celkem je počet úseků × max.
+     */
+    fun globalniKrok(
+        id: String?, nodeClasses: Map<String, String>, value: Int, max: Int,
+    ): Pair<Int, Int> {
+        val useky = nodeClasses.filterValues { it == "MiniMaxH3EasySegmentStep_SatoDive" }
+            .keys.mapNotNull { it.toIntOrNull() }.sorted()
+        val poradi = id?.toIntOrNull()?.let { useky.indexOf(it) } ?: -1
+        if (poradi < 0 || max <= 0) return value to max
+        return (poradi * max + value) to (useky.size * max)
+    }
+
     private fun uzel(cls: String, titulek: String, vstupy: JSONObject) = JSONObject()
         .put("class_type", cls)
         .put("inputs", vstupy)

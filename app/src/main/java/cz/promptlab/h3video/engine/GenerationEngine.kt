@@ -1209,6 +1209,9 @@ object GenerationEngine {
             restoreScene != null -> RestoreBuilder.STEPS
             angleScene != null -> AngleBuilder.STEPS
             editScene?.motor == cz.promptlab.h3video.data.EditMotor.QWEN21 -> editScene.qwen21Steps
+            // Film: kroky všech úseků dohromady (viz SbFilmBuilder.globalniKrok).
+            sbFilmScene != null ->
+                cz.promptlab.h3video.comfy.SbFilmBuilder.KROKU * sbFilmScene.useky.size
             else -> effective.steps
         }
         // Podle tříd uzlů se u šablon balíku poznávají fáze běhu.
@@ -2052,9 +2055,9 @@ object GenerationEngine {
                 }
                 // Kroky bere jen z uzlu vzorkování – ostatní uzly hlásí jiné jednotky.
                 if (reportsSteps(node)) {
-                    val m = data.optInt("max", 0)
+                    val (v, m) = celkovyKrok(node, data.optInt("value", srvStep), data.optInt("max", 0))
                     if (m > 0) srvMax = m
-                    noteStep(data.optInt("value", srvStep))
+                    noteStep(v)
                 }
             }
 
@@ -2071,7 +2074,10 @@ object GenerationEngine {
                         if (reportsSteps(key)) {
                             val v = n.optDouble("value", 0.0)
                             val m = n.optDouble("max", 0.0)
-                            if (m > 1.5) { srvMax = m.toInt(); noteStep(v.toInt()) }
+                            if (m > 1.5) {
+                                val (cv, cm) = celkovyKrok(key, v.toInt(), m.toInt())
+                                srvMax = cm; noteStep(cv)
+                            }
                         }
                     }
                 }
@@ -2097,6 +2103,11 @@ object GenerationEngine {
      * První krok se do průměru nezapočítává – je v něm ještě příprava modelu,
      * která u H3 zabere klidně minutu a odhad by kvůli ní byl mimo.
      */
+    /** U filmu ze storyboardu kroky přes všechny úseky, jinak beze změny. */
+    private fun celkovyKrok(node: String?, value: Int, max: Int): Pair<Int, Int> =
+        if (sbFilmRun) cz.promptlab.h3video.comfy.SbFilmBuilder.globalniKrok(node, nodeClasses, value, max)
+        else value to max
+
     private fun noteStep(value: Int) {
         if (value <= srvStep) { srvStep = value; return }
         val now = System.currentTimeMillis()

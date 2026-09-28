@@ -70,6 +70,17 @@ class SbFilmBuilderTest {
     }
 
     @Test
+    fun `kroky se pocitaji pres cely film`() {
+        val tridy = SbFilmBuilder.nodeClasses(graf())
+        val useky = tridy.filterValues { it == "MiniMaxH3EasySegmentStep_SatoDive" }.keys.sortedBy { it.toInt() }
+        assertEquals(0 to 24, SbFilmBuilder.globalniKrok(useky[0], tridy, 0, 8))
+        assertEquals(11 to 24, SbFilmBuilder.globalniKrok(useky[1], tridy, 3, 8))
+        assertEquals(24 to 24, SbFilmBuilder.globalniKrok(useky[2], tridy, 8, 8))
+        // Uzel mimo úseky: beze změny.
+        assertEquals(3 to 8, SbFilmBuilder.globalniKrok("999", tridy, 3, 8))
+    }
+
+    @Test
     fun `graf nema visici odkazy`() {
         val wf = graf()
         wf.keys().forEach { id ->
