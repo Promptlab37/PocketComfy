@@ -168,9 +168,13 @@ object SbFilmPlan {
             val k = MAX_CELKEM_S / soucet
             delky = delky.map { kotlin.math.floor(it * k * 10) / 10 }
         }
+        // Číslo panelu zůstává takové, jaké je ve storyboardu: přepisovač vidí
+        // celý obrázek a podle čísla panel dohledává. Jen když model čísla
+        // zdvojí, spadne se na pořadí.
+        val cislaSedi = zdroj.map { it.cislo }.distinct().size == zdroj.size
         val panely = zdroj.mapIndexed { i, p ->
             SbPanel(
-                cislo = i + 1,
+                cislo = if (cislaSedi) p.cislo else i + 1,
                 popis = p.popis,
                 typ = p.typ,
                 kamera = p.kamera,
@@ -421,7 +425,11 @@ object SbFilmPrepis {
         }
         // Bez tohohle úsek 2 Iron Mask ukázal i odhalení krále z panelu 6,
         // které patří do dalšího úseku (28. 9. 2026).
-        sb.append("\nShow only what these panels show; later panels belong to the next part.")
+        // 28. 9. 2026 úsek 2 začal „ruka otáčí klíčem v zámku dveří“ z panelu 2
+        // a ve filmu se dveře odemykaly podruhé.
+        sb.append("\nEach shot shows only the action of its own panel. Never repeat an action from an ")
+        sb.append("earlier shot or an earlier part, and do not use storyboard panels that are not in ")
+        sb.append("this list — they are either in another part or cut from the film.")
         sb.append("\nTotal ${"%.1f".format(java.util.Locale.ROOT, usek.sekundy)} seconds. Do not introduce ")
         sb.append("<Video> or <Audio> labels and do not refer to any reference that was not provided.\n]")
         return sb.toString()

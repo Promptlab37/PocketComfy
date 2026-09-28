@@ -127,6 +127,16 @@ class SbFilmPlanTest {
     }
 
     @Test
+    fun `cisla panelu zustanou jako ve storyboardu`() {
+        // Přepisovač vidí celý obrázek a panel dohledává podle čísla.
+        val c = SbCteni(null, null, null, listOf(
+            SbPrecteny(3, null, null, "wide", "static", "a"),
+            SbPrecteny(5, null, null, "close-up", "static", "b"),
+        ))
+        assertEquals(listOf(3, 5), SbFilmPlan.naplanuj(c).panely.map { it.cislo })
+    }
+
+    @Test
     fun `nejvys 12 panelu`() {
         val c = SbCteni(null, null, null, (1..15).map { SbPrecteny(it, null, null, "close-up", "static", "x") })
         assertEquals(SbFilmPlan.MAX_PANELU, SbFilmPlan.naplanuj(c).panely.size)

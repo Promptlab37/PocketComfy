@@ -4740,7 +4740,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun smazSbPanel(index: Int) = updateSbFilm { s ->
         s.copy(
-            panely = s.panely.filterIndexed { i, _ -> i != index }.mapIndexed { i, p -> p.copy(cislo = i + 1) },
+            // Bez přečíslování: číslo odkazuje na panel v obrázku storyboardu.
+            panely = s.panely.filterIndexed { i, _ -> i != index },
             zadaniUseku = emptyList(),
         )
     }
