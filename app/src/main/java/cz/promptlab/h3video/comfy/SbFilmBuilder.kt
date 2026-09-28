@@ -1,0 +1,226 @@
+package cz.promptlab.h3video.comfy
+
+import cz.promptlab.h3video.data.SbFilmPlan
+import cz.promptlab.h3video.data.SbFilmScene
+import cz.promptlab.h3video.data.SbUsek
+import org.json.JSONArray
+import org.json.JSONObject
+
+/**
+ * Grafy karty **Film ze storyboardu**.
+ *
+ * ### Čtení
+ * `LoadImage` → `MiniMaxH3ReferenceCaption` (odblokovaný Qwen3-VL z disku,
+ * otázka [SbFilmPlan.OTAZKA_CTENI] nahrazuje otázku role) → `PreviewAny`.
+ *
+ * ### Film
+ * Úseky vykreslí v jednom běhu balík SatoDive (Minimax-H3-Latent-Continuation):
+ * `ContextSegments` → `SegmentSampleSetup` → `SegmentStep`×N → `Collect` →
+ * `Decode` → `SaveVideo`. Navazuje se přes latent (`native_guide`, kontext
+ * 22 snímků jako v autorově předloze), v paměti je vždy jen jeden úsek.
+ *
+ * **Past, kterou tohle zapojení obchází:** `ContextSegments` bere délku úseku
+ * z první značky `[Shot N] At MM:SS` v textu úseku jako jeho **celkový**
+ * začátek (`_segment_durations_from_prompt`). Zadání z přepisovače má ale
+ * v každém úseku časy od nuly — úsek 2 by dostal délku podle `At 00:03`.
+ * Délky proto určuje plánovací text ([SbFilmPlan.planovaciText]) a skutečné
+ * zadání jde do `SegmentStep.prompt_override`, kde se nic nepřepočítává
+ * (`_segment_step_prompt_media`). Ověřeno během 2×5 s 28. 9. 2026.
+ *
+ * Model, LoRA a vzorkování jsou jako Turbo na kartě Long MiniMax (autorova
+ * sestava balíku): `fl2va` + ref2v Turbo LoRA 0,8, `euler`/`simple`, 8 kroků.
+ */
+object SbFilmBuilder {
+
+    // --- čtení
+    const val N_CTENI_OBRAZEK = "1"
+    const val N_CTENI = "2"
+    const val N_CTENI_VYSTUP = "3"
+    const val CTENI_CLASS = "MiniMaxH3ReferenceCaption"
+
+    fun buildCteni(obrazek: String, model: String, seed: Long): JSONObject = JSONObject()
+        .put(N_CTENI_OBRAZEK, uzel("LoadImage", "Storyboard", JSONObject().put("image", obrazek)))
+        .put(
+            N_CTENI, uzel(
+                CTENI_CLASS, "Čtení storyboardu", JSONObject()
+                    .put("role", "Picture")
+                    .put("model", model)
+                    // Otázka si délku odpovědi určuje sama (řádek na panel).
+                    .put("length", "detailed")
+                    .put("seed", seed)
+                    .put("image", odkaz(N_CTENI_OBRAZEK))
+                    .put("instruction", SbFilmPlan.OTAZKA_CTENI),
+            ),
+        )
+        // Výstup 1 = samotný popis; 0 je řádek bloku referencí s „Picture 1:".
+        .put(N_CTENI_VYSTUP, uzel("PreviewAny", "Panely", JSONObject().put("source", odkaz(N_CTENI, 1))))
+
+    // --- film
+    const val N_UNET = "190"
+    const val N_CLIP = "191"
+    const val N_VAE = "192"
+    const val N_VAE_ZVUK = "193"
+    const val N_SAGE = "18"
+    const val N_POZORNOST = "400"
+    const val N_LORA = "271"
+    const val N_ADAPTER = "269"
+    const val N_MEDIA = "280"
+    const val N_KONTEXT = "328"
+    const val N_KROKY = "5"
+    const val N_SAMPLER = "7"
+    const val N_SETUP = "500"
+    /** První úsek; další jdou po jedné nahoru. */
+    const val N_USEK_PRVNI = 501
+    const val N_OBRAZEK_PRVNI = 214
+    const val N_COLLECT = "600"
+    const val N_DECODE = "601"
+    const val N_ULOZ = "602"
+
+    const val UNET = "minimax_h3_fl2va_pruned_int8_convrot.safetensors"
+    const val CLIP = "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"
+    const val VAE = "minimax_h3_video_vae_fp16.safetensors"
+    const val VAE_ZVUK = "minimax_h3_audio_vae_fp32.safetensors"
+    const val LORA = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors"
+    const val LORA_SILA = 0.8
+    const val KROKU = 8
+    const val KONTEXT_SNIMKU = 22
+    const val ROZLISENI = "480P"
+
+    /**
+     * @param obrazky jména nahraných obrázků v pořadí [SbFilmScene.uploadImages]
+     *   (storyboard = `<Picture 1>`, postavy dál)
+     * @param zadani zadání úseků z přepisovače, jedno na úsek
+     */
+    fun buildFilm(
+        scene: SbFilmScene,
+        useky: List<SbUsek>,
+        zadani: List<String>,
+        obrazky: List<String>,
+        pomer: String,
+        seed: Long,
+    ): JSONObject {
+        require(useky.isNotEmpty() && useky.size == zadani.size) { "úseky a zadání nesedí" }
+        val wf = JSONObject()
+        wf.put(N_UNET, uzel("UNETLoader", "Model", JSONObject().put("unet_name", UNET).put("weight_dtype", "default")))
+        wf.put(N_CLIP, uzel("CLIPLoader", "Textový enkodér", JSONObject()
+            .put("clip_name", CLIP).put("type", "minimax").put("device", "default")))
+        wf.put(N_VAE, uzel("VAELoader", "VAE obrazu", JSONObject().put("vae_name", VAE)))
+        wf.put(N_VAE_ZVUK, uzel("VAELoader", "VAE zvuku", JSONObject().put("vae_name", VAE_ZVUK)))
+        wf.put(N_SAGE, uzel("MiniMaxH3MemoryEfficientSageAttentionPatch", "Sage", JSONObject().put("model", odkaz(N_UNET))))
+        wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Pozornost", JSONObject()
+            .put("model", odkaz(N_SAGE)).put("attention", "comfy kitchen attention")))
+        wf.put(N_LORA, uzel("MiniMaxH3TurboLoRA", "Turbo LoRA", JSONObject()
+            .put("model", odkaz(N_POZORNOST)).put("lora_name", LORA)
+            .put("strength", LORA_SILA).put("low_vram", false)))
+        wf.put(N_ADAPTER, uzel("MiniMaxH3EasyModelAdapter_SatoDive", "Balík H3", JSONObject()
+            .put("text_encoder", odkaz(N_CLIP)).put("video_vae", odkaz(N_VAE))
+            .put("audio_vae", odkaz(N_VAE_ZVUK)).put("ref2va_model", odkaz(N_UNET))))
+
+        val media = JSONObject().put("image_count", obrazky.size).put("video_count", 0).put("audio_count", 0)
+        obrazky.forEachIndexed { i, jmeno ->
+            val id = (N_OBRAZEK_PRVNI + i).toString()
+            wf.put(id, uzel("LoadImage", if (i == 0) "Storyboard" else "Postava $i", JSONObject().put("image", jmeno)))
+            media.put("image_${i + 1}", odkaz(id))
+        }
+        wf.put(N_MEDIA, uzel("MiniMaxH3EasyMediaBridge_SatoDive", "Reference", media))
+
+        val znacky = (1..obrazky.size).joinToString(" ") { "<Picture $it>" }
+        val celkem = useky.sumOf { it.sekundy }
+        wf.put(N_KONTEXT, uzel("MiniMaxH3EasyContextSegments_SatoDive", "Plán úseků", JSONObject()
+            .put("h3_bundle", odkaz(N_ADAPTER))
+            .put("mode", "context_segments").put("audio_mode", "generated")
+            .put("prompt", SbFilmPlan.planovaciText(useky, znacky))
+            .put("resolution", ROZLISENI).put("aspect_ratio", pomer).put("custom_ratio", pomer)
+            .put("width", 1344).put("height", 768)
+            .put("seconds", celkem)
+            .put("segment_seconds", useky.joinToString(",") { "%.3f".format(java.util.Locale.ROOT, it.sekundy) })
+            .put("context_length", KONTEXT_SNIMKU).put("continuity_mode", "native_guide")
+            .put("transition_seconds", 0.0).put("advanced", false).put("fps", 24.0)
+            .put("keyframe_role", "first").put("ref_image_size", "1k")
+            .put("reference_mention_mode", "index")
+            .put("prompt_optimizer_settings", false).put("prompt_optimizer_scene_guide", "none")
+            .put("context_prompt_optimizer_mode", "whole_sequence").put("context_prompt_optimizer_concurrency", 3)
+            .put("enable_detail_daemon", false).put("detail_strength", 0.0)
+            .put("ref_image_strength", 1.0).put("ref_video_strength", 1.0)
+            .put("ref_video1_strength", 1.0).put("ref_video2_strength", 1.0).put("ref_video3_strength", 1.0)
+            .put("ref_video1_range", "").put("ref_video2_range", "").put("ref_video3_range", "")
+            .put("seed_video_strength", 1.0).put("seed_video_reserved_seconds", 0.0)
+            .put("media", odkaz(N_MEDIA))))
+
+        wf.put(N_KROKY, uzel("BasicScheduler", "Kroky", JSONObject()
+            .put("model", odkaz(N_LORA)).put("scheduler", "simple").put("steps", KROKU).put("denoise", 1.0)))
+        wf.put(N_SAMPLER, uzel("KSamplerSelect", "Sampler", JSONObject().put("sampler_name", "euler")))
+        wf.put(N_SETUP, uzel("MiniMaxH3EasySegmentSampleSetup_SatoDive", "Nastavení úseků", JSONObject()
+            .put("h3_context", odkaz(N_KONTEXT, 1)).put("model", odkaz(N_LORA))
+            .put("sampler", odkaz(N_SAMPLER)).put("sigmas", odkaz(N_KROKY))))
+
+        var predchozi: String? = null
+        zadani.forEachIndexed { i, text ->
+            val id = (N_USEK_PRVNI + i).toString()
+            val vstupy = JSONObject()
+                .put("seed", (seed + i) and 0xFFFFFFFFL)
+                .put("prompt_override", text)
+            if (predchozi == null) vstupy.put("sample_setup", odkaz(N_SETUP))
+            else vstupy.put("previous_segment", odkaz(predchozi!!))
+            wf.put(id, uzel("MiniMaxH3EasySegmentStep_SatoDive", "Úsek ${i + 1}", vstupy))
+            predchozi = id
+        }
+        wf.put(N_COLLECT, uzel("MiniMaxH3EasySegmentCollect_SatoDive", "Sběr úseků",
+            JSONObject().put("final_segment", odkaz(predchozi!!))))
+        wf.put(N_DECODE, uzel("MiniMaxH3EasySegmentDecode_SatoDive", "Dekódování",
+            JSONObject().put("segments", odkaz(N_COLLECT))))
+        wf.put(N_ULOZ, uzel("SaveVideo", "Uložit", JSONObject()
+            .put("video", odkaz(N_DECODE)).put("filename_prefix", "PocketSbFilm")
+            .put("format", "auto").put("codec", "auto")))
+        return wf
+    }
+
+    fun nodeClasses(wf: JSONObject): Map<String, String> =
+        wf.keys().asSequence().mapNotNull { id ->
+            wf.optJSONObject(id)?.optString("class_type")?.takeIf { it.isNotEmpty() }?.let { id to it }
+        }.toMap()
+
+    fun stageForClass(cls: String?): Stage = when (cls) {
+        "UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3TurboLoRA",
+        "MiniMaxH3EasyModelAdapter_SatoDive", "MiniMaxH3MemoryEfficientSageAttentionPatch",
+        "ModelAttentionBackend" -> Stage.MODELS
+        "LoadImage", "MiniMaxH3EasyMediaBridge_SatoDive" -> Stage.REFERENCES
+        "MiniMaxH3EasyContextSegments_SatoDive", "BasicScheduler", "KSamplerSelect",
+        "MiniMaxH3EasySegmentSampleSetup_SatoDive" -> Stage.ENCODING
+        "MiniMaxH3EasySegmentStep_SatoDive" -> Stage.SAMPLING
+        "MiniMaxH3EasySegmentCollect_SatoDive", "MiniMaxH3EasySegmentDecode_SatoDive" -> Stage.DECODING
+        else -> Stage.MUXING
+    }
+
+    /**
+     * Pásmo procent pro uzel. Vzorkování (22–90 %) se dělí rovnoměrně mezi
+     * úseky podle čísla uzlu, ať ukazatel mezi úseky nejde zpátky.
+     */
+    fun rangeForNode(id: String?, cls: String?, nodeClasses: Map<String, String>): Pair<Float, Float> =
+        when (stageForClass(cls)) {
+            Stage.MODELS -> 0.00f to 0.10f
+            Stage.REFERENCES -> 0.10f to 0.14f
+            Stage.ENCODING -> 0.14f to 0.22f
+            Stage.SAMPLING -> {
+                val useky = nodeClasses.filterValues { it == "MiniMaxH3EasySegmentStep_SatoDive" }
+                    .keys.mapNotNull { it.toIntOrNull() }.sorted()
+                val poradi = id?.toIntOrNull()?.let { useky.indexOf(it) } ?: -1
+                if (useky.isEmpty() || poradi < 0) 0.22f to 0.90f
+                else {
+                    val krok = 0.68f / useky.size
+                    (0.22f + krok * poradi) to (0.22f + krok * (poradi + 1))
+                }
+            }
+            Stage.DECODING -> 0.90f to 0.98f
+            else -> 0.98f to 1.00f
+        }
+
+    fun reportsSteps(cls: String?): Boolean = cls == "MiniMaxH3EasySegmentStep_SatoDive"
+
+    private fun uzel(cls: String, titulek: String, vstupy: JSONObject) = JSONObject()
+        .put("class_type", cls)
+        .put("inputs", vstupy)
+        .put("_meta", JSONObject().put("title", titulek))
+
+    private fun odkaz(uzel: String, slot: Int = 0) = JSONArray().put(uzel).put(slot)
+}

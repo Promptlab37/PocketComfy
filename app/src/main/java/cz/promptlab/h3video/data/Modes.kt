@@ -225,6 +225,18 @@ enum class Mode(
     ),
 
     /**
+     * Film ze storyboardu (experimentální): mřížka panelů + postavy → jedno
+     * souvislé video, délku určí appka ze storyboardu. Úseky ≤ 15 s se
+     * navazují přes latent v jednom běhu (SatoDive SegmentStep), viz
+     * [cz.promptlab.h3video.comfy.SbFilmBuilder].
+     */
+    SBFILM(
+        titleCs = "Film ze storyboardu",
+        shortCs = "Storyboard",
+        detailCs = "Ze storyboardu jedno video, délka podle panelů"
+    ),
+
+    /**
      * Postava z fotky se hýbe — do rytmu hudby (Wan-Dancer, dřív karta Dance),
      * nebo podle videa (Wan-Animate 2). Stavitele i scény zůstávají
      * samostatné, karta je jen rozcestník mezi nimi.
@@ -278,7 +290,7 @@ enum class Mode(
     /** Vyrábí tahle karta video? Obrázkové karty vrací PNG, Hudba MP3. */
     val isVideo: Boolean
         get() = this == ALLINONE || this == TALK || this == TIMELINE ||
-            this == LONG || this == LTXAUDIO || this == DANCE || this == LONGMM ||
+            this == LONG || this == LTXAUDIO || this == DANCE || this == LONGMM || this == SBFILM ||
             this == ANIMATE || this == THREESTEP || this == POHYB ||
             this == UPRAVA_VIDEA || this == VYLEPSENI_VIDEA
 }
@@ -294,7 +306,7 @@ enum class Skupina(private val titleCs: String, val karty: List<Mode>) {
     VIDEO(
         "Video",
         listOf(
-            Mode.ALLINONE, Mode.TALK, Mode.LONGMM, Mode.TIMELINE,
+            Mode.ALLINONE, Mode.TALK, Mode.LONGMM, Mode.SBFILM, Mode.TIMELINE,
             Mode.THREESTEP, Mode.LTXAUDIO, Mode.POHYB,
             Mode.UPRAVA_VIDEA, Mode.VYLEPSENI_VIDEA,
         ),
@@ -427,6 +439,9 @@ fun ovladaProKartu(
     // Long MiniMax: kroky, vzorkovač i Turbo LoRA jsou autorovy a plátno si
     // karta volí sama (a v navázání ho zamyká, protože latent se přepočítat nedá).
     Mode.LONGMM -> Ovlada.NIC
+    // Film ze storyboardu: model, kroky, LoRA i plátno jsou pevně ve staviteli
+    // (sestava Turbo jako Long MiniMax); poměr stran volí karta.
+    Mode.SBFILM -> Ovlada.NIC
     Mode.LONG -> Ovlada(rozliseni = !dlouheNavazuje)
     // 3 kroky: rozlišení, kroky, shift i model má vlastní nastavení karty
     // (GenParams.tk*) — sdílené hodnoty by třístupňový recept rozbily.

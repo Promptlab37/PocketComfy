@@ -172,6 +172,8 @@ object H3RefWriteBuilder {
         seed: Long,
         maxTokenu: Int = MAX_TOKENU,
         storyboard: Boolean = false,
+        /** Vlastní dovětek místo [hlidkaStitku] (úseky filmu ze storyboardu). */
+        hlidka: String? = null,
     ): JSONObject {
         val wf = JSONObject()
 
@@ -205,7 +207,7 @@ object H3RefWriteBuilder {
             .put("task", TASK)
             .put("resolution", pomer)
             .put("duration", sekundy)
-            .put("prompt", zadani + hlidkaStitku(obrazky.size, storyboard))
+            .put("prompt", zadani + (hlidka ?: hlidkaStitku(obrazky.size, storyboard)))
             .put("caption_model", captioner)
             .put("caption_length", "standard")
             .put("writer_model", writer)

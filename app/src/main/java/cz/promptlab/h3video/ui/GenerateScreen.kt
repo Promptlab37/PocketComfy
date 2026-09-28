@@ -396,6 +396,9 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         if (mode == Mode.LONGMM) {
             LongMmSection(vm)
         }
+        if (mode == Mode.SBFILM) {
+            SbFilmSection(vm)
+        }
 
         // ----------------------------------------------------- oprava fotky
         if (mode == Mode.RESTORE) {
@@ -823,6 +826,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 // 3D model není video — tlačítko to nesmí slibovat.
                 mode == Mode.MODEL3D -> t("Postavit 3D model")
                 mode == Mode.LONG -> t("Vygenerovat dlouhé video")
+                mode == Mode.SBFILM -> t("Natočit film")
                 mode == Mode.LONGMM ->
                     if (longMmScene.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI)
                         t("Vygenerovat první záběr") else t("Navázat další záběr")

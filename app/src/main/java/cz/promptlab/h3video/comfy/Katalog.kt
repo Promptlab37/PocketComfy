@@ -170,6 +170,10 @@ object Katalog {
         "MiniMaxH3EasyMediaBridge_SatoDive" to LATENTCHAIN,
         "MiniMaxH3EasyContextSegments_SatoDive" to LATENTCHAIN,
         "MiniMaxH3EasySegmentRender_SatoDive" to LATENTCHAIN,
+        // Film ze storyboardu: úseky po jednom s vlastním zadáním.
+        "MiniMaxH3EasySegmentSampleSetup_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasySegmentStep_SatoDive" to LATENTCHAIN,
+        "MiniMaxH3EasySegmentCollect_SatoDive" to LATENTCHAIN,
         "MiniMaxH3EasySegmentDecode_SatoDive" to LATENTCHAIN,
         "MiniMaxH3EasySaveLatent_SatoDive" to LATENTCHAIN,
         "MiniMaxH3EasyLoadLatent_SatoDive" to LATENTCHAIN,
@@ -211,6 +215,9 @@ object Katalog {
         "EmptyYuE2LatentAudio" to COMFY035,
         "UnetLoaderGGUF" to GGUF,
         "MiniMaxH3PromptWriter8B" to REWRITER,
+        // Vylepšení s referencemi a čtení storyboardu.
+        "MiniMaxH3UniversalWriter" to REWRITER,
+        "MiniMaxH3ReferenceCaption" to REWRITER,
         "llama_cpp_model_loader" to LLAMACPP,
         "llama_cpp_instruct_adv" to LLAMACPP,
         "llama_cpp_parameters" to LLAMACPP,

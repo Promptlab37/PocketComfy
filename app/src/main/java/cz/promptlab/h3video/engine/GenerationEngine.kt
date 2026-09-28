@@ -277,6 +277,9 @@ object GenerationEngine {
     /** Jméno scény běžícího řetězu. Zapisuje se k výsledku, jinak prázdné. */
     @Volatile private var longMmRetez: String = ""
 
+    /** Běží Film ze storyboardu? Úseky navázané přes latent v jednom běhu. */
+    @Volatile private var sbFilmRun: Boolean = false
+
     /**
      * Mapa „číslo uzlu → třída" z odeslaného grafu. U karty All in One se podle
      * ní poznávají fáze: čísla uzlů se mezi šablonami liší (uzel 3 je u SeedVR2
@@ -298,6 +301,7 @@ object GenerationEngine {
         cnRun -> cz.promptlab.h3video.comfy.H3ControlNetBuilder.stageForClass(nodeClasses[node])
         berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.stageForClass(nodeClasses[node])
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.stageForClass(nodeClasses[node])
+        sbFilmRun -> cz.promptlab.h3video.comfy.SbFilmBuilder.stageForClass(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.stageForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.stageForClass(nodeClasses[node])
             else if (musicMm3) cz.promptlab.h3video.comfy.MiniMaxMusic3Builder.stageForClass(nodeClasses[node])
@@ -337,6 +341,7 @@ object GenerationEngine {
         berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.rangeForNode(node, nodeClasses[node])
         // Dva průchody mají vlastní dělení pásma, jinak by ukazatel skákal zpět.
         // Rozlišují se podle ID uzlu — oba jsou `SamplerCustomAdvanced`.
+        sbFilmRun -> cz.promptlab.h3video.comfy.SbFilmBuilder.rangeForNode(node, nodeClasses[node], nodeClasses)
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.rangeForNode(
             node, nodeClasses[node],
             dvaPruchody = cz.promptlab.h3video.comfy.LongMmBuilder.maDvaPruchody(nodeClasses),
@@ -378,6 +383,7 @@ object GenerationEngine {
         cnRun -> cz.promptlab.h3video.comfy.H3ControlNetBuilder.reportsSteps(nodeClasses[node])
         berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.reportsSteps(nodeClasses[node])
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.reportsSteps(nodeClasses[node])
+        sbFilmRun -> cz.promptlab.h3video.comfy.SbFilmBuilder.reportsSteps(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.reportsSteps(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.reportsSteps(nodeClasses[node])
             else if (musicMm3) cz.promptlab.h3video.comfy.MiniMaxMusic3Builder.reportsSteps(nodeClasses[node])
@@ -489,6 +495,8 @@ object GenerationEngine {
         danceScene: cz.promptlab.h3video.data.DanceScene? = null,
         /** Long MiniMax: jeden záběr na běh, navazuje se přes uložený latent. */
         longMmScene: cz.promptlab.h3video.data.LongMmScene? = null,
+        /** Film ze storyboardu: úseky s hotovým zadáním, jeden běh. */
+        sbFilmScene: cz.promptlab.h3video.data.SbFilmScene? = null,
         /** Wan Animate: fotka postavy + video s pohybem. */
         animateScene: cz.promptlab.h3video.data.AnimateScene? = null,
         /** Vylepšit video → Zplynulit: interpolace snímků FILM. */
@@ -528,10 +536,12 @@ object GenerationEngine {
         cnRun = cnScene != null
         berniniRun = berniniScene != null
         longMmRun = longMmScene != null
+        sbFilmRun = sbFilmScene != null
         longMmRetez = longMmScene
             ?.let { cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(it) }.orEmpty()
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun && !swapRun &&
             !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun && !longMmRun && !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun &&
+            !sbFilmRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
         settings.activeEdit = editRun
@@ -556,6 +566,7 @@ object GenerationEngine {
             cnRun -> "controlnet"
             berniniRun -> "bernini"
             longMmRun -> "longmm"
+            sbFilmRun -> "sbfilm"
             else -> ""
         }
         startedAt = System.currentTimeMillis()
@@ -582,6 +593,9 @@ object GenerationEngine {
             "Zplynulit · " + interpScene.nasobek + "×" + (if (interpScene.zpomalit) " · zpomaleně" else "")
         } else if (animateScene != null) {
             "Wan Animate · " + "%.1f s".format(animateScene.videoSekund)
+        } else if (sbFilmScene != null) {
+            "Film ze storyboardu · " + "%.1f s".format(sbFilmScene.sekundy) +
+                " · " + sbFilmScene.useky.size + " úseky"
         } else if (longMmScene != null) {
             "Long MiniMax · " + longMmScene.rezim.title + " · " + longMmScene.sekundy + " s"
         } else if (musicScene != null) {
@@ -610,6 +624,7 @@ object GenerationEngine {
                     inpaintScene,
                     longScene, model3dScene, ltxScene, danceScene, longMmScene,
                     animateScene, interpScene, scailScene, cnScene, berniniScene,
+                    sbFilmScene,
                 )
             }
                 .onFailure { e ->
@@ -638,6 +653,7 @@ object GenerationEngine {
         cnRun = druh == "controlnet"
         berniniRun = druh == "bernini"
         longMmRun = druh == "longmm"
+        sbFilmRun = druh == "sbfilm"
     }
 
     /** Znovu se přilepí na rozdělanou úlohu po restartu aplikace. */
@@ -683,10 +699,10 @@ object GenerationEngine {
             obnovDruh(settings.activeDruh)
             aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun &&
                 !swapRun && !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun &&
-                !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun && !longMmRun && settings.activeAio
+                !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun && !longMmRun && !sbFilmRun && settings.activeAio
             nodeClasses = if (aioRun || editRun || upscaleRun || t2iRun || musicRun ||
                 restoreRun || angleRun || swapRun || inpaintRun || longRun || model3dRun || ltxRun ||
-                danceRun || animateRun || interpRun || scailRun || cnRun || berniniRun || longMmRun
+                danceRun || animateRun || interpRun || scailRun || cnRun || berniniRun || longMmRun || sbFilmRun
             ) {
                 withContext(Dispatchers.IO) {
                     runCatching {
@@ -775,7 +791,7 @@ object GenerationEngine {
         obnovDruh(settings.activeDruh)
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun &&
             !swapRun && !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun &&
-            !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun && !longMmRun && settings.activeAio
+            !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun && !longMmRun && !sbFilmRun && settings.activeAio
         label = settings.activeLabel
         startedAt = System.currentTimeMillis()
         // Službu na popředí nesmí appka odnést pádem, když ji systém odmítne
@@ -824,6 +840,7 @@ object GenerationEngine {
         scailScene: cz.promptlab.h3video.data.UpravaScene? = null,
         cnScene: cz.promptlab.h3video.data.UpravaScene? = null,
         berniniScene: cz.promptlab.h3video.data.UpravaScene? = null,
+        sbFilmScene: cz.promptlab.h3video.data.SbFilmScene? = null,
     ) {
         val client = ComfyClient(settings.serverUrl)
 
@@ -865,6 +882,7 @@ object GenerationEngine {
                 berniniScene != null ||
                 // Long MiniMax jede na stejných vahách jako dlouhé video.
                 longMmScene != null ||
+                sbFilmScene != null ||
                 musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2 ||
                 // MiniMax Music 3: enkodér 9,2 GB + model 4,9 GB.
                 musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.MM3,
@@ -894,6 +912,7 @@ object GenerationEngine {
             inpaintScene != null -> null   // dtto
             longScene != null -> null      // dtto — graf staví appka
             longMmScene != null -> null    // dtto
+            sbFilmScene != null -> null    // dtto
             model3dScene != null -> null   // dtto
             ltxScene != null -> null       // dtto
             animateScene != null -> null   // dtto
@@ -1027,6 +1046,13 @@ object GenerationEngine {
                     lory = effective.extraLoras,
                     reference = names,
                     nastaveni = cz.promptlab.h3video.comfy.ThreeStepBuilder.Nastaveni.z(effective),
+                )
+
+            // Film ze storyboardu: úseky s hotovým zadáním v jednom běhu.
+            sbFilmScene != null ->
+                cz.promptlab.h3video.comfy.SbFilmBuilder.buildFilm(
+                    sbFilmScene, sbFilmScene.useky, sbFilmScene.zadaniUseku, names,
+                    sbFilmScene.pomer.kod, seed,
                 )
 
             // Long MiniMax: jeden záběr na běh. První zakládá řetěz a uloží
@@ -1210,6 +1236,8 @@ object GenerationEngine {
             cz.promptlab.h3video.comfy.DanceBuilder.nodeClasses(workflow)
         if (longMmScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.LongMmBuilder.nodeClasses(workflow)
+        if (sbFilmScene != null) nodeClasses =
+            cz.promptlab.h3video.comfy.SbFilmBuilder.nodeClasses(workflow)
         if (animateScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.AnimateBuilder.nodeClasses(workflow)
         if (interpScene != null) nodeClasses =

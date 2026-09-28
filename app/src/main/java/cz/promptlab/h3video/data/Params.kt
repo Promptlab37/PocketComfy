@@ -197,6 +197,8 @@ data class GenParams(
             // Long MiniMax: reference prvního záběru. Zdrojové video se při
             // navazování nahrává vlastní cestou, ne jako obrázek.
             Mode.LONGMM -> LongMmScene.MAX_REFERENCI
+            // Film ze storyboardu: storyboard + postavy.
+            Mode.SBFILM -> 1 + SbFilmScene.MAX_POSTAV
             // Úhel kamery: jedna fotka, ze které se objekt otočí.
             Mode.ANGLE -> 1
             // 3D model: jedna fotka předmětu.
