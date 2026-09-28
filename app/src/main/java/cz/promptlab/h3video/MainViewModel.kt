@@ -3113,7 +3113,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             client.uploadImage(f.readBytes(), "rw_ref${i + 1}.png")
         }
         val wf = H3RefWriteBuilder.build(
-            zadani = "$zadani. Do not add any on-screen text or captions unless explicitly requested.",
+            zadani = cz.promptlab.h3video.data.DialogyH3.proPrepisovac(zadani),
             obrazky = jmena,
             sekundy = sekundy.coerceIn(2.0, 60.0),
             pomer = rozliseni,
@@ -3187,8 +3187,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val durCfg = req.getJSONArray("duration").optJSONObject(1)
                     val delka = p.seconds
                         .coerceIn(durCfg?.optInt("min", 2) ?: 2, durCfg?.optInt("max", 60) ?: 60)
-                    val zadaniProModel =
-                        "$zadani. Do not add any on-screen text or captions unless explicitly requested."
+                    val zadaniProModel = cz.promptlab.h3video.data.DialogyH3.proPrepisovac(zadani)
                     val wf = PromptRewriteBuilder.build(
                         prompt = zadaniProModel,
                         model = model,
@@ -3293,8 +3292,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     // České zadání model občas vyloží i jako nápis do obrazu —
                     // tichý dovětek tomu předejde (do H3 promptu se nedostane,
                     // je to instrukce pro přepisovač, ne pro video model).
-                    val zadaniProModel =
-                        "$zadani. Do not add any on-screen text or captions unless explicitly requested."
+                    val zadaniProModel = cz.promptlab.h3video.data.DialogyH3.proPrepisovac(zadani)
                     val wf = PromptRewriteBuilder.build(
                         prompt = zadaniProModel,
                         model = model,
@@ -5249,8 +5247,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val delka = s.sekundy
                         .coerceIn(durCfg?.optInt("min", 2) ?: 2, durCfg?.optInt("max", 60) ?: 60)
                     val wf = PromptRewriteBuilder.build(
-                        prompt = zadani +
-                            ". Do not add any on-screen text or captions unless explicitly requested.",
+                        prompt = cz.promptlab.h3video.data.DialogyH3.proPrepisovac(zadani),
                         model = model,
                         task = if (nahrana != null) "I2VA" else "T2VA",
                         resolution = pomer,
