@@ -4736,7 +4736,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSbDej(text: String) = updateSbFilm { it.copy(dej = text, zadaniUseku = emptyList()) }
 
-    fun setSbPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateSbFilm { it.copy(pomer = v) }
+    fun setSbPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateSbFilm { it.copy(pomer = v, zadaniUseku = emptyList()) }
 
     fun setSbRozliseni(v: cz.promptlab.h3video.data.SbRozliseni) = updateSbFilm { it.copy(rozliseni = v) }
 
@@ -4942,7 +4942,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * „Natočit“: přepisovač napíše zadání každého úseku (přesný seznam záběrů
      * s časy — [cz.promptlab.h3video.data.SbFilmPrepis]) a běh jde do fronty.
      */
+    /** Natočit: hotové (a případně upravené) prompty se použijí, jinak se napíšou. */
     private fun natocitSbFilm() {
+        val s = _sbFilm.value
+        if (s.zadaniUseku.size == s.useky.size && s.zadaniUseku.isNotEmpty()) {
+            val p = _params.value
+            settings.save(p)
+            RunQueue.add(makeRunner(p))
+            return
+        }
+        pripravitSbPrompty(potomNatocit = true)
+    }
+
+    /** Uživatel upravil prompt úseku v náhledu. */
+    fun setSbZadaniUseku(index: Int, text: String) = updateSbFilm { s ->
+        s.copy(zadaniUseku = s.zadaniUseku.mapIndexed { i, z -> if (i == index) text else z })
+    }
+
+    /**
+     * „Připravit prompty“: přepisovač napíše prompt pro H3 ke každému úseku
+     * a ukáže se v náhledu (uživatel 28. 9. 2026: „přidej náhled promptu“).
+     * Jakákoli změna plánu prompty zahodí (zadaniUseku = emptyList()).
+     */
+    fun pripravitSbPrompty(potomNatocit: Boolean = false) {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _sbFilm.value
         val useky = s.useky
@@ -4972,9 +4994,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             vysledek.onSuccess { zadani ->
                 updateSbFilm { it.copy(zadaniUseku = zadani) }
                 _rewriteState.value = RewriteState.Idle
-                val p = _params.value
-                settings.save(p)
-                RunQueue.add(makeRunner(p))
+                if (potomNatocit) {
+                    val p = _params.value
+                    settings.save(p)
+                    RunQueue.add(makeRunner(p))
+                }
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
                 _rewriteState.value = RewriteState.Fail(

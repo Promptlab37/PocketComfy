@@ -170,9 +170,40 @@ fun SbFilmSection(vm: MainViewModel) {
                         }
                     }
                 }
+                Spacer(Modifier.height(8.dp))
+                val pripravuje = bezi && akce == MainViewModel.SbAkce.NATOCENI
+                OutlineButton(
+                    if (pripravuje) t("Píšu prompty…")
+                    else if (scene.zadaniUseku.isEmpty()) t("Připravit prompty") else t("Připravit znovu"),
+                    color = Amber,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { if (!bezi) vm.pripravitSbPrompty() }
                 if (akce == MainViewModel.SbAkce.NATOCENI) {
                     PrubehPrepisu(vm, barva = Amber)
                     chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        }
+
+        // Náhled promptů pro H3 — přesně to, co dostane model; jde upravit
+        // a Natočit film použije tuhle podobu.
+        if (scene.zadaniUseku.size == useky.size && useky.isNotEmpty()) {
+            SectionCard(title = t("Prompt pro H3")) {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    scene.zadaniUseku.forEachIndexed { k, text ->
+                        Text(
+                            t("Úsek %d · %s").format(k + 1, "%.1f s".format(useky[k].sekundy)),
+                            style = MaterialTheme.typography.labelLarge, color = Amber,
+                        )
+                        DarkTextField(
+                            value = text,
+                            onValueChange = { vm.setSbZadaniUseku(k, it) },
+                            placeholder = "",
+                            onClear = { vm.setSbZadaniUseku(k, "") },
+                            minHeight = 120.dp,
+                            rostouci = true,
+                        )
+                    }
                 }
             }
         }

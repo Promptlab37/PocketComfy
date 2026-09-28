@@ -488,6 +488,7 @@ class SbFilmStore(private val ctx: Context) {
             .put("rozliseni", s.rozliseni.name)
             .put("zdroj", s.zdroj.name)
             .put("cilSekund", s.cilSekund)
+            .put("zadaniUseku", org.json.JSONArray().also { a -> s.zadaniUseku.forEach { a.put(it) } })
             .put("nazev", s.nazev)
             .put("casyZeStoryboardu", s.casyZeStoryboardu)
             .put("panely", org.json.JSONArray().also { a ->
@@ -518,6 +519,8 @@ class SbFilmStore(private val ctx: Context) {
             rozliseni = runCatching { SbRozliseni.valueOf(j.optString("rozliseni")) }.getOrDefault(SbRozliseni.R480),
             zdroj = runCatching { SbZdroj.valueOf(j.optString("zdroj")) }.getOrDefault(SbZdroj.STORYBOARD),
             cilSekund = j.optInt("cilSekund", 30),
+            zadaniUseku = (0 until (j.optJSONArray("zadaniUseku")?.length() ?: 0))
+                .map { j.getJSONArray("zadaniUseku").getString(it) },
             nazev = j.optString("nazev"), casyZeStoryboardu = j.optBoolean("casyZeStoryboardu"),
             panely = panely,
         )
