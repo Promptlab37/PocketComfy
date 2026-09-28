@@ -503,19 +503,25 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             // byl knoflík, co nic nedělá: u zvětšení se nic negeneruje,
             // u přemalování plátno určuje výřez kolem sledovaného objektu
             // a u dlouhého videa při navázání ho diktuje zdrojové video.
+            // Poměr, pro který se velikosti počítají: kde ho diktuje video,
+            // jeho vlastní (jinak by pilulky ukazovaly cizí orientaci).
+            val upravaStav = vm.uprava.collectAsStateWithLifecycle().value
+            val pomerPlatna = if (!ovlada.pomer && upravaStav.videoSirka > 0 && upravaStav.videoVyska > 0)
+                Aspect.nejblizsi(upravaStav.videoSirka, upravaStav.videoVyska) ?: params.aspect
+            else params.aspect
             if (ovlada.rozliseni) SectionCard(
                 title = t("Rozlišení"),
                 subtitle = t("Megapixely × poměr stran, zaokrouhleno na násobek 32"),
                 trailing = {
                     Text(
-                        params.resolution.label,
+                        Resolution.of(pomerPlatna, params.megapixels).label,
                         style = MaterialTheme.typography.titleMedium,
                         color = if (params.aboveNative) Amber else Cyan
                     )
                 }
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column {
+                    if (ovlada.pomer) Column {
                         Text(t("Poměr stran"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                         Spacer(Modifier.height(8.dp))
                         PillRow(
@@ -565,12 +571,13 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                         // megapixely z tabulky se přepočítávají automaticky, uživatel čísla
                         // z tabulky nemusí znát. Nativní plátno je mezi nimi vždycky,
                         // i když v pevné řadě nevychází (3:4, čtverec).
-                        val nativni = params.nativeResolution
+                        val nativni = if (pomerPlatna == params.aspect) params.nativeResolution
+                        else params.copy(aspect = pomerPlatna).nativeResolution
                         PillRow(
-                            items = sizeStepsFor(params.aspect),
+                            items = sizeStepsFor(pomerPlatna),
                             selected = params.megapixels,
                             label = { mp ->
-                                val r = Resolution.of(params.aspect, mp)
+                                val r = Resolution.of(pomerPlatna, mp)
                                 if (r == nativni) "${r.label} • nativní" else r.label
                             },
                             onSelect = { v -> vm.update { it.copy(megapixels = v) } }

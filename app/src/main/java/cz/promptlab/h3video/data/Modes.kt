@@ -374,6 +374,12 @@ data class Ovlada(
     val shift: Boolean = true,
     /** Profil (Turbo / Kvalita) — nese s sebou i textový enkodér. */
     val profil: Boolean = true,
+    /**
+     * Poměr stran jde volit? Kde ho diktuje zdrojové video (výměna postavy
+     * přes H3), se volí jen velikost — do 4.90 se tam schovalo celé
+     * rozlišení a velikost nešla změnit (uživatel 28. 9. 2026).
+     */
+    val pomer: Boolean = true,
 ) {
     /** Má vůbec smysl panel Nastavení ukazovat? */
     val neco: Boolean get() = rozliseni || kroky || lora || model || shift || profil
@@ -405,7 +411,8 @@ fun ovladaProKartu(
             PostavaMotor.SCAIL -> Ovlada.NIC
             // H3 jede přes Reference All in One — nastavení MiniMax platí,
             // jen poměr stran plátna se bere z videa (jiný by obraz roztáhl).
-            PostavaMotor.H3 -> Ovlada(rozliseni = false)
+            // Velikost jde volit.
+            PostavaMotor.H3 -> Ovlada(pomer = false)
         }
         // Fun ControlNet: kroky, model i plátno jsou ze šablony.
         UpravaRezim.PREDLOHA -> Ovlada.NIC
