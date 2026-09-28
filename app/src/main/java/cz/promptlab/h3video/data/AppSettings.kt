@@ -178,6 +178,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeMusicYue2", false)
         set(v) = sp.edit().putBoolean("activeMusicYue2", v).apply()
 
+    /** Karty, které si uživatel v Nastavení skryl (jména z [Mode]). */
+    var skryteKarty: Set<String>
+        get() = sp.getStringSet("skryteKarty", emptySet())!!.toSet()
+        set(v) = sp.edit().putStringSet("skryteKarty", v.toSet()).apply()
+
     /** Rozdělaná hudba jede na MiniMax Music 3 — texty a fáze po restartu. */
     var activeMusicMm3: Boolean
         get() = sp.getBoolean("activeMusicMm3", false)

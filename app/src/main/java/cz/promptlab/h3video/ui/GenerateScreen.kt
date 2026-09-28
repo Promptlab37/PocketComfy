@@ -95,6 +95,7 @@ import cz.promptlab.h3video.data.MAX_SECONDS
 import cz.promptlab.h3video.data.sizeStepsFor
 import cz.promptlab.h3video.data.MIN_SECONDS
 import cz.promptlab.h3video.data.Mode
+import cz.promptlab.h3video.data.viditelne
 import cz.promptlab.h3video.data.Profile
 import cz.promptlab.h3video.data.Resolution
 import cz.promptlab.h3video.data.SAMPLERS
@@ -293,7 +294,8 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         }
 
         // ---------------------------------------------------------- karty
-        ModeTabs(mode) { vm.setMode(it) }
+        val skryteKarty by vm.skryteKarty.collectAsStateWithLifecycle()
+        ModeTabs(mode, skryteKarty) { vm.setMode(it) }
 
         // Dlouhé video staví každý úsek přes ReferenceToVideo, takže jede
         // na ref2va vahách vždycky — profil bez referencí by na něm nefungoval.
@@ -1307,8 +1309,9 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
  * ji otevře rovnou a druhé patro se neukazuje.
  */
 @Composable
-private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
+private fun ModeTabs(selected: Mode, skryte: Set<Mode>, onSelect: (Mode) -> Unit) {
     val skupina = selected.skupina ?: cz.promptlab.h3video.data.Skupina.VIDEO
+    val karty = skupina.viditelne(skryte, selected)
     // Poslední karta každé skupiny, ať se po návratu do skupiny otevře ta,
     // se kterou člověk pracoval, a ne vždycky první.
     val posledni = androidx.compose.runtime.saveable.rememberSaveable {
@@ -1329,7 +1332,7 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
                 .padding(4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            cz.promptlab.h3video.data.Skupina.entries.forEach { sk ->
+            cz.promptlab.h3video.data.viditelneSkupiny(skryte, selected).forEach { sk ->
                 val active = sk == skupina
                 Box(
                     Modifier
@@ -1340,9 +1343,10 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
                             else Modifier
                         )
                         .clickable {
+                            val nabidka = sk.viditelne(skryte)
                             val karta = posledni.value[sk.name]
-                                ?.let { jmeno -> sk.karty.firstOrNull { it.name == jmeno } }
-                                ?: sk.karty.first()
+                                ?.let { jmeno -> nabidka.firstOrNull { it.name == jmeno } }
+                                ?: nabidka.firstOrNull() ?: sk.karty.first()
                             onSelect(karta)
                         }
                         .padding(vertical = 10.dp),
@@ -1358,10 +1362,10 @@ private fun ModeTabs(selected: Mode, onSelect: (Mode) -> Unit) {
                 }
             }
         }
-        if (skupina.karty.size > 1) {
+        if (karty.size > 1) {
             Spacer(Modifier.height(6.dp))
             PasKaret(
-                polozky = skupina.karty,
+                polozky = karty,
                 vybrana = selected,
                 popisek = { it.short },
                 onVyber = onSelect,

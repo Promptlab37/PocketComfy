@@ -186,6 +186,8 @@ private fun Root(vm: MainViewModel = viewModel()) {
     val history by vm.history.collectAsStateWithLifecycle()
     val historyBytes by vm.historyBytes.collectAsStateWithLifecycle()
     val savingResults by vm.savingResults.collectAsStateWithLifecycle()
+    // Akce „Pokračuj s…" do karty, kterou si uživatel skryl, se nenabízí.
+    val skryteKarty by vm.skryteKarty.collectAsStateWithLifecycle()
     val galleryState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val updateState by vm.update.collectAsStateWithLifecycle()
     var opened by remember { mutableStateOf<VideoItem?>(null) }
@@ -438,53 +440,53 @@ private fun Root(vm: MainViewModel = viewModel()) {
                         onUpscale = {
                             GenerationEngine.dismissResult()
                             vm.posliDoZvetseni(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.UPSCALE in skryteKarty },
                         onSharpen = {
                             GenerationEngine.dismissResult()
                             vm.posliDoZvetseni(
                                 s.item, cz.promptlab.h3video.data.UpscaleMetoda.DLSS
                             )
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.UPSCALE in skryteKarty },
                         onEdit = {
                             GenerationEngine.dismissResult()
                             vm.posliDoUpravy(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.EDIT in skryteKarty },
                         onExtend = {
                             GenerationEngine.dismissResult()
                             vm.posliDoRozsireni(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.INPAINT in skryteKarty },
                         onInpaint = {
                             GenerationEngine.dismissResult()
                             vm.posliDoDomalovani(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.INPAINT in skryteKarty },
                         onAnimate = {
                             GenerationEngine.dismissResult()
                             vm.posliDoRozhybani(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.ALLINONE in skryteKarty },
                         onUpscaleVideo = {
                             GenerationEngine.dismissResult()
                             vm.posliVideoDoZvetseni(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty },
                         onSmoothVideo = {
                             GenerationEngine.dismissResult()
                             vm.posliVideoDoVylepseni(s.item, cz.promptlab.h3video.data.VylepseniRezim.ZPLYNULIT)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty },
                         onEditVideo = {
                             GenerationEngine.dismissResult()
                             vm.posliVideoDoUpravy(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.UPRAVA_VIDEA in skryteKarty },
                         onExtendVideo = {
                             GenerationEngine.dismissResult()
                             vm.posliVideoDoProdlouzeni(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.ALLINONE in skryteKarty },
                         onMusicToVideo = {
                             GenerationEngine.dismissResult()
                             vm.posliHudbuDoVidea(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.LTXAUDIO in skryteKarty },
                         onMusicToDance = {
                             GenerationEngine.dismissResult()
                             vm.posliHudbuDoTance(s.item)
-                        },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.POHYB in skryteKarty },
                     )
                 }
             }
@@ -535,51 +537,51 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onUpscale = {
                         opened = null
                         vm.posliDoZvetseni(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.UPSCALE in skryteKarty },
                     onSharpen = {
                         opened = null
                         vm.posliDoZvetseni(open, cz.promptlab.h3video.data.UpscaleMetoda.DLSS)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.UPSCALE in skryteKarty },
                     onEdit = {
                         opened = null
                         vm.posliDoUpravy(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.EDIT in skryteKarty },
                     onExtend = {
                         opened = null
                         vm.posliDoRozsireni(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.INPAINT in skryteKarty },
                     onInpaint = {
                         opened = null
                         vm.posliDoDomalovani(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.INPAINT in skryteKarty },
                     onAnimate = {
                         opened = null
                         vm.posliDoRozhybani(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.ALLINONE in skryteKarty },
                     onUpscaleVideo = {
                         opened = null
                         vm.posliVideoDoZvetseni(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty },
                     onSmoothVideo = {
                         opened = null
                         vm.posliVideoDoVylepseni(open, cz.promptlab.h3video.data.VylepseniRezim.ZPLYNULIT)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty },
                     onEditVideo = {
                         opened = null
                         vm.posliVideoDoUpravy(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.UPRAVA_VIDEA in skryteKarty },
                     onExtendVideo = {
                         opened = null
                         vm.posliVideoDoProdlouzeni(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.ALLINONE in skryteKarty },
                     onMusicToVideo = {
                         opened = null
                         vm.posliHudbuDoVidea(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.LTXAUDIO in skryteKarty },
                     onMusicToDance = {
                         opened = null
                         vm.posliHudbuDoTance(open)
-                    },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.POHYB in skryteKarty },
                 )
             }
         }

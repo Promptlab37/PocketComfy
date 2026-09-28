@@ -314,13 +314,20 @@ private fun ZaberRadek(
             Spacer(Modifier.height(6.dp))
             // Stejné skupiny jako nabídka karet nahoře, ať se karta hledá
             // na jednom a tom samém místě.
+            // Skryté karty se nenabízejí; tu, kterou záběr už má, ano.
+            val skryteKarty by vm.skryteKarty.collectAsStateWithLifecycle()
             cz.promptlab.h3video.data.Skupina.entries
-                .filter { sk -> sk.karty.any { it in KARTY_PRO_ZABER } }
-                .forEach { sk ->
+                .map { sk ->
+                    sk to sk.karty.filter {
+                        it in KARTY_PRO_ZABER && (it !in skryteKarty || it == zaber.karta?.nahradniKarta)
+                    }
+                }
+                .filter { (_, karty) -> karty.isNotEmpty() }
+                .forEach { (sk, karty) ->
                     Text(sk.title, style = MaterialTheme.typography.labelSmall, color = TextLow)
                     Spacer(Modifier.height(4.dp))
                     PillRow(
-                        items = sk.karty.filter { it in KARTY_PRO_ZABER },
+                        items = karty,
                         selected = zaber.karta?.nahradniKarta,
                         label = { it?.short ?: "" },
                         onSelect = { k -> vm.upravZaber(zaber.id) { it.copy(karta = k) } },

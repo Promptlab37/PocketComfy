@@ -162,6 +162,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val settings = AppSettings(app)
     private val historyStore = HistoryStore(app)
 
+    // Skryté karty se čtou dřív než uložená karta — ta se podle nich opravuje.
+    private val _skryteKarty = MutableStateFlow(
+        settings.skryteKarty.mapNotNull { jmeno -> Mode.entries.firstOrNull { it.name == jmeno } }
+            .filter { it.nabizena }.toSet()
+    )
+    /** Karty, které si uživatel v Nastavení skryl. */
+    val skryteKarty: StateFlow<Set<Mode>> = _skryteKarty.asStateFlow()
+
     private val _tab = MutableStateFlow(Tab.CREATE)
     val tab: StateFlow<Tab> = _tab.asStateFlow()
 
@@ -177,8 +185,28 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
                 p.copy(mode = p.mode.nahradniKarta)
             }
+        }.let { p ->
+            // Uložená karta je skrytá → appka se otevře na první viditelné.
+            if (p.mode in _skryteKarty.value) p.copy(mode = cz.promptlab.h3video.data.prvniViditelna(_skryteKarty.value))
+            else p
         }
     )
+
+    /** Ukázat / skrýt kartu v nabídce. Poslední viditelnou skrýt nejde. */
+    fun nastavViditelnostKarty(karta: Mode, viditelna: Boolean) {
+        val ted = _skryteKarty.value
+        if (!viditelna && !cz.promptlab.h3video.data.lzeSkryt(ted, karta)) return
+        val nove = if (viditelna) ted - karta else ted + karta
+        _skryteKarty.value = nove
+        settings.skryteKarty = nove.map { it.name }.toSet()
+        // Právě otevřená karta zmizela z nabídky → přejít na první viditelnou.
+        if (!viditelna && _params.value.mode == karta) setMode(cz.promptlab.h3video.data.prvniViditelna(nove))
+    }
+
+    fun zobrazitVsechnyKarty() {
+        _skryteKarty.value = emptySet()
+        settings.skryteKarty = emptySet()
+    }
 
     /** Režim karty Pohyb postavy, který odpovídá schované kartě. */
     private fun pohybRezimPro(m: Mode): cz.promptlab.h3video.data.PohybRezim? = when (m) {

@@ -315,6 +315,29 @@ enum class Skupina(private val titleCs: String, val karty: List<Mode>) {
 /** Karty v nabídce, v pořadí skupin. */
 val NABIZENE_KARTY: List<Mode> get() = Skupina.entries.flatMap { it.karty }
 
+/*
+ * Karty, které si uživatel v Nastavení skryl. Ukládá se, co je SKRYTÉ, ne co
+ * je vidět — karta přidaná v nové verzi se tak ukáže každému, dokud ji sám
+ * neschová. Otevřená karta zůstává v nabídce, i když je skrytá (přišel do ní
+ * z projektu nebo z historie): vybraná karta musí mít vždycky svou záložku.
+ */
+
+/** Karty skupiny, které se v nabídce ukazují. */
+fun Skupina.viditelne(skryte: Set<Mode>, otevrena: Mode? = null): List<Mode> =
+    karty.filter { it !in skryte || it == otevrena }
+
+/** Skupiny, ve kterých zbyla aspoň jedna karta. */
+fun viditelneSkupiny(skryte: Set<Mode>, otevrena: Mode? = null): List<Skupina> =
+    Skupina.entries.filter { it.viditelne(skryte, otevrena).isNotEmpty() }
+
+/** První karta, která skrytá není (appka nesmí zůstat bez karty). */
+fun prvniViditelna(skryte: Set<Mode>): Mode =
+    NABIZENE_KARTY.firstOrNull { it !in skryte } ?: NABIZENE_KARTY.first()
+
+/** Jde kartu skrýt? Poslední viditelnou ne. */
+fun lzeSkryt(skryte: Set<Mode>, karta: Mode): Boolean =
+    NABIZENE_KARTY.any { it != karta && it !in skryte }
+
 /**
  * Co karta z „Nastavení" opravdu použije.
  *

@@ -47,6 +47,7 @@ import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.update.UpdateChecker
 import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.ui.theme.Cyan
+import cz.promptlab.h3video.ui.theme.TextHi
 import cz.promptlab.h3video.ui.theme.Danger
 import cz.promptlab.h3video.ui.theme.Ok
 import cz.promptlab.h3video.ui.theme.Outline1
@@ -375,6 +376,8 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                 }
             }
         }
+
+        KartyVAplikaci(vm)
 
         SkladaciSekce(
             title = t("Aplikace"),
@@ -740,5 +743,55 @@ private fun Step(number: String, text: String) {
             Text(number, style = MaterialTheme.typography.labelMedium, color = Cyan)
         }
         Text(text, style = MaterialTheme.typography.bodySmall, color = TextMid)
+    }
+}
+
+/**
+ * Které karty se v appce ukazují. Po skupinách jako nabídka nahoře; poslední
+ * viditelnou kartu odškrtnout nejde. Změna platí hned.
+ */
+@Composable
+private fun KartyVAplikaci(vm: MainViewModel) {
+    val skryte by vm.skryteKarty.collectAsStateWithLifecycle()
+    val vsechny = cz.promptlab.h3video.data.NABIZENE_KARTY
+    SkladaciSekce(
+        title = t("Karty v aplikaci"),
+        souhrn = t("Zobrazeno %d z %d").format(vsechny.count { it !in skryte }, vsechny.size),
+        klic = "nastaveni-karty",
+    ) {
+        cz.promptlab.h3video.data.Skupina.entries.forEach { sk ->
+            SectionCard(title = sk.title) {
+                Column {
+                    sk.karty.forEach { karta ->
+                        val zapnuta = karta !in skryte
+                        val jdeZmenit = !zapnuta || cz.promptlab.h3video.data.lzeSkryt(skryte, karta)
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable(enabled = jdeZmenit) { vm.nastavViditelnostKarty(karta, !zapnuta) }
+                                .padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            androidx.compose.material3.Checkbox(
+                                checked = zapnuta,
+                                onCheckedChange = { vm.nastavViditelnostKarty(karta, it) },
+                                enabled = jdeZmenit,
+                            )
+                            Text(
+                                karta.title,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (zapnuta) TextHi else TextMid,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        if (skryte.isNotEmpty()) {
+            OutlineButton(t("Zobrazit všechny"), modifier = Modifier.fillMaxWidth(), color = Cyan) {
+                vm.zobrazitVsechnyKarty()
+            }
+        }
     }
 }
