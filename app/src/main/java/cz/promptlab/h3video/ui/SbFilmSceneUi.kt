@@ -69,6 +69,9 @@ fun SbFilmSection(vm: MainViewModel) {
     val bezi = (stav as? MainViewModel.RewriteState.Busy)?.druh == MainViewModel.PraceNaPromptu.VYLEPSENI
     val chyba = (stav as? MainViewModel.RewriteState.Fail)
         ?.takeIf { it.druh == MainViewModel.PraceNaPromptu.VYLEPSENI }?.message
+    val akce by vm.sbAkce.collectAsStateWithLifecycle()
+    val cte = bezi && akce == MainViewModel.SbAkce.CTENI
+    val navrhuje = bezi && akce == MainViewModel.SbAkce.NAVRH
 
     SectionCard(title = t("Plán")) {
         PillRow(
@@ -84,13 +87,13 @@ fun SbFilmSection(vm: MainViewModel) {
             StoryboardPole(scene, onPick = { vm.pickSbStoryboard(it) }, onClear = { vm.clearSbStoryboard() })
             if (scene.storyboard != null) {
                 OutlineButton(
-                    if (bezi && scene.panely.isEmpty()) t("Čtu storyboard…")
+                    if (cte) t("Čtu storyboard…")
                     else if (scene.panely.isEmpty()) t("Přečíst storyboard") else t("Přečíst znovu"),
                     color = Amber,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.precistSbStoryboard() }
             }
-            if (scene.panely.isEmpty()) {
+            if (akce == MainViewModel.SbAkce.CTENI) {
                 PrubehPrepisu(vm, barva = Amber)
                 chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             }
@@ -124,12 +127,12 @@ fun SbFilmSection(vm: MainViewModel) {
                     onSelect = { vm.setSbCil(it) },
                 )
                 OutlineButton(
-                    if (bezi && scene.panely.isEmpty()) t("Navrhuji záběry…")
+                    if (navrhuje) t("Navrhuji záběry…")
                     else if (scene.panely.isEmpty()) t("Navrhnout záběry") else t("Navrhnout znovu"),
                     color = Amber,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.navrhnoutSbZabery() }
-                if (scene.panely.isEmpty()) {
+                if (akce == MainViewModel.SbAkce.NAVRH) {
                     PrubehPrepisu(vm, barva = Amber)
                     chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                 }
@@ -167,8 +170,10 @@ fun SbFilmSection(vm: MainViewModel) {
                         }
                     }
                 }
-                PrubehPrepisu(vm, barva = Amber)
-                chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                if (akce == MainViewModel.SbAkce.NATOCENI) {
+                    PrubehPrepisu(vm, barva = Amber)
+                    chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                }
             }
         }
     }

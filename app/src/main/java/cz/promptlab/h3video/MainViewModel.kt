@@ -4677,6 +4677,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Co karta filmu právě dělá — podle toho se průběh a chyba ukážou u
+     * tlačítka, na které se kleplo. Do 4.92 se u „Přečíst znovu“ při
+     * hotovém plánu neukázalo nic (průběh visel až pod plánem) a vypadalo
+     * to, že se nic neděje.
+     */
+    enum class SbAkce { CTENI, NAVRH, NATOCENI }
+    private val _sbAkce = MutableStateFlow<SbAkce?>(null)
+    val sbAkce: StateFlow<SbAkce?> = _sbAkce.asStateFlow()
+
     private fun updateSbFilm(
         block: (cz.promptlab.h3video.data.SbFilmScene) -> cz.promptlab.h3video.data.SbFilmScene,
     ) {
@@ -4747,6 +4757,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun navrhnoutSbZabery() {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _sbFilm.value
+        _sbAkce.value = SbAkce.NAVRH
         if (s.dej.isBlank()) {
             _rewriteState.value = RewriteState.Fail(t("Napiš, o čem má film být."), PraceNaPromptu.VYLEPSENI)
             return
@@ -4842,6 +4853,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _sbFilm.value
         val obr = s.storyboard ?: return
+        _sbAkce.value = SbAkce.CTENI
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
@@ -4935,6 +4947,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val s = _sbFilm.value
         val useky = s.useky
         if (useky.isEmpty()) return
+        _sbAkce.value = SbAkce.NATOCENI
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
