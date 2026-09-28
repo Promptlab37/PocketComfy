@@ -173,7 +173,7 @@ fun AllInOneSection(vm: MainViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         OutlineButton(
-                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
+                            if (bezi) t("Přepisuji…") else t("✨ Vylepšit (MiniMax)"),
                             color = cz.promptlab.h3video.ui.theme.Amber,
                         ) { if (!bezi) vm.vylepsiAioPrompt() }
                         // Vylepšovač zadání rozepíše; tohle ho jen přeloží,

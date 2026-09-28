@@ -363,7 +363,7 @@ fun LongMmSection(vm: MainViewModel) {
             // ostatních kartách.
             PrekladPromptu(vm, MainViewModel.PromptPole.LONGMM, vylepseni = {
                 OutlineButton(
-                    text = if (prepisujeSe) t("Přepisuji…") else t("✨ Vylepšit"),
+                    text = if (prepisujeSe) t("Přepisuji…") else t("✨ Vylepšit (MiniMax)"),
                     color = Cyan,
                 ) { if (!prepisujeSe) vm.vylepsiLongMmPrompt() }
             })

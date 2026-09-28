@@ -882,7 +882,7 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 OutlineButton(
-                    if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
+                    if (bezi) t("Přepisuji…") else t("✨ Vylepšit (MiniMax)"),
                     color = cz.promptlab.h3video.ui.theme.Amber,
                 ) { if (!bezi && !beziPreklad) vm.vylepsi3KrokyPrompt() }
                 OutlineButton(

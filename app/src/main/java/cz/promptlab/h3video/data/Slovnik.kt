@@ -638,6 +638,7 @@ object Slovnik {
             "Above 1 the negative prompt starts to apply on Qwen 2.1, " +
             "but the official template runs at 1 — a higher value can hurt.",
         "✨ Vylepšit (odvázaně)" to "✨ Improve (unfiltered)",
+        "✨ Vylepšit (MiniMax)" to "✨ Improve (MiniMax)",
         "Qwen je na tenhle model vycvičený a poradí i poměr stran, " +
             "ale odvážnější zadání sám zjemní. Odvázaný nepřepisuje nic." to
             "Qwen is trained for this model and suggests an aspect ratio, " +
