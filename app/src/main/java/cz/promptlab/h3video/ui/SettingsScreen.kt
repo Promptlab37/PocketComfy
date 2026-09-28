@@ -913,66 +913,83 @@ private fun RadekKarty(
  * Nastavení → Vzhled. Každý vzhled se ukazuje jako malý vzorek: jeho pozadí,
  * karta a přechod hlavního tlačítka, pod tím název. Změna platí hned.
  */
-@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun VolbaVzhledu(vm: MainViewModel) {
     val ted = cz.promptlab.h3video.ui.theme.Vzhled.motiv
     SectionCard(title = t("Vzhled"), stav = ted.nazev) {
-        androidx.compose.foundation.layout.FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            cz.promptlab.h3video.ui.theme.Motiv.entries.forEach { m ->
-                val vybrany = m == ted
-                Column(
-                    Modifier
-                        .width(96.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .border(
-                            if (vybrany) 2.dp else 1.dp,
-                            if (vybrany) m.primary else Outline1,
-                            RoundedCornerShape(14.dp),
-                        )
-                        .clickable { vm.nastavVzhled(m) }
-                        .padding(6.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(m.bg)
-                            .padding(6.dp),
-                    ) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(18.dp)
-                                .clip(RoundedCornerShape(5.dp))
-                                .background(m.surface1)
-                                .border(1.dp, m.outline, RoundedCornerShape(5.dp))
-                        )
-                        Box(
-                            Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .height(14.dp)
-                                .clip(RoundedCornerShape(7.dp))
-                                .background(androidx.compose.ui.graphics.Brush.linearGradient(m.cta))
-                        )
+        // Sloupce podle šířky: na úzkém telefonu (nebo s větším písmem) dva, jinak tři.
+        androidx.compose.foundation.layout.BoxWithConstraints {
+            val sloupcu = if (maxWidth < 330.dp) 2 else 3
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                cz.promptlab.h3video.ui.theme.Motiv.entries.chunked(sloupcu).forEach { radek ->
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        radek.forEach { m -> VzorekVzhledu(vm, m, m == ted, Modifier.weight(1f)) }
+                        repeat(sloupcu - radek.size) { Spacer(Modifier.weight(1f)) }
                     }
-                    Text(
-                        m.nazev,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (vybrany) TextHi else TextMid,
-                        maxLines = 2,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                        modifier = Modifier.padding(top = 6.dp),
-                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun VzorekVzhledu(
+    vm: MainViewModel,
+    m: cz.promptlab.h3video.ui.theme.Motiv,
+    vybrany: Boolean,
+    modifier: Modifier,
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(14.dp))
+            .border(
+                if (vybrany) 2.dp else 1.dp,
+                if (vybrany) m.primary else Outline1,
+                RoundedCornerShape(14.dp),
+            )
+            .clickable { vm.nastavVzhled(m) }
+            .padding(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(m.bg)
+                .padding(6.dp),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(18.dp)
+                    .clip(RoundedCornerShape(5.dp))
+                    .background(m.surface1)
+                    .border(1.dp, m.outline, RoundedCornerShape(5.dp))
+            )
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(14.dp)
+                    .clip(RoundedCornerShape(7.dp))
+                    .background(androidx.compose.ui.graphics.Brush.linearGradient(m.cta))
+            )
+        }
+        // Víc slov smí na dva řádky; jedno slovo se nedělí, radši se zmenší.
+        if (' ' in m.nazev) Text(
+            m.nazev,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (vybrany) TextHi else TextMid,
+            maxLines = 2,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            modifier = Modifier.padding(top = 6.dp),
+        ) else TextVesel(
+            m.nazev,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (vybrany) TextHi else TextMid,
+            modifier = Modifier.padding(top = 6.dp),
+        )
     }
 }
 

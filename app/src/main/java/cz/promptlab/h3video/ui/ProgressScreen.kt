@@ -478,10 +478,14 @@ private fun StatTile(
             .padding(vertical = 9.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(value, style = MaterialTheme.typography.titleMedium, color = TextHi, maxLines = 1)
-        Text(label, style = MaterialTheme.typography.bodySmall, color = TextLow, maxLines = 1)
+        // Tři dlaždice vedle sebe — na úzkém telefonu se hodnota zmenší, neuřízne.
+        TextVesel(value, style = MaterialTheme.typography.titleMedium, color = TextHi)
+        TextVesel(label, style = MaterialTheme.typography.bodySmall, color = TextLow)
         if (hint != null) {
-            Text(hint, style = MaterialTheme.typography.bodySmall, color = Cyan)
+            Text(
+                hint, style = MaterialTheme.typography.bodySmall, color = Cyan, maxLines = 2,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+            )
         }
     }
 }

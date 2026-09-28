@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -248,7 +249,11 @@ fun ResultScreen(
 
         Spacer(Modifier.height(18.dp))
 
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Při větším písmu nebo na úzkém telefonu pod sebe — vedle sebe by se
+        // „Uložit .GLB do Stažených" zalomilo do tří řádků.
+        val konf = androidx.compose.ui.platform.LocalConfiguration.current
+        val podSebe = konf.fontScale > 1.15f || konf.screenWidthDp < 360
+        val ulozit: @Composable (Modifier) -> Unit = { mod ->
             OutlineButton(
                 when {
                     saving -> t("Ukládám…")
@@ -260,7 +265,7 @@ fun ResultScreen(
                     saved -> t("V galerii telefonu")
                     else -> t("Uložit do galerie")
                 },
-                modifier = Modifier.weight(1f),
+                modifier = mod,
                 enabled = !saving && !saved,
                 color = if (saved) Ok else TextMid,
                 icon = {
@@ -276,9 +281,11 @@ fun ResultScreen(
                 ) storagePermission.launch(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 else onSave()
             }
+        }
+        val sdilet: @Composable (Modifier) -> Unit = { mod ->
             OutlineButton(
                 t("Sdílet"),
-                modifier = Modifier.weight(1f),
+                modifier = mod,
                 icon = { Icon(Icons.Default.Share, null, Modifier.size(18.dp), TextMid) }
             ) {
                 val intent = cz.promptlab.h3video.util.MediaSaver.shareIntent(ctx, item.file(ctx))
@@ -293,6 +300,20 @@ fun ResultScreen(
                         }
                     )
                 )
+            }
+        }
+        if (podSebe) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                ulozit(Modifier.fillMaxWidth())
+                sdilet(Modifier.fillMaxWidth())
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                ulozit(Modifier.weight(1f).fillMaxHeight())
+                sdilet(Modifier.weight(1f).fillMaxHeight())
             }
         }
 

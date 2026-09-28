@@ -1,5 +1,8 @@
 package cz.promptlab.h3video.ui
 
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.draw.drawWithContent
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -331,6 +334,7 @@ fun FrontaPruh(
                         Icon(
                             Icons.Default.Close, t("Odebrat z fronty"),
                             Modifier
+                                .minimumInteractiveComponentSize()
                                 .size(28.dp)
                                 .clip(RoundedCornerShape(50))
                                 .clickable { onRemove(run.id) }
@@ -525,4 +529,40 @@ fun OutlineButton(
             Text(text, style = MaterialTheme.typography.labelLarge, color = if (enabled) color else TextLow)
         }
     }
+}
+
+/**
+ * Jednořádkový text, který se na úzkém místě sám zmenší (až na [minMeritko])
+ * místo useknutí. Pro řady s pevně rozdělenou šířkou — skupiny karet, spodní
+ * lišta. Na telefonu s větším písmem nebo větším zobrazením se jinak slovo
+ * uřízlo („Obráze", tester 29. 9. 2026). Compose 1.7 autoSize ještě nemá.
+ */
+@Composable
+fun TextVesel(
+    text: String,
+    style: androidx.compose.ui.text.TextStyle,
+    color: Color,
+    modifier: Modifier = Modifier,
+    fontWeight: androidx.compose.ui.text.font.FontWeight? = null,
+    minMeritko: Float = 0.6f,
+    /** Společné měřítko pro celou řadu — ať se zmenší všechny popisky stejně. */
+    sdilene: androidx.compose.runtime.MutableFloatState? = null,
+) {
+    val vlastni = androidx.compose.runtime.remember(text, style, fontWeight) { androidx.compose.runtime.mutableFloatStateOf(1f) }
+    val stav = sdilene ?: vlastni
+    var meritko by stav
+    var hotovo by androidx.compose.runtime.remember(text, style, fontWeight) { androidx.compose.runtime.mutableStateOf(false) }
+    Text(
+        text,
+        modifier = modifier.drawWithContent { if (hotovo) drawContent() },
+        style = style.copy(fontSize = style.fontSize * meritko),
+        color = color,
+        fontWeight = fontWeight,
+        maxLines = 1,
+        softWrap = false,
+        onTextLayout = { r ->
+            if (r.didOverflowWidth && meritko > minMeritko) meritko = (meritko - 0.05f).coerceAtLeast(minMeritko)
+            else hotovo = true
+        },
+    )
 }

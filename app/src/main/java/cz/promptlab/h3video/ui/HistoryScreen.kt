@@ -90,7 +90,7 @@ fun HistoryScreen(
                 // zalamovací řadě. Dřív tu byl velký nadpis, počet položek dvakrát
                 // a Oblíbené na samostatném řádku.
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
+                    TextVesel(
                         if (selecting) t("Vybráno: %d").format(selected.size)
                         else "${polozkyCount(items.size)} · ${formatStorage(totalBytes)}",
                         style = MaterialTheme.typography.bodySmall, color = TextMid,

@@ -607,21 +607,17 @@ private fun ObrazekSlot(
             }
         }
         Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(
+            TextVesel(
                 popisek,
                 style = MaterialTheme.typography.labelMedium,
                 color = if (ztlumeny) TextLow else TextMid,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
             if (onRemove != null) {
-                Text(
-                    t("Odebrat"),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TextLow,
-                    modifier = Modifier.clickable(onClick = onRemove),
-                )
+                // Ikona s dotykovou plochou místo drobného textu.
+                androidx.compose.material3.IconButton(onClick = onRemove, modifier = Modifier.size(36.dp)) {
+                    Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextLow)
+                }
             }
         }
     }

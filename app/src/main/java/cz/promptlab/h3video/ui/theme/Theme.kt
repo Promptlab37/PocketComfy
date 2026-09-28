@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import cz.promptlab.h3video.R
@@ -160,20 +159,16 @@ val AccentSweep: Brush get() = Brush.sweepGradient(Vzhled.motiv.cta + Rose + Vzh
 
 // ---------------------------------------------------------------- písma PromptLab
 
-@OptIn(androidx.compose.ui.text.ExperimentalTextApi::class)
-private fun promenne(res: Int, vaha: Int) = Font(
-    res, FontWeight(vaha),
-    variationSettings = FontVariation.Settings(FontVariation.weight(vaha)),
-)
-
-val Unbounded = FontFamily(
-    promenne(R.font.unbounded_var, 500), promenne(R.font.unbounded_var, 600), promenne(R.font.unbounded_var, 700),
-)
+// Statické řezy, ne proměnné písmo: telefony, které neumí proměnnou tloušťku,
+// kreslily výchozí (nejtenčí) řez — tester 29. 9. 2026 viděl tenký text.
+val Unbounded = FontFamily(Font(R.font.unbounded_600, FontWeight.SemiBold))
 val Manrope = FontFamily(
-    promenne(R.font.manrope_var, 400), promenne(R.font.manrope_var, 500),
-    promenne(R.font.manrope_var, 600), promenne(R.font.manrope_var, 700),
+    Font(R.font.manrope_400, FontWeight.Normal),
+    Font(R.font.manrope_500, FontWeight.Medium),
+    Font(R.font.manrope_600, FontWeight.SemiBold),
+    Font(R.font.manrope_700, FontWeight.Bold),
 )
-val JetBrainsMono = FontFamily(promenne(R.font.jetbrainsmono_var, 500))
+val JetBrainsMono = FontFamily(Font(R.font.jetbrainsmono_500, FontWeight.Medium))
 
 private fun typografie(m: Motiv): Typography {
     val text = if (m.pismaPromptLab) Manrope else FontFamily.Default

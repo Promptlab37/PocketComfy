@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -244,7 +245,8 @@ private fun DelkaRadek(seconds: Float, onChange: (Float) -> Unit) {
         Text(
             "%.0f s".format(seconds),
             style = MaterialTheme.typography.labelMedium, color = TextMid,
-            modifier = Modifier.width(38.dp),
+            softWrap = false,
+            modifier = Modifier.widthIn(min = 38.dp),
         )
     }
 }

@@ -590,7 +590,7 @@ private fun Header(tab: Tab, version: String, server: ServerState) {
         Modifier
             .fillMaxWidth()
             .statusBarsPadding()
-            .padding(horizontal = 20.dp, vertical = 14.dp)
+            .padding(horizontal = 20.dp, vertical = 8.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
@@ -856,10 +856,10 @@ private fun BarItem(
             }
         }
         Spacer(Modifier.height(4.dp))
-        Text(
+        cz.promptlab.h3video.ui.TextVesel(
             label,
             style = MaterialTheme.typography.bodySmall,
-            color = if (active) TextHi else TextLow
+            color = if (active) TextHi else TextLow,
         )
     }
 }

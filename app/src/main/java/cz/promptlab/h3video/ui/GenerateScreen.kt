@@ -30,6 +30,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -1315,6 +1318,12 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
 private fun ModeTabs(selected: Mode, skryte: Set<Mode>, onSelect: (Mode) -> Unit) {
     val skupina = selected.skupina ?: cz.promptlab.h3video.data.Skupina.VIDEO
     val karty = skupina.viditelne(skryte, selected)
+    // Jedno měřítko pro všechny skupiny: když se jedna nevejde, zmenší se všechny stejně.
+    // Přepočítá se, když se změní šířka obrazovky nebo velikost písma v telefonu.
+    val konfigurace = androidx.compose.ui.platform.LocalConfiguration.current
+    val meritkoSkupin = remember(konfigurace.screenWidthDp, konfigurace.fontScale) {
+        androidx.compose.runtime.mutableFloatStateOf(1f)
+    }
     // Poslední karta každé skupiny, ať se po návratu do skupiny otevře ta,
     // se kterou člověk pracoval, a ne vždycky první.
     val posledni = androidx.compose.runtime.saveable.rememberSaveable {
@@ -1332,7 +1341,8 @@ private fun ModeTabs(selected: Mode, skryte: Set<Mode>, onSelect: (Mode) -> Unit
                 .clip(RoundedCornerShape(16.dp))
                 .background(Surface1)
                 .border(1.dp, Outline1, RoundedCornerShape(16.dp))
-                .padding(4.dp),
+                .padding(4.dp)
+                .height(androidx.compose.foundation.layout.IntrinsicSize.Min),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             cz.promptlab.h3video.data.viditelneSkupiny(skryte, selected).forEach { sk ->
@@ -1340,6 +1350,7 @@ private fun ModeTabs(selected: Mode, skryte: Set<Mode>, onSelect: (Mode) -> Unit
                 Box(
                     Modifier
                         .weight(1f)
+                        .fillMaxHeight()
                         .clip(RoundedCornerShape(12.dp))
                         .then(
                             if (active) Modifier.background(cz.promptlab.h3video.ui.theme.AccentBrush)
@@ -1352,15 +1363,15 @@ private fun ModeTabs(selected: Mode, skryte: Set<Mode>, onSelect: (Mode) -> Unit
                                 ?: nabidka.firstOrNull() ?: sk.karty.first()
                             onSelect(karta)
                         }
-                        .padding(vertical = 10.dp),
+                        .padding(horizontal = 4.dp, vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
+                    TextVesel(
                         sk.title,
                         style = MaterialTheme.typography.labelLarge,
                         color = if (active) cz.promptlab.h3video.ui.theme.NaAkcentu else TextMid,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                        maxLines = 1,
+                        sdilene = meritkoSkupin,
                     )
                 }
             }
@@ -1395,6 +1406,9 @@ private fun <T> PasKaret(
     LaunchedEffect(index) {
         stav.animateScrollToItem((index - 1).coerceAtLeast(0))
     }
+    // Výška pásu roste s písmem — okraj se šipkou ji musí krýt celou.
+    var vyskaPasu by remember { mutableStateOf(0) }
+    val hustota = androidx.compose.ui.platform.LocalDensity.current
     Box(
         Modifier
             .fillMaxWidth()
@@ -1404,8 +1418,11 @@ private fun <T> PasKaret(
     ) {
         LazyRow(
             state = stav,
-            modifier = Modifier.fillMaxWidth(),
-            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onSizeChanged { vyskaPasu = it.height },
+            // Na konci místo pro okraj se šipkou, ať jde poslední karta odrolovat celá.
+            contentPadding = PaddingValues(start = 4.dp, end = 30.dp, top = 4.dp, bottom = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             items(polozky.size) { i ->
@@ -1439,7 +1456,7 @@ private fun <T> PasKaret(
             exit = androidx.compose.animation.fadeOut(),
             modifier = Modifier.align(Alignment.CenterStart),
         ) {
-            OkrajPasu(doleva = true)
+            OkrajPasu(doleva = true, vyska = with(hustota) { vyskaPasu.toDp() })
         }
         androidx.compose.animation.AnimatedVisibility(
             visible = stav.canScrollForward,
@@ -1447,21 +1464,21 @@ private fun <T> PasKaret(
             exit = androidx.compose.animation.fadeOut(),
             modifier = Modifier.align(Alignment.CenterEnd),
         ) {
-            OkrajPasu(doleva = false)
+            OkrajPasu(doleva = false, vyska = with(hustota) { vyskaPasu.toDp() })
         }
     }
 }
 
 /** Vytrácející se okraj se šipkou — „tímhle směrem jsou další karty". */
 @Composable
-private fun OkrajPasu(doleva: Boolean) {
+private fun OkrajPasu(doleva: Boolean, vyska: androidx.compose.ui.unit.Dp) {
     // Plná barva na kraji, aby projíždějící karta opravdu zmizela, a delší
     // přechod do průhledna, ať to nevypadá jako useknuté.
     val barvy = listOf(Surface1, Surface1, Surface1.copy(alpha = 0f))
     Box(
         Modifier
             .width(30.dp)
-            .height(48.dp)
+            .height(vyska.coerceAtLeast(48.dp))
             .background(
                 if (doleva) Brush.horizontalGradient(barvy)
                 else Brush.horizontalGradient(barvy.reversed())
@@ -1619,6 +1636,10 @@ fun DarkTextField(
     var souradnice by remember {
         mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null)
     }
+    // Větší písmo v telefonu = vyšší pole. Jednořádkové roste podle obsahu
+    // (dřív pevná výška uřízla text, tester 29. 9. 2026), víceřádkové drží
+    // stejný počet řádků jako při běžném písmu.
+    val meritkoPisma = androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)
     CompositionLocalProvider(
         LocalTextSelectionColors provides TextSelectionColors(Cyan, Cyan.copy(alpha = .35f))
     ) {
@@ -1627,7 +1648,10 @@ fun DarkTextField(
             onValueChange = onValueChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(minHeight)
+                .then(
+                    if (singleLine) Modifier.heightIn(min = minHeight)
+                    else Modifier.height(minHeight * meritkoPisma)
+                )
                 .onGloballyPositioned {
                     souradnice = it
                     if (maFokus) ZaostrenePole.bounds = it.boundsInWindow()
