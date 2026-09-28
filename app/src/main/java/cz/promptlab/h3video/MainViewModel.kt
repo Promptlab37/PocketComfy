@@ -3009,6 +3009,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         zadani: String,
     ): String = prepisSReferencemi(
         client, s.refsWithImage.mapNotNull { it.image }, s.frames / 24.0, zadani,
+        storyboard = s.storyboardUcinny,
     )
 
     /**
@@ -3021,6 +3022,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         fotky: List<java.io.File>,
         sekundy: Double,
         zadani: String,
+        storyboard: Boolean = false,
     ): String {
         val spec = client.objectInfo(H3RefWriteBuilder.NODE_CLASS)
             ?: throw ComfyException(
@@ -3059,6 +3061,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             captioner = captioner,
             writer = writer,
             seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+            storyboard = storyboard,
         )
         return spustPrepisAPockej(client, wf, H3RefWriteBuilder.N_PREVIEW)
     }
@@ -3304,6 +3307,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setAioUseLastFrame(on: Boolean) = updateAio { it.copy(useLastFrame = on) }
 
     fun setAioRefVideoAudio(on: Boolean) = updateAio { it.copy(refVideoAudio = on) }
+
+    fun setAioStoryboard(on: Boolean) = updateAio { it.copy(storyboard = on) }
 
     fun setAioUpscaler(u: Upscaler) = updateAio { it.copy(upscaler = u) }
 

@@ -145,7 +145,20 @@ data class AioScene(
      * U výměny postavy (Upravit video) ne — první snímek má být z videa.
      */
     val kotva: Boolean = true,
+    /**
+     * Reference: první předloha je storyboard (mřížka panelů), ne postava.
+     * Experimentální — viz [cz.promptlab.h3video.comfy.H3RefWriteBuilder].
+     * Mřížka se nesmí připnout jako snímek 0, takže kotva se při něm vypíná.
+     */
+    val storyboard: Boolean = false,
 ) {
+    /** Kotva totožnosti opravdu platí — storyboard ji vypíná. */
+    val kotvaUcinna: Boolean get() = kotva && !(mode == AioMode.REFERENCE && storyboard)
+
+    /** Storyboard jen v režimu Reference a jen když je co ukázat. */
+    val storyboardUcinny: Boolean
+        get() = storyboard && mode == AioMode.REFERENCE && refsWithImage.isNotEmpty()
+
     /** Šablona, kterou je potřeba stáhnout ze serveru. */
     val sablona: String
         get() = when {

@@ -192,7 +192,8 @@ object AioBuilder {
                 // Bez ní mluvící referenční video přebije stojící fotku (v balíku je
                 // to ověřené poměrem zhruba 2:1) a ve výsledku je vidět obličej
                 // z videa, ne z fotky.
-                firstImageId?.takeIf { scene.kotva }?.let { imgId ->
+                // Storyboard kotvu vypíná: mřížka panelů není první snímek videa.
+                firstImageId?.takeIf { scene.kotvaUcinna }?.let { imgId ->
                     val cond = wf.inputs(N_COND)
                     val kf = newId()
                     wf.put(
@@ -297,6 +298,26 @@ object AioBuilder {
         wf.inputs(N_SHIFT).put("shift_audio", p.shiftAudio.toDouble())
     }
 
+    /**
+     * Věta z oficiální příručky Ref2VA, která H3 řekne, že `<Picture 1>` je
+     * plán záběrů, ne postava ani první snímek.
+     */
+    const val STORYBOARD_VETA =
+        "<Picture 1> is a storyboard reference for every shot, defining their viewpoint, " +
+            "subject placement, and shot order."
+
+    /**
+     * Prompt pro H3. Se storyboardem se předřadí [STORYBOARD_VETA], pokud
+     * v textu `<Picture 1>` vůbec není — uživatel mohl psát ručně, bez
+     * přepisovače. Když ho zmiňuje (přepis se storyboardem to dělá vždy),
+     * nechá se text beze změny.
+     */
+    fun promptProStoryboard(scene: AioScene): String {
+        val text = scene.prompt.trim()
+        if (!scene.storyboardUcinny || text.contains("<Picture 1>")) return text
+        return if (text.isEmpty()) STORYBOARD_VETA else "$STORYBOARD_VETA\n$text"
+    }
+
     /** Společné hodnoty – rozměry, délka, modely, vzorkování, náhled. */
     private fun patchCommon(wf: JSONObject, p: GenParams, scene: AioScene) {
         patchModels(wf, p, referencni = scene.mode.usesRefWeights)
@@ -313,7 +334,7 @@ object AioBuilder {
         } else scene.frames
 
         wf.inputs(N_COND).apply {
-            put("prompt", scene.prompt.trim())
+            put("prompt", promptProStoryboard(scene))
             // U přemalování jsou rozměry i délka odkazy na výřez kolem
             // sledovaného objektu – přepsat je čísly by rozhodilo masku
             // i vlepení zpátky do původního záběru.

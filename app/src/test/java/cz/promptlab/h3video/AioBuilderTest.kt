@@ -284,6 +284,48 @@ class AioBuilderTest {
     }
 
     @Test
+    fun `storyboard vypne kotvu a predradi vetu z prirucky`() {
+        val scene = AioScene(
+            mode = AioMode.REFERENCE,
+            prompt = "honička v uličce",
+            refs = listOf(
+                AioSlot(key = 1, image = File("mrizka.jpg")),
+                AioSlot(key = 2, image = File("postava.jpg")),
+            ),
+            storyboard = true,
+        )
+        val wf = AioBuilder.build(
+            videoTemplate(condClass = "MiniMaxH3ReferenceToVideo"),
+            params(), scene, listOf("mrizka.jpg", "postava.jpg"),
+        )
+        // Mrizka panelu nesmi byt pripnuta jako snimek 0.
+        assertFalse(wf.keys().asSequence().any { wf.classOf(it) == "H3IdentityAnchor" })
+        assertEquals("6", wf.inputs("7").getJSONArray("conditioning").getString(0))
+        // Mrizka je prvni obrazek = <Picture 1> v uzlu H3.
+        val prvni = wf.inputs("6").getJSONArray("ref_images.ref_image_0").getString(0)
+        assertEquals("mrizka.jpg", wf.inputs(prvni).getString("image"))
+        val prompt = wf.inputs("6").getString("prompt")
+        assertTrue(prompt.startsWith(AioBuilder.STORYBOARD_VETA))
+        assertTrue(prompt.endsWith("honička v uličce"))
+    }
+
+    @Test
+    fun `storyboard nepredradi vetu, kdyz prompt uz Picture 1 zminuje`() {
+        val text = "<Picture 1> is a storyboard reference for [Shot 1] and [Shot 2]."
+        val scene = AioScene(
+            mode = AioMode.REFERENCE,
+            prompt = text,
+            refs = listOf(AioSlot(key = 1, image = File("mrizka.jpg"))),
+            storyboard = true,
+        )
+        assertEquals(text, AioBuilder.promptProStoryboard(scene))
+        // Bez storyboardu se prompt nemeni nikdy.
+        assertEquals("x", AioBuilder.promptProStoryboard(scene.copy(prompt = "x", storyboard = false)))
+        // V jinem rezimu storyboard neplati, i kdyby zustal zapnuty.
+        assertEquals("x", AioBuilder.promptProStoryboard(scene.copy(prompt = "x", mode = AioMode.IMAGE)))
+    }
+
+    @Test
     fun `bez zaskrtnuteho zvuku se stopa z referencniho videa nepripoji`() {
         val scene = AioScene(
             mode = AioMode.REFERENCE,

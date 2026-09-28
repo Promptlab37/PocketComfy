@@ -297,7 +297,11 @@ private fun ImageSekce(vm: MainViewModel, scene: AioScene) {
 
 /** Mřížka referenčních fotek – společná pro režimy Reference a List postavy. */
 @Composable
-private fun RefsMrizka(vm: MainViewModel, scene: AioScene) {
+private fun RefsMrizka(vm: MainViewModel, scene: AioScene, storyboard: Boolean = false) {
+    // Storyboard je první předloha s obrázkem — tak ji bere i stavitel grafu.
+    val slotStoryboardu = if (storyboard) {
+        (scene.refsWithImage.firstOrNull() ?: scene.refs.firstOrNull())?.key
+    } else null
     Column {
         // Po třech: dvě dlaždice na řádek byly přes půl obrazovky vysoké.
         scene.refs.chunked(3).forEach { dvojice ->
@@ -305,7 +309,8 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene) {
                 dvojice.forEach { slot ->
                     ObrazekSlot(
                         slot = slot,
-                        popisek = "Reference ${scene.refs.indexOf(slot) + 1}",
+                        popisek = if (slot.key == slotStoryboardu) t("Storyboard")
+                        else "Reference ${scene.refs.indexOf(slot) + 1}",
                         modifier = Modifier.weight(1f),
                         onPick = { uri -> vm.pickAioImage("ref", slot.key, uri) },
                         onClear = { vm.clearAioImage("ref", slot.key) },
@@ -336,7 +341,14 @@ private fun ReferenceSekce(vm: MainViewModel, scene: AioScene) {
         title = t("Reference"),
         subtitle = t("Podle nich model drží podobu postav, věcí i stylu")
     ) {
-        RefsMrizka(vm, scene)
+        PrepinacRadek(
+            titulek = t("Storyboard (experimentální)"),
+            detail = "",
+            checked = scene.storyboard,
+            onChange = { vm.setAioStoryboard(it) },
+        )
+        Spacer(Modifier.height(12.dp))
+        RefsMrizka(vm, scene, storyboard = scene.storyboard)
     }
 
     SectionCard(

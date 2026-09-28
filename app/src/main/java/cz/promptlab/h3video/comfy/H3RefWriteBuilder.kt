@@ -30,6 +30,17 @@ import org.json.JSONObject
  * ti lidé vypadají", ne „tenhle snímek je první". Roli i pořadí nese widget
  * `reference_layout` — proto se skládá tady a ne v UI.
  *
+ * ### Storyboard (experimentální)
+ *
+ * Oficiální příručka Ref2VA zná obrázek jako plán záběrů: „`<Picture 3>` is
+ * a storyboard reference for [Shot 1] and [Shot 2], defining their viewpoint,
+ * subject placement, and shot order." Při zapnutém storyboardu je proto
+ * **první** předloha mřížka panelů a všechny předlohy jdou jako Picture —
+ * přesně jak je čísluje uzel H3 (`<Picture i>` = i-tý obrázek). Postavy pak
+ * přepisovač definuje po vzoru příručky: „`<Subject 1>` is the man in
+ * `<Picture 2>`". Mřížka dostane vlastní otázku (popsat panely po řadě),
+ * postavy otázku role Subject.
+ *
  * ### Licence
  *
  * Psací příručka je **Dokumentace MiniMaxu** a jejich licence dovoluje šířit
@@ -79,21 +90,63 @@ object H3RefWriteBuilder {
      * Rozvržení referencí pro widget `reference_layout`.
      *
      * Uzel jím řídí **pořadí a roli** každé předlohy — bez něj by o obojím
-     * rozhodovalo to, do kterého slotu se co náhodou zapojilo. `slot` je
-     * jméno vstupu, `role` je štítek, pod kterým se reference objeví v textu.
+     * rozhodovalo to, do kterého slotu se co náhodou zapojilo. Tvar je ten,
+     * který čte `universal.layout_of`: `order` (pořadí slotů), `off`
+     * (vypnuté) a `roles` (slot → `Picture`/`Subject`/`Video`).
+     *
+     * Do 4.74 šel tvar `{"items":[…]}`, který uzel nezná — tiše ho zahodil
+     * a všechny fotky vzal jako Picture (výchozí role). Zjištěno 28. 9. 2026
+     * při rešerši storyboardu ze zdrojáku balíku 0.27.0.
      */
-    fun layout(pocet: Int): String {
-        val pole = JSONArray()
+    fun layout(pocet: Int, storyboard: Boolean = false): String {
+        val poradi = JSONArray()
+        val role = JSONObject()
         for (i in 0 until pocet) {
-            pole.put(
-                JSONObject()
-                    .put("slot", "ref_$i")
-                    .put("role", "subj")
-                    .put("on", true)
-            )
+            poradi.put("ref_$i")
+            role.put("ref_$i", if (storyboard) ROLE_PICTURE else ROLE_SUBJECT)
         }
-        return JSONObject().put("items", pole).toString()
+        return JSONObject()
+            .put("order", poradi)
+            .put("off", JSONArray())
+            .put("roles", role)
+            .toString()
     }
+
+    const val ROLE_PICTURE = "Picture"
+    const val ROLE_SUBJECT = "Subject"
+
+    /**
+     * Otázky pro vidoucí model po předlohách (widget `reference_instructions`).
+     * Bez storyboardu prázdné — každá předloha dostane otázku své role.
+     *
+     * Mřížka otázku své role **nahrazuje** (`add: false`): výchozí otázka
+     * Picture popisuje jeden snímek, storyboard jich má víc a záleží na
+     * pořadí. Postavy jedou jako Picture (kvůli číslování), ale ptát se na
+     * ně je potřeba jako na Subject — jinak přijde popis kompozice místo
+     * podoby.
+     */
+    fun otazky(pocet: Int, storyboard: Boolean): String {
+        val o = JSONObject()
+        if (!storyboard || pocet == 0) return o.toString()
+        o.put("ref_0", JSONObject().put("text", OTAZKA_STORYBOARD).put("add", false))
+        for (i in 1 until pocet) {
+            o.put("ref_$i", JSONObject().put("text", OTAZKA_POSTAVA).put("add", false))
+        }
+        return o.toString()
+    }
+
+    const val OTAZKA_STORYBOARD =
+        "This image is a storyboard: a grid of numbered panels, each panel one planned shot. " +
+            "Go through the panels in reading order (left to right, top to bottom) and write " +
+            "one line per panel as 'Panel K: shot size, camera angle, where the subjects are " +
+            "in the frame, what they do, the setting'. Keep the panel order. Ignore borders " +
+            "and any printed titles, numbers or timecodes."
+
+    const val OTAZKA_POSTAVA =
+        "Describe the main subject so it can be recognised again in another shot: who or " +
+            "what it is, age and build if it is a person, hair, clothing and their colours, " +
+            "and any distinguishing object it carries. State only what is visible. Answer in " +
+            "two or three sentences."
 
     /**
      * @param zadani co chce uživatel, klidně česky — model píše anglicky
@@ -110,6 +163,7 @@ object H3RefWriteBuilder {
         writer: String,
         seed: Long,
         maxTokenu: Int = MAX_TOKENU,
+        storyboard: Boolean = false,
     ): JSONObject {
         val wf = JSONObject()
 
@@ -133,11 +187,12 @@ object H3RefWriteBuilder {
         )
 
         val vstupy = JSONObject()
-            .put("reference_layout", layout(obrazky.size))
+            .put("reference_layout", layout(obrazky.size, storyboard))
+            .put("reference_instructions", otazky(obrazky.size, storyboard))
             .put("task", TASK)
             .put("resolution", pomer)
             .put("duration", sekundy)
-            .put("prompt", zadani + hlidkaStitku(obrazky.size))
+            .put("prompt", zadani + hlidkaStitku(obrazky.size, storyboard))
             .put("caption_model", captioner)
             .put("caption_length", "standard")
             .put("writer_model", writer)
@@ -169,11 +224,37 @@ object H3RefWriteBuilder {
      * movement` k zadání, kde žádné video nebylo (ověřeno 21. 9. 2026).
      * H3 pak dostane štítek, ke kterému neexistuje podklad.
      */
-    fun hlidkaStitku(pocet: Int): String {
+    fun hlidkaStitku(pocet: Int, storyboard: Boolean = false): String {
+        if (storyboard) return hlidkaStoryboardu(pocet)
         val stitky = (1..pocet).joinToString(", ") { "<Subject $it>" }
         return "\n\n[There are exactly $pocet reference images and nothing else: " +
             "$stitky. Do not introduce <Video> or <Audio> labels, and do not refer " +
             "to any reference that was not provided.]"
+    }
+
+    /**
+     * Hlídka pro storyboard: kolik je obrázků, co je mřížka a co postavy,
+     * a že každý panel je jeden `[Shot K]` v pořadí. Věta o mřížce je
+     * doslova vzor z oficiální příručky Ref2VA; to, že mřížka není první
+     * snímek, je nutné říct — jinak ji model může otevřít jako záběr.
+     */
+    fun hlidkaStoryboardu(pocet: Int): String {
+        val postavy = if (pocet > 1) {
+            val obr = (2..pocet).joinToString(", ") { "<Picture $it>" }
+            " $obr show the characters: define each one in subject_definitions as a " +
+                "<Subject K> taken from its picture (for example, <Subject 1> is the man in " +
+                "<Picture 2>) and keep every character identical in all shots."
+        } else ""
+        return "\n\n[There are exactly $pocet reference images and nothing else: " +
+            (1..pocet).joinToString(", ") { "<Picture $it>" } + ". " +
+            "<Picture 1> is a storyboard reference for every shot, defining their viewpoint, " +
+            "subject placement, and shot order. It is not a frame of the video. Its description " +
+            "lists the panels as Panel 1, Panel 2 and so on: count them and write exactly " +
+            "that many timed shots, [Shot K] following Panel K, without skipping or merging " +
+            "panels; the last panel is the last shot. Split the duration evenly between " +
+            "them." + postavy +
+            " Do not introduce <Video> or <Audio> labels, and " +
+            "do not refer to any reference that was not provided.]"
     }
 
     /**
