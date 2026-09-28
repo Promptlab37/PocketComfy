@@ -2518,10 +2518,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     @Volatile private var prepisNaServeru: Pair<ComfyClient, String>? = null
 
     /**
-     * ■ Zastavit vylepšení / překlad. Zruší čekání v appce, smaže úlohu
-     * z fronty serveru a když už běží, přeruší **jen ji** (interrupt
-     * s prompt_id) — cizí práce na serveru, třeba generované video, jede dál.
-     * Zadání zůstane, jak bylo před vylepšením.
+     * ■ Zastavit vylepšení / překlad. Zruší čekání v appce hned a úlohu,
+     * která na serveru ještě čeká ve frontě, z fronty smaže. Zadání zůstane,
+     * jak bylo před vylepšením.
+     *
+     * Běžící přepis se **nepřerušuje** — nechá se na serveru doběhnout.
+     * Přerušení během nahrávání modelu (llama-cpp v procesu ComfyUI) nechá
+     * model v grafice: `gguf_engine.load()` ho uloží a výjimka z přerušení
+     * vyletí mimo `try/finally`, který ho uklízí; `/free` ho nevidí.
+     * 28. 9. 2026 tak po testu zůstalo ~9 GB a další H3 video se 19 minut
+     * dusilo. Doběhnutý přepis model uvolní sám (keep_model_loaded=false).
      */
     fun zastavPrepis() {
         if (_rewriteState.value !is RewriteState.Busy) return
@@ -2533,7 +2539,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteProgress.value = null
         if (naServeru != null) viewModelScope.launch(Dispatchers.IO) {
             naServeru.first.deleteFromQueue(naServeru.second)
-            naServeru.first.interrupt(naServeru.second)
         }
     }
 
