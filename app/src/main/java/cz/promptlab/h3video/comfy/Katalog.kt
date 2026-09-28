@@ -485,8 +485,9 @@ object Katalog {
         "minimax_h3_ref2va_pruned_int8_convrot.safetensors" to Soubor(
             "models/diffusion_models", "video karty s referencemi a Dialogy"
         ),
-        "krea2_turbo_fp8_scaled.safetensors" to Soubor(
-            "models/diffusion_models", "Úprava obrázku"
+        "krea2_turbo_int8_convrot.safetensors" to Soubor(
+            "models/diffusion_models", "Úprava obrázku — Krea 2 (13,5 GB)",
+            "$HF/Comfy-Org/Krea-2/resolve/main/diffusion_models/krea2_turbo_int8_convrot.safetensors"
         ),
         "krea2_identity_edit_v1_2.safetensors" to Soubor("models/loras", "Úprava obrázku"),
         "qwen3vl_32b_minimax_h3_int8_convrot.safetensors" to Soubor(

@@ -11,7 +11,7 @@
   "2": {
     "class_type": "UNETLoader",
     "inputs": {
-      "unet_name": "krea2_turbo_fp8_scaled.safetensors",
+      "unet_name": "krea2_turbo_int8_convrot.safetensors",
       "weight_dtype": "default"
     },
     "_meta": { "title": "Krea 2 Turbo" }

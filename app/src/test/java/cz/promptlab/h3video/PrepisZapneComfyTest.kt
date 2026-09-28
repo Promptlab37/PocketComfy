@@ -26,4 +26,18 @@ class PrepisZapneComfyTest {
         }
         assertTrue("Bez zajištění ComfyUI: $chybi", chybi.isEmpty())
     }
+
+    /**
+     * 28. 9. 2026: úklid grafiky volaly jen 4 z 11 cest přepisu. Vylepšovač
+     * s fotkou po MiniMax Music 3 počítal na procesoru 110 s místo ~10 s.
+     * Úklid je proto ve společném spustPrepisAPockej, kterým jde každý přepis.
+     */
+    @Test fun `kazdy prepis nejdriv uklidi grafiku`() {
+        val kod = File("src/main/java/cz/promptlab/h3video/MainViewModel.kt").readText()
+        val od = kod.indexOf("private suspend fun spustPrepisAPockej(")
+        assertTrue("spustPrepisAPockej nenalezen", od >= 0)
+        val telo = kod.substring(od, kod.indexOf("\n    private ", od + 10).takeIf { it > 0 } ?: kod.length)
+        val predOdeslanim = telo.substringBefore("openWebSocket")
+        assertTrue("spustPrepisAPockej musí před odesláním volat uklidPredPrepisem", "uklidPredPrepisem(" in predOdeslanim)
+    }
 }

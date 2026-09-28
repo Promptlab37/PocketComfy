@@ -35,8 +35,8 @@ android {
         applicationId = "cz.promptlab.h3video"
         minSdk = 26
         targetSdk = 35
-        versionCode = 282
-        versionName = "4.70"
+        versionCode = 283
+        versionName = "4.71"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "GITHUB_TOKEN", "\"\"")
         buildConfigField("String", "DEFAULT_SERVER", "\"\"")

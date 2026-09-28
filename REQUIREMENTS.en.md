@@ -113,7 +113,7 @@ card by card, so you do not download what you will not use.
 - `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (references → video, Dialogue)
   — both from [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3),
   19.5 GB each
-- `krea2_turbo_fp8_scaled.safetensors` (Image edit)
+- `krea2_turbo_int8_convrot.safetensors` (Image edit, 13.5 GB), from [Comfy-Org/Krea-2](https://huggingface.co/Comfy-Org/Krea-2)
 - `z_image_turbo_bf16.safetensors` (Image card)
 - `z_image_bf16.safetensors` (Image card — the Z-Image Base option, 11.5 GB),
   from [Comfy-Org/z_image](https://huggingface.co/Comfy-Org/z_image)

@@ -113,7 +113,7 @@ po kartách, ať nestahuješ, co nepoužiješ.
 - `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (reference → video, Dialogy)
   — obojí z [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3),
   po 19,5 GB
-- `krea2_turbo_fp8_scaled.safetensors` (Úprava obrázku)
+- `krea2_turbo_int8_convrot.safetensors` (Úprava obrázku, 13,5 GB), z [Comfy-Org/Krea-2](https://huggingface.co/Comfy-Org/Krea-2)
 - `z_image_turbo_bf16.safetensors` (karta Obrázek)
 - `z_image_bf16.safetensors` (karta Obrázek — volba Z-Image Base, 11,5 GB),
   z [Comfy-Org/z_image](https://huggingface.co/Comfy-Org/z_image)

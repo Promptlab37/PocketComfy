@@ -45,7 +45,7 @@ class RunModelTest {
     @Test fun `z dvou nacitacu se hlasi ten pouzity`() {
         assertEquals("MiniMax H3", zeSablony("workflow_h3_ultra.json"))
         val (_, soubor) = RunModel.zGrafu(JSONObject(File("src/main/res/raw/workflow_h3_ultra.json").readText()))
-        assertEquals("MiniMax_H3_FL2VA_pruned_int8_convrot.safetensors", soubor)
+        assertEquals("minimax_h3_fl2va_pruned_int8_convrot.safetensors", soubor)
     }
 
     @Test fun `bez nacitace je prazdno a plati text karty`() {

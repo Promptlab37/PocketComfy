@@ -2334,6 +2334,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         wf: org.json.JSONObject,
         uzelNahledu: String,
     ): String {
+        // Každý přepis nejdřív uklidí grafiku. Dřív to dělaly jen 4 z 11 cest —
+        // 28. 9. 2026 zůstal po MiniMax Music 3 na kartě 8,7 GB, vylepšovač
+        // s fotkou se nevešel, počítal na procesoru a trval 110 s místo ~10 s
+        // (změřeno: s volnou kartou 37,7 tokenu/s, načtení 3,4 s).
+        uklidPredPrepisem(client)
         val promptId = java.util.UUID.randomUUID().toString()
         val clientId = java.util.UUID.randomUUID().toString()
         _rewriteProgress.value = null
@@ -2751,8 +2756,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         maxTokenu = Qwen21PeBuilder.MAX_TOKENU_RYCHLE,
                         seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
                     )
-                    // Před: ať se přepisovač vejde celý do VRAM.
-                    uklidPredPrepisem(client)
                     val syrove = spustPrepisAPockej(client, wf, Qwen21PeBuilder.N_PREVIEW)
                     // Po: uzel TextGenerate model sám nepustí (na rozdíl od
                     // starších přepisovačů, co mají force_offload), takže by
@@ -4936,7 +4939,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
-                    uklidPredPrepisem(client)
                     // Navázání má vlastní cestu. Oficiální přepisovač píše
                     // VŽDYCKY samostatný klip i s kulisami, oblečením a světlem
                     // — a ty scénu drží latent, ne prompt. Z „vyjde z kavárny"
@@ -5037,8 +5039,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
-                    // 12B enkodér i odvázaný model chtějí místo na grafice.
-                    uklidPredPrepisem(client)
                     val fotka = scene.obrazek?.takeIf { it.exists() }
                     val (wf, uzel) = if (odvazane) {
                         odvazanyLtxGraf(client, scene, zadani, fotka)
