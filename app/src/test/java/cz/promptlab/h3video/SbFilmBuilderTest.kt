@@ -58,7 +58,8 @@ class SbFilmBuilderTest {
         assertTrue(casti[1].startsWith("[Shot 1] At " + SbFilmPlan.casH3(useky[0].sekundy)))
         // Každý úsek označí storyboard i postavu — jinak by je nedostal.
         assertTrue(casti.all { it.contains("<Picture 1>") && it.contains("<Picture 2>") })
-        assertEquals("native_guide", k.getString("continuity_mode"))
+        // native_guide přehrával na švu 22 snímků znovu (28. 9. 2026).
+        assertEquals("latent_guide", k.getString("continuity_mode"))
     }
 
     @Test

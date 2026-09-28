@@ -67,7 +67,9 @@ object SbFilmPlan {
 
     /** Strop jednoho úseku: H3 zvládne 15 s (362 snímků). Kontext navazujícího
      *  úseku se do délky nepřičítá — 2×5 s dalo 248 snímků = 2×124 (28. 9. 2026). */
-    const val MAX_USEK_S = 15.0
+    // Navazující úsek se v latent_guide vzorkuje o kontext (22 snímků) delší:
+    // 14 s = 336 + 22 = 358 → mřížka 17k+5 = 362, trénovaný strop H3.
+    const val MAX_USEK_S = 14.0
     const val MIN_PANEL_S = 2.0
     const val MAX_PANEL_S = 8.0
     /** Strop celého filmu: 3–4 úseky, běh kolem půl hodiny. */

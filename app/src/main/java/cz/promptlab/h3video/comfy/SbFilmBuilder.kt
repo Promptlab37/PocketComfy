@@ -85,6 +85,7 @@ object SbFilmBuilder {
     const val KROKU = 8
     const val KONTEXT_SNIMKU = 22
     const val ROZLISENI = "480P"
+    const val CONTINUITY = "latent_guide"
 
     /**
      * @param obrazky jména nahraných obrázků v pořadí [SbFilmScene.uploadImages]
@@ -134,7 +135,13 @@ object SbFilmBuilder {
             .put("width", 1344).put("height", 768)
             .put("seconds", celkem)
             .put("segment_seconds", useky.joinToString(",") { "%.3f".format(java.util.Locale.ROOT, it.sekundy) })
-            .put("context_length", KONTEXT_SNIMKU).put("continuity_mode", "native_guide")
+            // latent_guide, NE native_guide: v native_guide jde chvost předchozího
+            // úseku jako vodítko na snímek 0 a zůstane ve videu — 22 snímků se
+            // na každém švu přehrálo znovu (změřeno 28. 9. 2026 na filmu
+            // uživatele: snímky 177–186 ≈ 155–164). latent_guide vzorkuje kontext
+            // jako skrytou předponu (head_frames) a Decode z ní nechá jen jeden
+            // navazovací snímek.
+            .put("context_length", KONTEXT_SNIMKU).put("continuity_mode", CONTINUITY)
             .put("transition_seconds", 0.0).put("advanced", false).put("fps", 24.0)
             .put("keyframe_role", "first").put("ref_image_size", "1k")
             .put("reference_mention_mode", "index")
