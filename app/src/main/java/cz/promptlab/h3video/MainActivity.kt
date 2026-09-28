@@ -187,7 +187,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
     val historyBytes by vm.historyBytes.collectAsStateWithLifecycle()
     val savingResults by vm.savingResults.collectAsStateWithLifecycle()
     // Akce „Pokračuj s…" do karty, kterou si uživatel skryl, se nenabízí.
-    val skryteKarty by vm.skryteKarty.collectAsStateWithLifecycle()
+    val skryteKarty by vm.skryteKartyUcinne.collectAsStateWithLifecycle()
+    val skryteVolby by vm.skryteVolby.collectAsStateWithLifecycle()
+    // Po startu, až je ViewModel celý: skrytá volba nesmí zůstat vybraná.
+    LaunchedEffect(Unit) { vm.opravVybraneVolby() }
     val galleryState = androidx.compose.runtime.saveable.rememberSaveableStateHolder()
     val updateState by vm.update.collectAsStateWithLifecycle()
     var opened by remember { mutableStateOf<VideoItem?>(null) }
@@ -460,11 +463,11 @@ private fun Root(vm: MainViewModel = viewModel()) {
                         onUpscaleVideo = {
                             GenerationEngine.dismissResult()
                             vm.posliVideoDoZvetseni(s.item)
-                        }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty || "VYLEPSENI_VIDEA.ZVETSIT" in skryteVolby },
                         onSmoothVideo = {
                             GenerationEngine.dismissResult()
                             vm.posliVideoDoVylepseni(s.item, cz.promptlab.h3video.data.VylepseniRezim.ZPLYNULIT)
-                        }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty || "VYLEPSENI_VIDEA.ZPLYNULIT" in skryteVolby },
                         onEditVideo = {
                             GenerationEngine.dismissResult()
                             vm.posliVideoDoUpravy(s.item)
@@ -480,7 +483,7 @@ private fun Root(vm: MainViewModel = viewModel()) {
                         onMusicToDance = {
                             GenerationEngine.dismissResult()
                             vm.posliHudbuDoTance(s.item)
-                        }.takeUnless { cz.promptlab.h3video.data.Mode.POHYB in skryteKarty },
+                        }.takeUnless { cz.promptlab.h3video.data.Mode.POHYB in skryteKarty || "POHYB.HUDBA" in skryteVolby },
                     )
                 }
             }
@@ -551,11 +554,11 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onUpscaleVideo = {
                         opened = null
                         vm.posliVideoDoZvetseni(open)
-                    }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty || "VYLEPSENI_VIDEA.ZVETSIT" in skryteVolby },
                     onSmoothVideo = {
                         opened = null
                         vm.posliVideoDoVylepseni(open, cz.promptlab.h3video.data.VylepseniRezim.ZPLYNULIT)
-                    }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA in skryteKarty || "VYLEPSENI_VIDEA.ZPLYNULIT" in skryteVolby },
                     onEditVideo = {
                         opened = null
                         vm.posliVideoDoUpravy(open)
@@ -571,7 +574,7 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onMusicToDance = {
                         opened = null
                         vm.posliHudbuDoTance(open)
-                    }.takeUnless { cz.promptlab.h3video.data.Mode.POHYB in skryteKarty },
+                    }.takeUnless { cz.promptlab.h3video.data.Mode.POHYB in skryteKarty || "POHYB.HUDBA" in skryteVolby },
                 )
             }
         }

@@ -18,6 +18,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.CircularProgressIndicator
@@ -747,50 +749,155 @@ private fun Step(number: String, text: String) {
 }
 
 /**
- * Které karty se v appce ukazují. Po skupinách jako nabídka nahoře; poslední
- * viditelnou kartu odškrtnout nejde. Změna platí hned.
+ * Které karty a které volby uvnitř nich se v appce ukazují.
+ *
+ * Dvě úrovně (karta → její motory, modely a režimy), víc ne. Karta má
+ * zaškrtávátko se třemi stavy: zapnutá, vypnutá, částečně (pomlčka, když
+ * jsou zapnuté jen některé volby). Klepnutí na kartu zapne/vypne všechno
+ * uvnitř, klepnutí na volbu přepočítá kartu. Poslední viditelnou kartu
+ * vypnout nejde. Kontrola modelů ukáže u každé volby, jestli ji server
+ * umí a kolik GB by chybělo — a jedním tlačítkem jde nechat jen to, co umí.
  */
 @Composable
 private fun KartyVAplikaci(vm: MainViewModel) {
-    val skryte by vm.skryteKarty.collectAsStateWithLifecycle()
+    val skryteKarty by vm.skryteKarty.collectAsStateWithLifecycle()
+    val skryteVolby by vm.skryteVolby.collectAsStateWithLifecycle()
+    val ucinne by vm.skryteKartyUcinne.collectAsStateWithLifecycle()
+    val stav by vm.stavVoleb.collectAsStateWithLifecycle()
+    val kontroluje by vm.kontrolaVoleb.collectAsStateWithLifecycle()
+    val chyba by vm.kontrolaVolebChyba.collectAsStateWithLifecycle()
     val vsechny = cz.promptlab.h3video.data.NABIZENE_KARTY
     SkladaciSekce(
         title = t("Karty v aplikaci"),
-        souhrn = t("Zobrazeno %d z %d").format(vsechny.count { it !in skryte }, vsechny.size),
+        souhrn = t("Zobrazeno %d z %d").format(vsechny.count { it !in ucinne }, vsechny.size),
         klic = "nastaveni-karty",
     ) {
         cz.promptlab.h3video.data.Skupina.entries.forEach { sk ->
             SectionCard(title = sk.title) {
                 Column {
                     sk.karty.forEach { karta ->
-                        val zapnuta = karta !in skryte
-                        val jdeZmenit = !zapnuta || cz.promptlab.h3video.data.lzeSkryt(skryte, karta)
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable(enabled = jdeZmenit) { vm.nastavViditelnostKarty(karta, !zapnuta) }
-                                .padding(vertical = 2.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            androidx.compose.material3.Checkbox(
-                                checked = zapnuta,
-                                onCheckedChange = { vm.nastavViditelnostKarty(karta, it) },
-                                enabled = jdeZmenit,
-                            )
-                            Text(
-                                karta.title,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (zapnuta) TextHi else TextMid,
-                            )
-                        }
+                        RadekKarty(vm, karta, skryteKarty, skryteVolby, ucinne, stav)
                     }
                 }
             }
         }
-        if (skryte.isNotEmpty()) {
-            OutlineButton(t("Zobrazit všechny"), modifier = Modifier.fillMaxWidth(), color = Cyan) {
-                vm.zobrazitVsechnyKarty()
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlineButton(
+                if (kontroluje) t("Zjišťuji modely na serveru…") else t("Zkontrolovat modely na serveru"),
+                modifier = Modifier.fillMaxWidth(),
+                color = Cyan,
+                enabled = !kontroluje,
+            ) { vm.zkontrolujVolby() }
+            chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = Amber) }
+            val chybiViditelne = stav?.filter { (k, v) -> !v.naServeru && k !in skryteVolby }.orEmpty()
+            if (chybiViditelne.isNotEmpty()) {
+                OutlineButton(
+                    t("Nechat jen to, co server má"),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { vm.nechatJenCoServerMa() }
+            }
+            if (skryteKarty.isNotEmpty() || skryteVolby.isNotEmpty()) {
+                OutlineButton(t("Zobrazit všechny"), modifier = Modifier.fillMaxWidth()) {
+                    vm.zobrazitVsechnyKarty()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RadekKarty(
+    vm: MainViewModel,
+    karta: cz.promptlab.h3video.data.Mode,
+    skryteKarty: Set<cz.promptlab.h3video.data.Mode>,
+    skryteVolby: Set<String>,
+    ucinne: Set<cz.promptlab.h3video.data.Mode>,
+    stav: Map<String, MainViewModel.StavVolby>?,
+) {
+    val volby = cz.promptlab.h3video.data.VolbyKaret.proKartu(karta)
+    var rozbaleno by androidx.compose.runtime.saveable.rememberSaveable(karta.name) {
+        androidx.compose.runtime.mutableStateOf(false)
+    }
+    val zapnute = volby.count { it.klic !in skryteVolby }
+    val stavKarty = when {
+        karta in ucinne -> androidx.compose.ui.state.ToggleableState.Off
+        volby.isNotEmpty() && zapnute < volby.size -> androidx.compose.ui.state.ToggleableState.Indeterminate
+        else -> androidx.compose.ui.state.ToggleableState.On
+    }
+    // Klepnutí na částečnou kartu ji zapne celou (tak to má Material).
+    val zapnout = stavKarty != androidx.compose.ui.state.ToggleableState.On
+    val jdeZmenit = zapnout || cz.promptlab.h3video.data.lzeSkryt(ucinne, karta)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable {
+                if (volby.isNotEmpty()) rozbaleno = !rozbaleno
+                else if (jdeZmenit) vm.nastavViditelnostKarty(karta, zapnout)
+            }
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        androidx.compose.material3.TriStateCheckbox(
+            state = stavKarty,
+            onClick = { if (jdeZmenit) vm.nastavViditelnostKarty(karta, zapnout) },
+            enabled = jdeZmenit,
+        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                karta.title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (karta in ucinne) TextMid else TextHi,
+            )
+            if (volby.isNotEmpty()) Text(
+                t("%d z %d").format(if (karta in skryteKarty) 0 else zapnute, volby.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = TextLow,
+            )
+        }
+        if (volby.isNotEmpty()) Icon(
+            if (rozbaleno) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+            contentDescription = if (rozbaleno) t("Sbalit") else t("Rozbalit"),
+            tint = TextMid,
+            modifier = Modifier.padding(end = 8.dp),
+        )
+    }
+    if (rozbaleno) volby.forEach { v ->
+        val zapnuta = v.klic !in skryteVolby && karta !in skryteKarty
+        val jdeVypnout = !zapnuta || run {
+            val nove = cz.promptlab.h3video.data.VolbyKaret.ucinneSkryte(skryteKarty, skryteVolby + v.klic)
+            !cz.promptlab.h3video.data.NABIZENE_KARTY.all { it in nove }
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 32.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .clickable(enabled = jdeVypnout) { vm.nastavVolbu(v, !zapnuta) },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            androidx.compose.material3.Checkbox(
+                checked = zapnuta,
+                onCheckedChange = { vm.nastavVolbu(v, it) },
+                enabled = jdeVypnout,
+            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    v.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (zapnuta) TextHi else TextMid,
+                )
+                stav?.get(v.klic)?.let { st ->
+                    val (text, barva) = when {
+                        st.naServeru -> t("na serveru") to Ok
+                        st.chybiSoubory.isEmpty() -> t("chybí doplněk ComfyUI") to Amber
+                        st.gb > 0.0 -> t("chybí %s GB").format(
+                            (if (st.gb >= 10) "%.0f" else "%.1f").format(st.gb) + if (st.neznamaVelikost) "+" else ""
+                        ) to Amber
+                        else -> t("chybí %d souborů").format(st.chybiSoubory.size) to Amber
+                    }
+                    Text(text, style = MaterialTheme.typography.bodySmall, color = barva)
+                }
             }
         }
     }

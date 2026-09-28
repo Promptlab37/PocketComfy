@@ -108,13 +108,14 @@ fun UpscaleSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(
+    val metody = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.UPSCALE, UpscaleMetoda.entries.toList()) { it.name }
+    if (metody.size > 1) SectionCard(
         title = t("Čím zvětšit"),
         subtitle = t("Dvě různé cesty — jedna dokresluje, druhá rekonstruuje")
     ) {
         Column {
             PillRow(
-                items = UpscaleMetoda.entries.toList(),
+                items = metody,
                 selected = scene.metoda,
                 label = { t(it.stitek) },
                 onSelect = { vm.setUpscaleMetoda(it) },

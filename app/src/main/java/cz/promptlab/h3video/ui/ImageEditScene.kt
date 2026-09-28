@@ -187,13 +187,14 @@ fun ImageEditSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(
+    val motory = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.EDIT, EditMotor.entries.toList()) { it.name }
+    if (motory.size > 1) SectionCard(
         title = t("Čím upravit"),
         subtitle = t("Vyberte model podle požadované úpravy")
     ) {
         Column {
             PillRow(
-                items = EditMotor.entries.toList(),
+                items = motory,
                 selected = scene.motor,
                 label = { it.nazev },
                 onSelect = { vm.setEditMotor(it) },

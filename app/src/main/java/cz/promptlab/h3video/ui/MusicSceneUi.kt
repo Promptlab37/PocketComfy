@@ -93,13 +93,14 @@ fun MusicSection(vm: MainViewModel) {
     val scene by vm.music.collectAsStateWithLifecycle()
     val yue2 = scene.motor == MusicMotor.YUE2
 
-    SectionCard(
+    val motory = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.MUSIC, MusicMotor.entries.toList()) { it.name }
+    if (motory.size > 1) SectionCard(
         title = t("Čím skládat"),
         subtitle = null
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             PillRow(
-                items = MusicMotor.entries.toList(),
+                items = motory,
                 selected = scene.motor,
                 label = { it.title },
                 onSelect = { vm.setMusicMotor(it) },

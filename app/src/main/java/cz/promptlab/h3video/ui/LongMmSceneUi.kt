@@ -118,8 +118,10 @@ fun LongMmSection(vm: MainViewModel) {
 
     SectionCard(title = t("Model")) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            PillRow(
-                items = cz.promptlab.h3video.data.LongMmModel.entries.toList(),
+            val modely = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.LONGMM,
+                cz.promptlab.h3video.data.LongMmModel.entries.toList()) { it.name }
+            if (modely.size > 1) PillRow(
+                items = modely,
                 selected = scene.model,
                 label = { it.title },
                 onSelect = { vm.setLongMmModel(it) },

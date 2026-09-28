@@ -170,6 +170,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Karty, které si uživatel v Nastavení skryl. */
     val skryteKarty: StateFlow<Set<Mode>> = _skryteKarty.asStateFlow()
 
+    // Volby uvnitř karet (motory, modely, režimy) — typicky ty, jejichž modely
+    // uživatel nechce stahovat. Ukládá se jen to, co je skryté.
+    private val _skryteVolby = MutableStateFlow(settings.skryteVolby)
+    val skryteVolby: StateFlow<Set<String>> = _skryteVolby.asStateFlow()
+
+    /** Karty skryté ručně nebo tím, že uživatel schoval všechny jejich volby. */
+    val skryteKartyUcinne: StateFlow<Set<Mode>> =
+        kotlinx.coroutines.flow.combine(_skryteKarty, _skryteVolby) { k, v ->
+            cz.promptlab.h3video.data.VolbyKaret.ucinneSkryte(k, v)
+        }.stateIn(
+            viewModelScope, kotlinx.coroutines.flow.SharingStarted.Eagerly,
+            cz.promptlab.h3video.data.VolbyKaret.ucinneSkryte(_skryteKarty.value, _skryteVolby.value),
+        )
+
+    private fun ucinneTed(): Set<Mode> =
+        cz.promptlab.h3video.data.VolbyKaret.ucinneSkryte(_skryteKarty.value, _skryteVolby.value)
+
     private val _tab = MutableStateFlow(Tab.CREATE)
     val tab: StateFlow<Tab> = _tab.asStateFlow()
 
@@ -187,25 +204,187 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
         }.let { p ->
             // Uložená karta je skrytá → appka se otevře na první viditelné.
-            if (p.mode in _skryteKarty.value) p.copy(mode = cz.promptlab.h3video.data.prvniViditelna(_skryteKarty.value))
+            val ucinne = cz.promptlab.h3video.data.VolbyKaret.ucinneSkryte(_skryteKarty.value, _skryteVolby.value)
+            if (p.mode in ucinne) p.copy(mode = cz.promptlab.h3video.data.prvniViditelna(ucinne))
             else p
         }
     )
 
     /** Ukázat / skrýt kartu v nabídce. Poslední viditelnou skrýt nejde. */
     fun nastavViditelnostKarty(karta: Mode, viditelna: Boolean) {
-        val ted = _skryteKarty.value
-        if (!viditelna && !cz.promptlab.h3video.data.lzeSkryt(ted, karta)) return
-        val nove = if (viditelna) ted - karta else ted + karta
-        _skryteKarty.value = nove
-        settings.skryteKarty = nove.map { it.name }.toSet()
-        // Právě otevřená karta zmizela z nabídky → přejít na první viditelnou.
-        if (!viditelna && _params.value.mode == karta) setMode(cz.promptlab.h3video.data.prvniViditelna(nove))
+        if (!viditelna && !cz.promptlab.h3video.data.lzeSkryt(ucinneTed(), karta)) return
+        if (viditelna) {
+            // Zapnout kartu = zapnout ji celou, i se všemi jejími volbami.
+            _skryteKarty.value = _skryteKarty.value - karta
+            _skryteVolby.value = _skryteVolby.value -
+                cz.promptlab.h3video.data.VolbyKaret.proKartu(karta).map { it.klic }.toSet()
+        } else {
+            _skryteKarty.value = _skryteKarty.value + karta
+        }
+        ulozViditelnost()
+    }
+
+    /** Ukázat / skrýt jednu volbu uvnitř karty. Kartu, která by byla poslední viditelná, vypnout nejde. */
+    fun nastavVolbu(volba: cz.promptlab.h3video.data.Volba, zapnuta: Boolean) {
+        if (zapnuta) {
+            _skryteVolby.value = _skryteVolby.value - volba.klic
+            _skryteKarty.value = _skryteKarty.value - volba.karta
+        } else {
+            val nove = _skryteVolby.value + volba.klic
+            val ucinne = cz.promptlab.h3video.data.VolbyKaret.ucinneSkryte(_skryteKarty.value, nove)
+            if (cz.promptlab.h3video.data.NABIZENE_KARTY.all { it in ucinne }) return
+            _skryteVolby.value = nove
+        }
+        ulozViditelnost()
     }
 
     fun zobrazitVsechnyKarty() {
         _skryteKarty.value = emptySet()
-        settings.skryteKarty = emptySet()
+        _skryteVolby.value = emptySet()
+        ulozViditelnost()
+    }
+
+    /** Skrýt každou volbu, jejíž modely server nemá (podle poslední kontroly). */
+    fun nechatJenCoServerMa() {
+        val stav = _stavVoleb.value ?: return
+        val chybi = stav.filterValues { !it.naServeru }.keys
+        val nove = _skryteVolby.value + chybi
+        val ucinne = cz.promptlab.h3video.data.VolbyKaret.ucinneSkryte(_skryteKarty.value, nove)
+        if (cz.promptlab.h3video.data.NABIZENE_KARTY.all { it in ucinne }) return
+        _skryteVolby.value = nove
+        ulozViditelnost()
+    }
+
+    private fun ulozViditelnost() {
+        settings.skryteKarty = _skryteKarty.value.map { it.name }.toSet()
+        settings.skryteVolby = _skryteVolby.value
+        val ucinne = ucinneTed()
+        // Otevřená karta zmizela z nabídky → přejít na první viditelnou.
+        if (_params.value.mode in ucinne) setMode(cz.promptlab.h3video.data.prvniViditelna(ucinne))
+        opravVybraneVolby()
+    }
+
+    /**
+     * Karta nesmí mít vybranou skrytou volbu — přepne se na první viditelnou.
+     * Volá se po každé změně v Nastavení a jednou po startu (MainActivity),
+     * až je celý ViewModel sestavený.
+     */
+    fun opravVybraneVolby() {
+        val s = _skryteVolby.value
+        fun <T> oprav(karta: Mode, vse: List<T>, ted: T, jmeno: (T) -> String, nastav: (T) -> Unit) {
+            if (cz.promptlab.h3video.data.VolbyKaret.jeSkryta(karta, jmeno(ted), s)) {
+                cz.promptlab.h3video.data.VolbyKaret.viditelne(karta, vse, s, jmeno).firstOrNull()?.let(nastav)
+            }
+        }
+        oprav(Mode.MUSIC, cz.promptlab.h3video.data.MusicMotor.entries, _music.value.motor, { it.name }) { setMusicMotor(it) }
+        oprav(Mode.FACESWAP, cz.promptlab.h3video.data.SwapMotor.entries, _swap.value.motor, { it.name }) { setSwapMotor(it) }
+        oprav(Mode.EDIT, cz.promptlab.h3video.data.EditMotor.entries, _edit.value.motor, { it.name }) { setEditMotor(it) }
+        oprav(Mode.IMAGE, cz.promptlab.h3video.comfy.T2iModel.NABIDKA,
+            cz.promptlab.h3video.comfy.T2iModel.zId(_params.value.zimageModel), { it.name }) { setImageModel(it.id) }
+        oprav(Mode.INPAINT, InpaintModel.entries, _inpaint.value.model, { it.name }) { setInpaintModel(it) }
+        oprav(Mode.UPSCALE, cz.promptlab.h3video.data.UpscaleMetoda.entries, _upscale.value.metoda, { it.name }) { setUpscaleMetoda(it) }
+        oprav(Mode.MODEL3D, cz.promptlab.h3video.data.Model3dMotor.entries, _model3d.value.motor, { it.name }) { setModel3dMotor(it) }
+        oprav(Mode.VYLEPSENI_VIDEA, cz.promptlab.h3video.data.VylepseniRezim.entries, _vylepseni.value.rezim, { it.name }) { setVylepseniRezim(it) }
+        oprav(Mode.POHYB, cz.promptlab.h3video.data.PohybRezim.entries, _pohyb.value, { it.name }) { setPohybRezim(it) }
+        oprav(Mode.LONGMM, cz.promptlab.h3video.data.LongMmModel.entries, _longMm.value.model, { it.name }) { setLongMmModel(it) }
+        val u = _uprava.value
+        val rezimy = cz.promptlab.h3video.data.VolbyKaret.upravaRezimy(s)
+        if (u.rezim !in rezimy) rezimy.firstOrNull()?.let { setUpravaRezim(it) }
+        val motory = cz.promptlab.h3video.data.VolbyKaret.postavaMotory(s)
+        if (u.motorPostavy !in motory) motory.firstOrNull()?.let { setUpravaMotorPostavy(it) }
+    }
+
+    // ------------------------------------------------ modely voleb na serveru
+
+    /** Co volba na serveru postrádá. Prázdné seznamy = server ji celou umí. */
+    data class StavVolby(val chybiSoubory: List<String>, val chybiUzly: List<String>, val gb: Double, val neznamaVelikost: Boolean) {
+        val naServeru: Boolean get() = chybiSoubory.isEmpty() && chybiUzly.isEmpty()
+    }
+
+    private val _stavVoleb = MutableStateFlow<Map<String, StavVolby>?>(null)
+    val stavVoleb: StateFlow<Map<String, StavVolby>?> = _stavVoleb.asStateFlow()
+    private val _kontrolaVoleb = MutableStateFlow(false)
+    val kontrolaVoleb: StateFlow<Boolean> = _kontrolaVoleb.asStateFlow()
+    private val _kontrolaVolebChyba = MutableStateFlow<String?>(null)
+    val kontrolaVolebChyba: StateFlow<String?> = _kontrolaVolebChyba.asStateFlow()
+
+    /** Zjistí u každé volby, jestli má server její modely a uzly (a kolik GB chybí). */
+    fun zkontrolujVolby() {
+        if (_kontrolaVoleb.value) return
+        _kontrolaVoleb.value = true
+        _kontrolaVolebChyba.value = null
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                runCatching {
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
+                    spocitejStavVoleb(client)
+                }
+            }
+            vysledek.onSuccess { _stavVoleb.value = it }
+                .onFailure { _kontrolaVolebChyba.value = t("Server neodpovídá — zkus to znovu, až poběží.") }
+            _kontrolaVoleb.value = false
+        }
+    }
+
+    private fun spocitejStavVoleb(client: ComfyClient): Map<String, StavVolby> {
+        val app = getApplication<Application>()
+        val cache = HashMap<String, org.json.JSONObject?>()
+        fun spec(cls: String) = cache.getOrPut(cls) { client.objectInfo(cls) }
+        val pripony = listOf(".safetensors", ".sft", ".gguf", ".pt", ".pth", ".ckpt", ".bin", ".onnx")
+        fun jeModel(v: String) = pripony.any { v.lowercase().endsWith(it) }
+        val out = mutableMapOf<String, StavVolby>()
+        cz.promptlab.h3video.data.VolbyKaret.VSECHNY.forEach { v ->
+            val soubory = linkedSetOf<String>()
+            val uzly = linkedSetOf<String>()
+            v.sablony.forEach { jmeno ->
+                @Suppress("DiscouragedApi")
+                val id = app.resources.getIdentifier(jmeno, "raw", app.packageName)
+                if (id == 0) return@forEach
+                val text = app.resources.openRawResource(id).bufferedReader().use { it.readText() }
+                cz.promptlab.h3video.comfy.ServerAudit.collect(listOf(text)).forEach { (cls, vstupy) ->
+                    val sp = spec(cls)
+                    if (sp == null) { uzly += cls; return@forEach }
+                    vstupy.distinct().forEach { (k, hodnota) ->
+                        if (!jeModel(hodnota)) return@forEach
+                        val moznosti = cz.promptlab.h3video.comfy.ServerAudit.options(sp, k)
+                        if (!moznosti.isNullOrEmpty() && hodnota !in moznosti) soubory += hodnota
+                    }
+                }
+            }
+            v.soubory.forEach { f ->
+                val (cls, k) = nacitacPro(f) ?: return@forEach
+                val sp = spec(cls) ?: return@forEach
+                val moznosti = cz.promptlab.h3video.comfy.ServerAudit.options(sp, k)
+                if (moznosti != null && f !in moznosti) soubory += f
+            }
+            val velikosti = soubory.map { velikostGb(it) }
+            out[v.klic] = StavVolby(soubory.toList(), uzly.toList(), velikosti.sumOf { it ?: 0.0 }, velikosti.any { it == null })
+        }
+        return out
+    }
+
+    /** Kterým uzlem a vstupem se soubor načítá — podle složky z katalogu. */
+    private fun nacitacPro(soubor: String): Pair<String, String>? {
+        if (soubor.lowercase().endsWith(".gguf")) return "UnetLoaderGGUF" to "unet_name"
+        val slozka = cz.promptlab.h3video.comfy.Katalog.soubor(soubor)?.slozka ?: return null
+        return when {
+            "loras" in slozka -> "LoraLoaderModelOnly" to "lora_name"
+            "diffusion_models" in slozka || "unet" in slozka -> "UNETLoader" to "unet_name"
+            "text_encoders" in slozka -> "CLIPLoader" to "clip_name"
+            "clip_vision" in slozka -> "CLIPVisionLoader" to "clip_name"
+            "vae" in slozka -> "VAELoader" to "vae_name"
+            "checkpoints" in slozka -> "CheckpointLoaderSimple" to "ckpt_name"
+            "model_patches" in slozka -> "ModelPatchLoader" to "name"
+            else -> null
+        }
+    }
+
+    /** Velikost z popisu v katalogu („… (14,5 GB)", „(80 MB)"), null = neznámá. */
+    private fun velikostGb(soubor: String): Double? {
+        val popis = cz.promptlab.h3video.comfy.Katalog.soubor(soubor)?.karta ?: return null
+        val m = Regex("""\(([0-9]+(?:,[0-9]+)?)\s*(GB|MB)""").find(popis) ?: return null
+        val cislo = m.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return null
+        return if (m.groupValues[2] == "MB") cislo / 1024 else cislo
     }
 
     /** Režim karty Pohyb postavy, který odpovídá schované kartě. */

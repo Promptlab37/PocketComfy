@@ -58,9 +58,10 @@ import kotlin.math.roundToInt
 @Composable
 fun PohybSection(vm: MainViewModel) {
     val rezim by vm.pohyb.collectAsStateWithLifecycle()
-    SectionCard(title = t("Podle čeho se hýbe")) {
+    val rezimy = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.POHYB, PohybRezim.entries.toList()) { it.name }
+    if (rezimy.size > 1) SectionCard(title = t("Podle čeho se hýbe")) {
         PillRow(
-            items = PohybRezim.entries.toList(),
+            items = rezimy,
             selected = rezim,
             label = { it.title },
             onSelect = { vm.setPohybRezim(it) },
@@ -81,10 +82,12 @@ fun UpravaVideaSection(vm: MainViewModel) {
     SectionCard(title = t("Video")) {
         VideoVyber(s.video, chyba, { vm.pickUpravaVideo(it) }, { vm.clearUpravaVideo() })
     }
-    if (UpravaRezim.entries.size > 1) {
+    val skryteVolby by vm.skryteVolby.collectAsStateWithLifecycle()
+    val rezimyUpravy = cz.promptlab.h3video.data.VolbyKaret.upravaRezimy(skryteVolby)
+    if (rezimyUpravy.size > 1) {
         SectionCard(title = t("Co udělat")) {
             PillRow(
-                items = UpravaRezim.entries.toList(),
+                items = rezimyUpravy,
                 selected = s.rezim,
                 label = { it.title },
                 onSelect = { vm.setUpravaRezim(it) },
@@ -159,9 +162,10 @@ fun UpravaVideaSection(vm: MainViewModel) {
         UpravaRezim.POSTAVA -> {
             val imageOnly = PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
             val vyberFotky = rememberLauncherForActivityResult(VyberMedii()) { vm.pickUpravaPostava(it) }
-            SectionCard(title = t("Čím")) {
+            val motory = cz.promptlab.h3video.data.VolbyKaret.postavaMotory(skryteVolby)
+            if (motory.size > 1) SectionCard(title = t("Čím")) {
                 PillRow(
-                    items = cz.promptlab.h3video.data.PostavaMotor.entries.toList(),
+                    items = motory,
                     selected = s.motorPostavy,
                     label = { it.title },
                     onSelect = { vm.setUpravaMotorPostavy(it) },
@@ -290,9 +294,10 @@ fun VylepseniVideaSection(vm: MainViewModel) {
     SectionCard(title = t("Video")) {
         VideoVyber(s.video, chyba, { vm.pickVylepseniVideo(it) }, { vm.clearVylepseniVideo() })
     }
-    SectionCard(title = t("Co udělat")) {
+    val rezimyVylepseni = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.VYLEPSENI_VIDEA, VylepseniRezim.entries.toList()) { it.name }
+    if (rezimyVylepseni.size > 1) SectionCard(title = t("Co udělat")) {
         PillRow(
-            items = VylepseniRezim.entries.toList(),
+            items = rezimyVylepseni,
             selected = s.rezim,
             label = { it.title },
             onSelect = { vm.setVylepseniRezim(it) },

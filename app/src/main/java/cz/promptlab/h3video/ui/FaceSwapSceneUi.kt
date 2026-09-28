@@ -95,9 +95,11 @@ fun FaceSwapSection(vm: MainViewModel) {
 
     var maluje by remember { mutableStateOf(false) }
 
-    SectionCard(title = t("Čím")) {
+    val motory = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.FACESWAP,
+        cz.promptlab.h3video.data.SwapMotor.entries.toList()) { it.name }
+    if (motory.size > 1) SectionCard(title = t("Čím")) {
         PillRow(
-            items = cz.promptlab.h3video.data.SwapMotor.entries.toList(),
+            items = motory,
             selected = scene.motor,
             label = { it.title },
             onSelect = { vm.setSwapMotor(it) },

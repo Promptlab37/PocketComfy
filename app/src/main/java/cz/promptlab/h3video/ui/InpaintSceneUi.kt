@@ -263,13 +263,14 @@ fun InpaintSection(vm: MainViewModel) {
                 " · síla %.2f".format(scene.sila) else ""),
         klic = "nastaveni-inpaint",
     ) {
-        SectionCard(
+        val modely = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.INPAINT, InpaintModel.entries.toList()) { it.name }
+        if (modely.size > 1) SectionCard(
             title = t("Čím domalovat"),
             subtitle = t("Když se výsledek nepovede, zkus jiný model — každý kreslí jinak")
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 PillRow(
-                    items = InpaintModel.entries.toList(),
+                    items = modely,
                     selected = scene.model,
                     label = { it.title },
                     onSelect = { vm.setInpaintModel(it) },

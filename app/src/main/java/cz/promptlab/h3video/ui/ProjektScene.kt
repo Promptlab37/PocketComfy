@@ -315,7 +315,7 @@ private fun ZaberRadek(
             // Stejné skupiny jako nabídka karet nahoře, ať se karta hledá
             // na jednom a tom samém místě.
             // Skryté karty se nenabízejí; tu, kterou záběr už má, ano.
-            val skryteKarty by vm.skryteKarty.collectAsStateWithLifecycle()
+            val skryteKarty by vm.skryteKartyUcinne.collectAsStateWithLifecycle()
             cz.promptlab.h3video.data.Skupina.entries
                 .map { sk ->
                     sk to sk.karty.filter {

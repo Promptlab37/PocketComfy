@@ -121,15 +121,18 @@ fun Model3dSection(vm: MainViewModel) {
         subtitle = t("Jemnost sítě a velikost textury")
     ) {
         Column {
-            Text(t("Čím počítat"), style = MaterialTheme.typography.labelMedium, color = TextLow)
-            Spacer(Modifier.height(8.dp))
-            PillRow(
-                items = Model3dMotor.entries.toList(),
-                selected = scene.motor,
-                label = { it.nazev },
-                onSelect = { vm.setModel3dMotor(it) },
-            )
-            Spacer(Modifier.height(14.dp))
+            val motory = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.MODEL3D, Model3dMotor.entries.toList()) { it.name }
+            if (motory.size > 1) {
+                Text(t("Čím počítat"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                Spacer(Modifier.height(8.dp))
+                PillRow(
+                    items = motory,
+                    selected = scene.motor,
+                    label = { it.nazev },
+                    onSelect = { vm.setModel3dMotor(it) },
+                )
+                Spacer(Modifier.height(14.dp))
+            }
 
             // Jemnost tvaru se nabízí, jen když je z čeho vybírat.
             if (Model3dScene.DETAILY.size > 1) {

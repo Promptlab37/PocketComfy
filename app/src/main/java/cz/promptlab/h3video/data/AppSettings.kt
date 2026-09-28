@@ -178,6 +178,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeMusicYue2", false)
         set(v) = sp.edit().putBoolean("activeMusicYue2", v).apply()
 
+    /** Volby uvnitř karet, které si uživatel skryl (`KARTA.VOLBA`, viz VolbyKaret). */
+    var skryteVolby: Set<String>
+        get() = sp.getStringSet("skryteVolby", emptySet())!!.toSet()
+        set(v) = sp.edit().putStringSet("skryteVolby", v.toSet()).apply()
+
     /** Karty, které si uživatel v Nastavení skryl (jména z [Mode]). */
     var skryteKarty: Set<String>
         get() = sp.getStringSet("skryteKarty", emptySet())!!.toSet()

@@ -294,7 +294,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         }
 
         // ---------------------------------------------------------- karty
-        val skryteKarty by vm.skryteKarty.collectAsStateWithLifecycle()
+        val skryteKarty by vm.skryteKartyUcinne.collectAsStateWithLifecycle()
         ModeTabs(mode, skryteKarty) { vm.setMode(it) }
 
         // Dlouhé video staví každý úsek přes ReferenceToVideo, takže jede
@@ -1105,16 +1105,19 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 )
             }
             Column {
-                Text(t("Model"), style = MaterialTheme.typography.labelMedium, color = TextLow)
-                Spacer(Modifier.height(8.dp))
                 val model = vybranyModel
-                PillRow(
-                    items = T2iModel.NABIDKA,
-                    selected = model,
-                    label = { t(it.stitek) },
-                    onSelect = { m -> vm.setImageModel(m.id) },
-                )
-                Spacer(Modifier.height(8.dp))
+                val modely = nabidkaVoleb(vm, Mode.IMAGE, T2iModel.NABIDKA) { it.name }
+                if (modely.size > 1) {
+                    Text(t("Model"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+                    Spacer(Modifier.height(8.dp))
+                    PillRow(
+                        items = modely,
+                        selected = model,
+                        label = { t(it.stitek) },
+                        onSelect = { m -> vm.setImageModel(m.id) },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
                 Spacer(Modifier.height(10.dp))
                 VzorkovaniObrazku(vm, params)
                 // Qwen 2.1 je na 2K stavěný. Tabulka rozměrů karty je z Z-Image
