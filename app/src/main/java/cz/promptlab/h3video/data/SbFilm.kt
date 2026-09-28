@@ -24,6 +24,26 @@ import kotlin.math.roundToInt
  * Pravidla délek navrhl kritik 28. 9. 2026 (viz [naplanuj]).
  */
 
+/** Odkud se bere plán: přečtený storyboard, nebo návrh z děje a postav. */
+enum class SbZdroj(private val titleCs: String) {
+    STORYBOARD("Mám storyboard"),
+    DEJ("Vytvořit z děje");
+
+    val title: String get() = t(titleCs)
+}
+
+/**
+ * Rozlišení filmu. 480p je ověřené (2×5 s = 7,6 min, VRAM 12,1 GB);
+ * 720p na přání uživatele 28. 9. 2026 — má 2,25× víc bodů, běh je řádově
+ * delší.
+ */
+enum class SbRozliseni(val kod: String, private val titleCs: String) {
+    R480("480P", "480p"),
+    R720("720P", "720p");
+
+    val title: String get() = t(titleCs)
+}
+
 /** Jeden panel storyboardu, jak ho appka naplánovala. */
 @Immutable
 data class SbPanel(
@@ -289,6 +309,60 @@ object SbFilmPlan {
         }.joinToString("\n---\n")
     }
 
+    /** Kolik panelů navrhnout na danou délku: ~3,5 s na panel, 3–12. */
+    fun panelyNaDelku(sekundy: Int): Int = (sekundy / 3.5).roundToInt().coerceIn(3, MAX_PANELU)
+
+    /** Systémový prompt pro návrh záběrů z děje (výstup v tvaru [OTAZKA_CTENI]). */
+    const val SYSTEM_NAVRH =
+        "You are a film director writing a shot list for a short AI video. Answer in plain lines " +
+            "only, no other text. First line: TITLE: <a short title> | TOTAL: <total seconds> | " +
+            "SHOTS: <number of shots>. Then one line per shot, in story order: PANEL <number> | " +
+            "<start-end seconds, for example 00-04s> | <shot size: wide, medium, close-up, extreme " +
+            "close-up, insert or detail> | <camera movement, or static> | <what happens in the shot, " +
+            "one short sentence of visible action>. The shots follow each other without gaps and " +
+            "add up to the total. Each shot shows one clear moment and never repeats an earlier " +
+            "action. If the story has spoken lines, put the exact line in quotes in the shot where " +
+            "it is spoken, in its original language."
+
+    /** Zadání návrhu: děj, délka, počet záběrů, postavy z fotek. */
+    fun zadaniNavrhu(dej: String, sekundy: Int, pocetPostav: Int): String {
+        val panelu = panelyNaDelku(sekundy)
+        val postavy = if (pocetPostav > 0)
+            " The characters are the people in the attached photos (photo 1 = character 1, and so on); " +
+                "refer to them by what they look like."
+        else ""
+        return "Story: ${dej.trim()}\nTotal length: $sekundy seconds. Number of shots: $panelu.$postavy"
+    }
+
+    /**
+     * Návrh z děje: délky se dorovnají přesně na cílovou délku (model počítá
+     * sekundy nespolehlivě). Poměr mezi panely zůstane, meze 2–8 s.
+     */
+    fun naplanujNavrh(text: String, cilSekund: Int): SbPlan {
+        val cteni = precti(text)
+        val plan = naplanuj(cteni.copy(celkemVepsano = null, zaberuVepsano = null))
+        if (plan.panely.isEmpty()) return plan
+        val soucet = plan.panely.sumOf { it.sekundy }
+        val k = cilSekund / soucet
+        // Strop panelu je tu úsek (14 s), ne 8 s: když model navrhne málo
+        // záběrů na dlouhý film, musí se délka dorovnat i tak.
+        var panely = plan.panely.map { it.copy(sekundy = zaokrouhli((it.sekundy * k).coerceIn(MIN_PANEL_S, MAX_USEK_S))) }
+        // Po mezích může součet ujet — rozdíl se rozdělí mezi panely, které
+        // mají ještě místo (po desetinách, ať se zaokrouhlení nesčítá).
+        val delky = panely.map { it.sekundy }.toMutableList()
+        var rozdil = zaokrouhli(cilSekund - delky.sum())
+        var pojistka = 1000
+        while (kotlin.math.abs(rozdil) >= 0.05 && pojistka-- > 0) {
+            val krok = if (rozdil > 0) 0.1 else -0.1
+            val i = delky.indices
+                .filter { if (krok > 0) delky[it] + krok <= MAX_USEK_S + 1e-9 else delky[it] + krok >= MIN_PANEL_S - 1e-9 }
+                .maxByOrNull { if (krok > 0) MAX_USEK_S - delky[it] else delky[it] } ?: break
+            delky[i] = zaokrouhli(delky[i] + krok)
+            rozdil = zaokrouhli(rozdil - krok)
+        }
+        return SbPlan(panely.mapIndexed { i, p -> p.copy(sekundy = delky[i]) }, false)
+    }
+
     /** `MM:SS.mmm` jako v příručce H3. */
     fun casH3(s: Double): String {
         val ms = (s * 1000).roundToInt()
@@ -305,8 +379,13 @@ data class SbFilmScene(
     val postavy: List<LongMmRef> = emptyList(),
     /** Volitelná věta o ději. */
     val dej: String = "",
-    /** Plátno filmu. Rozlišení je pevné (480p), jen ověřené. */
+    /** Plátno filmu. */
     val pomer: LongMmPomer = LongMmPomer.NASIRKU,
+    val rozliseni: SbRozliseni = SbRozliseni.R480,
+    /** Odkud je plán. */
+    val zdroj: SbZdroj = SbZdroj.STORYBOARD,
+    /** Vytvořit z děje: cílová délka filmu v sekundách. */
+    val cilSekund: Int = 30,
     /** Naplánované panely (po „Přečíst“). */
     val panely: List<SbPanel> = emptyList(),
     val nazev: String = "",
@@ -318,20 +397,33 @@ data class SbFilmScene(
     val useky: List<SbUsek> get() = SbFilmPlan.rozdel(panely)
     val sekundy: Double get() = panely.sumOf { it.sekundy }
 
+    /** Jde storyboard do H3 jako `<Picture 1>`? Jen když je z něj plán. */
+    val seStoryboardem: Boolean get() = zdroj == SbZdroj.STORYBOARD && storyboard != null
+
     /** Nahrávají se v tomhle pořadí: storyboard = `<Picture 1>`, postavy dál. */
     val uploadImages: List<File>
-        get() = listOfNotNull(storyboard) + postavy.map { it.soubor }
+        get() = listOfNotNull(storyboard.takeIf { seStoryboardem }) + postavy.map { it.soubor }
 
     companion object {
         const val MAX_POSTAV = 3
+        val DELKY = listOf(15, 30, 45)
     }
 }
 
 /** Co kartě chybí, než se dá natočit. */
-fun sbFilmProblem(s: SbFilmScene): String? = when {
-    s.storyboard == null -> t("Vyber obrázek se storyboardem.")
-    s.panely.isEmpty() -> t("Nejdřív storyboard přečti.")
-    else -> null
+fun sbFilmProblem(s: SbFilmScene): String? = when (s.zdroj) {
+    SbZdroj.STORYBOARD -> when {
+        s.storyboard == null -> t("Vyber obrázek se storyboardem.")
+        s.panely.isEmpty() -> t("Nejdřív storyboard přečti.")
+        else -> null
+    }
+    // Bez obrázku storyboardu musí mít H3 aspoň jednu referenci — Ref2VA
+    // bez předloh přepisovač odmítne.
+    SbZdroj.DEJ -> when {
+        s.postavy.isEmpty() -> t("Přidej aspoň jednu fotku postavy.")
+        s.panely.isEmpty() -> t("Nejdřív nech navrhnout záběry.")
+        else -> null
+    }
 }
 
 class SbFilmStore(private val ctx: Context) {
@@ -345,6 +437,9 @@ class SbFilmStore(private val ctx: Context) {
             .put("postavy", org.json.JSONArray().also { a -> s.postavy.forEach { a.put(it.soubor.absolutePath) } })
             .put("dej", s.dej)
             .put("pomer", s.pomer.name)
+            .put("rozliseni", s.rozliseni.name)
+            .put("zdroj", s.zdroj.name)
+            .put("cilSekund", s.cilSekund)
             .put("nazev", s.nazev)
             .put("casyZeStoryboardu", s.casyZeStoryboardu)
             .put("panely", org.json.JSONArray().also { a ->
@@ -371,6 +466,9 @@ class SbFilmStore(private val ctx: Context) {
         SbFilmScene(
             storyboard = sb, postavy = postavy, dej = j.optString("dej"),
             pomer = runCatching { LongMmPomer.valueOf(j.optString("pomer")) }.getOrDefault(LongMmPomer.NASIRKU),
+            rozliseni = runCatching { SbRozliseni.valueOf(j.optString("rozliseni")) }.getOrDefault(SbRozliseni.R480),
+            zdroj = runCatching { SbZdroj.valueOf(j.optString("zdroj")) }.getOrDefault(SbZdroj.STORYBOARD),
+            cilSekund = j.optInt("cilSekund", 30),
             nazev = j.optString("nazev"), casyZeStoryboardu = j.optBoolean("casyZeStoryboardu"),
             panely = panely,
         )
@@ -391,21 +489,27 @@ object SbFilmPrepis {
     fun zadani(scene: SbFilmScene, k: Int, n: Int): String {
         val dej = scene.dej.trim()
         val cast = if (n > 1) "Part ${k + 1} of $n of one continuous film" else "A short film"
-        return if (dej.isEmpty()) "$cast, told by the storyboard in <Picture 1>."
-        else "$cast. The whole story: $dej"
+        return when {
+            dej.isNotEmpty() -> "$cast. The whole story: $dej"
+            scene.seStoryboardem -> "$cast, told by the storyboard in <Picture 1>."
+            else -> "$cast."
+        }
     }
 
     /**
      * Dovětek: přesný seznam záběrů úseku s časy (délky počítá appka, ne
      * model), role obrázků a navázání na předchozí úsek.
      */
-    fun hlidka(pocetObrazku: Int, usek: SbUsek, k: Int, n: Int): String {
+    fun hlidka(pocetObrazku: Int, usek: SbUsek, k: Int, n: Int, seStoryboardem: Boolean = true): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
-        sb.append("<Picture 1> is a storyboard reference: it defines the viewpoint, subject placement ")
-        sb.append("and look of these shots. It is not a frame of the video.")
-        if (pocetObrazku > 1) {
-            sb.append(" ").append((2..pocetObrazku).joinToString(", ") { "<Picture $it>" })
+        val prvniPostava = if (seStoryboardem) 2 else 1
+        if (seStoryboardem) {
+            sb.append("<Picture 1> is a storyboard reference: it defines the viewpoint, subject placement ")
+            sb.append("and look of these shots. It is not a frame of the video.")
+        }
+        if (pocetObrazku >= prvniPostava) {
+            sb.append(" ").append((prvniPostava..pocetObrazku).joinToString(", ") { "<Picture $it>" })
             sb.append(" show the characters: define each one in subject_definitions as a <Subject K> ")
             sb.append("taken from its picture and keep them identical in every shot.")
         }
@@ -419,7 +523,7 @@ object SbFilmPrepis {
         usek.panely.forEachIndexed { i, p ->
             sb.append("\n[Shot ${i + 1}]")
             if (i > 0) sb.append(" At ${SbFilmPlan.casH3(t)},")
-            sb.append(" storyboard panel ${p.cislo}")
+            sb.append(if (seStoryboardem) " storyboard panel ${p.cislo}" else " shot ${p.cislo} of the film")
             if (p.typ.isNotBlank()) sb.append(", ${p.typ}")
             if (p.kamera.isNotBlank()) sb.append(", camera ${p.kamera}")
             sb.append(": ${p.popis}")

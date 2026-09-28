@@ -46,6 +46,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.promptlab.h3video.MainViewModel
 import cz.promptlab.h3video.data.LongMmPomer
 import cz.promptlab.h3video.data.SbFilmScene
+import cz.promptlab.h3video.data.SbRozliseni
+import cz.promptlab.h3video.data.SbZdroj
 import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.ui.theme.Amber
 import cz.promptlab.h3video.ui.theme.Outline1
@@ -68,7 +70,16 @@ fun SbFilmSection(vm: MainViewModel) {
     val chyba = (stav as? MainViewModel.RewriteState.Fail)
         ?.takeIf { it.druh == MainViewModel.PraceNaPromptu.VYLEPSENI }?.message
 
-    SectionCard(title = t("Storyboard")) {
+    SectionCard(title = t("Plán")) {
+        PillRow(
+            items = SbZdroj.entries.toList(),
+            selected = scene.zdroj,
+            label = { it.title },
+            onSelect = { vm.setSbZdroj(it) },
+        )
+    }
+
+    if (scene.zdroj == SbZdroj.STORYBOARD) SectionCard(title = t("Storyboard")) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             StoryboardPole(scene, onPick = { vm.pickSbStoryboard(it) }, onClear = { vm.clearSbStoryboard() })
             if (scene.storyboard != null) {
@@ -97,18 +108,38 @@ fun SbFilmSection(vm: MainViewModel) {
     }
 
     SectionCard(title = t("Děj")) {
-        DarkTextField(
-            value = scene.dej,
-            onValueChange = { vm.setSbDej(it) },
-            placeholder = t("Vězeň v železné masce je osvobozen a ukáže se, že je to král"),
-            minHeight = 90.dp,
-            onClear = { vm.setSbDej("") },
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            DarkTextField(
+                value = scene.dej,
+                onValueChange = { vm.setSbDej(it) },
+                placeholder = t("Vězeň v železné masce je osvobozen a ukáže se, že je to král"),
+                minHeight = 90.dp,
+                onClear = { vm.setSbDej("") },
+            )
+            if (scene.zdroj == SbZdroj.DEJ) {
+                PillRow(
+                    items = SbFilmScene.DELKY,
+                    selected = scene.cilSekund,
+                    label = { "$it s" },
+                    onSelect = { vm.setSbCil(it) },
+                )
+                OutlineButton(
+                    if (bezi && scene.panely.isEmpty()) t("Navrhuji záběry…")
+                    else if (scene.panely.isEmpty()) t("Navrhnout záběry") else t("Navrhnout znovu"),
+                    color = Amber,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { if (!bezi) vm.navrhnoutSbZabery() }
+                if (scene.panely.isEmpty()) {
+                    PrubehPrepisu(vm, barva = Amber)
+                    chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        }
     }
 
     if (scene.panely.isNotEmpty()) {
         val useky = scene.useky
-        SectionCard(title = scene.nazev.ifBlank { t("Plán") }) {
+        SectionCard(title = scene.nazev.ifBlank { t("Záběry") }) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     listOfNotNull(
@@ -141,12 +172,20 @@ fun SbFilmSection(vm: MainViewModel) {
     }
 
     SectionCard(title = t("Plátno")) {
-        PillRow(
-            items = LongMmPomer.entries.toList(),
-            selected = scene.pomer,
-            label = { it.title },
-            onSelect = { vm.setSbPomer(it) },
-        )
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillRow(
+                items = SbRozliseni.entries.toList(),
+                selected = scene.rozliseni,
+                label = { it.title },
+                onSelect = { vm.setSbRozliseni(it) },
+            )
+            PillRow(
+                items = LongMmPomer.entries.toList(),
+                selected = scene.pomer,
+                label = { it.title },
+                onSelect = { vm.setSbPomer(it) },
+            )
+        }
     }
 }
 

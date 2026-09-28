@@ -4722,6 +4722,84 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSbPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateSbFilm { it.copy(pomer = v) }
 
+    fun setSbRozliseni(v: cz.promptlab.h3video.data.SbRozliseni) = updateSbFilm { it.copy(rozliseni = v) }
+
+    /** Přepnutí zdroje plánu — plán z druhé cesty neplatí. */
+    fun setSbZdroj(v: cz.promptlab.h3video.data.SbZdroj) = updateSbFilm {
+        if (it.zdroj == v) it
+        else it.copy(zdroj = v, panely = emptyList(), nazev = "", casyZeStoryboardu = false, zadaniUseku = emptyList())
+    }
+
+    fun setSbCil(sekundy: Int) = updateSbFilm { it.copy(cilSekund = sekundy) }
+
+    /**
+     * „Navrhnout záběry“ (Vytvořit z děje): odblokovaný jazykový model
+     * napíše panely ve tvaru, který čte plánovač, a délky se dorovnají na
+     * zvolenou délku ([cz.promptlab.h3video.data.SbFilmPlan.naplanujNavrh]).
+     * Fotky postav model vidí, když je na serveru projektor.
+     */
+    fun navrhnoutSbZabery() {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val s = _sbFilm.value
+        if (s.dej.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(t("Napiš, o čem má film být."), PraceNaPromptu.VYLEPSENI)
+            return
+        }
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
+        viewModelScope.launch {
+            val vysledek = withContext(Dispatchers.IO) {
+                odolne {
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
+                    val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS) ?: throw ComfyException(
+                        "llama uzel chybi",
+                        "Server nemá uzly llama.cpp — bez nich návrh záběrů nejede.",
+                    )
+                    fun nabidka(pole: String): List<String> {
+                        val a = spec.getJSONObject("input").getJSONObject("required").nabidkaArr(pole)
+                        return (0 until a.length()).map { a.getString(it) }
+                    }
+                    val model = ImagePromptBuilder.vyberModel(nabidka("model")) ?: throw ComfyException(
+                        "zadny model", "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
+                    )
+                    val mmproj = ImagePromptBuilder.vyberMmproj(model, nabidka("mmproj"))
+                    val fotky = if (mmproj == "None") emptyList()
+                    else s.postavy.mapIndexed { i, p -> client.uploadImage(p.soubor.readBytes(), "sbfilm_postava${i + 1}.png") }
+                    val wf = ImagePromptBuilder.graf(
+                        zadani = cz.promptlab.h3video.data.SbFilmPlan.zadaniNavrhu(s.dej, s.cilSekund, fotky.size),
+                        model = model,
+                        seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                        system = cz.promptlab.h3video.data.SbFilmPlan.SYSTEM_NAVRH,
+                        maxTokens = 1200,
+                        teplota = 0.7,
+                        mmproj = mmproj,
+                        obrazky = fotky,
+                    )
+                    spustPrepisAPockej(client, wf, ImagePromptBuilder.N_PREVIEW)
+                }
+            }
+            vysledek.onSuccess { text ->
+                val plan = cz.promptlab.h3video.data.SbFilmPlan.naplanujNavrh(text, s.cilSekund)
+                if (plan.panely.isEmpty()) {
+                    _rewriteState.value = RewriteState.Fail(
+                        t("Záběry se nepodařilo navrhnout. Zkus to znovu."), PraceNaPromptu.VYLEPSENI,
+                    )
+                } else {
+                    updateSbFilm {
+                        it.copy(panely = plan.panely,
+                            nazev = cz.promptlab.h3video.data.SbFilmPlan.precti(text).nazev.orEmpty(),
+                            casyZeStoryboardu = false, zadaniUseku = emptyList())
+                    }
+                    _rewriteState.value = RewriteState.Idle
+                }
+            }.onFailure { e ->
+                if (e is kotlinx.coroutines.CancellationException) return@launch
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: (e.message ?: "Chyba"), PraceNaPromptu.VYLEPSENI,
+                )
+            }
+        }
+    }
+
     fun setSbPanelSekundy(index: Int, sekundy: Double) = updateSbFilm { s ->
         s.copy(
             panely = s.panely.mapIndexed { i, p ->
@@ -4819,8 +4897,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         prepisSReferencemi(
                             client, s.uploadImages, u.sekundy,
                             cz.promptlab.h3video.data.SbFilmPrepis.zadani(s, k, useky.size),
-                            storyboard = true,
-                            hlidka = cz.promptlab.h3video.data.SbFilmPrepis.hlidka(s.uploadImages.size, u, k, useky.size),
+                            storyboard = s.seStoryboardem,
+                            hlidka = cz.promptlab.h3video.data.SbFilmPrepis.hlidka(
+                                s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
+                            ),
                             pomer = s.pomer.kod,
                         )
                     }

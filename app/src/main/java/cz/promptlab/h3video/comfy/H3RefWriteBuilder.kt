@@ -143,12 +143,18 @@ object H3RefWriteBuilder {
         return o.toString()
     }
 
+    /**
+     * Popisky u panelů se čtou (děj, kdo to je, replika) — do 4.87 je otázka
+     * kázala ignorovat a ztrácel se tím význam („Behind the iron: Louis XIV“).
+     * Ignorují se jen rámečky, čísla a časy.
+     */
     const val OTAZKA_STORYBOARD =
         "This image is a storyboard: a grid of numbered panels, each panel one planned shot. " +
             "Go through the panels in reading order (left to right, top to bottom) and write " +
             "one line per panel as 'Panel K: shot size, camera angle, where the subjects are " +
-            "in the frame, what they do, the setting'. Keep the panel order. Ignore borders " +
-            "and any printed titles, numbers or timecodes."
+            "in the frame, what they do, the setting, and what the caption printed with that " +
+            "panel says'. Copy a printed caption or spoken line word for word. Keep the panel " +
+            "order. Ignore only borders, panel numbers and timecodes."
 
     const val OTAZKA_POSTAVA =
         "Describe the main subject so it can be recognised again in another shot: who or " +

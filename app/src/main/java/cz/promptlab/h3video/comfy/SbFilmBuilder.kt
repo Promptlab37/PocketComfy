@@ -120,7 +120,12 @@ object SbFilmBuilder {
         val media = JSONObject().put("image_count", obrazky.size).put("video_count", 0).put("audio_count", 0)
         obrazky.forEachIndexed { i, jmeno ->
             val id = (N_OBRAZEK_PRVNI + i).toString()
-            wf.put(id, uzel("LoadImage", if (i == 0) "Storyboard" else "Postava $i", JSONObject().put("image", jmeno)))
+            val popisek = when {
+                !scene.seStoryboardem -> "Postava ${i + 1}"
+                i == 0 -> "Storyboard"
+                else -> "Postava $i"
+            }
+            wf.put(id, uzel("LoadImage", popisek, JSONObject().put("image", jmeno)))
             media.put("image_${i + 1}", odkaz(id))
         }
         wf.put(N_MEDIA, uzel("MiniMaxH3EasyMediaBridge_SatoDive", "Reference", media))
@@ -131,7 +136,7 @@ object SbFilmBuilder {
             .put("h3_bundle", odkaz(N_ADAPTER))
             .put("mode", "context_segments").put("audio_mode", "generated")
             .put("prompt", SbFilmPlan.planovaciText(useky, znacky))
-            .put("resolution", ROZLISENI).put("aspect_ratio", pomer).put("custom_ratio", pomer)
+            .put("resolution", scene.rozliseni.kod).put("aspect_ratio", pomer).put("custom_ratio", pomer)
             .put("width", 1344).put("height", 768)
             .put("seconds", celkem)
             .put("segment_seconds", useky.joinToString(",") { "%.3f".format(java.util.Locale.ROOT, it.sekundy) })
