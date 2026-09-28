@@ -322,6 +322,15 @@ class AioBuilderTest {
     }
 
     @Test
+    fun `ve strukturovanem zadani jde veta do subject_definitions`() {
+        val text = "subject_definitions:\n<Subject 1> is the fox in <Picture 2>.\n\nsummary:\nx"
+        val p = AioBuilder.promptProStoryboard(sbScena(text))
+        assertTrue(p.startsWith("subject_definitions:\n" + AioBuilder.STORYBOARD_VETA))
+        assertTrue(p.contains("<Subject 1> is the fox in <Picture 2>."))
+        assertTrue(p.endsWith("summary:\nx"))
+    }
+
+    @Test
     fun `prepis se storyboardem se nemeni`() {
         val text = "<Picture 1> is a storyboard reference for [Shot 1] and [Shot 2]."
         assertEquals(text, AioBuilder.promptProStoryboard(sbScena(text)))

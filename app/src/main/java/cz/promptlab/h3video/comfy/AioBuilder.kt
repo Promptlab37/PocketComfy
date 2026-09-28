@@ -326,7 +326,16 @@ object AioBuilder {
             else -> "$STORYBOARD_VETA The characters are shown in " +
                 (2..postav + 1).joinToString(", ") { "<Picture $it>" } + "."
         }
-        return if (text.isEmpty()) uvod else "$uvod\n$text"
+        if (text.isEmpty()) return uvod
+        // Strukturované zadání (šest polí přepisovače): věta patří dovnitř
+        // subject_definitions, kam ji dává i oficiální příručka — řádek nad
+        // polem by rozbil tvar, který H3 čeká.
+        val pole = Regex("(?im)^subject_definitions:[ \\t]*$").find(text)
+        if (pole != null) {
+            val konec = pole.range.last + 1
+            return text.substring(0, konec) + "\n" + uvod + text.substring(konec)
+        }
+        return "$uvod\n$text"
     }
 
     /** Společné hodnoty – rozměry, délka, modely, vzorkování, náhled. */

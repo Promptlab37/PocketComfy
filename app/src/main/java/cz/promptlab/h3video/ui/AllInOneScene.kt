@@ -126,9 +126,14 @@ fun AllInOneSection(vm: MainViewModel) {
                 // Reference: značky <Picture N> se do popisu doplňují samy
                 // s nahráním fotky; čipy je ukazují a doťuknou chybějící.
                 if (scene.mode == AioMode.REFERENCE) {
-                    val pocet = scene.refs.count { it.image != null }
+                    // Počítá se jako uzel H3: storyboard je <Picture 1>, postavy
+                    // za ním. FlowRow — šest čipů se na úzký telefon nevejde.
+                    val pocet = scene.uploadImages.size
                     if (pocet > 0) {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        androidx.compose.foundation.layout.FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
                             (1..pocet).forEach { n ->
                                 val znacka = "<Picture $n>"
                                 TagChip(znacka, active = scene.prompt.contains(znacka)) {
