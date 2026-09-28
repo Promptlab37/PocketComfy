@@ -111,6 +111,8 @@ sealed interface GenState {
         val isAngle: Boolean = false,
         /** Beh meni tvar (ACE++) - texty "Menim tvar". */
         val isSwap: Boolean = false,
+        /** Výměna tváře na Qwen 2.1 + BFS — mění celou hlavu, bez masky. */
+        val isSwapQwen: Boolean = false,
         /** Beh domalovava do masky (inpaint) - texty "Domalovavam". */
         val isInpaint: Boolean = false,
         /** Domalovat v režimu Rozšířit — žádná maska, přidává se plátno. */
@@ -1108,11 +1110,12 @@ object GenerationEngine {
                     pokyn = restoreScene.pokyn,
                     doostrit = restoreScene.doostrit,
                     nasobek = restoreScene.doostritNasobek,
+                    verne = restoreScene.verne,
                 )
 
-            // Výměna tváře jede na uživatelově ACE++ workflow z APK.
+            // Výměna tváře: Qwen 2.1 + BFS Head, nebo uživatelovo ACE++ (Flux Fill).
             swapScene != null ->
-                FaceSwapBuilder.build(app, seed, names)
+                FaceSwapBuilder.build(app, swapScene.motor, seed, names)
 
             // 3D model: TRELLIS.2 z vlastní předlohy v APK, výsledkem je GLB.
             model3dScene != null ->
@@ -2082,6 +2085,11 @@ object GenerationEngine {
     }
 
     private fun handlePreview(bytes: ByteString) {
+        // Binární náhled nenese číslo úlohy. Dokud naše úloha čeká ve frontě
+        // (nebo ještě nezačala), patří každý náhled CIZÍ úloze — 28. 9. 2026
+        // ukázal Úhel kamery náhled cizí opravy fotky, která běžela před ním.
+        // currentNode se nastavuje jen z událostí naší úlohy.
+        if (currentNode == null || queuePos > 0) return
         if (bytes.size < 8) return
         val arr = bytes.toByteArray()
         val event = ((arr[0].toInt() and 0xFF) shl 24) or ((arr[1].toInt() and 0xFF) shl 16) or
@@ -2218,6 +2226,7 @@ object GenerationEngine {
             isRestore = restoreRun,
             isAngle = angleRun,
             isSwap = swapRun,
+            isSwapQwen = swapRun && FaceSwapBuilder.jeQwen(nodeClasses),
             isInpaint = inpaintRun,
             isOutpaint = outpaintRun,
             model = runModel.first,

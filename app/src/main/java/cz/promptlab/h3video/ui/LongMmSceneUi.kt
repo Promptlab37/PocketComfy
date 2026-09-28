@@ -369,6 +369,15 @@ fun LongMmSection(vm: MainViewModel) {
         }
     }
 
+    SectionCard(title = t("Podkresová hudba")) {
+        PillRow(
+            items = listOf(true, false),
+            selected = scene.hudba,
+            label = { if (it) t("Zapnuto") else t("Vypnuto") },
+            onSelect = { vm.setLongMmHudba(it) },
+        )
+    }
+
     SectionCard(title = t("Délka záběru")) {
         LabeledSlider(
             label = t("Sekundy"),

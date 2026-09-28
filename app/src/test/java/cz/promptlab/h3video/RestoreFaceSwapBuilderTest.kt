@@ -148,11 +148,11 @@ class RestoreFaceSwapBuilderTest {
         )
         assertEquals(
             "Začmárej prstem obličej, který se má vyměnit.",
-            faceSwapProblem(FaceSwapScene(target = File("c.png")))
+            faceSwapProblem(FaceSwapScene(motor = cz.promptlab.h3video.data.SwapMotor.FLUX, target = File("c.png")))
         )
         assertEquals(
             "Vyber fotku s novou tváří.",
-            faceSwapProblem(FaceSwapScene(target = File("c.png"), mask = File("m.png")))
+            faceSwapProblem(FaceSwapScene(motor = cz.promptlab.h3video.data.SwapMotor.FLUX, target = File("c.png"), mask = File("m.png")))
         )
         assertNull(
             faceSwapProblem(
@@ -163,6 +163,7 @@ class RestoreFaceSwapBuilderTest {
         )
         // Pořadí nahrávání je závazné pro stavitele: cíl, tvář, maska.
         val scena = FaceSwapScene(
+            motor = cz.promptlab.h3video.data.SwapMotor.FLUX,
             target = File("c.png"), mask = File("m.png"), face = File("f.png")
         )
         assertEquals(listOf("c.png", "f.png", "m.png"), scena.uploadImages.map { it.name })

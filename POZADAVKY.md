@@ -217,6 +217,16 @@ v kterékoli z nich, stěhovat ho nemusíš.
   [Comfy-Org/frame_interpolation](https://huggingface.co/Comfy-Org/frame_interpolation).
   Uzly `FrameInterpolate` a `FrameInterpolationModelLoader` jsou v jádře ComfyUI.
 
+### Výměna tváře → Qwen Image 2.1
+
+Modely Qwen Image 2.1 jako karta Úprava obrázku, navíc dvě LoRA (uzly jsou v jádře ComfyUI;
+`ImageResizeKJv2` z balíku KJNodes, sampler `deis_2m` z balíku RES4LYF):
+
+- `loras/bfs_head_v1.1_qwen_2.1.safetensors` (0,26 GB), z
+  [Alissonerdx/BFS-Best-Face-Swap](https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap)
+- `loras/p_qwen_image_2.1_8step_v0.1.safetensors` (0,34 GB), z
+  [PrunaAI/Pruna-Qwen-Image-2.1](https://huggingface.co/PrunaAI/Pruna-Qwen-Image-2.1)
+
 ### Upravit video → Vyměnit postavu
 
 Uzly `WanSCAILToVideo`, `SCAIL2ColoredMask` a `SAM3_VideoTrack` jsou v jádře

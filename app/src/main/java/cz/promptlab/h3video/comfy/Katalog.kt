@@ -347,6 +347,15 @@ object Katalog {
             "models/loras", "Upravit video — podle zadání, zrychlení na 6 kroků",
             "$HF/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_T2V_14B_cfg_step_distill_v2_lora_rank64_bf16.safetensors"
         ),
+        // Výměna tváře → Qwen Image 2.1: BFS Head v1.1 a zrychlení Pruna na 8 kroků.
+        "bfs_head_v1.1_qwen_2.1.safetensors" to Soubor(
+            "models/loras", "Výměna tváře — Qwen 2.1, BFS Head (0,26 GB)",
+            "$HF/Alissonerdx/BFS-Best-Face-Swap/resolve/main/bfs_head_v1.1_qwen_2.1.safetensors"
+        ),
+        "p_qwen_image_2.1_8step_v0.1.safetensors" to Soubor(
+            "models/loras", "Výměna tváře — Qwen 2.1, zrychlení na 8 kroků (0,34 GB)",
+            "$HF/PrunaAI/Pruna-Qwen-Image-2.1/resolve/main/p_qwen_image_2.1_8step_v0.1.safetensors"
+        ),
         // Hudba → MiniMax Music 3 (Comfy-Org/MiniMax-Music-3).
         "minimax_music3_dit_fp16.safetensors" to Soubor(
             "models/diffusion_models", "Hudba — MiniMax Music 3 (4,9 GB)",

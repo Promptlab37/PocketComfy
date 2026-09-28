@@ -193,7 +193,7 @@ object LongMmBuilder {
     ): JSONObject {
         val wf = JSONObject(sablona)
         val zadani = wf.inputs(N_ZADANI)
-        zadani.put("prompt", scene.prompt.trim())
+        zadani.put("prompt", zadaniUseku(scene))
         zadani.put("resolution", scene.rozliseni.kod)
         zadani.put("aspect_ratio", scene.pomer.kod)
         zadani.put("seconds", scene.sekundy.toDouble())
@@ -276,7 +276,7 @@ object LongMmBuilder {
         wf.inputs(N_LATENT_ULOZ_DALSI).put("filename_prefix", nazevLatentu(scene))
 
         val usek = wf.inputs(N_USEK)
-        val prompt = scene.prompt.trim()
+        val prompt = zadaniUseku(scene)
         usek.put("prompt", prompt)
         usek.put("resolution", scene.rozliseni.kod)
         usek.put("aspect_ratio", scene.pomer.kod)
@@ -620,6 +620,33 @@ object LongMmBuilder {
      * řádcích s `---`, takže co appka pošle jako jeden odstavec, zůstane
      * jedním záběrem.
      */
+    /** Pole hudby v zadání H3 — podle psacích příruček MiniMaxu je poslední. */
+    const val POLE_HUDBY = "non_diegetic_music:"
+
+    /** Zadání, jak jde do grafu: bez podkresové hudby s `N/A` v každém úseku. */
+    fun zadaniUseku(scene: LongMmScene): String {
+        val prompt = scene.prompt.trim()
+        return if (scene.hudba) prompt else bezHudby(prompt)
+    }
+
+    /**
+     * Každému úseku (oddělené řádkem `---`) nastaví `non_diegetic_music: N/A`.
+     * Když už pole v úseku je (typicky po vylepšení), jeho popis se nahradí —
+     * pole je poslední, takže se ustřihne od něj do konce úseku.
+     */
+    fun bezHudby(prompt: String): String {
+        val casti = mutableListOf(mutableListOf<String>())
+        prompt.replace("\r\n", "\n").split("\n").forEach { r ->
+            if (r.trim() == "---") casti += mutableListOf<String>() else casti.last() += r
+        }
+        return casti.joinToString("\n---\n") { radky ->
+            val text = radky.joinToString("\n")
+            val i = text.indexOf(POLE_HUDBY, ignoreCase = true)
+            val zbytek = (if (i >= 0) text.substring(0, i) else text).trimEnd()
+            if (zbytek.isEmpty()) "$POLE_HUDBY N/A" else "$zbytek\n\n$POLE_HUDBY N/A"
+        }
+    }
+
     fun useku(prompt: String): Int = prompt
         .replace("\r\n", "\n").split("\n")
         .count { it.trim() == "---" } + 1

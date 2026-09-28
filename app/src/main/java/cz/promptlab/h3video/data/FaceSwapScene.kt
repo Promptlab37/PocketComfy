@@ -6,6 +6,23 @@ import androidx.compose.runtime.Immutable
 import java.io.File
 
 /**
+ * Čím se tvář mění. Qwen 2.1 je první — v obrázkových kartách je to nejlepší
+ * model, který appka má (přání uživatele).
+ */
+enum class SwapMotor(private val titleCs: String) {
+    /**
+     * Qwen Image 2.1 + LoRA BFS Head v1.1 (Alissonerdx/BFS-Best-Face-Swap),
+     * autorovo workflow 1:1. Bez masky; mění celou hlavu včetně vlasů.
+     */
+    QWEN21("Qwen Image 2.1"),
+
+    /** Uživatelovo ACE++ workflow (Flux Fill), maska prstem. */
+    FLUX("Flux Fill");
+
+    val title: String get() = t(titleCs)
+}
+
+/**
  * Karta **Výměna tváře** — uživatelovo ACE++ workflow (Flux Fill inpaint
  * s portrétní LoRA). Maska je od 2.89 SAMOSTATNÝ soubor (bílá = vyměnit,
  * černá = nechat) a cílová fotka zůstává netknutá — dřívější gumování do
@@ -24,17 +41,22 @@ data class FaceSwapScene(
     /** Fotka s novou tváří. */
     val face: File? = null,
     val faceThumb: Bitmap? = null,
+    val motor: SwapMotor = SwapMotor.QWEN21,
 ) {
     val maskPainted: Boolean get() = mask != null
 
-    /** Pořadí je závazné — stavitel čte [cíl, tvář, maska]. */
-    val uploadImages: List<File> get() = listOfNotNull(target, face, mask)
+    /** Chce motor masku? Qwen s BFS ne — hlavu najde sám. */
+    val chceMasku: Boolean get() = motor == SwapMotor.FLUX
+
+    /** Pořadí je závazné — stavitel čte [cíl, tvář, maska]; Qwen masku nebere. */
+    val uploadImages: List<File>
+        get() = if (chceMasku) listOfNotNull(target, face, mask) else listOfNotNull(target, face)
 }
 
 /** Co kartě chybí, než se dá spustit. */
 fun faceSwapProblem(s: FaceSwapScene): String? = when {
     s.target == null -> t("Vyber fotku, ve které se má vyměnit tvář.")
-    !s.maskPainted -> t("Začmárej prstem obličej, který se má vyměnit.")
+    s.chceMasku && !s.maskPainted -> t("Začmárej prstem obličej, který se má vyměnit.")
     s.face == null -> t("Vyber fotku s novou tváří.")
     else -> null
 }
@@ -67,10 +89,17 @@ class FaceSwapStore(private val ctx: Context) {
         val mask = if (target != null) {
             maskFile().takeIf { it.exists() && it.length() > 0 }
         } else null
-        return FaceSwapScene(target = target, mask = mask, face = face)
+        val motor = runCatching { SwapMotor.valueOf(sp.getString(K_MOTOR, "")!!) }
+            .getOrDefault(SwapMotor.QWEN21)
+        return FaceSwapScene(target = target, mask = mask, face = face, motor = motor)
     }
 
-    fun save(@Suppress("UNUSED_PARAMETER") s: FaceSwapScene) {
-        // Všechno podstatné žije v souborech — není co zapisovat.
+    /** Fotky žijí v souborech; ukládá se jen volba motoru. */
+    fun save(s: FaceSwapScene) {
+        sp.edit().putString(K_MOTOR, s.motor.name).apply()
     }
+
+    private val sp get() = ctx.getSharedPreferences("h3video", Context.MODE_PRIVATE)
+
+    private companion object { const val K_MOTOR = "swapMotor" }
 }

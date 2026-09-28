@@ -24,6 +24,8 @@ REM --- video karty a All in One
 call :klon https://github.com/LeonQ8/ComfyUI-ALLinONE-MinimaxH3
 call :klon https://github.com/rgthree/rgthree-comfy
 call :klon https://github.com/kijai/ComfyUI-KJNodes
+REM Vymena tvare pres Qwen 2.1 - sampler deis_2m.
+call :klon https://github.com/ClownsharkBatwing/RES4LYF
 call :klon https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 REM Volitelne zrychleni video karet.
 call :klon https://github.com/Icyoung/ComfyUI-MiniMaxH3-TeaCache
@@ -259,6 +261,16 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors" "models\loras\lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
 )
 
+
+REM ------------------------------------------------------------------
+REM  Karta Vymena tvare - Qwen Image 2.1 (BFS Head + zrychleni Pruna).
+REM  Modely Qwen Image 2.1 stahuje sekce karty Uprava obrazku.
+REM ------------------------------------------------------------------
+set /p ODP="Vymena tvare - Qwen 2.1 LoRA, cca 0,6 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap/resolve/main/bfs_head_v1.1_qwen_2.1.safetensors" "models\loras\bfs_head_v1.1_qwen_2.1.safetensors"
+  call :stahni "https://huggingface.co/PrunaAI/Pruna-Qwen-Image-2.1/resolve/main/p_qwen_image_2.1_8step_v0.1.safetensors" "models\loras\p_qwen_image_2.1_8step_v0.1.safetensors"
+)
 
 REM ------------------------------------------------------------------
 REM  Karta Upravit video - Vymenit postavu (SCAIL-2 a MiniMax H3).

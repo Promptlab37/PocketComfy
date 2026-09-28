@@ -217,6 +217,16 @@ in either of them; there is no need to move it.
   [Comfy-Org/frame_interpolation](https://huggingface.co/Comfy-Org/frame_interpolation).
   The `FrameInterpolate` and `FrameInterpolationModelLoader` nodes are in the ComfyUI core.
 
+### Face swap → Qwen Image 2.1
+
+The Qwen Image 2.1 models as for the Image edit card, plus two LoRAs (the nodes are in the ComfyUI
+core; `ImageResizeKJv2` comes from KJNodes, the `deis_2m` sampler from RES4LYF):
+
+- `loras/bfs_head_v1.1_qwen_2.1.safetensors` (0.26 GB), from
+  [Alissonerdx/BFS-Best-Face-Swap](https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap)
+- `loras/p_qwen_image_2.1_8step_v0.1.safetensors` (0.34 GB), from
+  [PrunaAI/Pruna-Qwen-Image-2.1](https://huggingface.co/PrunaAI/Pruna-Qwen-Image-2.1)
+
 ### Edit video → Replace character
 
 The `WanSCAILToVideo`, `SCAIL2ColoredMask` and `SAM3_VideoTrack` nodes are in

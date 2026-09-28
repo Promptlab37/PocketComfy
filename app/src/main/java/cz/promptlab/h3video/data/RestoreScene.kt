@@ -31,6 +31,13 @@ data class RestoreScene(
     val doostrit: Boolean = true,
     /** "1x" = jen doostření, "2x" = doostření + zvětšení (viz DlssBuilder). */
     val doostritNasobek: String = "1x",
+    /**
+     * Věrně = Qwen 2.1 ve 2048 px, oficiální výchozí rozlišení autorů
+     * (ComfyUI má 1024). Uživatel 28. 9. 2026: oprava „musí zachovat
+     * konzistenci obličeje" — v 1024 px je u malých tváří málo pixelů a model
+     * je dohaduje. Rychle = 1024 px, asi 3,6× rychlejší (73 s proti 265 s).
+     */
+    val verne: Boolean = true,
 ) {
     val uploadImages: List<File> get() = listOfNotNull(source)
 }
@@ -51,6 +58,7 @@ class RestoreStore(private val ctx: Context) {
             pokyn = sp.getString(KEY_POKYN, "") ?: "",
             doostrit = sp.getBoolean(KEY_DOOSTRIT, true),
             doostritNasobek = sp.getString(KEY_NASOBEK, "1x") ?: "1x",
+            verne = sp.getBoolean(KEY_VERNE, true),
         )
         val name = sp.getString(KEY, null) ?: return zaklad
         val f = File(dir(), name)
@@ -63,6 +71,7 @@ class RestoreStore(private val ctx: Context) {
             .putString(KEY_POKYN, s.pokyn)
             .putBoolean(KEY_DOOSTRIT, s.doostrit)
             .putString(KEY_NASOBEK, s.doostritNasobek)
+            .putBoolean(KEY_VERNE, s.verne)
             .apply()
     }
 
@@ -71,5 +80,6 @@ class RestoreStore(private val ctx: Context) {
         const val KEY_POKYN = "restorePokyn"
         const val KEY_DOOSTRIT = "restoreDoostrit"
         const val KEY_NASOBEK = "restoreDoostritNasobek"
+        const val KEY_VERNE = "restoreVerne"
     }
 }

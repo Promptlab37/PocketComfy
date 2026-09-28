@@ -95,6 +95,15 @@ fun FaceSwapSection(vm: MainViewModel) {
 
     var maluje by remember { mutableStateOf(false) }
 
+    SectionCard(title = t("Čím")) {
+        PillRow(
+            items = cz.promptlab.h3video.data.SwapMotor.entries.toList(),
+            selected = scene.motor,
+            label = { it.title },
+            onSelect = { vm.setSwapMotor(it) },
+        )
+    }
+
     SectionCard(
         title = t("Fotka, kde se mění tvář"),
         subtitle = if (scene.maskPainted)
@@ -110,11 +119,12 @@ fun FaceSwapSection(vm: MainViewModel) {
                     .background(Surface2)
                     .border(
                         1.dp,
-                        if (scene.maskPainted) Ok.copy(alpha = .5f) else Outline1,
+                        if (scene.chceMasku && scene.maskPainted) Ok.copy(alpha = .5f) else Outline1,
                         RoundedCornerShape(14.dp)
                     )
                     .clickable {
-                        if (scene.target == null) pickTarget.launch(imageOnly) else maluje = true
+                        // Qwen masku nechce — klepnutí na fotku ji vymění.
+                        if (scene.target == null || !scene.chceMasku) pickTarget.launch(imageOnly) else maluje = true
                     }
             ) {
                 val thumb = scene.targetThumb
@@ -129,7 +139,7 @@ fun FaceSwapSection(vm: MainViewModel) {
                         Modifier.align(Alignment.TopEnd).padding(6.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Box(
+                        if (scene.chceMasku) Box(
                             Modifier
                                 .size(28.dp)
                                 .clip(RoundedCornerShape(8.dp))
@@ -206,7 +216,7 @@ fun FaceSwapSection(vm: MainViewModel) {
         }
     }
 
-    if (maluje) {
+    if (maluje && scene.chceMasku) {
         val file = scene.target
         // Dekódování na pozadí – PNG 2560 px na hraně by při otevření editoru
         // na okamžik zamrazilo UI.

@@ -1314,7 +1314,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     GenerationEngine.start(
                         p.copy(
                             prompt = "Výměna tváře",
-                            steps = cz.promptlab.h3video.comfy.FaceSwapBuilder.STEPS,
+                            steps = cz.promptlab.h3video.comfy.FaceSwapBuilder.kroky(s.motor),
                         ),
                         s.uploadImages,
                         swapScene = s,
@@ -3539,6 +3539,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         R.raw.workflow_h3_controlnet,
                         R.raw.workflow_bernini_edit,
                         R.raw.workflow_minimax_music3,
+                        R.raw.workflow_qwen21_faceswap,
                     ).map { id ->
                         res.openRawResource(id).bufferedReader().use { it.readText() }
                     }
@@ -4437,6 +4438,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setLongMmRealismus(v: Boolean) = updateLongMm { it.copy(realismus = v) }
     fun setLongMmRealismusSila(v: Float) {
         if (v.isFinite()) updateLongMm { it.copy(realismusSila = v.coerceIn(0f, 1.5f)) }
+    }
+
+    fun setLongMmHudba(v: Boolean) {
+        updateLongMm { it.copy(hudba = v) }
     }
     fun setLongMmRozliseni(v: cz.promptlab.h3video.data.LongMmRozliseni) =
         updateLongMm { it.copy(rozliseni = v) }
@@ -5622,7 +5627,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     faceThumb = s.face?.let { ImageUtils.loadFileThumb(it) },
                 )
             }
-            if (restored.target != null || restored.face != null) _swap.value = restored
+            _swap.value = restored
         }
     }
 
@@ -5688,6 +5693,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Fotka zůstává netknutá — gumování do alfy dřív černilo její pixely
      * a černé okraje dělaly tmavý šev kolem vyměněné tváře.
      */
+    fun setSwapMotor(m: cz.promptlab.h3video.data.SwapMotor) = updateSwap { it.copy(motor = m) }
+
     fun ulozSwapMasku(maska: android.graphics.Bitmap) {
         viewModelScope.launch {
             val f = withContext(Dispatchers.IO) {
@@ -5993,8 +6000,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun posliDoZvetseni(
         item: VideoItem,
-        metoda: cz.promptlab.h3video.data.UpscaleMetoda =
-            cz.promptlab.h3video.data.UpscaleMetoda.SEEDVR2,
+        /** null = nechat metodu, kterou má karta Zvětšit nastavenou. */
+        metoda: cz.promptlab.h3video.data.UpscaleMetoda? = null,
     ) {
         viewModelScope.launch {
             val vysledek = withContext(Dispatchers.IO) {
@@ -6008,7 +6015,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }.getOrNull()
             } ?: return@launch
             val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(vysledek) }
-            updateUpscale { it.copy(source = vysledek, thumb = thumb, metoda = metoda) }
+            updateUpscale { it.copy(source = vysledek, thumb = thumb, metoda = metoda ?: it.metoda) }
             setMode(Mode.UPSCALE)
             selectTab(Tab.CREATE)
         }

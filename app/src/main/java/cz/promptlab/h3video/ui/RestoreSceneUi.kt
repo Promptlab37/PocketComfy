@@ -133,6 +133,15 @@ fun RestoreSection(vm: MainViewModel) {
         }
     }
 
+    SectionCard(title = t("Obličeje")) {
+        PillRow(
+            items = listOf(true, false),
+            selected = scene.verne,
+            label = { if (it) t("Věrně · 2048 px") else t("Rychle · 1024 px") },
+            onSelect = { v -> vm.updateRestore { it.copy(verne = v) } },
+        )
+    }
+
     SectionCard(
         title = t("Doostření RTX"),
         subtitle = t("NVIDIA DLSS 5 jako poslední krok — nic nedokresluje, jen doostří"),

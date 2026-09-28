@@ -381,6 +381,12 @@ data class LongMmScene(
     /** Realistická LoRA `h3-realism-people-t2v-i2v-r2v`. */
     val realismus: Boolean = false,
     val realismusSila: Float = 0.7f,
+    /**
+     * Podkresová hudba (hudba, kterou postavy neslyší). Vypnuto = do zadání
+     * každého úseku jde `non_diegetic_music: N/A` — přesně tak píšou „bez
+     * hudby" psací příručky MiniMaxu k H3.
+     */
+    val hudba: Boolean = true,
     /** První záběr: fotky, podle kterých model drží podobu (nepovinné). */
     val reference: List<LongMmRef> = emptyList(),
     /**
@@ -576,6 +582,7 @@ class LongMmStore(private val ctx: Context) {
             ostrost = j.optDouble("ostrost", 0.0).toFloat().coerceIn(-1f, 1f),
             realismus = j.optBoolean("realismus"),
             realismusSila = j.optDouble("realismusSila", 0.7).toFloat().coerceIn(0f, 1.5f),
+            hudba = j.optBoolean("hudba", true),
             nazev = j.optString("nazev").ifBlank { "zaber" },
         )
     }.getOrDefault(LongMmScene())
@@ -604,6 +611,7 @@ class LongMmStore(private val ctx: Context) {
                 .put("ostrost", s.ostrost.toDouble())
                 .put("realismus", s.realismus)
                 .put("realismusSila", s.realismusSila.toDouble())
+                .put("hudba", s.hudba)
                 .put("nazev", s.nazev)
                 .toString()
         ).apply()

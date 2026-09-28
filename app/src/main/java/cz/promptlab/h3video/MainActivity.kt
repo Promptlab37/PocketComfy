@@ -441,12 +441,6 @@ private fun Root(vm: MainViewModel = viewModel()) {
                             GenerationEngine.dismissResult()
                             vm.posliDoZvetseni(s.item)
                         }.takeUnless { cz.promptlab.h3video.data.Mode.UPSCALE in skryteKarty },
-                        onSharpen = {
-                            GenerationEngine.dismissResult()
-                            vm.posliDoZvetseni(
-                                s.item, cz.promptlab.h3video.data.UpscaleMetoda.DLSS
-                            )
-                        }.takeUnless { cz.promptlab.h3video.data.Mode.UPSCALE in skryteKarty },
                         onEdit = {
                             GenerationEngine.dismissResult()
                             vm.posliDoUpravy(s.item)
@@ -537,10 +531,6 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     onUpscale = {
                         opened = null
                         vm.posliDoZvetseni(open)
-                    }.takeUnless { cz.promptlab.h3video.data.Mode.UPSCALE in skryteKarty },
-                    onSharpen = {
-                        opened = null
-                        vm.posliDoZvetseni(open, cz.promptlab.h3video.data.UpscaleMetoda.DLSS)
                     }.takeUnless { cz.promptlab.h3video.data.Mode.UPSCALE in skryteKarty },
                     onEdit = {
                         opened = null

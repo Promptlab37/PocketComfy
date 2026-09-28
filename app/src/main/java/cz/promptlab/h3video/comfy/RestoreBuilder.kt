@@ -93,12 +93,12 @@ object RestoreBuilder {
 
     fun build(
         ctx: Context, seed: Long, images: List<String>, pokyn: String = "",
-        doostrit: Boolean = false, nasobek: String = "1x",
-    ): JSONObject = build(template(ctx), seed, images, pokyn, doostrit, nasobek)
+        doostrit: Boolean = false, nasobek: String = "1x", verne: Boolean = true,
+    ): JSONObject = build(template(ctx), seed, images, pokyn, doostrit, nasobek, verne)
 
     fun build(
         template: String, seed: Long, images: List<String>, pokyn: String = "",
-        doostrit: Boolean = false, nasobek: String = "1x",
+        doostrit: Boolean = false, nasobek: String = "1x", verne: Boolean = true,
     ): JSONObject {
         // <image1> říká Qwenu 2.1, kterou fotku upravuje; text za ním je doslova uživatelův.
         val prompt = if (pokyn.isBlank()) "$UVOD $DEFAULT_PROMPT" else
@@ -107,7 +107,8 @@ object RestoreBuilder {
             motor = EditMotor.QWEN21,
             prompt = prompt,
             qwen21Steps = STEPS,
-            qwen21Resolution = Qwen21Resolution.STANDARD,
+            // Věrně = 2048 px, výchozí rozlišení oficiální implementace Qwenu 2.1.
+            qwen21Resolution = if (verne) Qwen21Resolution.NATIVE_2K else Qwen21Resolution.STANDARD,
             // Detailer je na tohle přímo stavěný („photo restoration and
             // quality improvements") — v Opravě jede vždy.
             qwen21Detailer = true,

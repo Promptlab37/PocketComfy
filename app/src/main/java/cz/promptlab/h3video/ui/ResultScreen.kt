@@ -83,7 +83,6 @@ fun ResultScreen(
     /** Poslat hotový obrázek rovnou do karty Zvětšit (jen u obrázků). */
     onUpscale: (() -> Unit)? = null,
     /** Totéž, ale rovnou s metodou DLSS 5 — doostření za pár sekund. */
-    onSharpen: (() -> Unit)? = null,
     /** Poslat hotový obrázek rovnou do karty Úprava obrázku (jen u obrázků). */
     onEdit: (() -> Unit)? = null,
     /** Rozšířit obrázek — poslat do karty Domalovat → Rozšířit (jen u obrázků). */
@@ -337,7 +336,7 @@ fun ResultScreen(
         // znovunahrávání.
         if (item.isImage &&
             (onAnimate != null || onEdit != null || onExtend != null || onInpaint != null ||
-                onUpscale != null || onSharpen != null)
+                onUpscale != null)
         ) {
             Spacer(Modifier.height(16.dp))
             Text(
@@ -384,20 +383,13 @@ fun ResultScreen(
                     )
                 }
             }
+            // Jedna volba: metodu (SeedVR2, DLSS, Chytré) si člověk vybere na kartě Zvětšit.
             if (onUpscale != null) {
                 Spacer(Modifier.height(8.dp))
                 OutlineButton(
-                    t("Zvětšit fotku"),
+                    t("Zvětšit / doostřit"),
                     modifier = Modifier.fillMaxWidth(),
                     onClick = onUpscale,
-                )
-            }
-            if (onSharpen != null) {
-                Spacer(Modifier.height(8.dp))
-                OutlineButton(
-                    t("Doostřit fotku"),
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onSharpen,
                 )
             }
         }

@@ -31,14 +31,50 @@ object FaceSwapBuilder {
     /** Kroky z předlohy (Turbo LoRA na 12 kroků). */
     const val STEPS = 12
 
+    // --- Qwen Image 2.1 + BFS Head (`res/raw/workflow_qwen21_faceswap.json`,
+    // autorovo „Head Swap V1 Qwen 2.1 Workflow" 1:1 bez náhledových uzlů):
+    // obrázek 1 = cíl (tělo, póza, scéna), obrázek 2 = hlava. Obě fotky se
+    // vejdou do 2 MP, latent má velikost cíle, 8 kroků s LoRA Pruna, deis_2m.
+    const val Q_CIL = "470"
+    const val Q_HLAVA = "475"
+    const val Q_SAMPLER = "490"
+    const val STEPS_QWEN = 8
+    const val TRIDA_QWEN = "TextEncodeQwenImage21"
+    const val Q_ZADANI = "496"
+
+    /** Zadání z autorova workflow (docs/qwen-image-2.1.md), doslova. */
+    const val ZADANI_QWEN = "head_swap: start with <image1> as the base image, keeping its lighting, environment, and background. remove the head from <image1> completely and replace it with the head from <image2>, strictly preserving the hair, eye color, nose structure from <image2>. copy the direction of the eye, head rotation, micro expressions from <image1>, high quality, sharp details, 4k"
+
+    fun kroky(motor: cz.promptlab.h3video.data.SwapMotor): Int =
+        if (motor == cz.promptlab.h3video.data.SwapMotor.QWEN21) STEPS_QWEN else STEPS
+
+    /** Jede odeslaný graf na Qwenu? (Pozná se i po znovupřipojení.) */
+    fun jeQwen(nodeClasses: Map<String, String>): Boolean = nodeClasses.containsValue(TRIDA_QWEN)
+
     private var cached: String? = null
+    private var cachedQwen: String? = null
 
     private fun template(ctx: Context): String = cached ?: ctx.resources
         .openRawResource(R.raw.workflow_ace_faceswap)
         .bufferedReader().use { it.readText() }.also { cached = it }
 
-    fun build(ctx: Context, seed: Long, images: List<String>): JSONObject =
-        build(template(ctx), seed, images)
+    private fun templateQwen(ctx: Context): String = cachedQwen ?: ctx.resources
+        .openRawResource(R.raw.workflow_qwen21_faceswap)
+        .bufferedReader().use { it.readText() }.also { cachedQwen = it }
+
+    fun build(ctx: Context, motor: cz.promptlab.h3video.data.SwapMotor, seed: Long, images: List<String>): JSONObject =
+        if (motor == cz.promptlab.h3video.data.SwapMotor.QWEN21) buildQwen(templateQwen(ctx), seed, images)
+        else build(template(ctx), seed, images)
+
+    /** [images]: cílová fotka, nová tvář. Zadání je autorovo a pevné. */
+    fun buildQwen(template: String, seed: Long, images: List<String>): JSONObject {
+        val wf = JSONObject(template)
+        wf.inputs(Q_CIL).put("image", images.getOrElse(0) { "" })
+        wf.inputs(Q_HLAVA).put("image", images.getOrElse(1) { "" })
+        wf.inputs(Q_SAMPLER).put("seed", seed)
+        wf.inputs(Q_ZADANI).put("prompt", ZADANI_QWEN)
+        return wf
+    }
 
     /**
      * [images] v pořadí: čistá cílová fotka, nová tvář, maska štětce
@@ -60,13 +96,13 @@ object FaceSwapBuilder {
         getJSONObject(node).getJSONObject("inputs")
 
     fun stageForClass(cls: String?): Stage = when (cls) {
-        "UNETLoader", "DualCLIPLoader", "VAELoader",
-        "Power Lora Loader (rgthree)" -> Stage.MODELS
+        "UNETLoader", "DualCLIPLoader", "VAELoader", "CLIPLoader", "LoraLoaderModelOnly",
+        "QwenImage21Cache", "Power Lora Loader (rgthree)" -> Stage.MODELS
         "LoadImage", "InpaintCropImproved", "ImageResize+", "ImageConcanate",
         "EmptyImage", "ResizeMask", "MaskToImage", "ImageToMask",
-        "ImpactGaussianBlurMask" -> Stage.REFERENCES
+        "ImpactGaussianBlurMask", "ResolutionSelector", "ImageResizeKJv2" -> Stage.REFERENCES
         "CLIPTextEncode", "FluxGuidance", "ConditioningZeroOut",
-        "InpaintModelConditioning" -> Stage.ENCODING
+        "InpaintModelConditioning", TRIDA_QWEN, "EmptyLatentImage" -> Stage.ENCODING
         "KSampler" -> Stage.SAMPLING
         "VAEDecode", "ImageCrop", "InpaintStitchImproved", "SaveImage" -> Stage.MUXING
         else -> Stage.SAMPLING
