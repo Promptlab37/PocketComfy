@@ -22,12 +22,18 @@ enum class PredlohaDruh(private val titleCs: String) {
     val title: String get() = t(titleCs)
 }
 
-/** Čím se vyměňuje postava ve videu. */
-enum class PostavaMotor(private val titleCs: String) {
-    SCAIL("SCAIL-2"),
-    H3("MiniMax H3");
+/**
+ * Čím se vyměňuje postava ve videu. [delka] se ukazuje přímo u volby
+ * (uživatel 28. 9. 2026: „ať je jasné, jak dlouhé video jaký režim zvládne“):
+ * SCAIL-2 projde celé video po úsecích 81 snímků (ScailBuilder), H3 bere
+ * nejvýš [UpravaScene.H3_MAX_S].
+ */
+enum class PostavaMotor(private val titleCs: String, private val delkaCs: String) {
+    SCAIL("SCAIL-2", "celé video"),
+    H3("MiniMax H3", "do 15 s");
 
     val title: String get() = t(titleCs)
+    val delka: String get() = t(delkaCs)
 }
 
 /** Režim karty Vylepšit video. */

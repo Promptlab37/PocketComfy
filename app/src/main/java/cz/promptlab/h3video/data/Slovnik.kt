@@ -1142,6 +1142,8 @@ object Slovnik {
         "Fotorealistický styl" to "Photorealistic style",
         "Storyboard" to "Storyboard",
         "Experimentální" to "Experimental",
+        "celé video" to "whole video",
+        "do 15 s" to "up to 15 s",
         "Mám storyboard" to "I have a storyboard",
         "Vytvořit z děje" to "Create from story",
         "Přidej aspoň jednu fotku postavy." to "Add at least one character photo.",

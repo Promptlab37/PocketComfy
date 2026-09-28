@@ -167,7 +167,7 @@ fun UpravaVideaSection(vm: MainViewModel) {
                 PillRow(
                     items = motory,
                     selected = s.motorPostavy,
-                    label = { it.title },
+                    label = { it.title + " · " + it.delka },
                     onSelect = { vm.setUpravaMotorPostavy(it) },
                 )
             }
