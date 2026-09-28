@@ -1140,8 +1140,10 @@ object Slovnik {
         "6 – plná otočka" to "6 — full turnaround",
         "4 – rychlejší" to "4 — faster",
         "Fotorealistický styl" to "Photorealistic style",
-        "Storyboard (experimentální)" to "Storyboard (experimental)",
         "Storyboard" to "Storyboard",
+        "Experimentální" to "Experimental",
+        "Chybí storyboard." to "Storyboard is missing.",
+        "Nejvýš 5 postav." to "At most 5 characters.",
         "Neretušovaná studiová fotografie, bez make-upu" to
             "Unretouched studio photography, no make-up",
         "Styl se převezme z první fotky" to "The style is taken from the first photo",

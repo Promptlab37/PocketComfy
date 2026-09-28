@@ -3008,7 +3008,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         s: cz.promptlab.h3video.data.AioScene,
         zadani: String,
     ): String = prepisSReferencemi(
-        client, s.refsWithImage.mapNotNull { it.image }, s.frames / 24.0, zadani,
+        client, s.uploadImages, s.frames / 24.0, zadani,
         storyboard = s.storyboardUcinny,
     )
 
@@ -3178,7 +3178,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     // Režim Reference má vlastní cestu: starý přepisovač zná
                     // jen T2VA/I2VA/FL2VA/L2VA a reference neumí vůbec.
-                    if (s.mode == AioMode.REFERENCE && s.refsWithImage.isNotEmpty()) {
+                    if (s.mode == AioMode.REFERENCE && s.uploadImages.isNotEmpty()) {
                         return@odolne prepisSReferencemi(client, s, zadani)
                     }
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
@@ -3286,7 +3286,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private fun doplnReferencniZnacky() {
         val s = _aio.value
-        if (s.mode != AioMode.REFERENCE) return
+        if (s.mode != AioMode.REFERENCE || s.storyboardZapnuty) return
         val pocet = s.refs.count { it.image != null }
         if (pocet == 0) return
         val chybejici = (1..pocet).map { "<Picture $it>" }.filterNot { s.prompt.contains(it) }
@@ -3308,7 +3308,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setAioRefVideoAudio(on: Boolean) = updateAio { it.copy(refVideoAudio = on) }
 
-    fun setAioStoryboard(on: Boolean) = updateAio { it.copy(storyboard = on) }
+    /**
+     * Přepnutí storyboardu. Značky `<Picture N>`, které appka sama vložila na
+     * začátek popisu, by po přepnutí ukazovaly na jiné obrázky (mřížka je
+     * `<Picture 1>`, postavy od dvojky) — proto se úvodní řada značek smaže
+     * a u vypnutí doplní znovu. Text, který uživatel napsal, zůstává.
+     */
+    fun setAioStoryboard(on: Boolean) {
+        updateAio {
+            it.copy(
+                storyboard = on,
+                prompt = if (on) bezUvodnichZnacek(it.prompt) else it.prompt,
+            )
+        }
+        if (!on) doplnReferencniZnacky()
+        prevezmiPomerJedineReference()
+    }
+
+    private fun bezUvodnichZnacek(text: String): String =
+        text.replaceFirst(Regex("^(\\s*<Picture \\d+>)+\\s*"), "")
 
     fun setAioUpscaler(u: Upscaler) = updateAio { it.copy(upscaler = u) }
 
@@ -3408,6 +3426,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     "ref" -> s.copy(refs = s.refs.map {
                         if (it.key == key) it.copy(image = target, thumb = thumb) else it
                     })
+                    "sb" -> s.copy(storyboardObr = s.storyboardObr.copy(image = target, thumb = thumb))
                     else -> s.copy(keys = s.keys.map {
                         if (it.key == key) it.copy(image = target, thumb = thumb) else it
                     })
@@ -3415,6 +3434,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             // Nová reference = rovnou i její značka v popisu.
             if (druh == "ref") doplnReferencniZnacky()
+            // Mřížka storyboardu tvar plátna neurčuje (celá mřížka má jiný
+            // tvar než jeden panel).
+            if (druh == "sb") return@launch
             // "keys" chodí jako cokoli jiného než first/last/ref — sjednotit.
             prevezmiPomerZeVstupu(
                 if (druh in setOf("first", "last", "ref")) druh else "key",
@@ -3463,6 +3485,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 "ref" -> s.copy(refs = s.refs.map {
                     if (it.key == key) it.copy(image = null, thumb = null) else it
                 })
+                "sb" -> s.copy(storyboardObr = s.storyboardObr.copy(image = null, thumb = null))
                 else -> s.copy(keys = s.keys.map {
                     if (it.key == key) it.copy(image = null, thumb = null) else it
                 })

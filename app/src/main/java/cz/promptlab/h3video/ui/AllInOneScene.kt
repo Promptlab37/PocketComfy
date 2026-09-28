@@ -297,11 +297,7 @@ private fun ImageSekce(vm: MainViewModel, scene: AioScene) {
 
 /** Mřížka referenčních fotek – společná pro režimy Reference a List postavy. */
 @Composable
-private fun RefsMrizka(vm: MainViewModel, scene: AioScene, storyboard: Boolean = false) {
-    // Storyboard je první předloha s obrázkem — tak ji bere i stavitel grafu.
-    val slotStoryboardu = if (storyboard) {
-        (scene.refsWithImage.firstOrNull() ?: scene.refs.firstOrNull())?.key
-    } else null
+private fun RefsMrizka(vm: MainViewModel, scene: AioScene, postavy: Boolean = false) {
     Column {
         // Po třech: dvě dlaždice na řádek byly přes půl obrazovky vysoké.
         scene.refs.chunked(3).forEach { dvojice ->
@@ -309,7 +305,7 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene, storyboard: Boolean =
                 dvojice.forEach { slot ->
                     ObrazekSlot(
                         slot = slot,
-                        popisek = if (slot.key == slotStoryboardu) t("Storyboard")
+                        popisek = if (postavy) t("Postava %d").format(scene.refs.indexOf(slot) + 1)
                         else "Reference ${scene.refs.indexOf(slot) + 1}",
                         modifier = Modifier.weight(1f),
                         onPick = { uri -> vm.pickAioImage("ref", slot.key, uri) },
@@ -327,7 +323,7 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene, storyboard: Boolean =
         }
         if (scene.canAddRef) {
             OutlineButton(
-                t("Přidat referenci"),
+                if (postavy) t("Přidat postavu") else t("Přidat referenci"),
                 icon = { Icon(Icons.Default.Add, null, Modifier.size(18.dp), TextMid) },
                 onClick = { vm.addAioRef() },
             )
@@ -337,18 +333,36 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene, storyboard: Boolean =
 
 @Composable
 private fun ReferenceSekce(vm: MainViewModel, scene: AioScene) {
-    SectionCard(
-        title = t("Reference"),
-        subtitle = t("Podle nich model drží podobu postav, věcí i stylu")
-    ) {
+    // Storyboard má vlastní sekci s přepínačem nahoře: vypnutý je to jen
+    // jeden řádek, zapnutý pod ním rozbalí široké pole pro mřížku panelů.
+    // Reference se pak jmenují Postavy — nic se nemaže ani nepřehazuje
+    // (návrh prošel kritikem 28. 9. 2026).
+    SectionCard(title = t("Storyboard")) {
         PrepinacRadek(
-            titulek = t("Storyboard (experimentální)"),
+            titulek = t("Experimentální"),
             detail = "",
             checked = scene.storyboard,
             onChange = { vm.setAioStoryboard(it) },
         )
-        Spacer(Modifier.height(12.dp))
-        RefsMrizka(vm, scene, storyboard = scene.storyboard)
+        if (scene.storyboard) {
+            Spacer(Modifier.height(12.dp))
+            ObrazekSlot(
+                slot = scene.storyboardObr,
+                popisek = t("Storyboard"),
+                modifier = Modifier.fillMaxWidth(),
+                pomer = 16f / 9f,
+                celyObrazek = true,
+                onPick = { uri -> vm.pickAioImage("sb", 1, uri) },
+                onClear = { vm.clearAioImage("sb", 1) },
+            )
+        }
+    }
+
+    SectionCard(
+        title = if (scene.storyboard) t("Postavy") else t("Reference"),
+        subtitle = t("Podle nich model drží podobu postav, věcí i stylu")
+    ) {
+        RefsMrizka(vm, scene, postavy = scene.storyboard)
     }
 
     SectionCard(
@@ -571,6 +585,10 @@ private fun ObrazekSlot(
     popisek: String,
     modifier: Modifier = Modifier,
     ztlumeny: Boolean = false,
+    /** Poměr stran dlaždice (šířka / výška). */
+    pomer: Float = 0.85f,
+    /** Ukázat celý obrázek bez ořezu — mřížka storyboardu se nesmí uříznout. */
+    celyObrazek: Boolean = false,
     onPick: (android.net.Uri?) -> Unit,
     onClear: () -> Unit,
     onRemove: (() -> Unit)? = null,
@@ -584,7 +602,7 @@ private fun ObrazekSlot(
         Box(
             Modifier
                 .fillMaxWidth()
-                .aspectRatio(0.85f)
+                .aspectRatio(pomer)
                 .clip(RoundedCornerShape(16.dp))
                 .background(Surface2)
                 .border(1.dp, if (ztlumeny) Outline1 else Outline1, RoundedCornerShape(16.dp))
@@ -597,7 +615,7 @@ private fun ObrazekSlot(
                     thumb.asImageBitmap(),
                     contentDescription = popisek,
                     modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop,
+                    contentScale = if (celyObrazek) ContentScale.Fit else ContentScale.Crop,
                 )
                 Box(
                     Modifier

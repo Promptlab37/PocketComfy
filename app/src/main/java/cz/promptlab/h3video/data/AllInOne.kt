@@ -146,18 +146,30 @@ data class AioScene(
      */
     val kotva: Boolean = true,
     /**
-     * Reference: první předloha je storyboard (mřížka panelů), ne postava.
-     * Experimentální — viz [cz.promptlab.h3video.comfy.H3RefWriteBuilder].
+     * Reference: zapnutý storyboard (experimentální) — viz
+     * [cz.promptlab.h3video.comfy.H3RefWriteBuilder]. Mřížka panelů má
+     * vlastní [storyboardObr], reference se při něm berou jako postavy.
      * Mřížka se nesmí připnout jako snímek 0, takže kotva se při něm vypíná.
      */
     val storyboard: Boolean = false,
+    /**
+     * Obrázek storyboardu — zvlášť od [refs], aby přepnutí sem a tam nikdy
+     * nepřeházelo ani nesmazalo fotky postav (do 4.76 to byl první slot refs).
+     */
+    val storyboardObr: AioSlot = AioSlot(key = 1),
 ) {
-    /** Kotva totožnosti opravdu platí — storyboard ji vypíná. */
-    val kotvaUcinna: Boolean get() = kotva && !(mode == AioMode.REFERENCE && storyboard)
+    /** Storyboard platí jen v režimu Reference. */
+    val storyboardZapnuty: Boolean get() = storyboard && mode == AioMode.REFERENCE
 
-    /** Storyboard jen v režimu Reference a jen když je co ukázat. */
+    /** Kotva totožnosti opravdu platí — storyboard ji vypíná. */
+    val kotvaUcinna: Boolean get() = kotva && !storyboardZapnuty
+
+    /** Storyboard opravdu jde do videa: zapnutý a s obrázkem. */
     val storyboardUcinny: Boolean
-        get() = storyboard && mode == AioMode.REFERENCE && refsWithImage.isNotEmpty()
+        get() = storyboardZapnuty && storyboardObr.image != null
+
+    /** Kolik postav se storyboardem jde (celkem nejvýš [MAX_REFS] obrázků). */
+    val maxPostav: Int get() = MAX_REFS - 1
 
     /** Šablona, kterou je potřeba stáhnout ze serveru. */
     val sablona: String
@@ -170,7 +182,7 @@ data class AioScene(
     val refsWithImage: List<AioSlot> get() = refs.filter { it.image != null }
     val keysWithImage: List<AioSlot> get() = keys.filter { it.image != null }
 
-    val canAddRef: Boolean get() = refs.size < MAX_REFS
+    val canAddRef: Boolean get() = refs.size < (if (storyboardZapnuty) maxPostav else MAX_REFS)
     val canAddKey: Boolean get() = keys.size < MAX_KEYS
 
     /** Počet snímků po zaokrouhlení na mřížku modelu (17k+5). */
@@ -184,7 +196,11 @@ data class AioScene(
         get() = when (mode) {
             AioMode.TEXT, AioMode.EXTEND, AioMode.UPSCALE -> emptyList()
             AioMode.IMAGE -> listOfNotNull(first.image, last.image.takeIf { useLastFrame })
-            AioMode.REFERENCE, AioMode.CHARSHEET, AioMode.MASK ->
+            // Storyboard jde první — uzel H3 čísluje <Picture i> podle pořadí.
+            AioMode.REFERENCE ->
+                listOfNotNull(storyboardObr.image.takeIf { storyboardZapnuty }) +
+                    refsWithImage.mapNotNull { it.image }
+            AioMode.CHARSHEET, AioMode.MASK ->
                 refsWithImage.mapNotNull { it.image }
             AioMode.KEYFRAMES -> keysWithImage.mapNotNull { it.image }
         }
@@ -237,7 +253,7 @@ fun vstupUrcujePomer(druh: String, scene: AioScene): Boolean {
         // stará fotka na výšku zablokovala převzetí poměru z reference
         // (25. 9. 2026: auto na šířku → video 640×960). Reference se navíc
         // kotví jako snímek 0 (H3IdentityAnchor), plátno jí musí sedět.
-        "ref" -> scene.refVideo == null &&
+        "ref" -> scene.refVideo == null && !scene.storyboardZapnuty &&
             scene.refs.count { it.image != null } == 1
         else -> false
     }
@@ -258,9 +274,15 @@ fun aioProblem(s: AioScene): String? {
                 t("Vyber poslední snímek, nebo ho vypni.")
             else -> null
         }
-        AioMode.REFERENCE ->
-            if (s.refsWithImage.isEmpty() && s.refVideo == null)
-                t("Přidej aspoň jednu referenci – obrázek nebo video.") else null
+        AioMode.REFERENCE -> when {
+            s.storyboardZapnuty && s.storyboardObr.image == null ->
+                t("Chybí storyboard.")
+            s.storyboardZapnuty && s.refsWithImage.size > s.maxPostav ->
+                t("Nejvýš 5 postav.")
+            s.refsWithImage.isEmpty() && s.refVideo == null && !s.storyboardZapnuty ->
+                t("Přidej aspoň jednu referenci – obrázek nebo video.")
+            else -> null
+        }
         AioMode.KEYFRAMES -> when {
             s.keysWithImage.isEmpty() -> t("Přidej aspoň jeden klíčový snímek.")
             s.keysWithImage.any { it.position > s.frames } ->

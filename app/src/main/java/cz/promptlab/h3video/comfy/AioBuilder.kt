@@ -307,15 +307,26 @@ object AioBuilder {
             "subject placement, and shot order."
 
     /**
-     * Prompt pro H3. Se storyboardem se předřadí [STORYBOARD_VETA], pokud
-     * v textu `<Picture 1>` vůbec není — uživatel mohl psát ručně, bez
-     * přepisovače. Když ho zmiňuje (přepis se storyboardem to dělá vždy),
-     * nechá se text beze změny.
+     * Prompt pro H3. Se storyboardem se předřadí [STORYBOARD_VETA] a značky
+     * postav (`<Picture 2>`…), pokud text storyboard vůbec nezmiňuje —
+     * uživatel mohl psát ručně, bez přepisovače. Přepis se storyboardem ho
+     * zmiňuje vždy, pak se text nechá beze změny.
+     *
+     * Do 4.76 rozhodovalo, jestli text obsahuje `<Picture 1>` — jenže tu
+     * značku do popisu sama vkládá appka po výběru fotky, takže věta se
+     * ve skutečnosti nepřidala nikdy.
      */
     fun promptProStoryboard(scene: AioScene): String {
         val text = scene.prompt.trim()
-        if (!scene.storyboardUcinny || text.contains("<Picture 1>")) return text
-        return if (text.isEmpty()) STORYBOARD_VETA else "$STORYBOARD_VETA\n$text"
+        if (!scene.storyboardUcinny || text.contains("storyboard reference", ignoreCase = true)) return text
+        val postav = scene.refsWithImage.size
+        val uvod = when (postav) {
+            0 -> STORYBOARD_VETA
+            1 -> "$STORYBOARD_VETA The character is shown in <Picture 2>."
+            else -> "$STORYBOARD_VETA The characters are shown in " +
+                (2..postav + 1).joinToString(", ") { "<Picture $it>" } + "."
+        }
+        return if (text.isEmpty()) uvod else "$uvod\n$text"
     }
 
     /** Společné hodnoty – rozměry, délka, modely, vzorkování, náhled. */
