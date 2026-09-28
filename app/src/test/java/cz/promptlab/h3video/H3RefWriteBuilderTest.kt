@@ -134,7 +134,9 @@ class H3RefWriteBuilderTest {
         assertTrue(w.getString("writer_model").contains("abliterated"))
         assertTrue(w.getString("caption_model").startsWith("on disk"))
         assertTrue(w.getString("writer_model").startsWith("on disk"))
-        assertTrue(!inputs(wf, H3RefWriteBuilder.N_OPTIONS).getBoolean("auto_download"))
+        // Stahování zapnuté kvůli psací příručce; modely jsou „on disk" výš,
+        // takže se nestahují.
+        assertTrue(inputs(wf, H3RefWriteBuilder.N_OPTIONS).getBoolean("auto_download"))
     }
 
     @Test

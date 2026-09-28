@@ -1286,6 +1286,8 @@ object Slovnik {
         "Namluvit repliku" to "Voice this line",
         "Namluvit znovu" to "Voice it again",
         "Zastavit" to "Stop",
+        "Přepis na serveru selhal (%s):" to "Rewrite failed on the server (%s):",
+        "Přepis na serveru selhal — mrkni do logu ComfyUI." to "Rewrite failed on the server — check the ComfyUI log.",
         "Odebrat postavu" to "Remove the character",
         "Odebrat repliku" to "Remove the line",
         "Prompt pro model" to "Prompt for the model",

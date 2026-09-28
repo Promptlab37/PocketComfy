@@ -375,6 +375,9 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/Huihui-Qwen3-VL-8B-Instruct-abliterated-Q4_K_M.gguf" "models\LLM\Huihui-Qwen3-VL-8B-Instruct-abliterated-Q4_K_M.gguf"
   call :stahni "https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/mmproj-F16.gguf" "models\LLM\Huihui-Qwen3-VL-8B-Instruct-abliterated-mmproj-F16.gguf"
   call :stahni "https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF/resolve/main/MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf" "models\LLM\MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf"
+  rem Psaci prirucky MiniMaxu - bez nich Vylepsit s referencemi selze.
+  call :stahni "https://huggingface.co/MiniMaxAI/MiniMax-H3/resolve/main/docs/VIDEO_PROMPT_WRITING_GUIDE_base_en.md" "user\minimax_h3_rewriter\guides\VIDEO_PROMPT_WRITING_GUIDE_base_en.md"
+  call :stahni "https://huggingface.co/MiniMaxAI/MiniMax-H3/resolve/main/docs/VIDEO_PROMPT_WRITING_GUIDE_ref_en.md" "user\minimax_h3_rewriter\guides\VIDEO_PROMPT_WRITING_GUIDE_ref_en.md"
 )
 
 echo.

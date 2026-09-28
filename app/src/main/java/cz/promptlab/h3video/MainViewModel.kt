@@ -2542,6 +2542,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Hláška z `execution_error` v historii: uzel a první řádky výjimky. */
+    private fun chybaPrepisu(status: org.json.JSONObject): String {
+        val zpravy = status.optJSONArray("messages")
+        if (zpravy != null) for (i in 0 until zpravy.length()) {
+            val m = zpravy.optJSONArray(i) ?: continue
+            if (m.optString(0) != "execution_error") continue
+            val d = m.optJSONObject(1) ?: continue
+            val vyjimka = d.optString("exception_message").trim()
+                .lines().filter { it.isNotBlank() }.take(4).joinToString("\n").take(400)
+            if (vyjimka.isNotEmpty()) {
+                return t("Přepis na serveru selhal (%s):").format(d.optString("node_type")) + "\n" + vyjimka
+            }
+        }
+        return t("Přepis na serveru selhal — mrkni do logu ComfyUI.")
+    }
+
     private suspend fun spustPrepisAPockej(
         client: ComfyClient,
         wf: org.json.JSONObject,
@@ -2619,9 +2635,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val h = client.history(promptId)
                 if (h != null) {
                     val status = h.optJSONObject("status")
+                    // Skutečná chyba ze serveru, ne jen „mrkni do logu": tester
+                    // 28. 9. 2026 dostal jen tu obecnou větu a log na svém
+                    // počítači dohledával zbytečně.
                     if (status?.optString("status_str") == "error") throw ComfyException(
                         "rewrite error",
-                        "Přepis na serveru selhal — mrkni do logu ComfyUI.",
+                        chybaPrepisu(status),
                     )
                     val text = h.optJSONObject("outputs")
                         ?.optJSONObject(uzelNahledu)

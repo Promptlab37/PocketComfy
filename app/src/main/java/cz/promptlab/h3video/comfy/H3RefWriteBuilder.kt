@@ -188,8 +188,13 @@ object H3RefWriteBuilder {
                     .put("top_k", 40)
                     .put("repetition_penalty", 1.05)
                     .put("attn_implementation", "sdpa")
-                    // Model i projektor leží na disku — nic se nestahuje.
-                    .put("auto_download", false)
+                    // Modely se berou jen „on disk" (vyberOdblokovany), takže
+                    // se nestahují. Zapnuté stahování je kvůli psací příručce
+                    // Ref2VA: na čerstvém serveru chybí a uzel ji s vypnutým
+                    // stahováním odmítne (tester 28. 9. 2026 — Vylepšit
+                    // u Reference vždy selhal). Příručka se do appky balit
+                    // nesmí (licence), stahuje si ji uzel sám z HF MiniMaxu.
+                    .put("auto_download", true)
                     .put("use_lora", false),
             ),
         )
