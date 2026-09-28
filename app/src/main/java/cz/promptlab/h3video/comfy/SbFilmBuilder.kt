@@ -38,7 +38,10 @@ object SbFilmBuilder {
     const val N_CTENI_VYSTUP = "3"
     const val CTENI_CLASS = "MiniMaxH3ReferenceCaption"
 
-    fun buildCteni(obrazek: String, model: String, seed: Long): JSONObject = JSONObject()
+    fun buildCteni(
+        obrazek: String, model: String, seed: Long,
+        otazka: String = SbFilmPlan.OTAZKA_CTENI,
+    ): JSONObject = JSONObject()
         .put(N_CTENI_OBRAZEK, uzel("LoadImage", "Storyboard", JSONObject().put("image", obrazek)))
         .put(
             N_CTENI, uzel(
@@ -49,7 +52,7 @@ object SbFilmBuilder {
                     .put("length", "detailed")
                     .put("seed", seed)
                     .put("image", odkaz(N_CTENI_OBRAZEK))
-                    .put("instruction", SbFilmPlan.OTAZKA_CTENI),
+                    .put("instruction", otazka),
             ),
         )
         // Výstup 1 = samotný popis; 0 je řádek bloku referencí s „Picture 1:".

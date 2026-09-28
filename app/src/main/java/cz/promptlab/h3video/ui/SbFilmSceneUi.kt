@@ -158,6 +158,8 @@ fun SbFilmSection(vm: MainViewModel) {
                         scene.panely.getOrNull(i)?.let { p ->
                             PanelRadek(
                                 cislo = p.cislo, popis = p.popis, sekundy = p.sekundy,
+                                repliky = p.repliky,
+                                onRepliky = { vm.setSbPanelRepliky(i, it) },
                                 onPopis = { vm.setSbPanelPopis(i, it) },
                                 onSekundy = { vm.setSbPanelSekundy(i, it) },
                                 onSmazat = { vm.smazSbPanel(i) },
@@ -228,6 +230,8 @@ private fun PanelRadek(
     cislo: Int,
     popis: String,
     sekundy: Double,
+    repliky: String,
+    onRepliky: (String) -> Unit,
     onPopis: (String) -> Unit,
     onSekundy: (Double) -> Unit,
     onSmazat: () -> Unit,
@@ -255,9 +259,22 @@ private fun PanelRadek(
             value = popis,
             onValueChange = onPopis,
             placeholder = "",
-            minHeight = 48.dp,
+            minHeight = 56.dp,
             onClear = { onPopis("") },
+            rostouci = true,
         )
+        // Repliky panelu (doslova, v původním jazyce) — jen když nějaké jsou.
+        if (repliky.isNotBlank()) {
+            Spacer(Modifier.height(4.dp))
+            DarkTextField(
+                value = repliky,
+                onValueChange = onRepliky,
+                placeholder = "",
+                minHeight = 56.dp,
+                onClear = { onRepliky("") },
+                rostouci = true,
+            )
+        }
         Spacer(Modifier.height(4.dp))
     }
 }

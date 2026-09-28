@@ -3100,6 +3100,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         storyboard: Boolean = false,
         hlidka: String? = null,
         pomer: String? = null,
+        /** Film ze storyboardu nese repliky po panelech — globální hlídka by je dala do každého úseku. */
+        hlidatDialogy: Boolean = true,
     ): String {
         val spec = client.objectInfo(H3RefWriteBuilder.NODE_CLASS)
             ?: throw ComfyException(
@@ -3131,7 +3133,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             client.uploadImage(f.readBytes(), "rw_ref${i + 1}.png")
         }
         val wf = H3RefWriteBuilder.build(
-            zadani = cz.promptlab.h3video.data.DialogyH3.proPrepisovac(zadani),
+            zadani = if (hlidatDialogy) cz.promptlab.h3video.data.DialogyH3.proPrepisovac(zadani)
+            else "${zadani.trimEnd().trimEnd('.')}. Do not add any on-screen text or captions unless explicitly requested.",
             obrazky = jmena,
             sekundy = sekundy.coerceIn(2.0, 60.0),
             pomer = rozliseni,
@@ -4815,6 +4818,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         )
     }
 
+    fun setSbPanelRepliky(index: Int, text: String) = updateSbFilm { s ->
+        s.copy(panely = s.panely.mapIndexed { i, p -> if (i == index) p.copy(repliky = text) else p }, zadaniUseku = emptyList())
+    }
+
     fun setSbPanelPopis(index: Int, text: String) = updateSbFilm { s ->
         s.copy(panely = s.panely.mapIndexed { i, p -> if (i == index) p.copy(popis = text) else p }, zadaniUseku = emptyList())
     }
@@ -4856,11 +4863,48 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val wf = cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
                         jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
                     )
-                    spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP)
+                    val prvni = spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP)
+                    // Repliky znovu po řádcích mřížky, v ostřejším výřezu.
+                    val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(prvni)
+                    val radku = cteni.radku ?: 0
+                    val sloupcu = cteni.sloupcu ?: 0
+                    val opravene = mutableMapOf<Int, String>()
+                    if (radku >= 2 && sloupcu >= 1 && cteni.panely.any { it.repliky.isNotBlank() } &&
+                        radku * sloupcu >= cteni.panely.size
+                    ) {
+                        val bmp = android.graphics.BitmapFactory.decodeFile(obr.absolutePath)
+                        if (bmp != null) for (r in 0 until radku) {
+                            val v = bmp.height / radku
+                            val presah = v / 20
+                            val y0 = (r * v - presah).coerceAtLeast(0)
+                            val y1 = ((r + 1) * v + presah).coerceAtMost(bmp.height)
+                            val pruh = android.graphics.Bitmap.createBitmap(bmp, 0, y0, bmp.width, y1 - y0)
+                            val out = java.io.ByteArrayOutputStream()
+                            pruh.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
+                            val jm = client.uploadImage(out.toByteArray(), "sbfilm_radek${r + 1}.png")
+                            val odpoved = spustPrepisAPockej(
+                                client,
+                                cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
+                                    jm, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                                    otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaRadku(
+                                        r * sloupcu + 1, (r + 1) * sloupcu,
+                                    ),
+                                ),
+                                cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
+                            )
+                            opravene += cz.promptlab.h3video.data.SbFilmPlan.prectiRepliky(odpoved)
+                        }
+                    }
+                    prvni to opravene
                 }
             }
-            vysledek.onSuccess { text ->
-                val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(text)
+            vysledek.onSuccess { (text, repliky) ->
+                val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(text).let { c ->
+                    // Repliky z ostřejšího čtení po řádcích mají přednost.
+                    c.copy(panely = c.panely.map { p ->
+                        repliky[p.cislo]?.let { p.copy(repliky = cz.promptlab.h3video.data.SbFilmPrepis.sloucit(p.repliky, it)) } ?: p
+                    })
+                }
                 val plan = cz.promptlab.h3video.data.SbFilmPlan.naplanuj(cteni)
                 if (plan.panely.isEmpty()) {
                     _rewriteState.value = RewriteState.Fail(
@@ -4903,7 +4947,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             storyboard = s.seStoryboardem,
                             hlidka = cz.promptlab.h3video.data.SbFilmPrepis.hlidka(
                                 s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
+                                cz.promptlab.h3video.data.SbFilmPrepis.idMluvcich(s.panely),
+                                cz.promptlab.h3video.data.SbFilmPrepis.jazykFilmu(s.panely),
                             ),
+                            hlidatDialogy = false,
                             pomer = s.pomer.kod,
                         )
                     }

@@ -1640,6 +1640,8 @@ fun DarkTextField(
     onClear: (() -> Unit)? = null,
     /** Tajnost (token, přístupový kód): znaky se ukazují jako tečky. */
     secret: Boolean = false,
+    /** Víceřádkové pole, které roste s textem (plán filmu: celý popis a repliky na očích). */
+    rostouci: Boolean = false,
 ) {
     val focus = LocalFocusManager.current
     // Poloha pole pro hlídač klávesnice (viz ZaostrenePole v Components.kt).
@@ -1660,7 +1662,7 @@ fun DarkTextField(
             modifier = Modifier
                 .fillMaxWidth()
                 .then(
-                    if (singleLine) Modifier.heightIn(min = minHeight)
+                    if (singleLine || rostouci) Modifier.heightIn(min = minHeight)
                     else Modifier.height(minHeight * meritkoPisma)
                 )
                 .onGloballyPositioned {

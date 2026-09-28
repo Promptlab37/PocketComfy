@@ -56,6 +56,12 @@ data class SbPanel(
     val kamera: String = "",
     /** Délka panelu v sekundách. */
     val sekundy: Double,
+    /**
+     * Repliky panelu doslova, v původním jazyce: `Pepa: „Rozsviť obývák.“; AI: „…“`.
+     * Do 4.91 se při čtení zahazovaly (otázka chtěla jen „co se děje, jednou
+     * větou“) — tester měl storyboard s českými dialogy a film by byl bez nich.
+     */
+    val repliky: String = "",
 )
 
 /** Co model ze storyboardu přečetl, ještě bez naplánovaných délek. */
@@ -64,6 +70,9 @@ data class SbCteni(
     val celkemVepsano: Double?,
     val zaberuVepsano: Int?,
     val panely: List<SbPrecteny>,
+    /** Mřížka panelů (řádky × sloupce), když ji model uvedl. */
+    val radku: Int? = null,
+    val sloupcu: Int? = null,
 )
 
 data class SbPrecteny(
@@ -73,6 +82,7 @@ data class SbPrecteny(
     val typ: String,
     val kamera: String,
     val popis: String,
+    val repliky: String = "",
 )
 
 /** Naplánované panely a jestli délky pocházejí z časů vepsaných ve storyboardu. */
@@ -104,13 +114,15 @@ object SbFilmPlan {
         "This image is a film storyboard. Answer in plain lines only, no other text.\n" +
             "First line: TITLE: <the title printed on the sheet, or none> | TOTAL: <the total " +
             "duration printed on the sheet in seconds, or none> | SHOTS: <the number of shots " +
-            "printed on the sheet, or none>\n" +
+            "printed on the sheet, or none> | GRID: <rows>x<columns> of the shot panels\n" +
             "Then one line per numbered shot panel, in the panel order: PANEL <number> | <the time " +
             "range exactly as printed on that panel, for example 00-04s, or none> | <shot size: " +
             "wide, medium, close-up, extreme close-up, insert or detail> | <camera movement, or " +
-            "static> | <what happens in the panel, one short sentence>\n" +
+            "static> | <what happens in the panel, one short sentence> | <every spoken line " +
+            "printed with that panel, copied word for word in its original language, as " +
+            "Speaker: \"line\", separated by ; — or none>\n" +
             "Skip boxes that are only colour, texture or environment swatches. Do not invent " +
-            "panels or times that are not on the sheet."
+            "panels, times or lines that are not on the sheet: if no time is printed, write none."
 
     private val CISLO = Regex("""\d+(?:[.,]\d+)?""")
     private val CAS = Regex("""(\d{1,2})(?::(\d{2}(?:[.,]\d+)?))?\s*s?\s*[-–—]\s*(\d{1,2})(?::(\d{2}(?:[.,]\d+)?))?\s*s?""")
@@ -120,6 +132,8 @@ object SbFilmPlan {
         var nazev: String? = null
         var celkem: Double? = null
         var zaberu: Int? = null
+        var radku: Int? = null
+        var sloupcu: Int? = null
         val panely = mutableListOf<SbPrecteny>()
         // Přepisovač slučuje řádky do jednoho (`" ".join(caption.split())`) —
         // před každý PANEL/TITLE se proto zalomení vrátí.
@@ -137,6 +151,10 @@ object SbFilmPlan {
                             "TITLE" -> nazev = v
                             "TOTAL" -> celkem = CISLO.find(v)?.value?.replace(',', '.')?.toDoubleOrNull()
                             "SHOTS" -> zaberu = CISLO.find(v)?.value?.toIntOrNull()
+                            "GRID" -> Regex("""(\d+)\s*[x×X]\s*(\d+)""").find(v)?.let {
+                                radku = it.groupValues[1].toIntOrNull()
+                                sloupcu = it.groupValues[2].toIntOrNull()
+                            }
                         }
                     }
                 }
@@ -149,12 +167,41 @@ object SbFilmPlan {
                         od = cas?.first, doS = cas?.second,
                         typ = casti.getOrNull(2).orEmpty().takeUnless { it.equals("none", true) }.orEmpty(),
                         kamera = casti.getOrNull(3).orEmpty().takeUnless { it.equals("none", true) }.orEmpty(),
-                        popis = casti.drop(4).joinToString(" | ").ifBlank { casti.lastOrNull().orEmpty() },
+                        // 6. pole = repliky (od 4.92); starší odpověď ho nemá.
+                        popis = (if (casti.size >= 6) casti[4] else casti.drop(4).joinToString(" | "))
+                            .ifBlank { casti.lastOrNull().orEmpty() },
+                        repliky = if (casti.size >= 6) casti.drop(5).joinToString(" | ")
+                            .takeUnless { it.isBlank() || it.equals("none", true) }.orEmpty() else "",
                     )
                 }
             }
         }
-        return SbCteni(nazev, celkem, zaberu, panely)
+        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu)
+    }
+
+    /**
+     * Druhé čtení replik po řádcích mřížky. Celý storyboard se pro vidoucí
+     * model zmenší a drobné písmo pod panely pak čte s chybami (tester:
+     * „k vypínání“ místo „k vypínači“, „celý“ místo „celej“). Pruh s jedním
+     * řádkem panelů dostane stejný počet obrazových tokenů na třetinu plochy.
+     */
+    fun otazkaRadku(prvni: Int, posledni: Int): String =
+        "This image is one row of a film storyboard: the shot panels numbered $prvni to $posledni, " +
+            "left to right. Answer in plain lines only, one line per panel: PANEL <number> | <every " +
+            "spoken line printed with that panel, copied letter by letter exactly as printed, in its " +
+            "original language, as Speaker: \"line\", separated by ; — or none>. Keep the exact " +
+            "spelling, including colloquial words and punctuation. Do not translate or correct anything."
+
+    /** Odpověď [otazkaRadku] → číslo panelu → repliky. */
+    fun prectiRepliky(text: String): Map<Int, String> {
+        val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
+        return radky.lines().mapNotNull { r ->
+            val casti = r.trim().split("|", limit = 2).map { it.trim() }
+            if (casti.size < 2 || !casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
+            val rep = casti[1].takeUnless { it.isBlank() || it.equals("none", true) } ?: return@mapNotNull null
+            n to rep
+        }.toMap()
     }
 
     /** `00-04s`, `0:00–0:04`, `27–30 s` → (od, do) v sekundách. */
@@ -201,6 +248,7 @@ object SbFilmPlan {
                 typ = p.typ,
                 kamera = p.kamera,
                 sekundy = zaokrouhli(delky[i]),
+                repliky = p.repliky,
             )
         }
         return SbPlan(panely, vepsane != null)
@@ -319,10 +367,10 @@ object SbFilmPlan {
             "SHOTS: <number of shots>. Then one line per shot, in story order: PANEL <number> | " +
             "<start-end seconds, for example 00-04s> | <shot size: wide, medium, close-up, extreme " +
             "close-up, insert or detail> | <camera movement, or static> | <what happens in the shot, " +
-            "one short sentence of visible action>. The shots follow each other without gaps and " +
-            "add up to the total. Each shot shows one clear moment and never repeats an earlier " +
-            "action. If the story has spoken lines, put the exact line in quotes in the shot where " +
-            "it is spoken, in its original language."
+            "one short sentence of visible action> | <the spoken lines of that shot as Speaker: " +
+            "\"line\", separated by ;, in their original language, or none>. The shots follow each " +
+            "other without gaps and add up to the total. Each shot shows one clear moment and never " +
+            "repeats an earlier action. Spoken lines given in the story are copied word for word."
 
     /** Zadání návrhu: děj, délka, počet záběrů, postavy z fotek. */
     fun zadaniNavrhu(dej: String, sekundy: Int, pocetPostav: Int): String {
@@ -445,7 +493,8 @@ class SbFilmStore(private val ctx: Context) {
             .put("panely", org.json.JSONArray().also { a ->
                 s.panely.forEach {
                     a.put(org.json.JSONObject().put("cislo", it.cislo).put("popis", it.popis)
-                        .put("typ", it.typ).put("kamera", it.kamera).put("sekundy", it.sekundy))
+                        .put("typ", it.typ).put("kamera", it.kamera).put("sekundy", it.sekundy)
+                        .put("repliky", it.repliky))
                 }
             })
         sp.edit().putString(KEY, j.toString()).apply()
@@ -461,7 +510,7 @@ class SbFilmStore(private val ctx: Context) {
         val panely = (0 until (j.optJSONArray("panely")?.length() ?: 0)).map {
             val p = j.getJSONArray("panely").getJSONObject(it)
             SbPanel(p.optInt("cislo", it + 1), p.optString("popis"), p.optString("typ"),
-                p.optString("kamera"), p.optDouble("sekundy", 3.0))
+                p.optString("kamera"), p.optDouble("sekundy", 3.0), p.optString("repliky"))
         }
         SbFilmScene(
             storyboard = sb, postavy = postavy, dej = j.optString("dej"),
@@ -482,6 +531,51 @@ class SbFilmStore(private val ctx: Context) {
 /** Zadání a dovětek pro přepisovač jednoho úseku filmu. */
 object SbFilmPrepis {
 
+    /** Replika v uvozovkách — konec je zavírací uvozovka, středník mezi nimi není nutný. */
+    private val REPLIKA_V_UVOZOVKACH = Regex("""([\p{L}][\p{L}0-9 .'’-]{0,24}?)\s*:\s*[„"“«»]([^„“”"«»]+)[“”"«»]""")
+    /** Záloha bez uvozovek: repliky oddělené středníkem. */
+    private val REPLIKA = Regex("""([\p{L}][\p{L}0-9 .'’-]{0,24}?)\s*:\s*([^;]+?)\s*(?:;|$)""")
+
+    /** `Pepa: „…“; AI: „…“` → dvojice (mluvčí, text). */
+    fun repliky(text: String): List<Pair<String, String>> {
+        val vUvozovkach = REPLIKA_V_UVOZOVKACH.findAll(text)
+            .map { it.groupValues[1].trim() to it.groupValues[2].trim() }.toList()
+        val vysledek = vUvozovkach.ifEmpty {
+            REPLIKA.findAll(text).map { it.groupValues[1].trim() to it.groupValues[2].trim() }.toList()
+        }
+        return vysledek.filter { it.second.isNotBlank() }.map { (kdo, co) -> opravMluvciho(kdo) to co }
+    }
+
+    /**
+     * Spojí dvě čtení replik jednoho panelu: jména mluvčích z celého
+     * storyboardu (tam model čte „AI“ správně), text z ostřejšího čtení po
+     * řádcích (tam „Al“, ale správně „k vypínači“). Když se počty neshodují,
+     * platí ostřejší čtení celé.
+     */
+    fun sloucit(zCelku: String, zRadku: String): String {
+        val a = repliky(zCelku)
+        val b = repliky(zRadku)
+        if (b.isEmpty()) return zCelku
+        val spojene = if (a.size == b.size) a.zip(b).map { (x, y) -> x.first to y.second } else b
+        return spojene.joinToString("; ") { (kdo, co) -> "$kdo: „${opravHacky(co)}“" }
+    }
+
+    /** `t’` / `d’` na konci slova je ť / ď, jak ho model vidí v tištěném písmu. */
+    fun opravHacky(text: String): String =
+        text.replace(Regex("""t[’'ʼ´`](?=\s|[.,!?…]|$)"""), "ť").replace(Regex("""d[’'ʼ´`](?=\s|[.,!?…]|$)"""), "ď")
+
+    /** Mluvčí „Al“ je v tištěném písmu „AI“ (malé L a velké I vypadají stejně). */
+    fun opravMluvciho(jmeno: String): String = if (jmeno == "Al") "AI" else jmeno
+
+    /** Jazyk všech replik filmu dohromady (null = nepoznaný, model ho určí sám). */
+    fun jazykFilmu(panely: List<SbPanel>): String? =
+        DialogyH3.jazyk(panely.flatMap { repliky(it.repliky) }.map { DialogyH3.Replika(it.first, it.second) })
+
+    /** Stálá ID mluvčích přes celý film (S1, S2… podle prvního výskytu). */
+    fun idMluvcich(panely: List<SbPanel>): Map<String, String> =
+        panely.flatMap { repliky(it.repliky).map { r -> r.first } }.distinct()
+            .withIndex().associate { (i, m) -> m to "S${i + 1}" }
+
     /**
      * Zadání úseku: děj celého filmu (když ho uživatel napsal) a kde v něm
      * úsek je. Přepisovač píše anglicky; repliky ze scénáře hlídá [DialogyH3].
@@ -500,7 +594,12 @@ object SbFilmPrepis {
      * Dovětek: přesný seznam záběrů úseku s časy (délky počítá appka, ne
      * model), role obrázků a navázání na předchozí úsek.
      */
-    fun hlidka(pocetObrazku: Int, usek: SbUsek, k: Int, n: Int, seStoryboardem: Boolean = true): String {
+    fun hlidka(
+        pocetObrazku: Int, usek: SbUsek, k: Int, n: Int, seStoryboardem: Boolean = true,
+        idMluvcich: Map<String, String> = idMluvcich(usek.panely),
+        /** Jazyk replik celého filmu — krátká replika („Výborný.“) sama češtinu neprozradí. */
+        jazykFilmu: String? = jazykFilmu(usek.panely),
+    ): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
         val prvniPostava = if (seStoryboardem) 2 else 1
@@ -527,12 +626,22 @@ object SbFilmPrepis {
             if (p.typ.isNotBlank()) sb.append(", ${p.typ}")
             if (p.kamera.isNotBlank()) sb.append(", camera ${p.kamera}")
             sb.append(": ${p.popis}")
+            repliky(p.repliky).forEach { (kdo, text) ->
+                val tag = jazykFilmu ?: "Language"
+                sb.append("\n    spoken in this shot: $kdo (${idMluvcich[kdo] ?: "S?"}) says <d>[$tag] $text</d>")
+            }
             t += p.sekundy
         }
         // Bez tohohle úsek 2 Iron Mask ukázal i odhalení krále z panelu 6,
         // které patří do dalšího úseku (28. 9. 2026).
         // 28. 9. 2026 úsek 2 začal „ruka otáčí klíčem v zámku dveří“ z panelu 2
         // a ve filmu se dveře odemykaly podruhé.
+        if (usek.panely.any { repliky(it.repliky).isNotEmpty() }) {
+            sb.append("\nEvery spoken line listed above goes into its shot word for word, in its original ")
+            sb.append("language, inside <d>; never translate, shorten or drop a line. The speaker ")
+            sb.append("description and the speaker ID stay outside <d>. Speaker IDs for the whole film: ")
+            sb.append(idMluvcich.entries.joinToString(", ") { "${it.key} = (${it.value})" }).append(".")
+        }
         sb.append("\nEach shot shows only the action of its own panel. Never repeat an action from an ")
         sb.append("earlier shot or an earlier part, and do not use storyboard panels that are not in ")
         sb.append("this list — they are either in another part or cut from the film.")
