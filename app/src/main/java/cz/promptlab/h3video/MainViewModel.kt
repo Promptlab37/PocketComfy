@@ -2513,11 +2513,40 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * na téhle kartě kolem tří tokenů za vteřinu a rozvahu dlouhou tisíce
      * tokenů — appka by to vzdala, zatímco server dál počítá do prázdna.
      */
+    /** Běžící přepis — ať ho jde zastavit ([zastavPrepis]). */
+    @Volatile private var prepisJob: kotlinx.coroutines.Job? = null
+    @Volatile private var prepisNaServeru: Pair<ComfyClient, String>? = null
+
+    /**
+     * ■ Zastavit vylepšení / překlad. Zruší čekání v appce, smaže úlohu
+     * z fronty serveru a když už běží, přeruší **jen ji** (interrupt
+     * s prompt_id) — cizí práce na serveru, třeba generované video, jede dál.
+     * Zadání zůstane, jak bylo před vylepšením.
+     */
+    fun zastavPrepis() {
+        if (_rewriteState.value !is RewriteState.Busy) return
+        val naServeru = prepisNaServeru
+        prepisNaServeru = null
+        prepisJob?.cancel()
+        prepisJob = null
+        _rewriteState.value = RewriteState.Idle
+        _rewriteProgress.value = null
+        if (naServeru != null) viewModelScope.launch(Dispatchers.IO) {
+            naServeru.first.deleteFromQueue(naServeru.second)
+            naServeru.first.interrupt(naServeru.second)
+        }
+    }
+
     private suspend fun spustPrepisAPockej(
         client: ComfyClient,
         wf: org.json.JSONObject,
         uzelNahledu: String,
     ): String {
+        // Zastaveno ještě před odesláním (při zapínání ComfyUI, nahrávání fotek).
+        if (_rewriteState.value !is RewriteState.Busy) {
+            throw kotlinx.coroutines.CancellationException("přepis zastaven")
+        }
+        prepisJob = kotlin.coroutines.coroutineContext[kotlinx.coroutines.Job]
         // Každý přepis nejdřív uklidí grafiku. Dřív to dělaly jen 4 z 11 cest —
         // 28. 9. 2026 zůstal po MiniMax Music 3 na kartě 8,7 GB, vylepšovač
         // s fotkou se nevešel, počítal na procesoru a trval 110 s místo ~10 s
@@ -2571,6 +2600,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             })
         }.getOrNull()
         try {
+            prepisNaServeru = client to promptId
             zaradPrepis(client, wf, clientId, promptId)
             // Rozhoduje server, ne hodiny. Do 4.50 tu byla mez „pět minut bez
             // zprávy": zamčený telefon uspí appku, po odemčení ta mez hned
@@ -2657,6 +2687,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             ws?.cancel()
             _rewriteProgress.value = null
             _prubehPrepisu.value = PrubehPrepisu()
+            // Jen vlastní — zastavený starý přepis nesmí smazat odkaz na nový.
+            if (prepisNaServeru?.second == promptId) {
+                prepisNaServeru = null
+                prepisJob = null
+            }
         }
     }
 
