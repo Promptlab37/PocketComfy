@@ -104,6 +104,7 @@ import cz.promptlab.h3video.engine.GenerationService
 import cz.promptlab.h3video.ui.theme.AccentBrush
 import cz.promptlab.h3video.ui.theme.Cyan
 import cz.promptlab.h3video.ui.theme.H3Theme
+import cz.promptlab.h3video.ui.theme.pozadiAplikace
 import cz.promptlab.h3video.ui.theme.Ink
 import cz.promptlab.h3video.ui.theme.Outline1
 import cz.promptlab.h3video.ui.theme.Surface1
@@ -133,6 +134,8 @@ class MainActivity : ComponentActivity() {
                 askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+        cz.promptlab.h3video.ui.theme.Vzhled.motiv =
+            cz.promptlab.h3video.ui.theme.Motiv.zUlozeneho(cz.promptlab.h3video.data.AppSettings(this).vzhled)
         setContent { H3Theme { Root() } }
     }
 
@@ -294,7 +297,7 @@ private fun Root(vm: MainViewModel = viewModel()) {
     Box(
         Modifier
             .fillMaxSize()
-            .background(Ink)
+            .then(Modifier.pozadiAplikace())
             .onGloballyPositioned { korenoveSouradnice = it }
             .pointerInput(Unit) {
                 awaitPointerEventScope {
@@ -607,12 +610,22 @@ private fun Header(tab: Tab, version: String, server: ServerState) {
             Spacer(Modifier.size(9.dp))
             // Jméno vlastní, ne jméno cizího modelu — „MiniMax" je ochranná
             // známka a patří jen do popisů karet (nominativní užití).
-            Text(
-                "PocketComfy",
-                style = MaterialTheme.typography.titleMedium,
-                color = TextHi,
-                fontWeight = FontWeight.Bold
-            )
+            // Jméno appky a pod ním podpis autora — PocketComfy dělá PromptLab.
+            Column {
+                Text(
+                    "PocketComfy",
+                    style = MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp),
+                    color = TextHi,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    "by PromptLab",
+                    fontFamily = cz.promptlab.h3video.ui.theme.JetBrainsMono,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.6.sp,
+                    color = cz.promptlab.h3video.ui.theme.Vzhled.motiv.popisekBarva,
+                )
+            }
             Spacer(Modifier.size(8.dp))
             Spacer(Modifier.weight(1f))
             // číslo verze má být vidět na první pohled, ne až v nastavení

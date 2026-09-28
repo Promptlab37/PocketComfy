@@ -238,6 +238,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         ulozViditelnost()
     }
 
+    fun nastavVzhled(m: cz.promptlab.h3video.ui.theme.Motiv) {
+        cz.promptlab.h3video.ui.theme.Vzhled.motiv = m
+        settings.vzhled = m.name
+    }
+
     fun zobrazitVsechnyKarty() {
         _skryteKarty.value = emptySet()
         _skryteVolby.value = emptySet()

@@ -133,6 +133,8 @@ class VyberObrazkuActivity : ComponentActivity() {
                     onZavrit = { zrusit() },
                 )
             } else {
+                cz.promptlab.h3video.ui.theme.Vzhled.motiv =
+                    cz.promptlab.h3video.ui.theme.Motiv.zUlozeneho(cz.promptlab.h3video.data.AppSettings(this).vzhled)
                 H3Theme {
                     BingObrazovka(
                         max = max,

@@ -829,7 +829,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             icon = {
                 if (!blocked) Icon(
                     if (busy) Icons.Default.PlaylistAdd else Icons.Default.AutoAwesome,
-                    null, Modifier.size(20.dp), Color.White
+                    null, Modifier.size(20.dp), cz.promptlab.h3video.ui.theme.NaAkcentu
                 )
             },
             onClick = {
@@ -1342,7 +1342,7 @@ private fun ModeTabs(selected: Mode, skryte: Set<Mode>, onSelect: (Mode) -> Unit
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .then(
-                            if (active) Modifier.background(Brush.linearGradient(listOf(Violet, Cyan)))
+                            if (active) Modifier.background(cz.promptlab.h3video.ui.theme.AccentBrush)
                             else Modifier
                         )
                         .clickable {
@@ -1358,7 +1358,7 @@ private fun ModeTabs(selected: Mode, skryte: Set<Mode>, onSelect: (Mode) -> Unit
                     Text(
                         sk.title,
                         style = MaterialTheme.typography.labelLarge,
-                        color = if (active) Color.White else TextMid,
+                        color = if (active) cz.promptlab.h3video.ui.theme.NaAkcentu else TextMid,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
                     )
@@ -1416,7 +1416,7 @@ private fun <T> PasKaret(
                         .clip(RoundedCornerShape(12.dp))
                         .then(
                             if (active) Modifier.background(
-                                Brush.linearGradient(listOf(Violet, Cyan))
+                                cz.promptlab.h3video.ui.theme.AccentBrush
                             ) else Modifier
                         )
                         .clickable { onVyber(p) }
@@ -1426,7 +1426,7 @@ private fun <T> PasKaret(
                     Text(
                         popisek(p),
                         style = MaterialTheme.typography.labelLarge,
-                        color = if (active) Color.White else TextMid,
+                        color = if (active) cz.promptlab.h3video.ui.theme.NaAkcentu else TextMid,
                         fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
                     )

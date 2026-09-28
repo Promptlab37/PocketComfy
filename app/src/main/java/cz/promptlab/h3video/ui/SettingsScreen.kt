@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -173,6 +176,8 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
         }
 
         UpdateCard(vm)
+
+        VolbaVzhledu(vm)
 
 
         SkladaciSekce(
@@ -543,6 +548,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             }
         }
 
+        PodpisPromptLab()
         Spacer(Modifier.height(12.dp))
     }
 }
@@ -900,5 +906,101 @@ private fun RadekKarty(
                 }
             }
         }
+    }
+}
+
+/**
+ * Nastavení → Vzhled. Každý vzhled se ukazuje jako malý vzorek: jeho pozadí,
+ * karta a přechod hlavního tlačítka, pod tím název. Změna platí hned.
+ */
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+private fun VolbaVzhledu(vm: MainViewModel) {
+    val ted = cz.promptlab.h3video.ui.theme.Vzhled.motiv
+    SectionCard(title = t("Vzhled"), stav = ted.nazev) {
+        androidx.compose.foundation.layout.FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            cz.promptlab.h3video.ui.theme.Motiv.entries.forEach { m ->
+                val vybrany = m == ted
+                Column(
+                    Modifier
+                        .width(96.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(
+                            if (vybrany) 2.dp else 1.dp,
+                            if (vybrany) m.primary else Outline1,
+                            RoundedCornerShape(14.dp),
+                        )
+                        .clickable { vm.nastavVzhled(m) }
+                        .padding(6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(m.bg)
+                            .padding(6.dp),
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(18.dp)
+                                .clip(RoundedCornerShape(5.dp))
+                                .background(m.surface1)
+                                .border(1.dp, m.outline, RoundedCornerShape(5.dp))
+                        )
+                        Box(
+                            Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth()
+                                .height(14.dp)
+                                .clip(RoundedCornerShape(7.dp))
+                                .background(androidx.compose.ui.graphics.Brush.linearGradient(m.cta))
+                        )
+                    }
+                    Text(
+                        m.nazev,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (vybrany) TextHi else TextMid,
+                        maxLines = 2,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** Podpis autora na konci Nastavení — PocketComfy dělá PromptLab. */
+@Composable
+fun PodpisPromptLab() {
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 18.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text("PocketComfy", style = MaterialTheme.typography.titleLarge, color = TextHi)
+        Text(
+            t("vytvořil PromptLab"),
+            fontFamily = cz.promptlab.h3video.ui.theme.JetBrainsMono,
+            fontSize = 11.sp,
+            letterSpacing = 2.sp,
+            color = cz.promptlab.h3video.ui.theme.Vzhled.motiv.popisekBarva,
+        )
+        androidx.compose.material3.TextButton(onClick = {
+            runCatching {
+                ctx.startActivity(
+                    android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("https://promptlab.cz"))
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
+        }) { Text("promptlab.cz", color = Cyan) }
     }
 }

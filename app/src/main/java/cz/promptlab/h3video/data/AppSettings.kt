@@ -178,6 +178,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("activeMusicYue2", false)
         set(v) = sp.edit().putBoolean("activeMusicYue2", v).apply()
 
+    /** Zvolený vzhled appky (jméno z Motiv), prázdné = výchozí. */
+    var vzhled: String
+        get() = sp.getString("vzhled", "")!!
+        set(v) = sp.edit().putString("vzhled", v).apply()
+
     /** Volby uvnitř karet, které si uživatel skryl (`KARTA.VOLBA`, viz VolbyKaret). */
     var skryteVolby: Set<String>
         get() = sp.getStringSet("skryteVolby", emptySet())!!.toSet()

@@ -11,3 +11,8 @@ This application contains and distributes no models or weights. It is a
 client for a ComfyUI server that you install and operate yourself.
 
 Full text: https://huggingface.co/MiniMaxAI/MiniMax-H3/blob/main/LICENSE
+
+Fonts / Písma (SIL Open Font License 1.1, full text in app/src/main/assets/licence_pisma_OFL.txt):
+- Unbounded — Copyright 2022 The Unbounded Project Authors
+- Manrope — Copyright 2018 The Manrope Project Authors
+- JetBrains Mono — Copyright 2020 The JetBrains Mono Project Authors

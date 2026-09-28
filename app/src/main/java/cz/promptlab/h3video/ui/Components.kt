@@ -106,7 +106,11 @@ fun SectionCard(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    cz.promptlab.h3video.ui.theme.nadpisSekce(title),
+                    style = cz.promptlab.h3video.ui.theme.nadpisSekceStyl,
+                    color = cz.promptlab.h3video.ui.theme.Vzhled.motiv.popisekBarva,
+                )
                 if (!stav.isNullOrBlank()) {
                     Text(
                         stav,
@@ -493,7 +497,7 @@ fun GradientButton(
                 text,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (enabled) Color.White else TextLow
+                color = if (enabled) cz.promptlab.h3video.ui.theme.NaAkcentu else TextLow
             )
         }
     }
