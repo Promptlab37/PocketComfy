@@ -121,6 +121,8 @@ object SbFilmPlan {
             "static> | <what happens in the panel, one short sentence> | <every spoken line " +
             "printed with that panel, copied word for word in its original language, as " +
             "Speaker: \"line\", separated by ; — or none>\n" +
+            "Text labelled as action, plot, description or a note (for example DĚJ, AKCE, POPIS, " +
+            "ACTION, NOTE) is not a spoken line: put it into the action field, never into the lines.\n" +
             "Skip boxes that are only colour, texture or environment swatches. Do not invent " +
             "panels, times or lines that are not on the sheet: if no time is printed, write none."
 
@@ -172,7 +174,12 @@ object SbFilmPlan {
                             .ifBlank { casti.lastOrNull().orEmpty() },
                         repliky = if (casti.size >= 6) casti.drop(5).joinToString(" | ")
                             .takeUnless { it.isBlank() || it.equals("none", true) }.orEmpty() else "",
-                    )
+                    ).let { p ->
+                        // „DĚJ: Žena pochopí narážku.“ je popis, ne replika — 29. 9. 2026
+                        // ho H3 přečetl nahlas jako třetí mluvčí.
+                        val (repliky, dej) = SbFilmPrepis.oddelDej(p.repliky)
+                        p.copy(repliky = repliky, popis = listOf(p.popis, dej).filter { it.isNotBlank() }.joinToString(" "))
+                    }
                 }
             }
         }
@@ -190,7 +197,9 @@ object SbFilmPlan {
             "left to right. Answer in plain lines only, one line per panel: PANEL <number> | <every " +
             "spoken line printed with that panel, copied letter by letter exactly as printed, in its " +
             "original language, as Speaker: \"line\", separated by ; — or none>. Keep the exact " +
-            "spelling, including colloquial words and punctuation. Do not translate or correct anything."
+            "spelling, including colloquial words and punctuation. Do not translate or correct anything. " +
+            "Text labelled as action, plot, description or a note (for example DĚJ, AKCE, POPIS) is not " +
+            "a spoken line — leave it out."
 
     /** Odpověď [otazkaRadku] → číslo panelu → repliky. */
     fun prectiRepliky(text: String): Map<Int, String> {
@@ -539,14 +548,45 @@ object SbFilmPrepis {
     /** Záloha bez uvozovek: repliky oddělené středníkem. */
     private val REPLIKA = Regex("""([\p{L}][\p{L}0-9 .'’-]{0,24}?)\s*:\s*([^;]+?)\s*(?:;|$)""")
 
-    /** `Pepa: „…“; AI: „…“` → dvojice (mluvčí, text). */
-    fun repliky(text: String): List<Pair<String, String>> {
+    /**
+     * Štítky, kterými storyboard značí popis děje nebo poznámku, ne postavu.
+     * Text za nimi se nesmí dostat do `<d>` — H3 by ho řekl nahlas.
+     */
+    private val NE_MLUVCI = setOf(
+        "děj", "dej", "akce", "popis", "poznámka", "poznamka", "scéna", "scena", "záběr", "zaber",
+        "kamera", "titulek", "střih", "strih", "zvuk", "hudba", "ruch", "ruchy",
+        "action", "plot", "description", "note", "notes", "scene", "shot", "camera", "caption",
+        "direction", "stage direction", "sfx", "sound", "music",
+    )
+
+    /** Je to jméno postavy (a ne štítek popisu)? */
+    fun jeMluvci(jmeno: String): Boolean = jmeno.trim().lowercase() !in NE_MLUVCI
+
+    /** Všechny dvojice (štítek, text) včetně popisných štítků. */
+    private fun vsechnyRepliky(text: String): List<Pair<String, String>> {
         val vUvozovkach = REPLIKA_V_UVOZOVKACH.findAll(text)
             .map { it.groupValues[1].trim() to it.groupValues[2].trim() }.toList()
         val vysledek = vUvozovkach.ifEmpty {
             REPLIKA.findAll(text).map { it.groupValues[1].trim() to it.groupValues[2].trim() }.toList()
         }
         return vysledek.filter { it.second.isNotBlank() }.map { (kdo, co) -> opravMluvciho(kdo) to co }
+    }
+
+    /** `Pepa: „…“; AI: „…“` → dvojice (mluvčí, text). Popisné štítky (DĚJ…) vynechá. */
+    fun repliky(text: String): List<Pair<String, String>> =
+        vsechnyRepliky(text).filter { jeMluvci(it.first) }
+
+    /**
+     * Rozdělí pole replik panelu na skutečné repliky a popis děje (text se
+     * štítkem DĚJ, AKCE, POPIS…). Když popisný štítek chybí, vrátí text beze změny.
+     */
+    fun oddelDej(text: String): Pair<String, String> {
+        val vse = vsechnyRepliky(text)
+        val dej = vse.filterNot { jeMluvci(it.first) }
+        if (dej.isEmpty()) return text to ""
+        val repliky = vse.filter { jeMluvci(it.first) }
+            .joinToString("; ") { (kdo, co) -> "$kdo: „$co“" }
+        return repliky to dej.joinToString(" ") { it.second }
     }
 
     /**
