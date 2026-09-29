@@ -829,7 +829,8 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 mode == Mode.RESTORE -> t("Opravit fotku")
                 mode == Mode.ANGLE -> t("Otočit pohled")
                 mode == Mode.FACESWAP -> t("Vyměnit tvář")
-                mode == Mode.INPAINT -> t("Domalovat do masky")
+                mode == Mode.INPAINT ->
+                    if (inpaintScene.rezim.chceMasku) t("Domalovat do masky") else t("Rozšířit obrázek")
                 // 3D model není video — tlačítko to nesmí slibovat.
                 mode == Mode.MODEL3D -> t("Postavit 3D model")
                 mode == Mode.LONG -> t("Vygenerovat dlouhé video")

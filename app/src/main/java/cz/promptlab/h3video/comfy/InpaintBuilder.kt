@@ -220,27 +220,6 @@ object InpaintBuilder {
     }
 
     /**
-     * Slovo pro směr tak, jak ho model čte. Qwen má outpainting ve své
-     * příručce popsaný právě přes směr rozšíření (扩图 / 延伸画面).
-     */
-    fun smerSlovem(smer: Smer): String = when (smer) {
-        Smer.DOLU -> "downward"
-        Smer.NAHORU -> "upward"
-        Smer.VLEVO -> "to the left"
-        Smer.VPRAVO -> "to the right"
-    }
-
-    /** Směry v pořadí enumu, spojené do „downward and to the left". */
-    fun smeryVetou(smery: Set<Smer>): String {
-        val slova = Smer.entries.filter { it in smery }.map { smerSlovem(it) }
-        return when (slova.size) {
-            0 -> ""
-            1 -> slova[0]
-            else -> slova.dropLast(1).joinToString(", ") + " and " + slova.last()
-        }
-    }
-
-    /**
      * Spouštěč outpaint LoRA — doslova z její dokumentace
      * (huggingface.co/ausboss/Qwen-Image-2.1-Outpaint-LoRA): „The instruction
      * is the trigger. Put it first.“ Za něj graf připojí „ Scene: “ a popis
@@ -327,10 +306,10 @@ object InpaintBuilder {
                 wf.inputs(N_LORA_QWEN21).put("model", JSONArray().put(N_LORA_ROZSIRENI).put(0))
         }
         wf.inputs(N_PLATNO).apply {
-            put("pad_top", okrajPx(vyska, scene.procent, Smer.NAHORU in scene.smery))
-            put("pad_bottom", okrajPx(vyska, scene.procent, Smer.DOLU in scene.smery))
-            put("pad_left", okrajPx(sirka, scene.procent, Smer.VLEVO in scene.smery))
-            put("pad_right", okrajPx(sirka, scene.procent, Smer.VPRAVO in scene.smery))
+            put("pad_top", okrajPx(vyska, scene.procento(Smer.NAHORU), Smer.NAHORU in scene.smery))
+            put("pad_bottom", okrajPx(vyska, scene.procento(Smer.DOLU), Smer.DOLU in scene.smery))
+            put("pad_left", okrajPx(sirka, scene.procento(Smer.VLEVO), Smer.VLEVO in scene.smery))
+            put("pad_right", okrajPx(sirka, scene.procento(Smer.VPRAVO), Smer.VPRAVO in scene.smery))
         }
         wf.inputs(N_SAMPLER).put("seed", seed)
         return wf

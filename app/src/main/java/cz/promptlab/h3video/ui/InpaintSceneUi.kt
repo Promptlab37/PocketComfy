@@ -18,6 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import cz.promptlab.h3video.data.InpaintScene
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
@@ -158,10 +161,7 @@ fun InpaintSection(vm: MainViewModel) {
         }
     }
 
-    if (!masku) SectionCard(
-        title = t("Kam a o kolik"),
-        subtitle = t("Qwen doporučuje 30–50 % plochy navíc na jeden směr"),
-    ) {
+    if (!masku) SectionCard(title = t("Kam a o kolik")) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -176,14 +176,19 @@ fun InpaintSection(vm: MainViewModel) {
                     ) { vm.prepniInpaintSmer(smer) }
                 }
             }
-            LabeledSlider(
-                label = t("O kolik"),
-                value = "%d %%".format(scene.procent),
-                position = scene.procent.toFloat(),
-                range = 10f..InpaintBuilder.ROZSIRENI_MAX.toFloat(),
-                onChange = { vm.setInpaintProcent(it.roundToInt()) },
-                note = t("Počítá se z rozměru fotky a platí pro každý zvolený směr zvlášť."),
-            )
+            // Posuvník pro každý zapnutý směr, ve stejném pořadí jako tlačítka.
+            Smer.entries.filter { it in scene.smery }.forEach { smer ->
+                LabeledSlider(
+                    label = smer.title,
+                    value = "%d %%".format(scene.procento(smer)),
+                    position = scene.procento(smer).toFloat(),
+                    range = InpaintScene.PROCENT_MIN.toFloat()..InpaintBuilder.ROZSIRENI_MAX.toFloat(),
+                    onChange = { vm.setInpaintProcent(smer, it.roundToInt()) },
+                )
+            }
+            if (scene.smery.isNotEmpty() && scene.sirka > 0 && scene.vyska > 0) {
+                SchemaRozsireni(scene)
+            }
         }
     }
 
@@ -333,4 +338,50 @@ fun InpaintSection(vm: MainViewModel) {
     }
 
     Spacer(Modifier.height(2.dp))
+}
+
+/**
+ * Výsledné plátno v přesném poměru: šedý rám = domalované místo, uvnitř
+ * náhled fotky. Pevná výška, šířka podle poměru (úzký telefon: omezená).
+ */
+@Composable
+private fun SchemaRozsireni(scene: InpaintScene) {
+    val l = scene.pridano(Smer.VLEVO).toFloat()
+    val r = scene.pridano(Smer.VPRAVO).toFloat()
+    val tp = scene.pridano(Smer.NAHORU).toFloat()
+    val b = scene.pridano(Smer.DOLU).toFloat()
+    val fotoW = scene.sirka.toFloat()
+    val fotoH = scene.vyska.toFloat()
+    val celkW = fotoW * (1f + l + r)
+    val celkH = fotoH * (1f + tp + b)
+    BoxWithConstraints(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        val maxW = maxWidth
+        val maxH = 140.dp
+        val meritko = minOf(maxW.value / celkW, maxH.value / celkH)
+        val w = (celkW * meritko).dp
+        val h = (celkH * meritko).dp
+        Box(
+            Modifier
+                .size(w, h)
+                .clip(RoundedCornerShape(6.dp))
+                .background(TextLow.copy(alpha = .35f))
+                .border(1.dp, Outline1, RoundedCornerShape(6.dp))
+        ) {
+            Box(
+                Modifier
+                    .offset(x = (fotoW * l * meritko).dp, y = (fotoH * tp * meritko).dp)
+                    .size((fotoW * meritko).dp, (fotoH * meritko).dp)
+                    .background(Surface2)
+            ) {
+                scene.thumb?.let {
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = null,
+                        contentScale = ContentScale.FillBounds,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+            }
+        }
+    }
 }

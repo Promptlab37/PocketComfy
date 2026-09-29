@@ -6399,8 +6399,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         it.copy(smery = if (smer in it.smery) it.smery - smer else it.smery + smer)
     }
 
-    fun setInpaintProcent(v: Int) = updateInpaint {
-        it.copy(procent = v.coerceIn(10, cz.promptlab.h3video.comfy.InpaintBuilder.ROZSIRENI_MAX))
+    /** Posuvník jednoho směru; krok 5 %. */
+    fun setInpaintProcent(smer: cz.promptlab.h3video.data.Smer, v: Int) = updateInpaint {
+        val krok = cz.promptlab.h3video.data.InpaintScene.PROCENT_KROK
+        val hodnota = (Math.round(v.toFloat() / krok) * krok).coerceIn(
+            cz.promptlab.h3video.data.InpaintScene.PROCENT_MIN,
+            cz.promptlab.h3video.comfy.InpaintBuilder.ROZSIRENI_MAX,
+        )
+        it.copy(procenta = it.procenta + (smer to hodnota))
     }
 
     /**
@@ -6423,9 +6429,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 ImageUtils.importToApp(getApplication(), Uri.fromFile(zdroj), target)
             } ?: return@launch
             withContext(Dispatchers.IO) { runCatching { inpaintStore.maskFile().delete() } }
+            val (w, h) = withContext(Dispatchers.IO) { cz.promptlab.h3video.data.rozmerObrazku(target) }
             updateInpaint {
                 it.copy(
-                    source = target, thumb = thumb, mask = null,
+                    source = target, thumb = thumb, mask = null, sirka = w, vyska = h,
                     rezim = rezim, model = InpaintModel.QWEN21,
                 )
             }
@@ -6529,14 +6536,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val thumb = withContext(Dispatchers.IO) { ImageUtils.loadFileThumb(source) }
             // Nová fotka = stará maska už nesedí, maže se.
             withContext(Dispatchers.IO) { runCatching { inpaintStore.maskFile().delete() } }
-            updateInpaint { it.copy(source = source, thumb = thumb, mask = null) }
+            val (w, h) = withContext(Dispatchers.IO) { cz.promptlab.h3video.data.rozmerObrazku(source) }
+            updateInpaint { it.copy(source = source, thumb = thumb, mask = null, sirka = w, vyska = h) }
         }
     }
 
     fun clearInpaintImage() {
         runCatching { inpaintStore.sourceFile().delete() }
         runCatching { inpaintStore.maskFile().delete() }
-        updateInpaint { it.copy(source = null, thumb = null, mask = null) }
+        updateInpaint { it.copy(source = null, thumb = null, mask = null, sirka = 0, vyska = 0) }
     }
 
     /** Maska štětce jako samostatný černobílý PNG (bílá = přemalovat). */

@@ -102,6 +102,9 @@ data class InpaintScene(
     /** Fotka, do které se maluje — čistá, bez zásahů. */
     val source: File? = null,
     val thumb: Bitmap? = null,
+    /** Rozměry fotky v pixelech (0 = neznámé) — pro schéma rozšíření. */
+    val sirka: Int = 0,
+    val vyska: Int = 0,
     /** Maska štětcem: bílá = přemalovat, černá = nechat. */
     val mask: File? = null,
     /** Co má na zamaskovaném místě být. */
@@ -125,11 +128,13 @@ data class InpaintScene(
     /** Směry rozšíření. Prázdné = nic, karta pak nepustí start. */
     val smery: Set<Smer> = setOf(Smer.DOLU),
     /**
-     * O kolik procent plochy se v každém zvoleném směru přidá. Qwen ve své
-     * příručce doporučuje 30–50 %, proto je výchozí 50 a strop 100:
-     * nad tím už model nemá z čeho vycházet a dokresluje si scénu od nuly.
+     * O kolik procent rozměru fotky se rozšíří každý směr zvlášť (4.97,
+     * uživatel chtěl posuvník pro každý zapnutý směr). Vypnutý směr si
+     * hodnotu pamatuje. Výchozí 40: jeden směr pak nechá fotce 71 % plochy,
+     * dva kolmé 51 % — obojí v rozsahu, na kterém je outpaint LoRA trénovaná
+     * (fotka zabírá 45–93 % plátna).
      */
-    val procent: Int = 50,
+    val procenta: Map<Smer, Int> = emptyMap(),
 ) {
     val maskPainted: Boolean get() = mask != null
 
@@ -143,9 +148,46 @@ data class InpaintScene(
     val uploadImages: List<File> get() =
         if (rezim.chceMasku) listOfNotNull(source, mask) else listOfNotNull(source)
 
-    /** Faktor pro daný směr tak, jak ho čte uzel: 1,0 = neměnit. */
-    fun faktor(smer: Smer): Double =
-        if (smer in smery) 1.0 + procent / 100.0 else 1.0
+    /** O kolik procent se rozšíří [smer] (i když je zrovna vypnutý). */
+    fun procento(smer: Smer): Int = procenta[smer] ?: PROCENT_VYCHOZI
+
+    /** Přidaný díl vůči rozměru fotky; vypnutý směr = 0. */
+    private fun dil(smer: Smer): Double = if (smer in smery) procento(smer) / 100.0 else 0.0
+
+    /**
+     * Kolik procent plochy výsledku zabere původní fotka (zaokrouhleno
+     * dolů, stejné číslo se ukazuje i porovnává). Na rozměrech fotky
+     * nezávisí — rozšíření se zadává v procentech jejích stran.
+     */
+    val podilFotky: Int get() {
+        val w = 1.0 + dil(Smer.VLEVO) + dil(Smer.VPRAVO)
+        val h = 1.0 + dil(Smer.NAHORU) + dil(Smer.DOLU)
+        return kotlin.math.floor(100.0 / (w * h) + 1e-9).toInt()
+    }
+
+    /** Rozšíření [smer] vůči rozměru fotky (0 = nerozšiřuje se). */
+    fun pridano(smer: Smer): Double = dil(smer)
+
+    companion object {
+        const val PROCENT_VYCHOZI = 40
+        const val PROCENT_MIN = 10
+        const val PROCENT_KROK = 5
+
+        /**
+         * Pod tímhle podílem plochy je fotka menší, než na čem se outpaint
+         * LoRA učila (45–93 % plátna). Dokumentace neříká výslovně, zda jde
+         * o plochu, nebo stranu — plocha je opatrnější čtení (upozorní dřív).
+         */
+        const val PODIL_VAROVANI = 45
+    }
+}
+
+/** Rozměry obrázku bez dekódování celé bitmapy; 0 to 0, když to nejde. */
+fun rozmerObrazku(f: File?): Pair<Int, Int> {
+    if (f == null || !f.exists()) return 0 to 0
+    val o = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    runCatching { android.graphics.BitmapFactory.decodeFile(f.absolutePath, o) }
+    return maxOf(0, o.outWidth) to maxOf(0, o.outHeight)
 }
 
 /**
@@ -194,13 +236,9 @@ fun inpaintHints(s: InpaintScene): List<String> {
         // u ostatních modelů appky to takhle nefunguje.
         if (s.prompt.isBlank()) {
         }
-        if (s.procent > 60) {
-            out += t("Nad 60 % už model nemá z čeho vycházet a scénu si vymýšlí. " +
-                "Spolehlivější je rozšířit dvakrát po menším kusu.")
-        }
-        if (s.smery.size > 2) {
-            out += t("Čím víc směrů naráz, tím víc si model domýšlí. " +
-                "Po jednom směru to bývá přesnější.")
+        if (s.smery.isNotEmpty() && s.podilFotky < InpaintScene.PODIL_VAROVANI) {
+            out += t("Fotka zabere jen %d %% obrázku. Spolehlivější je rozšířit dvakrát.")
+                .format(s.podilFotky)
         }
         return out
     }
@@ -266,9 +304,21 @@ class InpaintStore(private val ctx: Context) {
                     runCatching { Smer.valueOf(pole.getString(i)) }.getOrNull()
                 }.toSet()
             } ?: setOf(Smer.DOLU),
-            procent = (ulozene?.optInt("procent", 50) ?: 50)
-                .coerceIn(10, cz.promptlab.h3video.comfy.InpaintBuilder.ROZSIRENI_MAX),
-        )
+            procenta = nactiProcenta(ulozene),
+        ).let { s -> rozmerObrazku(source).let { (w, h) -> s.copy(sirka = w, vyska = h) } }
+    }
+
+    /**
+     * `{"NAHORU":40,…}`; neznámé klíče se zahodí, hodnoty se omezí. Starý
+     * společný `procent` (do 4.96) poslouží jako výchozí pro chybějící směry.
+     */
+    private fun nactiProcenta(ulozene: org.json.JSONObject?): Map<Smer, Int> {
+        val stary = ulozene?.optInt("procent", InpaintScene.PROCENT_VYCHOZI) ?: InpaintScene.PROCENT_VYCHOZI
+        val mapa = ulozene?.optJSONObject("procenta")
+        return Smer.entries.associateWith { smer ->
+            (mapa?.optInt(smer.name, stary) ?: stary)
+                .coerceIn(InpaintScene.PROCENT_MIN, cz.promptlab.h3video.comfy.InpaintBuilder.ROZSIRENI_MAX)
+        }
     }
 
     fun save(s: InpaintScene) {
@@ -282,7 +332,9 @@ class InpaintStore(private val ctx: Context) {
                 .put("sila", s.sila.toDouble())
                 .put("rezim", s.rezim.name)
                 .put("smery", org.json.JSONArray(s.smery.map { it.name }))
-                .put("procent", s.procent)
+                .put("procenta", org.json.JSONObject().also { j ->
+                    Smer.entries.forEach { j.put(it.name, s.procento(it)) }
+                })
                 .toString()
         ).apply()
     }

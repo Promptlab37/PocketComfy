@@ -713,6 +713,8 @@ object Slovnik {
         "Štětec tady není potřeba — nové místo si graf označí sám" to
             "No brush needed here — the graph marks the new space itself",
         "Kam a o kolik" to "Where and how much",
+        "Fotka zabere jen %d %% obrázku. Spolehlivější je rozšířit dvakrát." to
+            "The photo takes up only %d %% of the picture. Extending twice is more reliable.",
         "Qwen doporučuje 30–50 % plochy navíc na jeden směr" to
             "Qwen recommends 30–50% extra space per direction",
         "Dolů" to "Down",

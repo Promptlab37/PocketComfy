@@ -6,6 +6,7 @@ import cz.promptlab.h3video.data.GenParams
 import cz.promptlab.h3video.data.InpaintModel
 import cz.promptlab.h3video.data.InpaintScene
 import cz.promptlab.h3video.data.Mode
+import cz.promptlab.h3video.data.Smer
 import cz.promptlab.h3video.data.inpaintProblem
 import org.json.JSONArray
 import org.json.JSONObject
@@ -361,13 +362,14 @@ class InpaintBuilderTest {
 
     private fun rozsir(
         smery: Set<cz.promptlab.h3video.data.Smer>, procent: Int = 50, prompt: String = "nohy",
+        procenta: Map<cz.promptlab.h3video.data.Smer, Int> = cz.promptlab.h3video.data.Smer.entries.associateWith { procent },
         sirka: Int = 1000, vyska: Int = 1000,
     ) = InpaintBuilder.buildRozsireni(
         rozsireni,
         InpaintScene(
             prompt = prompt, model = InpaintModel.QWEN21,
             rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
-            smery = smery, procent = procent,
+            smery = smery, procenta = procenta,
         ),
         5L, listOf("foto.png"), sirka, vyska,
     )
@@ -464,7 +466,7 @@ class InpaintBuilderTest {
         val scene = InpaintScene(
             prompt = "", model = InpaintModel.QWEN21,
             rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
-            smery = setOf(cz.promptlab.h3video.data.Smer.DOLU), procent = 50,
+            smery = setOf(cz.promptlab.h3video.data.Smer.DOLU),
             lora = "moje_qwen_2.1_lora.safetensors", loraSila = 0.8f,
         )
         val wf = InpaintBuilder.buildRozsireni(rozsireni, scene, 5L, listOf("foto.png"), 1000, 1000)
@@ -513,5 +515,34 @@ class InpaintBuilderTest {
         listOf("pad_top", "pad_bottom", "pad_left", "pad_right").forEach {
             assertEquals(it, 0, p.inputs(InpaintBuilder.N_PLATNO).getInt(it))
         }
+    }
+
+    /** Každý směr má vlastní posuvník (4.97). */
+    @Test fun `kazdy smer ma vlastni procenta`() {
+        val wf = rozsir(setOf(Smer.NAHORU, Smer.VLEVO), sirka = 1000, vyska = 800,
+            procenta = mapOf(Smer.NAHORU to 25, Smer.VLEVO to 70, Smer.DOLU to 90, Smer.VPRAVO to 90))
+        val p = wf.inputs(InpaintBuilder.N_PLATNO)
+        assertEquals(200, p.getInt("pad_top"))
+        assertEquals(696, p.getInt("pad_left"))
+        // Vypnuté směry zůstanou na nule, i když mají uloženou hodnotu.
+        assertEquals(0, p.getInt("pad_bottom"))
+        assertEquals(0, p.getInt("pad_right"))
+    }
+
+    /** Podíl plochy fotky — jedno měřítko pro upozornění, bez rozměrů fotky. */
+    @Test fun `podil fotky na plose vysledku`() {
+        fun sc(smery: Set<cz.promptlab.h3video.data.Smer>, p: Int) = InpaintScene(
+            rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT, smery = smery,
+            procenta = Smer.entries.associateWith { p })
+        assertEquals(71, sc(setOf(Smer.DOLU), 40).podilFotky)
+        assertEquals(51, sc(setOf(Smer.DOLU, Smer.VLEVO), 40).podilFotky)
+        assertEquals(44, sc(setOf(Smer.DOLU, Smer.VLEVO), 50).podilFotky)
+        assertEquals(50, sc(setOf(Smer.DOLU), 100).podilFotky)
+        // Výchozí nastavení (40 %) nevaruje ani u dvou kolmých směrů.
+        val vychozi = InpaintScene(rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
+            source = File("a.png"), smery = setOf(Smer.DOLU, Smer.VLEVO))
+        assertEquals(40, vychozi.procento(Smer.DOLU))
+        assertTrue(cz.promptlab.h3video.data.inpaintHints(vychozi).isEmpty())
+        assertEquals(1, cz.promptlab.h3video.data.inpaintHints(sc(setOf(Smer.DOLU, Smer.VLEVO), 50)).size)
     }
 }
