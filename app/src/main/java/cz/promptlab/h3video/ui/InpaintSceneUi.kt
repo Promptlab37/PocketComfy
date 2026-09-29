@@ -265,7 +265,7 @@ fun InpaintSection(vm: MainViewModel) {
             // graf nedostane a ve shrnutí by strašila.
             (if (scene.lora in lory) " · LoRA" else "") +
             (if (scene.model == InpaintModel.FILL && scene.sila < 1f)
-                " · síla %.2f".format(scene.sila) else ""),
+                t(" · síla %.2f").format(scene.sila) else ""),
         klic = "nastaveni-inpaint",
     ) {
         val modely = nabidkaVoleb(vm, cz.promptlab.h3video.data.Mode.INPAINT, InpaintModel.entries.toList()) { it.name }

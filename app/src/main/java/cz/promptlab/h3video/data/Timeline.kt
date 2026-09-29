@@ -134,15 +134,15 @@ fun timelineProblem(scene: TimelineScene): String? {
     }
     scene.segments.forEachIndexed { i, seg ->
         if (seg.seconds > TimelineScene.MAX_SEGMENT_SECONDS) {
-            return "Segment ${i + 1} má ${seg.seconds.toInt()} s, model zvládne nejvýš " +
-                "${TimelineScene.MAX_SEGMENT_SECONDS.toInt()} s na jeden. Rozděl ho."
+            return t("Segment %d má %d s, model zvládne nejvýš %d s na jeden. Rozděl ho.")
+                .format(i + 1, seg.seconds.toInt(), TimelineScene.MAX_SEGMENT_SECONDS.toInt())
         }
         if (seg.mode == SegmentMode.IMAGE) {
             if (i == 0 && seg.inheritPrevious) {
                 return t("První segment nemá na co navázat – vyber mu snímek.")
             }
             if (!seg.inheritPrevious && seg.image == null) {
-                return "Segment ${i + 1} čeká na snímek, ze kterého má vyjít."
+                return t("Segment %d čeká na snímek, ze kterého má vyjít.").format(i + 1)
             }
         }
     }

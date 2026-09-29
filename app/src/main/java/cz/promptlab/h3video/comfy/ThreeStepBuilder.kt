@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.comfy
 
+import cz.promptlab.h3video.data.t
 import android.content.Context
 import cz.promptlab.h3video.R
 import cz.promptlab.h3video.data.Aspect
@@ -336,10 +337,10 @@ object ThreeStepBuilder {
 
     /** Popis fáze pro daný uzel — co se zrovna děje. */
     fun stageForClass(cls: String?): String? = when (cls) {
-        "SamplerCustomAdvanced" -> "Generuji"
-        "MinimaxH3LatentUpscaler3D" -> "Zvětšuji"
-        "VAEDecode", "VAEDecodeAudio" -> "Skládám obraz"
-        "SaveVideo" -> "Ukládám"
+        "SamplerCustomAdvanced" -> t("Generuji")
+        "MinimaxH3LatentUpscaler3D" -> t("Zvětšuji")
+        "VAEDecode", "VAEDecodeAudio" -> t("Skládám obraz")
+        "SaveVideo" -> t("Ukládám")
         else -> null
     }
 }

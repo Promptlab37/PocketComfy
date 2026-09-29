@@ -150,7 +150,7 @@ fun FaceSwapSection(vm: MainViewModel) {
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.Brush, "Malovat masku",
+                                Icons.Default.Brush, t("Malovat masku"),
                                 Modifier.size(16.dp),
                                 if (scene.maskPainted) Ok else Cyan
                             )
@@ -163,12 +163,12 @@ fun FaceSwapSection(vm: MainViewModel) {
                                 .clickable { vm.clearSwap("target") },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Close, "Odebrat", Modifier.size(16.dp), TextMid)
+                            Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextMid)
                         }
                     }
                 } else {
                     Icon(
-                        Icons.Default.AddPhotoAlternate, "Vybrat fotku",
+                        Icons.Default.AddPhotoAlternate, t("Vybrat fotku"),
                         Modifier.align(Alignment.Center).size(34.dp), TextMid
                     )
                 }
@@ -207,7 +207,7 @@ fun FaceSwapSection(vm: MainViewModel) {
                         .clickable { vm.clearSwap("face") },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Close, "Odebrat", Modifier.size(16.dp), TextMid)
+                    Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextMid)
                 }
             } else {
                 Icon(

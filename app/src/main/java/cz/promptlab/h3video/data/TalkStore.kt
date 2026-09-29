@@ -86,7 +86,7 @@ class TalkStore(private val ctx: Context) {
                         voiceId.isNotBlank() ->
                             VoiceSource.Library(voiceId, o.optString("voiceName", voiceId))
                         sample != null ->
-                            VoiceSource.Sample(sample, o.optString("sampleLabel", "vlastní nahrávka"))
+                            VoiceSource.Sample(sample, o.optString("sampleLabel", t("vlastní nahrávka")))
                         else -> null
                     },
                 )

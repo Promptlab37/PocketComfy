@@ -423,10 +423,13 @@ object TURBO {
 /** Doporučené hodnoty ke konkrétní Turbo LoRA. */
 data class LoraProfile(
     val file: String,
-    val label: String,
+    private val labelCs: String,
     val steps: Int,
     val shiftVideo: Float,
-)
+) {
+    /** Popisek v jazyce rozhraní (překlad až při čtení). */
+    val label: String get() = t(labelCs)
+}
 
 /**
  * Turbo vs. plný model. Turbo drží uživatelovo vyladěné ULTRA workflow beze změny;
@@ -439,8 +442,8 @@ data class LoraProfile(
  * zaplatí se to časem.
  */
 enum class Profile(
-    val title: String,
-    val detail: String,
+    private val titleCs: String,
+    private val detailCs: String,
     val steps: Int,
     val sampler: String,
     val scheduler: String,
@@ -471,8 +474,8 @@ enum class Profile(
     val bezReferenci: Boolean = false,
 ) {
     TURBO(
-        title = "Turbo",
-        detail = "Turbo LoRA, 8 kroků – rychlé",
+        titleCs = "Turbo",
+        detailCs = "Turbo LoRA, 8 kroků – rychlé",
         steps = 8, sampler = "euler", scheduler = "beta",
         shiftVideo = 12.191111f, spectrum = true, useLora = true,
     ),
@@ -493,8 +496,8 @@ enum class Profile(
      * Vypínač je na hlavní obrazovce, kdyby se hodila rychlost.
      */
     FULL(
-        title = "Kvalita",
-        detail = "Plný model bez LoRA, 10 kroků – lepší hlas",
+        titleCs = "Kvalita",
+        detailCs = "Plný model bez LoRA, 10 kroků – lepší hlas",
         steps = 10, sampler = "euler", scheduler = "beta",
         shiftVideo = 12.191111f, spectrum = false, useLora = false,
     ),
@@ -508,8 +511,8 @@ enum class Profile(
      * proto je vypnuté i tady.
      */
     V2_TURBO(
-        title = "V2 Turbo",
-        detail = "Nová Turbo LoRA v4, 8 kroků – rychlé",
+        titleCs = "V2 Turbo",
+        detailCs = "Nová Turbo LoRA v4, 8 kroků – rychlé",
         steps = 8, sampler = "euler", scheduler = "beta",
         shiftVideo = 12f, spectrum = false, useLora = true,
         clip = CLIP_NVFP4,
@@ -524,8 +527,8 @@ enum class Profile(
      * kvalitu znatelně sráží). Jen nereferenční (fl2va) cesta.
      */
     TURBO8(
-        title = "Turbo 8 v1",
-        detail = "Nová lightx2v LoRA, 8 kroků – lepší zvuk",
+        titleCs = "Turbo 8 v1",
+        detailCs = "Nová lightx2v LoRA, 8 kroků – lepší zvuk",
         steps = 8, sampler = "euler", scheduler = "simple",
         shiftVideo = 6f, spectrum = false, useLora = true,
         clip = CLIP_NVFP4,
@@ -542,8 +545,8 @@ enum class Profile(
      * na jeden klip znamenalo přes dvacet minut.
      */
     V2_QUALITY(
-        title = "V2 Kvalita",
-        detail = "Bez LoRA, res_multistep, 10 kroků – nejvěrnější",
+        titleCs = "V2 Kvalita",
+        detailCs = "Bez LoRA, res_multistep, 10 kroků – nejvěrnější",
         steps = 10, sampler = "res_multistep", scheduler = "simple",
         shiftVideo = 12f, spectrum = false, useLora = false,
         clip = CLIP_NVFP4,
@@ -562,14 +565,18 @@ enum class Profile(
      * zvuku můžou zůstat pod základním modelem". Není to zrychlení zadarmo.
      */
     FAST(
-        title = "Fast",
-        detail = "FastH3, 4 kroky – nejrychlejší, ale bez referencí",
+        titleCs = "Fast",
+        detailCs = "FastH3, 4 kroky – nejrychlejší, ale bez referencí",
         steps = 4, sampler = "euler", scheduler = "simple",
         shiftVideo = 12f, spectrum = false, useLora = true,
         clip = CLIP_NVFP4,
         lora = FASTH3_LORA,
         bezReferenci = true,
     );
+
+    /** Název a popis v jazyce rozhraní (překlad až při čtení). */
+    val title: String get() = t(titleCs)
+    val detail: String get() = t(detailCs)
 
     /** Hodnoty profilu dosazené do parametrů (prompt a vstupy zůstávají). */
     fun applyTo(p: GenParams): GenParams = p.copy(

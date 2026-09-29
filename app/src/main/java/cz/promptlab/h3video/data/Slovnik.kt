@@ -9,7 +9,14 @@ package cz.promptlab.h3video.data
  */
 object Slovnik {
 
-    val EN: Map<String, String> = mapOf(
+    /**
+     * Doplňky jsou v samostatných souborech (SlovnikA–D.kt): jedno velké
+     * `mapOf` by narazilo na limit velikosti metody v JVM, a po částech se
+     * dá překládat souběžně bez konfliktů.
+     */
+    val EN: Map<String, String> by lazy { ZAKLAD + SLOVNIK_A + SLOVNIK_B + SLOVNIK_C + SLOVNIK_D }
+
+    private val ZAKLAD: Map<String, String> = mapOf(
         "Vybrat" to "Select",
         "Vybráno: %d" to "Selected: %d",
         "Zrušit výběr" to "Cancel selection",
@@ -344,6 +351,8 @@ object Slovnik {
         "Vítej v PocketComfy" to "Welcome to PocketComfy",
         "Appka je klient pro tvůj vlastní ComfyUI server — všechno se " to
             "This app is a client for your own ComfyUI server — everything is ",
+        "generuje na tvém počítači, nikam jinam se nic neposílá." to
+            "generated on your own PC and nothing is sent anywhere else.",
         "Zadej adresu počítače, na kterém ComfyUI běží. Musí být " to
             "Enter the address of the PC running ComfyUI. It has to be ",
         "spuštěné s parametrem --listen 0.0.0.0 a telefon musí být " to

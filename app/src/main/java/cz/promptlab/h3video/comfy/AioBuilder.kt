@@ -192,7 +192,6 @@ object AioBuilder {
                 // Bez ní mluvící referenční video přebije stojící fotku (v balíku je
                 // to ověřené poměrem zhruba 2:1) a ve výsledku je vidět obličej
                 // z videa, ne z fotky.
-                // Storyboard kotvu vypíná: mřížka panelů není první snímek videa.
                 firstImageId?.takeIf { scene.kotvaUcinna }?.let { imgId ->
                     val cond = wf.inputs(N_COND)
                     val kf = newId()
@@ -306,46 +305,6 @@ object AioBuilder {
         wf.inputs(N_SHIFT).put("shift_audio", p.shiftAudio.toDouble())
     }
 
-    /**
-     * Věta z oficiální příručky Ref2VA, která H3 řekne, že `<Picture 1>` je
-     * plán záběrů, ne postava ani první snímek.
-     */
-    const val STORYBOARD_VETA =
-        "<Picture 1> is a storyboard reference for every shot, defining their viewpoint, " +
-            "subject placement, and shot order."
-
-    /**
-     * Prompt pro H3. Se storyboardem se předřadí [STORYBOARD_VETA] a značky
-     * postav (`<Picture 2>`…), pokud text storyboard vůbec nezmiňuje —
-     * uživatel mohl psát ručně, bez přepisovače. Přepis se storyboardem ho
-     * zmiňuje vždy, pak se text nechá beze změny.
-     *
-     * Do 4.76 rozhodovalo, jestli text obsahuje `<Picture 1>` — jenže tu
-     * značku do popisu sama vkládá appka po výběru fotky, takže věta se
-     * ve skutečnosti nepřidala nikdy.
-     */
-    fun promptProStoryboard(scene: AioScene): String {
-        val text = scene.prompt.trim()
-        if (!scene.storyboardUcinny || text.contains("storyboard reference", ignoreCase = true)) return text
-        val postav = scene.refsWithImage.size
-        val uvod = when (postav) {
-            0 -> STORYBOARD_VETA
-            1 -> "$STORYBOARD_VETA The character is shown in <Picture 2>."
-            else -> "$STORYBOARD_VETA The characters are shown in " +
-                (2..postav + 1).joinToString(", ") { "<Picture $it>" } + "."
-        }
-        if (text.isEmpty()) return uvod
-        // Strukturované zadání (šest polí přepisovače): věta patří dovnitř
-        // subject_definitions, kam ji dává i oficiální příručka — řádek nad
-        // polem by rozbil tvar, který H3 čeká.
-        val pole = Regex("(?im)^subject_definitions:[ \\t]*$").find(text)
-        if (pole != null) {
-            val konec = pole.range.last + 1
-            return text.substring(0, konec) + "\n" + uvod + text.substring(konec)
-        }
-        return "$uvod\n$text"
-    }
-
     /** Společné hodnoty – rozměry, délka, modely, vzorkování, náhled. */
     private fun patchCommon(wf: JSONObject, p: GenParams, scene: AioScene) {
         patchModels(wf, p, referencni = scene.mode.usesRefWeights)
@@ -362,7 +321,7 @@ object AioBuilder {
         } else scene.frames
 
         wf.inputs(N_COND).apply {
-            put("prompt", promptProStoryboard(scene))
+            put("prompt", scene.prompt.trim())
             // U přemalování jsou rozměry i délka odkazy na výřez kolem
             // sledovaného objektu – přepsat je čísly by rozhodilo masku
             // i vlepení zpátky do původního záběru.

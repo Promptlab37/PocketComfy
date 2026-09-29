@@ -255,8 +255,8 @@ fun ImageEditSection(vm: MainViewModel) {
         } else if (scene.motor != EditMotor.KREA2) {
             t("rozměry podle předlohy")
         } else {
-            scene.resolution.label + " · vidí " + scene.groundingPx + " px" +
-                " · věrnost %.2f".format(scene.refBoost)
+            scene.resolution.label +
+                t(" · vidí %d px · věrnost %.2f").format(scene.groundingPx, scene.refBoost)
         },
         klic = "nastaveni-edit",
     ) {
@@ -285,7 +285,7 @@ fun ImageEditSection(vm: MainViewModel) {
                     )
                 }
                 LabeledSlider(
-                    label = "Velikost",
+                    label = t("Velikost"),
                     value = "%.1f MP".format(scene.megapixels),
                     position = scene.megapixels,
                     range = 0.4f..ImageEditScene.MAX_MEGAPIXELS,
@@ -430,7 +430,7 @@ private fun EditSlot(
                         .clickable { onClear() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Close, "Odebrat", Modifier.size(16.dp), TextMid)
+                    Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextMid)
                 }
             } else {
                 Icon(

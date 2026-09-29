@@ -170,7 +170,7 @@ fun ProgressScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "GENERUJI",
+                t("GENERUJI"),
                 style = MaterialTheme.typography.labelMedium,
                 color = TextLow,
                 letterSpacing = 4.sp
@@ -208,7 +208,7 @@ fun ProgressScreen(
                     when {
                         state.preparing -> t("Model se nahrává do grafické karty, chvíli to trvá.")
                         state.stage == Stage.QUEUED && state.queuePosition > 0 ->
-                            "Před tebou je ${state.queuePosition} úloha ve frontě"
+                            t("Před tebou je %d úloha ve frontě").format(state.queuePosition)
                         else -> stageDetailText(state.stage, state.kind, state.modelSoubor)
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -254,7 +254,7 @@ fun ProgressScreen(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            StatTile("Uplynulo", formatClock(elapsed), Modifier.weight(1f))
+            StatTile(t("Uplynulo"), formatClock(elapsed), Modifier.weight(1f))
             StatTile(
                 t("Zbývá"),
                 state.etaSeconds?.let { GenerationService.formatEta(it) } ?: t("počítám"),
@@ -271,7 +271,7 @@ fun ProgressScreen(
                 )
             } else {
                 StatTile(
-                    "Krok",
+                    t("Krok"),
                     if (state.stage == Stage.SAMPLING && state.totalSteps > 0)
                         "${state.step}/${state.totalSteps}" else "—",
                     Modifier.weight(1f),
@@ -444,7 +444,7 @@ private fun PhaseStrip(activePhase: Int, kind: RunKind = RunKind.VIDEO) {
         Spacer(Modifier.height(5.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Fáze ${activePhase + 1} z ${phases().size}",
+                t("Fáze %d z %d").format(activePhase + 1, phases().size),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextLow
             )

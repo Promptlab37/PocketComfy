@@ -49,8 +49,6 @@ class AioStore(private val ctx: Context) {
                 // vedle referencí ostatních karet, ne do složky téhle karty.
                 .put("refVideo", s.refVideo?.absolutePath ?: "")
                 .put("refVideoAudio", s.refVideoAudio)
-                .put("storyboard", s.storyboard)
-                .put("storyboardObr", slots(listOf(s.storyboardObr)))
                 .put("sourceVideo", s.sourceVideo?.absolutePath ?: "")
                 .put("upscaler", s.upscaler.name)
                 .put("upscaleResolution", s.upscaleResolution)
@@ -100,8 +98,6 @@ class AioStore(private val ctx: Context) {
                 keys = slots("keys", listOf(AioSlot(key = 1))),
                 refVideo = video("refVideo"),
                 refVideoAudio = root.optBoolean("refVideoAudio", false),
-                storyboard = root.optBoolean("storyboard", false),
-                storyboardObr = slots("storyboardObr", listOf(AioSlot(key = 1))).first(),
                 sourceVideo = video("sourceVideo"),
                 upscaler = runCatching { Upscaler.valueOf(root.optString("upscaler")) }
                     .getOrDefault(Upscaler.SEEDVR2),

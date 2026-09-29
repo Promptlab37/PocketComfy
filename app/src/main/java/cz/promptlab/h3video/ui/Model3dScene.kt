@@ -143,7 +143,7 @@ fun Model3dSection(vm: MainViewModel) {
                     selected = scene.detail,
                     // Náročné hodnoty se nezakazují, ale ani nepředstírají, že
                     // jsou zadarmo — ať je vidět, do čeho člověk jde.
-                    label = { if (it in Model3dScene.NAROCNE_DETAILY) "$it • náročné" else "$it" },
+                    label = { if (it in Model3dScene.NAROCNE_DETAILY) t("%d • náročné").format(it) else "$it" },
                     onSelect = { vm.setModel3dDetail(it) },
                 )
                 if (scene.detail in Model3dScene.NAROCNE_DETAILY) {
@@ -163,7 +163,7 @@ fun Model3dSection(vm: MainViewModel) {
                     items = Model3dScene.TEXTURY,
                     selected = scene.textura,
                     label = {
-                        if (it in Model3dScene.NAROCNE_TEXTURY) "${it}×$it • náročné"
+                        if (it in Model3dScene.NAROCNE_TEXTURY) t("%d×%d • náročné").format(it, it)
                         else "${it}×$it"
                     },
                     onSelect = { vm.setModel3dTextura(it) },

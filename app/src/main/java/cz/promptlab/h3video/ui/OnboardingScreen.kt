@@ -64,7 +64,7 @@ fun OnboardingScreen(vm: MainViewModel) {
         Spacer(Modifier.height(10.dp))
         Text(
             t("Appka je klient pro tvůj vlastní ComfyUI server — všechno se ") +
-                "generuje na tvém počítači, nikam jinam se nic neposílá.\n\n" +
+                t("generuje na tvém počítači, nikam jinam se nic neposílá.") + "\n\n" +
                 t("Zadej adresu počítače, na kterém ComfyUI běží. Musí být ") +
                 t("spuštěné s parametrem --listen 0.0.0.0 a telefon musí být ") +
                 t("na stejné síti nebo VPN (např. Tailscale)."),
@@ -115,7 +115,7 @@ fun OnboardingScreen(vm: MainViewModel) {
         }
         Spacer(Modifier.height(14.dp))
         Text(
-            "V Nastavení pak najdeš tlačítko „Zkontrolovat server\" — vypíše, " +
+            t("V Nastavení pak najdeš tlačítko „Zkontrolovat server\" — vypíše, ") +
                 t("jestli na serveru nechybí custom nody nebo modely, které ") +
                 t("karty appky potřebují."),
             style = MaterialTheme.typography.bodySmall,

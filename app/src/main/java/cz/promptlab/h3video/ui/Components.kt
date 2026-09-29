@@ -172,7 +172,7 @@ fun SkladaciSekce(
             }
             Icon(
                 if (rozbaleno) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                if (rozbaleno) "Sbalit" else "Rozbalit",
+                if (rozbaleno) t("Sbalit") else t("Rozbalit"),
                 Modifier.size(22.dp),
                 TextMid
             )

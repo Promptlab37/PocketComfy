@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.comfy
 
+import cz.promptlab.h3video.data.t
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -33,7 +34,7 @@ object BingHledani {
     /** Manifest z `/search` → výsledek. Neplatné položky se vynechají. */
     fun parsuj(json: JSONObject): Vysledek {
         val session = json.optString("session")
-        require(SESSION.matches(session)) { "neplatná session" }
+        require(SESSION.matches(session)) { t("neplatná session") }
         val items = json.optJSONArray("items")
         val obrazky = buildList {
             for (i in 0 until (items?.length() ?: 0)) {
@@ -84,7 +85,7 @@ object BingHledani {
             .build()
         HTTP.newCall(req).execute().use { r ->
             val text = r.body?.string().orEmpty()
-            if (r.code == 404) throw ComfyException("bing 404", CHYBI_BALIK)
+            if (r.code == 404) throw ComfyException("bing 404", t(CHYBI_BALIK))
             if (!r.isSuccessful) throw ComfyException("bing ${r.code}", chyba(text) ?: "HTTP ${r.code}")
             return parsuj(JSONObject(text))
         }

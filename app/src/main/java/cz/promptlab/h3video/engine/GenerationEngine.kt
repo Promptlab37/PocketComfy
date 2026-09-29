@@ -571,11 +571,11 @@ object GenerationEngine {
         }
         startedAt = System.currentTimeMillis()
         label = if (restoreScene != null) {
-            "Oprava fotky"
+            t("Oprava fotky")
         } else if (swapScene != null) {
-            "Výměna tváře"
+            t("Výměna tváře")
         } else if (inpaintScene != null) {
-            "Domalovat · " + inpaintScene.model.title
+            t("Domalovat") + " · " + inpaintScene.model.title
         } else if (ltxScene != null) {
             "LTX 2.5 · " + ltxScene.rezim.title +
                 (if (ltxScene.snimku > 0)
@@ -584,26 +584,26 @@ object GenerationEngine {
         } else if (danceScene != null) {
             "Dance · " + danceScene.styl.title + " · " + danceScene.sekundy + " s"
         } else if (berniniScene != null) {
-            "Podle zadání · " + "%.1f s".format(cz.promptlab.h3video.comfy.BerniniBuilder.sekund(berniniScene))
+            t("Podle zadání") + " · " + "%.1f s".format(cz.promptlab.h3video.comfy.BerniniBuilder.sekund(berniniScene))
         } else if (cnScene != null) {
-            "Podle předlohy · " + cnScene.predlohaDruh.title + " · " + "%.0f s".format(cnScene.predlohaDelka)
+            t("Podle předlohy") + " · " + cnScene.predlohaDruh.title + " · " + "%.0f s".format(cnScene.predlohaDelka)
         } else if (scailScene != null) {
-            "Vyměnit postavu"
+            t("Vyměnit postavu")
         } else if (interpScene != null) {
-            "Zplynulit · " + interpScene.nasobek + "×" + (if (interpScene.zpomalit) " · zpomaleně" else "")
+            t("Zplynulit") + " · " + interpScene.nasobek + "×" + (if (interpScene.zpomalit) " · " + t("zpomaleně") else "")
         } else if (animateScene != null) {
             "Wan Animate · " + "%.1f s".format(animateScene.videoSekund)
         } else if (sbFilmScene != null) {
-            "Film ze storyboardu · " + "%.1f s".format(sbFilmScene.sekundy) +
-                " · " + sbFilmScene.useky.size + " úseky"
+            t("Film ze storyboardu") + " · " + "%.1f s".format(sbFilmScene.sekundy) +
+                " · " + t("%d úseky").format(sbFilmScene.useky.size)
         } else if (longMmScene != null) {
             "Long MiniMax · " + longMmScene.rezim.title + " · " + longMmScene.sekundy + " s"
         } else if (musicScene != null) {
-            "Hudba · " + musicScene.motor.title + " · " + musicScene.delka + " s"
+            t("Hudba") + " · " + musicScene.motor.title + " · " + musicScene.delka + " s"
         } else if (t2i) {
-            "Obrázek · " + params.aspect.label
+            t("Obrázek") + " · " + params.aspect.label
         } else if (upscaleScene != null) {
-            "Zvětšit · " + upscaleScene.grid
+            t("Zvětšit") + " · " + upscaleScene.grid
         } else if (editScene != null) {
             params.mode.short + " · " + editScene.resolution.label
         } else {
@@ -630,7 +630,7 @@ object GenerationEngine {
                 .onFailure { e ->
                     if (e is kotlinx.coroutines.CancellationException) throw e
                     Log.e(TAG, "generation failed", e)
-                    fail((e as? ComfyException)?.userMessage ?: (e.message ?: "Neznámá chyba"))
+                    fail((e as? ComfyException)?.userMessage ?: (e.message ?: t("Neznámá chyba")))
                 }
         }
         // Ať job skončí jakkoli (hotovo, chyba, zrušení uprostřed blokujícího
@@ -726,7 +726,7 @@ object GenerationEngine {
             label = settings.activeLabel
             // Po restartu aplikace ještě nevíme, jak daleko úloha je – nezačínat na
             // vymyšlené třetině, skutečný postup dorazí ze serveru za okamžik.
-            publish(Stage.QUEUED, 0.05f, note = "Navazuji na rozdělané generování")
+            publish(Stage.QUEUED, 0.05f, note = t("Navazuji na rozdělané generování"))
             // Odmítnutou službu na popředí (kvóta Androidu 15, běh mimo popředí…)
             // nesmí appka odnést pádem při startu – bez ní se jen hůř přežívá
             // zamčený telefon, ale sledování běží dál.
@@ -738,7 +738,7 @@ object GenerationEngine {
                 finishFromHistory(client, pid, null)
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) throw e
-                fail((e as? ComfyException)?.userMessage ?: e.message ?: "Nepodařilo se navázat na generování")
+                fail((e as? ComfyException)?.userMessage ?: e.message ?: t("Nepodařilo se navázat na generování"))
             }
         }
         job?.invokeOnCompletion { uvolniGrafikuPoBehu() }
@@ -805,7 +805,7 @@ object GenerationEngine {
                 finishFromHistory(client, pid, null)
             }.onFailure {
                 fail(
-                    (it as? ComfyException)?.userMessage ?: it.message ?: "Stažení se nepovedlo",
+                    (it as? ComfyException)?.userMessage ?: it.message ?: t("Stažení se nepovedlo"),
                     canRetryDownload = true,
                 )
             }
@@ -849,7 +849,7 @@ object GenerationEngine {
         // generováním videa složí. Ukončuje se výhradně proces, který spouštěč
         // sám nastartoval – Higgs spuštěný ručně na počítači zůstane běžet.
         if (settings.higgsUrl.isNotBlank()) {
-            publish(Stage.UPLOADING, 0.015f, note = "Uvolňuji grafiku po Higgsi")
+            publish(Stage.UPLOADING, 0.015f, note = t("Uvolňuji grafiku po Higgsi"))
             withContext(Dispatchers.IO) {
                 runCatching { HiggsLauncher(settings.higgsUrl).stop() }
             }
@@ -936,7 +936,7 @@ object GenerationEngine {
         else images.take(params.imageSlots)
         val payloads = needed.map { f ->
             readImage(f) ?: throw ComfyException(
-                "image unreadable", "Obrázek se nepodařilo načíst. Zkus vybrat jiný."
+                "image unreadable", t("Obrázek se nepodařilo načíst. Zkus vybrat jiný.")
             )
         }
 
@@ -1365,7 +1365,7 @@ object GenerationEngine {
         val (volnoPred, celkem) = pred
         if (!vzdycky && volnoPred.toDouble() / celkem >= 0.60) return
 
-        publish(Stage.UPLOADING, 0.018f, note = "Uvolňuji paměť grafiky")
+        publish(Stage.UPLOADING, 0.018f, note = t("Uvolňuji paměť grafiky"))
         val po = withContext(Dispatchers.IO) {
             runCatching {
                 client.freeMemory()
@@ -1387,7 +1387,7 @@ object GenerationEngine {
         if (volnoPo.toDouble() / celkem < 0.55) {
             publish(
                 Stage.UPLOADING, 0.02f,
-                note = "Na grafice je volných jen %.1f z %.1f GB — něco jiného na počítači ji drží. Generování bude pomalejší.".format(
+                note = t("Na grafice je volných jen %.1f z %.1f GB — něco jiného na počítači ji drží. Generování bude pomalejší.").format(
                     gb(volnoPo), gb(celkem)
                 ),
             )
@@ -1405,7 +1405,7 @@ object GenerationEngine {
      * stará kopie by problém jen zamaskovaly (graf by stejně neprošel validací).
      */
     private suspend fun fetchTemplate(client: ComfyClient, jmeno: String): String {
-        publish(Stage.UPLOADING, 0.018f, note = "Stahuji šablonu ze serveru")
+        publish(Stage.UPLOADING, 0.018f, note = t("Stahuji šablonu ze serveru"))
         val cacheFile = File(File(app.filesDir, "templates"), jmeno)
         var lastError: Throwable? = null
         repeat(5) { attempt ->
@@ -1432,14 +1432,14 @@ object GenerationEngine {
         if (zaloha != null) {
             publish(
                 Stage.UPLOADING, 0.02f,
-                note = "Server šablonu nevydal – použila se poslední známá kopie."
+                note = t("Server šablonu nevydal – použila se poslední známá kopie.")
             )
             return zaloha
         }
         throw ComfyException(
             "template", (lastError as? ComfyException)?.userMessage
-                ?: ("Server nevydal šablonu $jmeno. Zkontroluj, že je " +
-                    "v ComfyUI nainstalovaný balík ComfyUI-ALLinONE-MinimaxH3.")
+                ?: t("Server nevydal šablonu %s. Zkontroluj, že je " +
+                    "v ComfyUI nainstalovaný balík ComfyUI-ALLinONE-MinimaxH3.").format(jmeno)
         )
     }
 
@@ -1467,14 +1467,14 @@ object GenerationEngine {
             val launcherUp = withContext(Dispatchers.IO) { client.launcherAlive() }
             if (!launcherUp) throw ComfyException(
                 "launcher offline",
-                "Počítač neodpovídá.\n\n" +
+                t("Počítač neodpovídá.\n\n" +
                     "Zkontroluj, že je zapnutý a přihlášený a že máš v telefonu " +
-                    "zapnutý Tailscale.\n\nAdresa: ${settings.serverUrl}"
+                    "zapnutý Tailscale.\n\nAdresa: %s").format(settings.serverUrl)
             )
         }
         publish(
             Stage.STARTING, 0.005f,
-            note = "Zapínám ComfyUI na počítači. Načtení modelů trvá asi tři minuty."
+            note = t("Zapínám ComfyUI na počítači. Načtení modelů trvá asi tři minuty.")
         )
 
         val startedWaiting = System.currentTimeMillis()
@@ -1482,21 +1482,21 @@ object GenerationEngine {
             val waited = ((System.currentTimeMillis() - startedWaiting) / 1000).toInt()
             if (waited > SERVER_WAIT_SECONDS) throw ComfyException(
                 "server offline",
-                "ComfyUI se nerozjelo ani po ${SERVER_WAIT_SECONDS / 60} minutách.\n\n" +
+                t("ComfyUI se nerozjelo ani po %d minutách.\n\n" +
                     "Na počítači se podívej do složky s logy spouštěče ComfyUI.\n\n" +
-                    "Adresa serveru: ${settings.serverUrl}"
+                    "Adresa serveru: %s").format(SERVER_WAIT_SECONDS / 60, settings.serverUrl)
             )
             publish(
                 Stage.STARTING,
                 // Kolečko se během čekání jen lehce nadechne – skutečná práce
                 // ještě nezačala a nemá co ukazovat.
                 (0.005f + 0.015f * (waited / SERVER_WAIT_SECONDS.toFloat())).coerceAtMost(0.02f),
-                note = "ComfyUI se na počítači spouští – načítá uzly a modely " +
-                    "(${waited} s). Jakmile bude hotové, generování se rozjede samo."
+                note = t("ComfyUI se na počítači spouští – načítá uzly a modely " +
+                    "(%d s). Jakmile bude hotové, generování se rozjede samo.").format(waited)
             )
             delay(3000)
             if (withContext(Dispatchers.IO) { client.isAlive() }) {
-                publish(Stage.UPLOADING, 0.02f, note = "Server je připravený, pokračuji.")
+                publish(Stage.UPLOADING, 0.02f, note = t("Server je připravený, pokračuji."))
                 return
             }
         }
@@ -1535,7 +1535,7 @@ object GenerationEngine {
 
     private suspend fun uploadMediaWithRetry(client: ComfyClient, file: File, progress: Float): String {
         if (!file.exists() || file.length() == 0L) throw ComfyException(
-            "media unreadable", "Soubor se nepodařilo načíst. Zkus ho vybrat znovu."
+            "media unreadable", t("Soubor se nepodařilo načíst. Zkus ho vybrat znovu.")
         )
         val name = withContext(Dispatchers.IO) { mediaName(file) }
         var attempt = 0
@@ -1547,7 +1547,7 @@ object GenerationEngine {
                 throw e
             } catch (e: Exception) {
                 if (++attempt >= MAX_SUBMIT_ATTEMPTS) throw ComfyException(
-                    "media net", "Nedaří se nahrát soubor na server ComfyUI."
+                    "media net", t("Nedaří se nahrát soubor na server ComfyUI.")
                 )
                 delay(2000L * attempt.coerceAtMost(5))
             }
@@ -1571,9 +1571,9 @@ object GenerationEngine {
                 throw e                       // server odmítl -> skutečná chyba
             } catch (e: Exception) {
                 if (++attempt >= MAX_SUBMIT_ATTEMPTS) throw ComfyException(
-                    "upload net", "Nedaří se spojit se serverem ComfyUI.\n\n" +
+                    "upload net", t("Nedaří se spojit se serverem ComfyUI.\n\n" +
                         "Zkontroluj, že počítač běží, ComfyUI je spuštěné s parametrem " +
-                        "--listen 0.0.0.0 a že jsi ve stejné síti / na Tailscale."
+                        "--listen 0.0.0.0 a že jsi ve stejné síti / na Tailscale.")
                 )
                 delay(2000L * attempt.coerceAtMost(5))
             }
@@ -1592,7 +1592,7 @@ object GenerationEngine {
                 // Možná to prošlo a jen se ztratila odpověď – ověřit, ať to nepošleme dvakrát.
                 if (client.history(promptId) != null || client.queuePosition(promptId) >= 0) return
                 if (++attempt >= MAX_SUBMIT_ATTEMPTS) throw ComfyException(
-                    "submit net", "Nedaří se spojit se serverem ComfyUI."
+                    "submit net", t("Nedaří se spojit se serverem ComfyUI.")
                 )
                 publish(Stage.QUEUED, 0.06f, note = NOTE_WAITING)
                 delay(2000L * attempt.coerceAtMost(5))
@@ -1631,8 +1631,8 @@ object GenerationEngine {
             if (serverFinished) return
             if (System.currentTimeMillis() > hardDeadline) throw ComfyException(
                 "watch hard limit",
-                "Generování běží už přes ${WATCH_HARD_LIMIT_MS / 3_600_000} hodin – " +
-                    "to není normální. Podívej se na počítači, co ComfyUI dělá."
+                t("Generování běží už přes %d hodin – " +
+                    "to není normální. Podívej se na počítači, co ComfyUI dělá.").format(WATCH_HARD_LIMIT_MS / 3_600_000)
             )
 
             // dotaz na historii + frontu (pojistka nezávislá na WebSocketu)
@@ -1644,7 +1644,7 @@ object GenerationEngine {
                     val status = h.optJSONObject("status")
                     val str = status?.optString("status_str")
                     if (str == "error") {
-                        serverError = extractError(status) ?: "ComfyUI ohlásilo chybu při generování."
+                        serverError = extractError(status) ?: t("ComfyUI ohlásilo chybu při generování.")
                         continue
                     }
                     val outputs = h.optJSONObject("outputs")
@@ -1668,8 +1668,8 @@ object GenerationEngine {
                                     settings.activePromptId = null
                                     throw ComfyException(
                                         "prompt lost",
-                                        "Server ComfyUI se mezitím restartoval a rozdělaná " +
-                                            "úloha se ztratila.\n\nSpusť generování znovu."
+                                        t("Server ComfyUI se mezitím restartoval a rozdělaná " +
+                                            "úloha se ztratila.\n\nSpusť generování znovu.")
                                     )
                                 }
                             }
@@ -1698,7 +1698,7 @@ object GenerationEngine {
                 val d = m.optJSONObject(1) ?: continue
                 val node = d.optString("node_type")
                 val msg = d.optString("exception_message")
-                return "Chyba v uzlu $node:\n$msg"
+                return t("Chyba v uzlu %s:").format(node) + "\n" + msg
             }
         }
         return null
@@ -1719,13 +1719,13 @@ object GenerationEngine {
             record = runCatching { client.history(promptId) }.getOrNull()
             val status = record?.optJSONObject("status")
             if (status?.optString("status_str") == "error") {
-                throw ComfyException("server", extractError(status) ?: "ComfyUI ohlásilo chybu.")
+                throw ComfyException("server", extractError(status) ?: t("ComfyUI ohlásilo chybu."))
             }
             val zatim = record?.optJSONObject("outputs")
             if (zatim != null && zatim.length() > 0) break
             if (++attempt >= MAX_DOWNLOAD_ATTEMPTS) {
                 fail(
-                    "Výsledek se nepodařilo najít na serveru. Zkus to znovu, až bude spojení stabilní.",
+                    t("Výsledek se nepodařilo najít na serveru. Zkus to znovu, až bude spojení stabilní."),
                     canRetryDownload = true,
                 )
                 return
@@ -1735,7 +1735,7 @@ object GenerationEngine {
         }
 
         val outputs = record!!.optJSONObject("outputs")
-            ?: throw ComfyException("no outputs", "ComfyUI nevrátilo žádný výstup.")
+            ?: throw ComfyException("no outputs", t("ComfyUI nevrátilo žádný výstup."))
 
         // Výstupů může být víc druhů najednou: list postavy vrací otočné video
         // (SaveVideo) i slepený list jako PNG (SaveImage). Videem se plní
@@ -1797,7 +1797,7 @@ object GenerationEngine {
         // ostatní zůstanou jako doplňkové (list postavy má obojí).
         val jenObrazek = main == null && pictures.isNotEmpty()
         val mainOut = main ?: pictures.firstOrNull()
-            ?: throw ComfyException("no file", "ComfyUI nevrátilo žádný soubor.")
+            ?: throw ComfyException("no file", t("ComfyUI nevrátilo žádný soubor."))
         if (jenObrazek) pictures.removeAt(0)
         val filename = mainOut.filename
         val subfolder = mainOut.subfolder
@@ -1819,7 +1819,7 @@ object GenerationEngine {
         // Pojistka navíc: cíl musí zůstat ve složce výstupů, i kdyby se
         // někdy změnilo, z čeho se název skládá.
         if (!Soubory.uvnitr(target, VideoItem.videosDir(app))) throw ComfyException(
-            "unsafe target $filename", "Server vrátil podezřelý název souboru."
+            "unsafe target $filename", t("Server vrátil podezřelý název souboru.")
         )
         val url = client.viewUrl(filename, subfolder, type)
 
@@ -1840,8 +1840,8 @@ object GenerationEngine {
                 transferDone = 0L; transferTotal = 0L
                 if (++dl >= MAX_DOWNLOAD_ATTEMPTS) {
                     fail(
-                        "Výsledek je hotový na počítači, ale nejde ho přenést do aplikace.\n" +
-                            "Zkus to znovu, až bude spojení v pořádku.",
+                        t("Výsledek je hotový na počítači, ale nejde ho přenést do aplikace.\n" +
+                            "Zkus to znovu, až bude spojení v pořádku."),
                         canRetryDownload = true
                     )
                     return
@@ -1931,7 +1931,7 @@ object GenerationEngine {
             ).takeLast(6)
         }
         val poznamky = if (savedPictures > 0)
-            listOf("List postavy je uložený v telefonu ve složce Obrázky/H3 Video.")
+            listOf(t("List postavy je uložený v telefonu ve složce Obrázky/H3 Video."))
         else emptyList()
         _state.value = GenState.Done(item, poznamky + warnings)
         GenerationService.notifyDone(app, item)
@@ -2093,7 +2093,7 @@ object GenerationEngine {
             "execution_error" -> if (pid == promptId) {
                 val node = data.optString("node_type")
                 val message = data.optString("exception_message")
-                serverError = "Chyba v uzlu $node:\n$message"
+                serverError = t("Chyba v uzlu %s:").format(node) + "\n" + message
             }
         }
     }
@@ -2211,8 +2211,8 @@ object GenerationEngine {
         publish(
             stageForNode(), overall,
             note = when {
-                quiet -> "Telefon je bez spojení se serverem – generování na počítači běží dál."
-                longRun -> "Trvá to dlouho, ale hlídám to dál – video se objeví, jakmile bude hotové."
+                quiet -> t("Telefon je bez spojení se serverem – generování na počítači běží dál.")
+                longRun -> t("Trvá to dlouho, ale hlídám to dál – video se objeví, jakmile bude hotové.")
                 else -> null
             },
             offline = quiet
@@ -2292,7 +2292,7 @@ object GenerationEngine {
         lastContactAt = System.currentTimeMillis()
     }
 
-    private const val NOTE_WAITING = "Čekám na spojení – zkouším to dál."
+    private val NOTE_WAITING: String get() = t("Čekám na spojení – zkouším to dál.")
 
     /**
      * Otevře appku na výsledku (z notifikace). Třída se odkazuje přímo, ne přes

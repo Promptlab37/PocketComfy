@@ -100,7 +100,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                         items = AppSettings.SUGGESTED,
                         selected = AppSettings.SUGGESTED.firstOrNull { it.first == server }
                             ?: (server to ""),
-                        label = { it.second.ifEmpty { "vlastní" } },
+                        label = { it.second.ifEmpty { t("vlastní") } },
                         onSelect = { vm.setServer(it.first) }
                     )
                 }
@@ -266,7 +266,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                         Spacer(Modifier.height(8.dp))
                         if (modely.isEmpty()) {
                             Text(
-                                "Seznam se načítá ze serveru… když se neobjeví, " +
+                                t("Seznam se načítá ze serveru… když se neobjeví, ") +
                                     t("ComfyUI neodpovídá."),
                                 style = MaterialTheme.typography.bodySmall, color = TextLow
                             )
@@ -327,12 +327,12 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
 
             SectionCard(
                 title = t("Grafická karta"),
-                subtitle = "ComfyUI se zapíná samo při generování"
+                subtitle = t("ComfyUI se zapíná samo při generování")
             ) {
                 val ctx = LocalContext.current
                 Column {
                     OutlineButton(
-                        "Vypnout ComfyUI a uvolnit grafiku",
+                        t("Vypnout ComfyUI a uvolnit grafiku"),
                         modifier = Modifier.fillMaxWidth(),
                         color = Amber,
                     ) {
@@ -342,7 +342,7 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                     }
                     Spacer(Modifier.height(10.dp))
                     OutlineButton(
-                        "Vypnout Higgs Audio",
+                        t("Vypnout Higgs Audio"),
                         modifier = Modifier.fillMaxWidth(),
                         color = Amber,
                     ) {
@@ -520,29 +520,29 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             klic = "nastaveni-pripojeni",
         ) {
             SectionCard(
-                title = "Aby to fungovalo z mobilu",
-                subtitle = "Krátký seznam, když se appka nemůže spojit"
+                title = t("Aby to fungovalo z mobilu"),
+                subtitle = t("Krátký seznam, když se appka nemůže spojit")
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Step(
                         "1",
-                        "Počítač musí být zapnutý a přihlášený. ComfyUI se pak spouští samo " +
-                            "(úloha „H3 ComfyUI autostart\") – náběh po zapnutí trvá asi 3 minuty."
+                        t("Počítač musí být zapnutý a přihlášený. ComfyUI se pak spouští samo " +
+                            "(úloha „H3 ComfyUI autostart\") – náběh po zapnutí trvá asi 3 minuty.")
                     )
                     Step(
                         "2",
-                        "Telefon musí mít zapnutý Tailscale na stejném účtu, nebo být " +
-                            "ve stejné Wi-Fi jako počítač."
+                        t("Telefon musí mít zapnutý Tailscale na stejném účtu, nebo být " +
+                            "ve stejné Wi-Fi jako počítač.")
                     )
                     Step(
                         "3",
-                        "Přes Tailscale se používá port 8189, po domácí síti 8188 – " +
-                            "rychlá volba níž nastaví obojí správně."
+                        t("Přes Tailscale se používá port 8189, po domácí síti 8188 – " +
+                            "rychlá volba níž nastaví obojí správně.")
                     )
                     Step(
                         "4",
-                        "Modely MiniMax H3 (ref2va, qwen3vl enkodér a oba VAE) musí být " +
-                            "v ComfyUI stažené – appka je nedoinstaluje."
+                        t("Modely MiniMax H3 (ref2va, qwen3vl enkodér a oba VAE) musí být " +
+                            "v ComfyUI stažené – appka je nedoinstaluje.")
                     )
                 }
             }
@@ -624,7 +624,7 @@ private fun UpdateCard(vm: MainViewModel) {
                         Icon(Icons.Default.NewReleases, null, Modifier.size(18.dp), Cyan)
                         Column {
                             Text(
-                                "Je k dispozici ${s.info.versionName}",
+                                t("Je k dispozici %s").format(s.info.versionName),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             if (s.info.notes.isNotBlank()) {
@@ -649,7 +649,7 @@ private fun UpdateCard(vm: MainViewModel) {
 
                 is UpdateState.Downloading -> Column {
                     Text(
-                        "Stahuji… ${(s.progress * 100).toInt()} %",
+                        t("Stahuji… %d %%").format((s.progress * 100).toInt()),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(Modifier.height(8.dp))
@@ -667,7 +667,7 @@ private fun UpdateCard(vm: MainViewModel) {
                         style = MaterialTheme.typography.bodySmall, color = TextMid
                     )
                     Spacer(Modifier.height(12.dp))
-                    GradientButton("Nainstalovat ${s.info.versionName}") {
+                    GradientButton(t("Nainstalovat %s").format(s.info.versionName)) {
                         if (UpdateChecker.canInstall(ctx)) {
                             ctx.startActivity(UpdateChecker.installIntent(ctx, s.apk))
                         } else {
@@ -680,7 +680,7 @@ private fun UpdateCard(vm: MainViewModel) {
                 is UpdateState.Failed -> Column {
                     Text(s.message, style = MaterialTheme.typography.bodySmall, color = Danger)
                     Spacer(Modifier.height(12.dp))
-                    OutlineButton("Zkusit znovu", modifier = Modifier.fillMaxWidth()) {
+                    OutlineButton(t("Zkusit znovu"), modifier = Modifier.fillMaxWidth()) {
                         vm.checkUpdate()
                     }
                 }
@@ -705,7 +705,7 @@ private fun UpdateCard(vm: MainViewModel) {
                         )
                     }
                     Spacer(Modifier.height(12.dp))
-                    OutlineButton("Zkontrolovat znovu", modifier = Modifier.fillMaxWidth()) {
+                    OutlineButton(t("Zkontrolovat znovu"), modifier = Modifier.fillMaxWidth()) {
                         vm.checkUpdate()
                     }
                 }

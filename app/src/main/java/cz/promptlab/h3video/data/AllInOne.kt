@@ -88,7 +88,7 @@ enum class Upscaler(
     private val popisCs: String,
     val sablona: String,
 ) {
-    SEEDVR2("seedvr2", "SeedVR2", t("Kvalitnější, ale pomalé – dopočítává detaily"), "upscale.json"),
+    SEEDVR2("seedvr2", "SeedVR2", "Kvalitnější, ale pomalé – dopočítává detaily", "upscale.json"),
     RTX("rtx", "RTX Video SR", "Rychlé, jede na grafice NVIDIA", "upscale_rtx.json");
 
     val nazev: String get() = t(nazevCs)
@@ -148,31 +148,9 @@ data class AioScene(
      * U výměny postavy (Upravit video) ne — první snímek má být z videa.
      */
     val kotva: Boolean = true,
-    /**
-     * Reference: zapnutý storyboard (experimentální) — viz
-     * [cz.promptlab.h3video.comfy.H3RefWriteBuilder]. Mřížka panelů má
-     * vlastní [storyboardObr], reference se při něm berou jako postavy.
-     * Mřížka se nesmí připnout jako snímek 0, takže kotva se při něm vypíná.
-     */
-    val storyboard: Boolean = false,
-    /**
-     * Obrázek storyboardu — zvlášť od [refs], aby přepnutí sem a tam nikdy
-     * nepřeházelo ani nesmazalo fotky postav (do 4.76 to byl první slot refs).
-     */
-    val storyboardObr: AioSlot = AioSlot(key = 1),
 ) {
-    /** Storyboard platí jen v režimu Reference. */
-    val storyboardZapnuty: Boolean get() = storyboard && mode == AioMode.REFERENCE
-
-    /** Kotva totožnosti opravdu platí — storyboard ji vypíná. */
-    val kotvaUcinna: Boolean get() = kotva && !storyboardZapnuty
-
-    /** Storyboard opravdu jde do videa: zapnutý a s obrázkem. */
-    val storyboardUcinny: Boolean
-        get() = storyboardZapnuty && storyboardObr.image != null
-
-    /** Kolik postav se storyboardem jde (celkem nejvýš [MAX_REFS] obrázků). */
-    val maxPostav: Int get() = MAX_REFS - 1
+    /** Kotva totožnosti opravdu platí. */
+    val kotvaUcinna: Boolean get() = kotva
 
     /** Šablona, kterou je potřeba stáhnout ze serveru. */
     val sablona: String
@@ -185,7 +163,7 @@ data class AioScene(
     val refsWithImage: List<AioSlot> get() = refs.filter { it.image != null }
     val keysWithImage: List<AioSlot> get() = keys.filter { it.image != null }
 
-    val canAddRef: Boolean get() = refs.size < (if (storyboardZapnuty) maxPostav else MAX_REFS)
+    val canAddRef: Boolean get() = refs.size < MAX_REFS
     val canAddKey: Boolean get() = keys.size < MAX_KEYS
 
     /** Počet snímků po zaokrouhlení na mřížku modelu (17k+5). */
@@ -199,11 +177,7 @@ data class AioScene(
         get() = when (mode) {
             AioMode.TEXT, AioMode.EXTEND, AioMode.UPSCALE -> emptyList()
             AioMode.IMAGE -> listOfNotNull(first.image, last.image.takeIf { useLastFrame })
-            // Storyboard jde první — uzel H3 čísluje <Picture i> podle pořadí.
-            AioMode.REFERENCE ->
-                listOfNotNull(storyboardObr.image.takeIf { storyboardZapnuty }) +
-                    refsWithImage.mapNotNull { it.image }
-            AioMode.CHARSHEET, AioMode.MASK ->
+            AioMode.REFERENCE, AioMode.CHARSHEET, AioMode.MASK ->
                 refsWithImage.mapNotNull { it.image }
             AioMode.KEYFRAMES -> keysWithImage.mapNotNull { it.image }
         }
@@ -256,7 +230,7 @@ fun vstupUrcujePomer(druh: String, scene: AioScene): Boolean {
         // stará fotka na výšku zablokovala převzetí poměru z reference
         // (25. 9. 2026: auto na šířku → video 640×960). Reference se navíc
         // kotví jako snímek 0 (H3IdentityAnchor), plátno jí musí sedět.
-        "ref" -> scene.refVideo == null && !scene.storyboardZapnuty &&
+        "ref" -> scene.refVideo == null &&
             scene.refs.count { it.image != null } == 1
         else -> false
     }
@@ -278,11 +252,7 @@ fun aioProblem(s: AioScene): String? {
             else -> null
         }
         AioMode.REFERENCE -> when {
-            s.storyboardZapnuty && s.storyboardObr.image == null ->
-                t("Chybí storyboard.")
-            s.storyboardZapnuty && s.refsWithImage.size > s.maxPostav ->
-                t("Nejvýš 5 postav.")
-            s.refsWithImage.isEmpty() && s.refVideo == null && !s.storyboardZapnuty ->
+            s.refsWithImage.isEmpty() && s.refVideo == null ->
                 t("Přidej aspoň jednu referenci – obrázek nebo video.")
             else -> null
         }
@@ -325,11 +295,13 @@ fun aioHints(s: AioScene, p: GenParams): List<String> {
     }
     if (s.mode == AioMode.EXTEND) {
         val (_, cil, nove) = planExtend(s.seconds)
-        out += "Vygeneruje se $cil snímků, z toho ${cil - nove} navazuje na konec zdrojového " +
-            "videa a nových je $nove (%.1f s).".format(nove / 24f)
+        out += t(
+            "Vygeneruje se %d snímků, z toho %d navazuje na konec zdrojového " +
+                "videa a nových je %d (%.1f s)."
+        ).format(cil, cil - nove, nove, nove / 24f)
         if (s.seconds > AioScene.MAX_EXTEND_SECONDS) {
-            out += "Delší prodloužení než ${AioScene.MAX_EXTEND_SECONDS.toInt()} s uzel neumí – " +
-                "zbytek se ustřihne."
+            out += t("Delší prodloužení než %d s uzel neumí – zbytek se ustřihne.")
+                .format(AioScene.MAX_EXTEND_SECONDS.toInt())
         }
     }
     // Jen režim Reference: list postavy má vzorkování i velikost referencí

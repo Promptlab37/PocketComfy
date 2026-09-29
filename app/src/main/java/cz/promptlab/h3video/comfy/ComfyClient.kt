@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.comfy
 
+import cz.promptlab.h3video.data.t
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -141,7 +142,7 @@ class ComfyClient(baseUrl: String) {
         val ver = sys?.optString("comfyui_version") ?: "?"
         val devices = j.optJSONArray("devices")
         val gpu = if (devices != null && devices.length() > 0)
-            devices.getJSONObject(0).optString("name") else "neznámé GPU"
+            devices.getJSONObject(0).optString("name") else t("neznámé GPU")
         return "ComfyUI $ver\n$gpu"
     }
 
@@ -163,7 +164,7 @@ class ComfyClient(baseUrl: String) {
         http.newCall(req).execute().use { r ->
             if (!r.isSuccessful) throw ComfyException(
                 "upload ${r.code}",
-                "Server odmítl obrázek (HTTP ${r.code})."
+                t("Server odmítl obrázek (HTTP %d).").format(r.code)
             )
             val j = JSONObject(r.body!!.string())
             val name = j.getString("name")
@@ -200,7 +201,7 @@ class ComfyClient(baseUrl: String) {
         http.newCall(req).execute().use { r ->
             if (!r.isSuccessful) throw ComfyException(
                 "upload media ${r.code}",
-                "Server odmítl soubor (HTTP ${r.code})."
+                t("Server odmítl soubor (HTTP %d).").format(r.code)
             )
             val j = JSONObject(r.body!!.string())
             val n = j.getString("name")
@@ -351,9 +352,9 @@ class ComfyClient(baseUrl: String) {
             if (!r.isSuccessful) throw ComfyException(
                 "template $name ${r.code}",
                 if (r.code == 404)
-                    "Server šablonu „$name\" nezná. Zkontroluj, že je v ComfyUI nainstalovaný " +
-                        "a načtený balík ComfyUI-ALLinONE-MinimaxH3."
-                else "Server nevydal šablonu „$name\" (HTTP ${r.code})."
+                    t("Server šablonu „%s\" nezná. Zkontroluj, že je v ComfyUI nainstalovaný " +
+                        "a načtený balík ComfyUI-ALLinONE-MinimaxH3.").format(name)
+                else t("Server nevydal šablonu „%s\" (HTTP %d).").format(name, r.code)
             )
             return r.body!!.string()
         }
@@ -482,17 +483,17 @@ class ComfyClient(baseUrl: String) {
     private fun describeValidationError(text: String, code: Int): String = runCatching {
         val j = JSONObject(text)
         val err = j.optJSONObject("error")
-        val head = err?.optString("message") ?: "Server workflow nepřijal (HTTP $code)"
+        val head = err?.optString("message") ?: t("Server workflow nepřijal (HTTP %d)").format(code)
         val details = StringBuilder()
         val nodeErrors = j.optJSONObject("node_errors")
         nodeErrors?.keys()?.forEach { k ->
             val errs = nodeErrors.getJSONObject(k).optJSONArray("errors")
             if (errs != null) for (i in 0 until errs.length()) {
-                details.append("\n• uzel $k: ").append(errs.getJSONObject(i).optString("message"))
+                details.append("\n• ").append(t("uzel %s:").format(k)).append(' ').append(errs.getJSONObject(i).optString("message"))
             }
         }
         head + details.toString()
-    }.getOrDefault("Server workflow nepřijal (HTTP $code)")
+    }.getOrDefault(t("Server workflow nepřijal (HTTP %d)").format(code))
 
     fun history(promptId: String): JSONObject? = runCatching {
         get("/history/$promptId").use { r ->

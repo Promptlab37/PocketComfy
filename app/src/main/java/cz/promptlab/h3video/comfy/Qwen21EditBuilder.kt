@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.comfy
 
+import cz.promptlab.h3video.data.t
 import android.content.Context
 import cz.promptlab.h3video.R
 import cz.promptlab.h3video.data.ImageEditScene
@@ -79,7 +80,7 @@ object Qwen21EditBuilder {
         seed: Long,
         images: List<String>,
     ): JSONObject {
-        require(images.isNotEmpty()) { "Qwen Image 2.1 potřebuje upravovaný obrázek." }
+        require(images.isNotEmpty()) { t("Qwen Image 2.1 potřebuje upravovaný obrázek.") }
         val wf = JSONObject(template)
         val used = images.filter { it.isNotBlank() }.take(MAX_IMAGES)
 

@@ -8,8 +8,8 @@ REM  2) volitelne stahne verejne dostupne modely (po kartach)
 REM  Po dokonceni RESTARTUJ ComfyUI a v aplikaci spust
 REM  Nastaveni -^> Co serveru chybi -^> Zkontrolovat server.
 REM
-REM  Seznam odpovida appce 3.82 a souboru POZADAVKY.md.
-REM  Vsechny odkazy nize byly overene 22. 9. 2026.
+REM  Seznam odpovida appce 4.97 a souboru POZADAVKY.md.
+REM  Odkazy na modely odpovidaji katalogu, ktery pouziva kontrola serveru v appce.
 REM ============================================================
 
 if not exist main.py (
@@ -22,6 +22,10 @@ echo.
 echo === 1/2  Custom nody ===
 REM --- video karty a All in One
 call :klon https://github.com/LeonQ8/ComfyUI-ALLinONE-MinimaxH3
+REM Karta Casova osa - uzel SpectrumApplyMiniMaxH3.
+call :klon https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3
+REM Karta LTX 2.5 - uzly LTXV (verze, ktera zna LTX 2.5).
+call :klon https://github.com/Lightricks/ComfyUI-LTXVideo
 call :klon https://github.com/rgthree/rgthree-comfy
 call :klon https://github.com/kijai/ComfyUI-KJNodes
 REM Vymena tvare pres Qwen 2.1 - sampler deis_2m.
@@ -29,37 +33,42 @@ call :klon https://github.com/ClownsharkBatwing/RES4LYF
 call :klon https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite
 REM Volitelne zrychleni video karet.
 call :klon https://github.com/Icyoung/ComfyUI-MiniMaxH3-TeaCache
-REM Karta Dlouhe video - navaznost useku na sebe.
+REM Nepovinne: jen pro starsi kartu Dlouhe video, ktera uz v nabidce neni.
 call :klon https://github.com/seitanism/ComfyUI-H3-Motion-Context-MultiRef
-REM Volitelne: rychly prvni zaber u Dlouheho videa.
+REM Karta Rychle video a Long MiniMax (volba 3 + 2) - latentni zvetsovac.
 call :klon https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler
-REM Karta Long MiniMax - navazovani zaberu pres ulozeny latent.
+REM Karty Long MiniMax a Film ze storyboardu - navazovani pres ulozeny latent.
 call :klon https://github.com/SatoDive/Minimax-H3-Latent-Continuation
-REM All in One, volba Premalovat ve videu.
+REM Upravit video - Premalovat.
 call :klon https://github.com/drozbay/MaskVidExperiments
-REM --- karta Zvetsit
+REM --- karta Zvetsit fotku
 call :klon https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler
 call :klon https://github.com/Praveenhalder/praveen-tools
-REM Metoda Chytre zvetseni na karte Zvetsit (modely viz nize).
+REM Metoda Chytre zvetseni na karte Zvetsit fotku (modely viz nize).
 call :klon https://github.com/HallettVisual/ComfyUI-Smart-Upscaler
 REM Vyber obrazku: Hledat na internetu (Bing). Zavislosti (Pillow, numpy) ComfyUI uz ma.
 call :klon https://github.com/concarne000/ComfyUI-BingImageSelector
-REM Volitelne: metoda DLSS 5 na karte Zvetsit. Po naklonovani je potreba
+REM Volitelne: metoda DLSS 5 na karte Zvetsit fotku. Po naklonovani je potreba
 REM jeste jednou spustit install_runtime.py - viz konec skriptu.
 call :klon https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer
 REM --- karty s obrazky
 call :klon https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch
+REM Domalovat - Rozsirit obrazek.
 call :klon https://github.com/ausboss/ComfyUI-AusBoss
+REM Uprava obrazku - Krea 2 (uzly Krea2Edit).
+call :klon https://github.com/lbouaraba/comfyui-krea2edit
+REM Zadna sablona appky 4.97 ho uz nepouziva; nechava se jen kvuli starsim instalacim.
 call :klon https://github.com/lrzjason/Comfyui-QwenEditUtils
 call :klon https://github.com/cubiq/ComfyUI_essentials
 call :klon https://github.com/ltdrdata/ComfyUI-Impact-Pack
-REM Jen pro volitelny model v GGUF na karte Obrazek.
+REM Karta Obrazek - volby ERNIE Image Turbo a Photoreal (modely v GGUF).
 call :klon https://github.com/city96/ComfyUI-GGUF
-REM Volitelne: tlacitko "Vylepsit prompt" na karte All in One - LLM prepise
-REM kratke zadani na plny H3 prompt. Model viz nabidka nize.
+REM Volitelne: tlacitko "Vylepsit (MiniMax)" na kartach All in One, Rychle video
+REM a Long MiniMax - LLM prepise kratke zadani na plny H3 prompt. Model viz nabidka nize.
 call :klon https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI
-REM Volitelne: totez pro kartu Obrazek - prompty pro Z-Image. Tenhle uzel si
-REM model sam nestahne - musi lezet v models\LLM, viz nabidka nize.
+REM Volitelne: tlacitka "Vylepsit" a "Vylepsit (odvazane)" - Obrazek, Uprava obrazku,
+REM LTX 2.5 - a Prelozit. Tenhle uzel si model sam nestahne - musi lezet
+REM v models\LLM, viz nabidka nize.
 call :klon https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm
 
 echo.
@@ -67,8 +76,8 @@ echo   Pozn.: knihovny, ktere si nektere balicky zadaji v requirements.txt,
 echo          doinstaluj pres ComfyUI-Manager - tlacitko Try Fix u balicku.
 echo          Rucni "pip install -U" umi prepsat torch a shodit CUDA.
 echo.
-echo   Karty Casova osa a Uprava obrazku jedou na balicich, ktere nejsou
-echo   verejne. Zbytek appky funguje i bez nich.
+echo   Karta Casova osa jede na balicku LSI-Minimax-Segment-Timeline, ktery neni
+echo   verejny. Zbytek appky funguje i bez nej.
 
 echo.
 echo === 2/2  Modely (volitelne, velke soubory) ===
@@ -94,17 +103,17 @@ if /i "!ODP!"=="a" (
   echo         ref2v_turbo je zaroven LoRA, na ktere jede karta Long MiniMax.
 )
 
-set /p ODP="All in One, Premalovat ve videu - SAM 3.1, cca 1,7 GB. Stahnout? [a/n] "
+set /p ODP="Upravit video - Premalovat a Vymenit postavu - SAM 3.1, cca 1,7 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/sam3.1/resolve/main/checkpoints/sam3.1_multiplex_fp16.safetensors" "models\checkpoints\sam3.1_multiplex_fp16.safetensors"
 )
 
-set /p ODP="Dlouhe video a 3 kroky - latentni zvetsovac, cca 0,7 GB. Stahnout? [a/n] "
+set /p ODP="Rychle video a Long MiniMax (3 + 2) - latentni zvetsovac, cca 0,7 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler/resolve/main/minimax_h3_latent_upscaler_3d_fp16.safetensors" "models\latent_upscale_models\minimax_h3_latent_upscaler_3d_fp16.safetensors"
 )
 
-set /p ODP="Karta 3 kroky - textovy enkoder int8, cca 25,3 GB. Stahnout? [a/n] "
+set /p ODP="Karta Rychle video - textovy enkoder int8, cca 25,3 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   REM Tahle predloha ma enkoder zapsany napevno - nvfp4 z video karet
   REM se pro ni nepouzije.
@@ -123,7 +132,7 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/z_image_turbo/resolve/main/split_files/vae/ae.safetensors" "models\vae\ae.sft"
 )
 
-set /p ODP="Karta Zvetsit - Chytre zvetseni (potrebuje Z-Image Turbo), cca 7 GB navic. Stahnout? [a/n] "
+set /p ODP="Karta Zvetsit fotku - Chytre zvetseni (potrebuje Z-Image Turbo), cca 7 GB navic. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors" "models\text_encoders\qwen3vl_4b_fp8_scaled.safetensors"
   call :stahni "https://huggingface.co/alibaba-pai/Z-Image-Turbo-Fun-Controlnet-Union-2.1/resolve/main/Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors" "models\model_patches\Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors"
@@ -176,24 +185,25 @@ if /i "!ODP!"=="a" (
   echo   Pozn.: k tomu je potreba i samotny YuE2 z nabidky vyse.
 )
 
-set /p ODP="Karta Video ze zvuku - LTX 2.5, cca 38 GB. Stahnout? [a/n] "
+set /p ODP="Karta LTX 2.5, cca 38 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
-  REM Fotka + zvukovy soubor -> video, ktere na ten zvuk mluvi. Pocet snimku
-  REM si graf spocita z delky zvuku, takze se rec nema jak useknout.
+  REM Vsechny tri rezimy karty: Z textu, Z obrazku a Ze zvuku. V rezimu
+  REM Ze zvuku si graf pocet snimku spocita z delky zvuku.
   call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/transformers/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors" "models\diffusion_models\ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
   call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors" "models\text_encoders\gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors"
   call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-video-vae-bf16.safetensors" "models\vae\ltx-2.5-video-vae-bf16.safetensors"
   call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-audio-vae-bf16.safetensors" "models\vae\ltx-2.5-audio-vae-bf16.safetensors"
   call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors" "models\latent_upscale_models\ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
-  echo   Pozn.: k tomu je potreba balik ComfyUI-LTXVideo ve verzi, ktera zna LTX 2.5.
+  echo   Pozn.: balik ComfyUI-LTXVideo je naklonovany vyse; musi byt ve verzi,
+  echo         ktera zna LTX 2.5.
 )
 
 REM ------------------------------------------------------------------
-REM  Qwen Image 2.1 - jeden model pro peti karet: Obrazek, Uprava
-REM  obrazku, Oprava fotky, Domalovat a castecne Uhel kamery.
+REM  Qwen Image 2.1 - jeden model pro pet karet: Obrazek, Uprava
+REM  obrazku, Oprava fotky, Domalovat a Vymena tvare.
 REM  Kresli i upravuje, umi nativni 2K a pruhledne pozadi.
 REM ------------------------------------------------------------------
-set /p ODP="Qwen Image 2.1 - Obrazek, Uprava, Oprava fotky, Domalovat; cca 17,3 GB. Stahnout? [a/n] "
+set /p ODP="Qwen Image 2.1 - Obrazek, Uprava, Oprava fotky, Domalovat, Vymena tvare; cca 17,3 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_int8_convrot.safetensors" "models\diffusion_models\qwen_image_2.1_int8_convrot.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors" "models\text_encoders\qwen3vl_8b_int8_convrot.safetensors"
@@ -212,19 +222,27 @@ if /i "!ODP!"=="a" (
 )
 
 REM ------------------------------------------------------------------
-REM  Uhel kamery je JEDINA karta, ktera zustava na Qwen Image Edit 2511.
-REM  Schopnost zmenit pohled je v LoRA multiple-angles a ta je trenovana
-REM  na 2511 - na Qwen Image 2.1 nesedi, je to jina architektura.
-REM  Proto se tu stahuje i zakladni model, ne jen LoRA.
+REM  Karta Uprava obrazku - Krea 2. Uzly Krea2Edit jsou naklonovane vyse.
 REM ------------------------------------------------------------------
+set /p ODP="Karta Uprava obrazku - Krea 2, cca 18,7 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/Comfy-Org/Krea-2/resolve/main/diffusion_models/krea2_turbo_int8_convrot.safetensors" "models\diffusion_models\krea2_turbo_int8_convrot.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors" "models\text_encoders\qwen3vl_4b_fp8_scaled.safetensors"
+  call :stahni "https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/vae/qwen_image_vae.safetensors" "models\vae\qwen_image_vae.safetensors"
+  echo   [rucne] LoRA Krea 2 Identity Edit - uloz ji jako
+  echo          models\loras\krea2_identity_edit_v1_2.safetensors
+  echo          Odkud ji vzit, pise README balicku:
+  echo          https://github.com/lbouaraba/comfyui-krea2edit
+)
+
 REM ------------------------------------------------------------------
-REM  Karta Dance - Wan-Dancer 14B. Z fotky cloveka a hudby video, kde
+REM  Pohyb postavy, rezim Podle hudby - Wan-Dancer 14B. Z fotky cloveka a hudby video, kde
 REM  ten clovek tanci do rytmu. Choreografii si model vymysli sam podle
 REM  rytmu; vzorove video s tancem se nikam nedava.
 REM  Bezi ve dvou fazich: globalni model rozvrhne pohyb, lokalni ho
 REM  dopili na 30 fps. Kazda faze je samostatny soubor po 17,1 GB.
 REM ------------------------------------------------------------------
-set /p ODP="Karta Dance - Wan-Dancer 14B, cca 34,2 GB. Stahnout? [a/n] "
+set /p ODP="Pohyb postavy, Podle hudby - Wan-Dancer 14B, cca 34,2 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/Wan-Dancer/resolve/main/diffusion_models/wan2.2_dancer_14b_global_fp8_scaled.safetensors" "models\diffusion_models\wan2.2_dancer_14b_global_fp8_scaled.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/Wan-Dancer/resolve/main/diffusion_models/wan2.2_dancer_14b_local_fp8_scaled.safetensors" "models\diffusion_models\wan2.2_dancer_14b_local_fp8_scaled.safetensors"
@@ -232,7 +250,7 @@ if /i "!ODP!"=="a" (
   echo         16GB karta. Beh proto trva dlouho a preleva se do RAM.
 )
 
-set /p ODP="Karta Dance - spolecne modely Wan, cca 13 GB. Stahnout? [a/n] "
+set /p ODP="Pohyb postavy, Podle hudby - spolecne modely Wan, cca 13 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors" "models\text_encoders\umt5_xxl_fp16.safetensors"
   call :stahni "https://huggingface.co/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors" "models\vae\Wan2_1_VAE_bf16.safetensors"
@@ -250,10 +268,11 @@ if /i "!ODP!"=="a" (
 )
 
 REM ------------------------------------------------------------------
-REM  Karta Wan Animate - Wan-Animate 2. Postava z fotky zopakuje pohyb
-REM  z videa. VAE, clip_vision a LoRA lightx2v sdili s kartou Dance.
+REM  Pohyb postavy, rezim Podle videa - Wan-Animate 2. Postava z fotky
+REM  zopakuje pohyb z videa. VAE, clip_vision a LoRA lightx2v sdili
+REM  s rezimem Podle hudby.
 REM ------------------------------------------------------------------
-set /p ODP="Karta Wan Animate - Wan-Animate 2, cca 23,4 GB. Stahnout? [a/n] "
+set /p ODP="Pohyb postavy, Podle videa - Wan-Animate 2, cca 23,4 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Comfy-Org/Wan-Animate-2/resolve/main/diffusion_models/wan_animate_2_int8_convrot.safetensors" "models\diffusion_models\wan_animate_2_int8_convrot.safetensors"
   call :stahni "https://huggingface.co/Comfy-Org/Wan-Animate-2/resolve/main/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors" "models\text_encoders\umt5_xxl_fp8_e4m3fn_scaled.safetensors"
@@ -265,7 +284,7 @@ if /i "!ODP!"=="a" (
 
 REM ------------------------------------------------------------------
 REM  Karta Vymena tvare - Qwen Image 2.1 (BFS Head + zrychleni Pruna).
-REM  Modely Qwen Image 2.1 stahuje sekce karty Uprava obrazku.
+REM  Modely Qwen Image 2.1 stahuje sekce Qwen Image 2.1 vyse.
 REM ------------------------------------------------------------------
 set /p ODP="Vymena tvare - Qwen 2.1 LoRA, cca 0,6 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
@@ -273,12 +292,16 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/PrunaAI/Pruna-Qwen-Image-2.1/resolve/main/p_qwen_image_2.1_8step_v0.1.safetensors" "models\loras\p_qwen_image_2.1_8step_v0.1.safetensors"
 )
 
-REM Karta Domalovat - rozsireni obrazku (outpaint LoRA pro Qwen 2.1, 0,16 GB).
-call :stahni "https://huggingface.co/ausboss/Qwen-Image-2.1-Outpaint-LoRA/resolve/main/qwen-image-2.1-outpaint-v2.safetensors" "models\loras\qwen-image-2.1-outpaint-v2.safetensors"
+REM Karta Domalovat - Rozsirit obrazek (outpaint LoRA pro Qwen 2.1).
+REM Modely Qwen Image 2.1 stahuje sekce Qwen Image 2.1 vyse.
+set /p ODP="Domalovat - Rozsirit obrazek, outpaint LoRA, cca 0,16 GB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  call :stahni "https://huggingface.co/ausboss/Qwen-Image-2.1-Outpaint-LoRA/resolve/main/qwen-image-2.1-outpaint-v2.safetensors" "models\loras\qwen-image-2.1-outpaint-v2.safetensors"
+)
 
 REM ------------------------------------------------------------------
 REM  Karta Upravit video - Vymenit postavu (SCAIL-2 a MiniMax H3).
-REM  VAE, enkoder, clip_vision a LoRA lightx2v sdili s kartou Wan Animate.
+REM  VAE, enkoder, clip_vision a LoRA lightx2v sdili s Pohybem postavy.
 REM ------------------------------------------------------------------
 set /p ODP="Upravit video - vymenit postavu SCAIL-2, cca 18 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
@@ -302,7 +325,7 @@ if /i "!ODP!"=="a" (
 
 REM ------------------------------------------------------------------
 REM  Karta Upravit video - Podle zadani (Bernini-R na Wan 2.2).
-REM  Enkoder a VAE Wan sdili s kartou Wan Animate.
+REM  Enkoder a VAE Wan sdili s Pohybem postavy.
 REM ------------------------------------------------------------------
 set /p ODP="Upravit video - podle zadani Bernini-R, cca 29,4 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
@@ -331,8 +354,15 @@ REM ------------------------------------------------------------------
 set /p ODP="Long MiniMax - sestava FastVideo VSA, cca 22 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Jackxuanxuan/MiniMax-H3-experimental/resolve/main/minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors" "models\diffusion_models\minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors"
-  echo   Pozn.: LoRA TaoMate k teto sestave stahuje sekce karty 3 kroky.
+  echo   Pozn.: LoRA TaoMate k teto sestave - viz pokyny u karty Rychle video vyse.
 )
+
+REM ------------------------------------------------------------------
+REM  Uhel kamery je JEDINA karta, ktera zustava na Qwen Image Edit 2511.
+REM  Schopnost zmenit pohled je v LoRA multiple-angles a ta je trenovana
+REM  na 2511 - na Qwen Image 2.1 nesedi, je to jina architektura.
+REM  Proto se tu stahuje i zakladni model, ne jen LoRA.
+REM ------------------------------------------------------------------
 set /p ODP="Karta Uhel kamery - Qwen Image Edit 2511 + LoRA, cca 31 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/drbaph/Qwen-Image-Edit-2511-FP8/resolve/main/qwen_image_edit_2511_fp8_e4m3fn.safetensors" "models\diffusion_models\qwen_image_edit_2511_fp8_e4m3fn.safetensors"
@@ -372,7 +402,7 @@ if /i "!ODP!"=="a" (
 )
 
 echo.
-echo Tlacitko "Vylepsit prompt" - jazykovy model do models\LLM, cca 7 GB.
+echo Tlacitka "Vylepsit (MiniMax)" a "Vylepsit (odvazane)" - jazykovy model do models\LLM, cca 7 GB.
 echo   Bez nej karty jedou normalne, jen tlacitko ohlasi chybejici model.
 set /p ODP="Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
@@ -385,15 +415,14 @@ if /i "!ODP!"=="a" (
 )
 
 echo.
-echo Karta Zvetsit: SeedVR2 si sve modely stahne SAM pri prvnim pouziti.
+echo Karta Zvetsit fotku: SeedVR2 si sve modely stahne SAM pri prvnim pouziti.
 echo Metoda DLSS 5 chce jeste jeden krok - spust jednou tenhle prikaz,
 echo kde PYTHON je python tveho ComfyUI:
 echo   PYTHON custom_nodes\ComfyUI-DLSS5-Enhancer\install_runtime.py
 echo   Stahne si runtime treti strany, cca 470 MB, a zepta se na licenci.
 echo.
-echo Karta Uprava obrazku - Krea 2: uzly ani modely nejsou verejne, viz POZADAVKY.md.
-echo Karta Obrazek - prepinac "Bez cenzury" a model "Photoreal": vlastni soubory
-echo   z CivitAI, viz POZADAVKY.md.
+echo Karta Casova osa: balik LSI-Minimax-Segment-Timeline neni verejny.
+echo Karta Obrazek - model "Photoreal": vlastni soubor z CivitAI, viz POZADAVKY.md.
 echo.
 echo HOTOVO. Ted RESTARTUJ ComfyUI a v aplikaci spust:
 echo   Nastaveni ^-^> Co serveru chybi ^-^> Zkontrolovat server

@@ -20,39 +20,40 @@ chybí u tebe).
 
 | Balík | Poskytuje | Potřebují karty |
 |---|---|---|
-| ComfyUI-ALLinONE-MinimaxH3 | šablony workflow, endpoint `/h3one` | All in One, Dialogy |
-| rgthree-comfy | Power Lora Loader, Any Switch | video karty, Výměna tváře |
-| LSI-Minimax-Segment-Timeline | LSIMinimaxTimeline(+Render) | Časová osa |
-| ComfyUI-SeedVR2_VideoUpscaler | SeedVR2 nody | Zvětšit |
-| [praveen-tools](https://github.com/Praveenhalder/praveen-tools) | ImageTileSplit/Merge, LoadImageWithFilename | Zvětšit |
-| [ComfyUI-Smart-Upscaler](https://github.com/HallettVisual/ComfyUI-Smart-Upscaler) | SmartUpscaledTilePlanner, SmartCachedTextGenerate, SmartTileFinalizer… | Zvětšit — chytré zvětšení |
+| [ComfyUI-ALLinONE-MinimaxH3](https://github.com/LeonQ8/ComfyUI-ALLinONE-MinimaxH3) | šablony workflow, endpoint `/h3one`, H3CacheBust, H3IdentityAnchor | All in One, Dialogy, Upravit video |
+| rgthree-comfy | Power Lora Loader, Any Switch | video karty, Výměna tváře, Domalovat |
+| LSI-Minimax-Segment-Timeline | LSIMinimaxTimeline(+Render) | Časová osa (balík není veřejný) |
+| [ComfyUI-Spectrum-MiniMax-H3](https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3) | SpectrumApplyMiniMaxH3 | Časová osa |
+| ComfyUI-SeedVR2_VideoUpscaler | SeedVR2 nody | Zvětšit fotku |
+| [praveen-tools](https://github.com/Praveenhalder/praveen-tools) | ImageTileSplit/Merge, LoadImageWithFilename | Zvětšit fotku |
+| [ComfyUI-Smart-Upscaler](https://github.com/HallettVisual/ComfyUI-Smart-Upscaler) | SmartUpscaledTilePlanner, SmartCachedTextGenerate, SmartTileFinalizer… | Zvětšit fotku — Chytré zvětšení |
 | [ComfyUI-BingImageSelector](https://github.com/concarne000/ComfyUI-BingImageSelector) | BingImageSelector, adresy `/bing_image_selector/*` | výběr obrázku — Hledat na internetu |
-| [ComfyUI-DLSS5-Enhancer](https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer) | DLSS5Settings, DLSS5EnhanceImages/VideoFile | Zvětšit — metoda DLSS 5 (po instalaci ještě `install_runtime.py`) |
-| [ComfyUI-H3-Motion-Context-MultiRef](https://github.com/seitanism/ComfyUI-H3-Motion-Context-MultiRef) | MiniMaxH3StartMaskedContext, MiniMaxH3GeneratedAVMaskedContext, MiniMaxH3CropTo32 aj. | Dlouhé video |
-| [Comfyui_Minimax_h3_latent_Upscaler](https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler) | MinimaxH3LatentUpscaler3D | Dlouhé video — rychlý první záběr (volitelné) |
-| [Minimax-H3-Latent-Continuation](https://github.com/SatoDive/Minimax-H3-Latent-Continuation) | MiniMaxH3Easy_SatoDive, MiniMaxH3EasyContextSegments_SatoDive, Save/Load Latent, StitchContinuation aj. | Long MiniMax |
-| [MaskVidExperiments](https://github.com/drozbay/MaskVidExperiments) | MVEx_MaskCleanup, MVEx_SubjectCrop/Uncrop aj. | All in One → Přemalovat ve videu |
-| VideoHelperSuite / KJNodes* | VHS_VideoCombine, PathchSageAttentionKJ, INTConstant, ModelPreviewOverrideKJ, ImageConcanate, ResizeMask | video karty, živý náhled, Výměna tváře |
-| nody Krea 2 Edit* | Krea2EditModelPatch, Krea2EditGroundedEncode, SpectrumApplyMiniMaxH3, H3CacheBust | Úprava obrázku, video karty |
+| [ComfyUI-DLSS5-Enhancer](https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer) | DLSS5Settings, DLSS5EnhanceImages/VideoFile | Zvětšit fotku — metoda DLSS 5 (po instalaci ještě `install_runtime.py`) |
+| [Comfyui_Minimax_h3_latent_Upscaler](https://github.com/LBH-123-AI/Comfyui_Minimax_h3_latent_Upscaler) | MinimaxH3LatentUpscaler3D | Rychlé video; Long MiniMax — volba 3 + 2 |
+| [Minimax-H3-Latent-Continuation](https://github.com/SatoDive/Minimax-H3-Latent-Continuation) | MiniMaxH3Easy_SatoDive, MiniMaxH3EasyContextSegments_SatoDive, Save/Load Latent, StitchContinuation aj. | Long MiniMax, Film ze storyboardu |
+| [MaskVidExperiments](https://github.com/drozbay/MaskVidExperiments) | MVEx_MaskCleanup, MVEx_SubjectCrop/Uncrop aj. | Upravit video → Přemalovat |
+| [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) | LTXVAudioVAEEncode, LTXVLatentUpsampler, LTXVImgToVideoInplace aj. (viz níž) | LTX 2.5 |
+| VideoHelperSuite / KJNodes* | VHS_VideoCombine, VHS_LoadAudioUpload, PathchSageAttentionKJ, MiniMaxH3MemoryEfficientSageAttentionPatch, INTConstant, ModelPreviewOverrideKJ, ImageConcanate, ResizeMask, ImageResizeKJv2 | video karty, živý náhled, Výměna tváře |
+| [comfyui-krea2edit](https://github.com/lbouaraba/comfyui-krea2edit) | Krea2EditModelPatch, Krea2EditGroundedEncode | Úprava obrázku — Krea 2 |
 | ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | Výměna tváře, Domalovat |
-| [ComfyUI-AusBoss](https://github.com/ausboss/ComfyUI-AusBoss) | AUSBOSS_NODES_LoadImagePad, AUSBOSS_NODES_StitchInpaint | Domalovat → Rozšířit |
+| [ComfyUI-AusBoss](https://github.com/ausboss/ComfyUI-AusBoss) | AUSBOSS_NODES_LoadImagePad, AUSBOSS_NODES_StitchInpaint | Domalovat → Rozšířit obrázek |
 | ComfyUI-MiniMaxH3-TeaCache | MiniMaxH3TeaCache | video karty (volitelné zrychlení) |
 | ComfyUI_essentials | ImageResize+ | Výměna tváře |
 | Impact Pack* | ImpactGaussianBlurMask | Výměna tváře |
-| ComfyUI-GGUF | UnetLoaderGGUF | Obrázek — jen volitelný alternativní model ve formátu GGUF |
-| [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | MiniMaxH3PromptWriter8B | tlačítko **✨ Vylepšit prompt** (volitelné, viz níž) |
+| ComfyUI-GGUF | UnetLoaderGGUF | Obrázek — volby ERNIE Image Turbo a Photoreal (modely v GGUF) |
+| [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | MiniMaxH3PromptWriter8B | tlačítko **✨ Vylepšit (MiniMax)** (volitelné, viz níž) |
 
 Karta **Long MiniMax** navazuje záběry jedné scény přes **uložený latent**.
 Navazovat přes hotové video znamená dekódovat a zase zakódovat, a ten okruh
 obraz pokaždé o kus ztmaví; chyba se v řetězu sčítá. Balík proto latent
 hotového záběru uloží do `output/h3_latents` a další běh z něj začne.
-Modely navíc karta nepotřebuje žádné: jede na `minimax_h3_fl2va`, obou VAE
-a enkodéru jako ostatní video karty, plus na LoRA
+Modely navíc karta ve výchozí volbě Turbo nepotřebuje žádné: jede na
+`minimax_h3_fl2va`, obou VAE a enkodéru jako ostatní video karty, plus na LoRA
 `minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors`.
 
 Karty **Obrázek** (Z-Image), **Hudba**, **Úhel kamery** a **3D model** jedou
 jen na vestavěných uzlech ComfyUI — žádný custom balík nepotřebují
-(ComfyUI-GGUF je potřeba až pro volitelný alternativní model na kartě
+(ComfyUI-GGUF je potřeba až pro volby ERNIE Image Turbo a Photoreal na kartě
 Obrázek). Platí u nich ale minimální verze jádra: uzly **TRELLIS.2** a
 **Pixal3D/MoGe** pro kartu 3D model jsou v ComfyUI **od 0.34**, uzly
 `YuE2GenerateABC`, `YuE2GenerateMusic` a `EmptyYuE2LatentAudio` pro volbu
@@ -60,32 +61,37 @@ Obrázek). Platí u nich ale minimální verze jádra: uzly **TRELLIS.2** a
 ComfyUI se aktualizuje.
 
 Qwen Image 2.1 je **jeden model na generování i úpravy**, takže ho najdeš na
-čtyřech kartách: **Obrázek** (text→obrázek) a **Úprava obrázku**, **Oprava
-fotky** a **Úhel kamery** (úpravy). Stejně je na tom FLUX.2 Klein. Potřebuje
-vestavěné uzly `TextEncodeQwenImage21` a `QwenImage21Cache`, které přišly až
-v **ComfyUI 0.37.0** — na 0.36.0 a starším chybí. Žádný custom node se
-neinstaluje.
+víc kartách: **Obrázek** (text→obrázek), **Úprava obrázku**, **Oprava
+fotky**, **Domalovat** (včetně **Rozšířit obrázek**) a **Výměna tváře**.
+FLUX.2 Klein je na tom podobně (Obrázek, Úprava obrázku, Domalovat). Qwen
+Image 2.1 potřebuje vestavěné uzly `TextEncodeQwenImage21` a
+`QwenImage21Cache`, které přišly až v **ComfyUI 0.37.0** — na 0.36.0 a
+starším chybí. Žádný custom node se neinstaluje.
 
-Volitelně k němu patří **✨ Vylepšit zadání** — vlastní přepisovače promptu
-od Qwenu (`Qwen-Image-2.1-PE-I2I` a `-PE-T2I`) na vestavěném uzlu
+Karta **Úhel kamery** jede na **Qwen Image Edit 2511**, ne na 2.1. Schopnost
+změnit pohled je v LoRA `qwen-image-edit-2511-multiple-angles` a ta je
+trénovaná na 2511. Modely karty jsou v seznamu níž.
+
+Volitelně k Qwen Image 2.1 patří **✨ Vylepšit (Qwen)** — vlastní přepisovače
+promptu od Qwenu (`Qwen-Image-2.1-PE-I2I` a `-PE-T2I`) na vestavěném uzlu
 `TextGenerate` (taky od 0.37.0). Zadání zvládnou i česky. Bez jejich vah
 tlačítko jen ohlásí, že model chybí; zbytek karty funguje dál.
 
-Karta **Video ze zvuku** potřebuje balík
-[ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo) (uzly
-`LTXVAudioVAEEncode`, `LTXVConcatAVLatent`, `LTXVSeparateAVLatent`,
+Karta **LTX 2.5** (všechny tři režimy: Z textu, Z obrázku a Ze zvuku)
+potřebuje balík [ComfyUI-LTXVideo](https://github.com/Lightricks/ComfyUI-LTXVideo)
+(uzly `LTXVAudioVAEEncode`, `LTXVConcatAVLatent`, `LTXVSeparateAVLatent`,
 `LTXVLatentUpsampler`, `LTXVImgToVideoInplace`, `LTXVDualCFGGuider`,
-`LTXVPreprocess`, `LatentUpscaleModelLoader`) a k tomu VideoHelperSuite kvůli
-`VHS_LoadAudioUpload`. Verze balíku musí znát **LTX 2.5** — starší zná jen 2.3
-a část uzlů v ní chybí.
+`LTXVPreprocess`, `LatentUpscaleModelLoader`) a režim Ze zvuku k tomu
+VideoHelperSuite kvůli `VHS_LoadAudioUpload`. Verze balíku musí znát
+**LTX 2.5** — starší zná jen 2.3 a část uzlů v ní chybí.
 
-Pozn.: balíky LSI-Minimax-Segment-Timeline a balík s uzly Krea2Edit/H3
-nejsou veřejně dostupné — bez nich nepojedou karty Časová osa a Úprava
-obrázku (a živý náhled u videa). Ostatní karty fungují normálně.
+Pozn.: veřejně nedostupný je jen balík **LSI-Minimax-Segment-Timeline** —
+bez něj nepojede karta **Časová osa**. Ostatní karty fungují normálně.
 
-\* Na referenčním serveru tyhle třídy poskytuje balík `comfyui-workflow-encrypt`;
-při čisté instalaci pocházejí z VideoHelperSuite, KJNodes a balíku Krea 2 Edit.
-Rozhoduje třída uzlu, ne jméno balíku — kontrola v appce ověřuje třídy.
+\* Na referenčním serveru hlásí ComfyUI u těchhle tříd balík
+`comfyui-workflow-encrypt`; při čisté instalaci pocházejí z VideoHelperSuite,
+KJNodes a Impact Packu. Rozhoduje třída uzlu, ne jméno balíku — kontrola
+v appce ověřuje třídy.
 
 ## Modely (složka `models/`)
 
@@ -96,8 +102,8 @@ po kartách, ať nestahuješ, co nepoužiješ.
 - `ace_step_1.5_turbo_aio.safetensors` (karta Hudba — volba ACE-Step)
 - `yue2_3b_int8_convrot.safetensors` (karta Hudba — volba YuE2, 3,9 GB;
   ComfyUI 0.36.0+), z [Comfy-Org/YuE2](https://huggingface.co/Comfy-Org/YuE2)
-- `sam3.1_multiplex_fp16.safetensors` (All in One → Přemalovat ve videu, 1,7 GB),
-  z [Comfy-Org/sam3.1](https://huggingface.co/Comfy-Org/sam3.1)
+- `sam3.1_multiplex_fp16.safetensors` (Upravit video → Přemalovat a Vyměnit
+  postavu, 1,7 GB), z [Comfy-Org/sam3.1](https://huggingface.co/Comfy-Org/sam3.1)
 
 **audio_encoders/**
 - `sheetsage2_bf16.safetensors` (karta Hudba — **Předělat nahrávku**, 1,3 GB),
@@ -108,19 +114,22 @@ po kartách, ať nestahuješ, co nepoužiješ.
 
 **diffusion_models/**
 - `ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors`
-  (karta Video ze zvuku, **21 GB**), z
+  (karta LTX 2.5, **21 GB**), z
   [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_fl2va_pruned_int8_convrot.safetensors` (video z textu/obrázků)
 - `minimax_h3_ref2va_pruned_int8_convrot.safetensors` (reference → video, Dialogy)
   — obojí z [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3),
   po 19,5 GB
-- `krea2_turbo_int8_convrot.safetensors` (Úprava obrázku, 13,5 GB), z [Comfy-Org/Krea-2](https://huggingface.co/Comfy-Org/Krea-2)
+- `krea2_turbo_int8_convrot.safetensors` (Úprava obrázku — Krea 2, 13,5 GB), z [Comfy-Org/Krea-2](https://huggingface.co/Comfy-Org/Krea-2)
 - `z_image_turbo_bf16.safetensors` (karta Obrázek)
 - `z_image_bf16.safetensors` (karta Obrázek — volba Z-Image Base, 11,5 GB),
   z [Comfy-Org/z_image](https://huggingface.co/Comfy-Org/z_image)
 - `qwen_image_2.1_int8_convrot.safetensors` (Obrázek, Úprava obrázku, Oprava
-  fotky a Úhel kamery — Qwen Image 2.1,
+  fotky, Domalovat a Výměna tváře — Qwen Image 2.1,
   7,3 GB), z [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
+- `qwen_image_edit_2511_fp8_e4m3fn.safetensors` (karta Úhel kamery — Qwen
+  Image Edit 2511, 20,4 GB), z
+  [drbaph/Qwen-Image-Edit-2511-FP8](https://huggingface.co/drbaph/Qwen-Image-Edit-2511-FP8)
 - `flux1-Fill-Dev_FP8.safetensors` (Výměna tváře, Domalovat — volba Flux Fill)
 - `flux-2-klein-9b.safetensors` (Domalovat a karta Obrázek — volba FLUX.2 Klein;
   stáhni fp8 vydání z [black-forest-labs/FLUX.2-klein-9b-fp8](https://huggingface.co/black-forest-labs/FLUX.2-klein-9b-fp8),
@@ -138,21 +147,25 @@ v kterékoli z nich, stěhovat ho nemusíš.
   načítá ho uzel `UnetLoaderGGUF` z balíku ComfyUI-GGUF
 
 **text_encoders/**
-- `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors` (karta Video
-  ze zvuku, **15 GB**), z
+- `gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors` (karta
+  LTX 2.5, **15 GB**), z
   [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors` (MiniMax H3, 14,6 GB)
-- `qwen3vl_32b_minimax_h3_int8_convrot.safetensors` (karta 3 kroky, 25,3 GB) —
-  ta pred‑loha má enkodér zapsaný napevno, nvfp4 se u ní nepoužije
-- `qwen3vl_4b_fp8_scaled.safetensors` (Krea 2)
+- `qwen3vl_32b_minimax_h3_int8_convrot.safetensors` (karta Rychlé video, 25,3 GB) —
+  ta předloha má enkodér zapsaný napevno, nvfp4 se u ní nepoužije
+- `qwen3vl_4b_fp8_scaled.safetensors` (Úprava obrázku — Krea 2, a Chytré
+  zvětšení, 4,9 GB), z [Comfy-Org/Krea-2](https://huggingface.co/Comfy-Org/Krea-2)
 - `qwen_3_4b.safetensors` (karta Obrázek — Z-Image Turbo i Base)
-- `qwen3vl_8b_int8_convrot.safetensors` (Obrázek, Úprava obrázku, Oprava fotky
-  a Úhel kamery — Qwen Image 2.1,
+- `qwen3vl_8b_int8_convrot.safetensors` (Obrázek, Úprava obrázku, Oprava fotky,
+  Domalovat a Výměna tváře — Qwen Image 2.1,
   9,4 GB), z [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
+- `qwen_2.5_vl_7b_fp8_scaled.safetensors` (karta Úhel kamery — enkodér k Qwen
+  Image Edit 2511, 9,4 GB), z
+  [Comfy-Org/Qwen-Image_ComfyUI](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI)
 - `qwen3.5_9b_qwen_image_2.1_pe_i2i.int8_convrot.safetensors` (**nepovinné** —
-  ✨ Vylepšit zadání u úprav, 9,5 GB), z téhož repozitáře
+  ✨ Vylepšit (Qwen) u úprav, 9,5 GB), z [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
 - `qwen3.5_9b_qwen_image_2.1_pe_t2i.int8_convrot.safetensors` (**nepovinné** —
-  ✨ Vylepšit zadání na kartě Obrázek, 9,5 GB), z téhož repozitáře
+  ✨ Vylepšit (Qwen) na kartě Obrázek, 9,5 GB), z téhož repozitáře
 - `clip_l.safetensors` + `t5xxl_fp16.safetensors` (Výměna tváře, Domalovat — Flux Fill)
 - `qwen_3_8b_fp8mixed.safetensors` (karta Obrázek a Domalovat — FLUX.2 Klein), z
   [Comfy-Org/vae-text-encorder-for-flux-klein-9b](https://huggingface.co/Comfy-Org/vae-text-encorder-for-flux-klein-9b)
@@ -161,13 +174,14 @@ v kterékoli z nich, stěhovat ho nemusíš.
 
 **vae/**
 - `ltx-2.5-video-vae-bf16.safetensors` a `ltx-2.5-audio-vae-bf16.safetensors`
-  (karta Video ze zvuku; bez toho druhého se zvuk nedostane do latentu), z
+  (karta LTX 2.5; bez toho druhého se zvuk nedostane do latentu), z
   [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
 - `minimax_h3_video_vae_fp16.safetensors`
 - `minimax_h3_audio_vae_fp32.safetensors`
-- `qwen_image_vae.safetensors` (Krea 2)
-- `qwen_image_2.1_vae_bf16.safetensors` (Úprava obrázku, Oprava fotky a Úhel
-  kamery — Qwen Image 2.1,
+- `qwen_image_vae.safetensors` (Úprava obrázku — Krea 2, a karta Úhel kamery), z
+  [Comfy-Org/Qwen-Image_ComfyUI](https://huggingface.co/Comfy-Org/Qwen-Image_ComfyUI)
+- `qwen_image_2.1_vae_bf16.safetensors` (Obrázek, Úprava obrázku, Oprava fotky,
+  Domalovat a Výměna tváře — Qwen Image 2.1,
   0,7 GB; 64kanálové RGBA VAE pro průhlednost), z
   [Comfy-Org/Qwen-Image-2.1](https://huggingface.co/Comfy-Org/Qwen-Image-2.1)
 - `ae.sft` (karta Obrázek, Domalovat a Výměna tváře — FLUX/Z-Image autoenkodér)
@@ -192,19 +206,32 @@ v kterékoli z nich, stěhovat ho nemusíš.
   z fotky úhel objektivu), z [Comfy-Org/MoGe](https://huggingface.co/Comfy-Org/MoGe)
 
 **latent_upscale_models/**
-- `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` (karta Video ze
-  zvuku — druhý průchod, 0,95 GB), z
+- `ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors` (karta LTX 2.5 —
+  druhý průchod, 0,95 GB), z
   [Lightricks/LTX-2.5](https://huggingface.co/Lightricks/LTX-2.5)
-- `minimax_h3_latent_upscaler_3d_fp16.safetensors` (Dlouhé video — rychlý první
-  záběr — a karta 3 kroky), z [LBH-123-AI/Minimax_h3_latent_Upscaler](https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler)
+- `minimax_h3_latent_upscaler_3d_fp16.safetensors` (karta Rychlé video a Long
+  MiniMax — volba 3 + 2), z [LBH-123-AI/Minimax_h3_latent_Upscaler](https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler)
 
 **loras/**
-- `krea2_identity_edit_v1_2.safetensors` (drží identitu při úpravě obrázku)
+- `krea2_identity_edit_v1_2.safetensors` (Úprava obrázku — Krea 2; drží
+  identitu při úpravě). Je to LoRA **Krea 2 Identity Edit**, ke které patří
+  balík [comfyui-krea2edit](https://github.com/lbouaraba/comfyui-krea2edit)
+  — odkud ji vzít, píše jeho README.
 - zrychlovací (Turbo) LoRA k MiniMax H3 podle výběru v appce — nabídka se čte
   ze serveru, veřejné jsou ve složce `loras/` v
   [Comfy-Org/MiniMax-H3](https://huggingface.co/Comfy-Org/MiniMax-H3)
 - `comfyui_portrait_lora64.safetensors` (ACE++), `FLUX.1-Turbo-Alpha.safetensors` (Výměna tváře)
-- `h3/TaoMate-H3-3step-ComfyUI.safetensors` (karta 3 kroky, 2,5 GB) — v podsložce
+- `qwen-image-2.1-outpaint-v2.safetensors` (Domalovat → Rozšířit obrázek,
+  0,16 GB; bez ní se fotka posune nebo zůstane šedá), z
+  [ausboss/Qwen-Image-2.1-Outpaint-LoRA](https://huggingface.co/ausboss/Qwen-Image-2.1-Outpaint-LoRA)
+- `qwen-image-edit-2511-multiple-angles-lora.safetensors` (karta Úhel kamery,
+  0,3 GB; bez ní se pohled nezmění), z
+  [fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA](https://huggingface.co/fal/Qwen-Image-Edit-2511-Multiple-Angles-LoRA)
+- `Qwen-Image-Edit-2511-Lightning-8steps-V1.0-fp32.safetensors` (karta Úhel
+  kamery — zrychlení na 8 kroků, 1,7 GB), z
+  [lightx2v/Qwen-Image-Edit-2511-Lightning](https://huggingface.co/lightx2v/Qwen-Image-Edit-2511-Lightning)
+- `h3/TaoMate-H3-3step-ComfyUI.safetensors` (karta Rychlé video a Long MiniMax
+  — volby FastVideo VSA a 3 + 2, 2,5 GB) — v podsložce
   `h3` a přesně pod tímhle jménem; na ní celý postup stojí, bez ní jsou tři kroky
   málo. Originál vydává [TaoLiveAIGC/TaoMate-H3](https://huggingface.co/TaoLiveAIGC/TaoMate-H3),
   podoba pro ComfyUI je např. [Robert1212star/TaoMate-H3-3Step-ComfyUI](https://huggingface.co/Robert1212star/TaoMate-H3-3Step-ComfyUI)
@@ -279,22 +306,23 @@ ComfyUI (ověřeno na 0.37.4). Vše z
 - `text_encoders/minimax_music3_text_encoder_pruned_int8_convrot.safetensors` (9,2 GB)
 - `vae/minimax_music3_dav.safetensors` (0,22 GB)
 
-### Karty Dance a Wan Animate (Wan)
+### Pohyb postavy (Wan) — Podle hudby a Podle videa
 
+Režim **Podle hudby** jede na Wan-Dancer, **Podle videa** na Wan-Animate 2.
 Uzly `WanDancer*`, `WanAnimate2ToVideo`, `WanAnimate2Cache` a smyčka
-`StartLoop`/`EndLoop` jsou v jádře ComfyUI (Wan Animate potřebuje **0.36.0+**).
+`StartLoop`/`EndLoop` jsou v jádře ComfyUI (Wan-Animate 2 potřebuje **0.36.0+**).
 
-- `diffusion_models/wan_animate_2_int8_convrot.safetensors` (Wan Animate, 16,7 GB),
+- `diffusion_models/wan_animate_2_int8_convrot.safetensors` (Podle videa, 16,7 GB),
   z [Comfy-Org/Wan-Animate-2](https://huggingface.co/Comfy-Org/Wan-Animate-2)
-- `text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors` (Wan Animate, 6,7 GB),
+- `text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors` (Podle videa, 6,7 GB),
   z [Comfy-Org/Wan-Animate-2](https://huggingface.co/Comfy-Org/Wan-Animate-2)
 - `diffusion_models/wan2.2_dancer_14b_global_fp8_scaled.safetensors` a
-  `wan2.2_dancer_14b_local_fp8_scaled.safetensors` (Dance, po 17,1 GB),
+  `wan2.2_dancer_14b_local_fp8_scaled.safetensors` (Podle hudby, po 17,1 GB),
   z [Comfy-Org/Wan-Dancer](https://huggingface.co/Comfy-Org/Wan-Dancer)
-- `text_encoders/umt5_xxl_fp16.safetensors` (Dance, 11,4 GB)
+- `text_encoders/umt5_xxl_fp16.safetensors` (Podle hudby, 11,4 GB)
 - `vae/Wan2_1_VAE_bf16.safetensors`, `clip_vision/clip_vision_h.safetensors`
   a `loras/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors`
-  (obě karty)
+  (oba režimy)
 
 ### Licence Qwen Image 2.1
 
@@ -312,13 +340,13 @@ dovoluje; její plné znění je v repozitáři jako
 [`LICENSE-Qwen-Research.txt`](LICENSE-Qwen-Research.txt) a odkaz na originál:
 [QwenLM/Qwen-Image-2.1 LICENSE](https://github.com/QwenLM/Qwen-Image-2.1/blob/main/LICENSE).
 
-**SeedVR2** (karta Zvětšit): `seedvr2_ema_7b-Q4_K_M.gguf` a
+**SeedVR2** (karta Zvětšit fotku): `seedvr2_ema_7b-Q4_K_M.gguf` a
 `ema_vae_fp16.safetensors` si balík **stáhne sám při prvním použití**.
 Metoda **DLSS 5** na téže kartě žádný model nemá, ale po instalaci balíku
 je potřeba jednou spustit jeho `install_runtime.py` — stáhne runtime třetí
 strany (~470 MB) a zeptá se na licenci.
 
-**Chytré zvětšení** (karta Zvětšit) potřebuje vedle Z-Image Turbo ještě
+**Chytré zvětšení** (karta Zvětšit fotku) potřebuje vedle Z-Image Turbo ještě
 `qwen3vl_4b_fp8_scaled.safetensors` (models/text_encoders, 4,9 GB,
 [Comfy-Org/Krea-2](https://huggingface.co/Comfy-Org/Krea-2/resolve/main/text_encoders/qwen3vl_4b_fp8_scaled.safetensors))
 a `Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors`
@@ -331,58 +359,50 @@ a `Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors`
   Dialogy; bez něj zbytek appky funguje normálně.
 - **Spouštěč na počítači** (port 8190) — umí ComfyUI na dálku zapnout
   a vypnout (uvolnit grafiku). Bez něj musí ComfyUI běžet, když appku používáš.
-- **✨ Vylepšit prompt** (karty All in One a Obrázek) — napíšeš pár slov,
-  klidně česky, a jazykový model z nich složí plný anglický prompt: u videa
-  včetně záběrů, časování a zvuku, u obrázku podle pravidel Z-Image (souvislé
-  věty, důraz na světlo, bez negativního promptu).
+- **Tlačítka ✨ Vylepšit** — napíšeš pár slov, klidně česky, a jazykový
+  model z nich složí plný anglický prompt. Podle karty jde o tyhle přepisovače:
+
+  | Tlačítko | Karty | Co potřebuje |
+  |---|---|---|
+  | **✨ Vylepšit (MiniMax)** | All in One, Rychlé video, Long MiniMax (navázání záběru jede přes llama.cpp z řádku níž) | balík [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI), model v `models/LLM`: základ + projektor + adaptér |
+  | **✨ Vylepšit** a **✨ Vylepšit (odvázaně)** | Obrázek, Úprava obrázku (s Qwen Image 2.1), LTX 2.5 | balík [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm), model v `models/LLM`: stačí základ |
+  | **✨ Vylepšit (Qwen)** | Obrázek a Úprava obrázku s Qwen Image 2.1 | přepisovače PE-T2I / PE-I2I (viz výš), vestavěný uzel `TextGenerate` |
+  | **✨ Vylepšit (LTX)** | LTX 2.5 | nic navíc — jede na enkodéru `gemma4` z téže karty |
 
   **Jede to jako obyčejné workflow ve tvém ComfyUI** — appka pošle malý graf
   na `/prompt` a přečte si z historie hotový text. V telefonu se tedy nic
-  nestahuje a nic neodchází z domu; potřebuješ ale na serveru balík uzlů
-  a jeden model v `models/LLM`:
+  nestahuje a nic neodchází z domu.
 
-  | | video (All in One) | obrázek |
-  |---|---|---|
-  | balík | [MiniMax-H3-Prompt-Rewriter-ComfyUI](https://github.com/pytraveler/MiniMax-H3-Prompt-Rewriter-ComfyUI) | [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm) |
-  | model | základ + projektor + adaptér | stačí ten základ |
-
-  Konkrétní soubory (dohromady ~7 GB; `instalace-serveru.bat` je umí stáhnout
-  za tebe do `models/LLM`):
+  Soubory pro `models/LLM` (dohromady ~7 GB; `instalace-serveru.bat` je umí
+  stáhnout za tebe):
   - **základ:** [Huihui-Qwen3-VL-8B-Instruct-abliterated Q4_K_M](https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/Huihui-Qwen3-VL-8B-Instruct-abliterated-Q4_K_M.gguf)
     (4,7 GB) — odblokovaná verze, takže zadání neodmítá,
   - **projektor:** [mmproj-F16](https://huggingface.co/noctrex/Huihui-Qwen3-VL-8B-Instruct-abliterated-GGUF/resolve/main/mmproj-F16.gguf) (1,1 GB) ze stejného repozitáře;
     ulož ho jako `Huihui-Qwen3-VL-8B-Instruct-abliterated-mmproj-F16.gguf`,
-  - **adaptér (jen pro video):**
+  - **adaptér (jen pro ✨ Vylepšit (MiniMax)):**
     [MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF/resolve/main/MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf) (1,3 GB).
 
-  Tentýž balík a model obsluhuje i tlačítko **🌐 Přeložit do angličtiny**
-  u karet s zadáním — nic dalšího se pro překlad stahovat nemusí.
+  Tentýž balík a model obsluhuje i tlačítko **🌐 Přeložit**
+  u karet se zadáním — nic dalšího se pro překlad stahovat nemusí.
 
-  Uzel přepisovače videa si model umí stáhnout i sám při prvním použití
-  (nabídne ho v seznamu); u karty Obrázek to neumí — tam soubor ve složce
+  Uzel přepisovače MiniMax si model umí stáhnout i sám při prvním použití
+  (nabídne ho v seznamu); uzel llama.cpp to neumí — tam soubor ve složce
   `models/LLM` opravdu být musí. Appka si pak model z nabídky serveru vybere
   sama (přednost má odblokovaný) a po dopsání promptu ho uvolní z paměti
   grafiky, takže generování neomezí. Bez toho appka funguje normálně, jen
   tlačítko ohlásí, co na serveru chybí.
-- **Karta Obrázek — vlastní model**: kromě pěti připravených voleb umí karta
-  jet na **jakémkoli dalším modelu z rodiny Z-Image, který máš na serveru**.
-  Volba **Vlastní model** načte nabídku přímo z ComfyUI (`UNETLoader`
-  i `UnetLoaderGGUF`, takže safetensors i GGUF), soubor si vybereš ze seznamu
-  a k němu nastavíš kroky a cfg — z názvu souboru se nepoznají.
-  Destilované finetuny Turba jedou na cfg 1 a 8–12 krocích, nedestilovaný
-  základ na cfg kolem 4 a 25 krocích a víc. Soubor patří do
-  `models/diffusion_models/` (nebo `models/unet/`, je to pro ComfyUI táž
-  složka), model v GGUF k tomu chce balík ComfyUI-GGUF. **Přejmenovávat
-  nic nemusíš** — appka nabídne, co server hlásí.
-- **Karta Obrázek — přepínač „Bez cenzury" a model „Photoreal"** (18+):
-  obojí vyžaduje vlastní soubory, které si stáhneš sám (CivitAI /
-  Hugging Face, hledej Z-Image Turbo LoRA a finetuny). LoRA patří do
-  `models/loras/` a appka nabídne **každou, která má v názvu
-  `zimage`/`zit`** — pojmenuj ji tak a objeví se sama. Hotová volba
-  **Photoreal** očekává soubor pod názvem
-  `zimage_nsfw_photoreal_v61_Q8.gguf`; jiný finetune se dá použít bez
-  přejmenování přes volbu **Vlastní model** výš.
-  Bez těchto souborů karta Obrázek normálně jede na základním Z-Image Turbo.
+- **Karta Obrázek — model „Photoreal (odvázaný)"** (18+): očekává soubor
+  `zimage_nsfw_photoreal_v61_Q8.gguf` v `models/diffusion_models/` (nebo
+  `models/unet/`, pro ComfyUI táž složka), který si stáhneš sám z CivitAI;
+  načítá ho uzel `UnetLoaderGGUF` z balíku ComfyUI-GGUF. Bez něj karta jede
+  normálně na ostatních modelech.
+- **Karta Obrázek — vlastní LoRA**: karta má dvě pole, **LoRA pro <model>**
+  a **Druhá LoRA (nepovinná)**. Nabídka se čte ze `models/loras/` na serveru
+  a řadí se podle vybraného modelu: appka pozná rodinu LoRA z metadat
+  souboru, případně z názvu (`zimage`/`zit` pro Z-Image, `ernie`, `klein`
+  + `9b` pro FLUX.2 Klein 9B, LoRA pro Qwen Image 2.1). Soubory bez poznatelného
+  modelu nabídne pod čarou jako „neoznačený model" a před použitím se zeptá.
+  **Přejmenovávat nic nemusíš.**
 
 ## Jak ověřit, že máš všechno
 

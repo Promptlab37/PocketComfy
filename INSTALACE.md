@@ -51,10 +51,9 @@ takže bez čehokoli dalšího):
 |---|---|
 | ComfyUI-ALLinONE-MinimaxH3 | All in One, Dialogy |
 | rgthree-comfy | video karty, Výměna tváře |
-| ComfyUI-SeedVR2_VideoUpscaler | Zvětšit |
-| ComfyUI-Inpaint-CropAndStitch | Výměna tváře |
-| ComfyUI-AusBoss | Domalovat → Rozšířit |
-| Comfyui-QwenEditUtils | Oprava fotky |
+| ComfyUI-SeedVR2_VideoUpscaler | Zvětšit fotku |
+| ComfyUI-Inpaint-CropAndStitch | Výměna tváře, Domalovat |
+| ComfyUI-AusBoss | Domalovat → Rozšířit obrázek |
 | ComfyUI_essentials, KJNodes, VideoHelperSuite, Impact Pack | pomocné uzly |
 
 ### A3. Stáhni modely
@@ -79,12 +78,14 @@ necháš chybějící položky být).
 
 ### A4. Vylepšovač promptů (volitelné)
 
-Tlačítko **✨ Vylepšit prompt** (karty All in One a Obrázek) není zvláštní
+Tlačítka **✨ Vylepšit** u zadání (např. **✨ Vylepšit (MiniMax)** na kartě
+All in One nebo **✨ Vylepšit** na kartě Obrázek) nejsou zvláštní
 služba — **je to workflow jako každé jiné, běží u tebe v ComfyUI.** Aby
-fungovalo, musí na serveru být balík uzlů a jeden jazykový model v GGUF ve
+fungovala, musí na serveru být balík uzlů a jeden jazykový model v GGUF ve
 složce `models/LLM` (dohromady ~7 GB). `instalace-serveru.bat` se na ně zeptá
-a stáhne je; ručně je najdeš i s odkazy v [POZADAVKY.md](POZADAVKY.md).
-Bez toho jedou obě karty normálně, jen tlačítko ohlásí, co chybí.
+a stáhne je; ručně je najdeš i s odkazy v [POZADAVKY.md](POZADAVKY.md), kde
+je i přehled, které tlačítko na které kartě potřebuje co. Bez toho jedou
+karty normálně, jen tlačítko ohlásí, co chybí.
 
 ---
 
@@ -142,6 +143,10 @@ a otevři (Android se zeptá na povolení instalace z neznámých zdrojů).
    slov a stiskni **Vygenerovat obrázek**. To je nejrychlejší první test
    (pár sekund). Pak zkoušej dál: Hudba, video, oprava fotek…
 
+> Rozhraní se řídí jazykem telefonu: na českém telefonu je česky, na
+> jakémkoli jiném anglicky. Jazyk jde vynutit v **Nastavení → Aplikace →
+> Jazyk**; nepřeložené části zůstanou česky.
+
 ### Přístup odkudkoli (volitelné, doporučené)
 
 Doma stačí společná Wi-Fi. Aby appka fungovala i mimo domov, dej na počítač
@@ -177,8 +182,8 @@ kartě Dialogy nepůjde namlouvat repliky.
 | Fungovalo doma, venku ne | telefon není připojený k VPN — zapni Tailscale (a viz tip s baterií výše) |
 | „Na serveru chybí balík ComfyUI-ALLinONE-MinimaxH3" | nainstaluj balík přes Manager a **restartuj ComfyUI** — načítá nody jen při startu |
 | Kontrola serveru vypíše chybějící modely | stáhni přesně ty soubory (názvy sedí na POZADAVKY.md) do uvedených složek `models/…`; nový soubor se pozná bez restartu |
-| Tlačítko **✨ Vylepšit prompt** hlásí chybějící uzel nebo model | chybí balík přepisovače / llama.cpp nebo GGUF model ve `models/LLM` — viz A4 |
-| Karta Časová osa / Úprava obrázku hlásí chybějící nody | tyhle dvě karty potřebují balíky, které nejsou veřejně dostupné — ostatních sedm karet funguje normálně |
+| Tlačítko **✨ Vylepšit** hlásí chybějící uzel nebo model | chybí balík přepisovače / llama.cpp nebo GGUF model ve `models/LLM` — viz A4 |
+| Karta Časová osa hlásí chybějící nody | potřebuje balík LSI-Minimax-Segment-Timeline, který není veřejně dostupný — ostatní karty fungují normálně |
 | Gradle sync v Android Studiu selže | zkontroluj připojení k internetu a že máš JDK 17 (File → Settings → Build Tools → Gradle → Gradle JDK) |
 | Instalace APK z příkazové řádky selže | v telefonu povol Ladění USB a potvrď otisk počítače; nebo APK prostě zkopíruj a otevři v telefonu |
 

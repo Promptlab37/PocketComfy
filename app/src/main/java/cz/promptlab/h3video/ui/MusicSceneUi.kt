@@ -126,7 +126,7 @@ fun MusicSection(vm: MainViewModel) {
     }
 
     SectionCard(
-        title = "Skladba",
+        title = t("Skladba"),
         subtitle = null
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

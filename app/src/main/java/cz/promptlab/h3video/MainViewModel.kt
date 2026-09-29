@@ -593,8 +593,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             _serverStatus.value = ServerStatus(if (ok) ServerState.OFFLINE else ServerState.UNKNOWN)
             onDone(
-                if (ok) "ComfyUI vypnuto, grafika je volná"
-                else "Nepovedlo se – běží na počítači spouštěč?"
+                if (ok) t("ComfyUI vypnuto, grafika je volná")
+                else t("Nepovedlo se – běží na počítači spouštěč?")
             )
         }
     }
@@ -641,7 +641,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // takže tím nikoho neotravuje.
                 onFailure = {
                     _update.value =
-                        UpdateState.Failed(it.message ?: "Aktualizaci se nepodařilo ověřit")
+                        UpdateState.Failed(it.message ?: t("Aktualizaci se nepodařilo ověřit"))
                 }
             )
         }
@@ -668,7 +668,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             _update.value = result.fold(
                 onSuccess = { UpdateState.Ready(nejnovejsi, it) },
-                onFailure = { UpdateState.Failed("Stažení se nepovedlo: ${it.message}") }
+                onFailure = { UpdateState.Failed(t("Stažení se nepovedlo: %s").format(it.message)) }
             )
         }
     }
@@ -721,7 +721,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             res.fold(
                 onSuccess = { _availableLoras.value = it; _loraError.value = null },
-                onFailure = { _loraError.value = "Seznam LoRA se nepodařilo načíst — server neodpovídá." }
+                onFailure = { _loraError.value = t("Seznam LoRA se nepodařilo načíst — server neodpovídá.") }
             )
         }
     }
@@ -743,7 +743,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 runCatching { ComfyClient(settings.serverUrl).unetNames() }
             }.fold(
                 onSuccess = { _availableUnets.value = it; _unetError.value = null },
-                onFailure = { _unetError.value = "Seznam modelů se nepodařilo načíst — server neodpovídá." }
+                onFailure = { _unetError.value = t("Seznam modelů se nepodařilo načíst — server neodpovídá.") }
             )
         }
     }
@@ -972,8 +972,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             (p.mode == Mode.VYLEPSENI_VIDEA &&
                 _vylepseni.value.rezim == cz.promptlab.h3video.data.VylepseniRezim.ZVETSIT)
         if (naAio && _aioAvailable.value == false) {
-            return "Na serveru chybí balík ComfyUI-ALLinONE-MinimaxH3 – nainstaluj ho " +
-                "v ComfyUI a restartuj server."
+            return t("Na serveru chybí balík ComfyUI-ALLinONE-MinimaxH3 – nainstaluj ho " +
+                "v ComfyUI a restartuj server.")
         }
         // Poslední pojistka u profilu jen pro fl2va cestu. UI ho u referenčních
         // karet nenabízí a přepnutí karty ho vymění, ale uložené nastavení
@@ -981,7 +981,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val referencni = p.mode == Mode.TALK || p.mode == Mode.LONG ||
             (p.mode == Mode.ALLINONE && _aio.value.mode.usesRefWeights)
         if (referencni && p.profile.bezReferenci) {
-            return "Profil ${p.profile.title} nejde použít s referencemi – přepni profil."
+            return t("Profil %s nejde použít s referencemi – přepni profil.").format(p.profile.title)
         }
         return when (p.mode) {
             // Projekt se nespouští — je to rozcestník, vyrábí se z jeho záběrů
@@ -1116,39 +1116,39 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (refCesta && p.refImageSize != "max") {
         }
         if (p.shiftVideo != p.profile.shiftVideo) {
-            out += "Sigma shift je %.2f, workflow má u tohoto profilu %.2f. Odchylka mění celý průběh vzorkování."
+            out += t("Sigma shift je %.2f, workflow má u tohoto profilu %.2f. Odchylka mění celý průběh vzorkování.")
                 .format(p.shiftVideo, p.profile.shiftVideo)
         }
         // Porovnává se s plátnem daného poměru stran, ne s plochým číslem:
         // u 21:9 má model nativně 672 px na kratší hraně, u ostatních 768.
         if (refCesta && p.resolution.pixels < p.nativeResolution.pixels) {
-            out += "Rozlišení ${p.resolution.label} je pod plátnem modelu " +
-                "(${p.nativeResolution.label}) – obraz bývá měkčí a tváře méně přesné."
+            out += t("Rozlišení %s je pod plátnem modelu " +
+                "(%s) – obraz bývá měkčí a tváře méně přesné.").format(p.resolution.label, p.nativeResolution.label)
         }
         if (p.mode == Mode.TALK) {
             val s = _scene.value
             val needed = s.neededSeconds
             if (needed != null && !s.fitsInto(p.seconds)) {
-                out += "Namluvené repliky trvají ${needed} s, ale video má ${p.seconds} s – " +
-                    "model konec ustřihne. Přidej délku, nebo repliky zkrať."
+                out += t("Namluvené repliky trvají %d s, ale video má %d s – " +
+                    "model konec ustřihne. Přidej délku, nebo repliky zkrať.").format(needed, p.seconds)
             } else if (needed != null) {
-                out += "Délka je nastavená na ${p.seconds} s podle namluvených replik (potřeba ${needed} s)."
+                out += t("Délka je nastavená na %d s podle namluvených replik (potřeba %d s).").format(p.seconds, needed)
             }
             if (s.speakers.size > s.withImage.size) {
-                out += "Postava bez fotky se do videa nedostane – model nemá podle čeho ji vytvořit."
+                out += t("Postava bez fotky se do videa nedostane – model nemá podle čeho ji vytvořit.")
             }
             if (!s.canAddLine) {
-                out += "Tři repliky jsou strop jednoho videa (model bere jen tři zvukové reference)."
+                out += t("Tři repliky jsou strop jednoho videa (model bere jen tři zvukové reference).")
             }
         }
         if (p.frames < cz.promptlab.h3video.data.TRAINED_MIN_FRAMES) {
-            out += "Délka pod 5 s je mimo trénovaný rozsah modelu – výsledek bývá horší."
+            out += t("Délka pod 5 s je mimo trénovaný rozsah modelu – výsledek bývá horší.")
         }
         if (p.aboveNative) {
-            out += "Rozlišení ${p.resolution.label} je o ${p.nativeOverhead} % víc bodů než " +
-                "plátno modelu (${p.nativeResolution.label}). Generovat se to dá, jen to trvá " +
+            out += t("Rozlišení %s je o %d %% víc bodů než " +
+                "plátno modelu (%s). Generovat se to dá, jen to trvá " +
                 "déle a detaily bývají měkčí – ostřejší HD spíš vyjde z nativu a zvětšení " +
-                "v kartě All in One."
+                "v kartě All in One.").format(p.resolution.label, p.nativeOverhead, p.nativeResolution.label)
         }
         return out
     }
@@ -1470,7 +1470,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 QueuedRun(id, p.mode.title, "") {
                     GenerationEngine.start(
                         p.copy(
-                            prompt = "Oprava staré fotky",
+                            prompt = t("Oprava staré fotky"),
                             steps = cz.promptlab.h3video.comfy.RestoreBuilder.STEPS,
                         ),
                         s.uploadImages,
@@ -1500,7 +1500,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 QueuedRun(id, p.mode.title, "") {
                     GenerationEngine.start(
                         p.copy(
-                            prompt = "Výměna tváře",
+                            prompt = t("Výměna tváře"),
                             steps = cz.promptlab.h3video.comfy.FaceSwapBuilder.kroky(s.motor),
                         ),
                         s.uploadImages,
@@ -1779,10 +1779,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             if (needModel) _higgs.value = "running"
             return@withContext true
         }
-        _higgsNote.value = "Zapínám Higgs Audio na počítači…"
+        _higgsNote.value = t("Zapínám Higgs Audio na počítači…")
         _higgs.value = "starting"
         if (launcher.state() == null) {
-            _higgsNote.value = "Na počítači neodpovídá spouštěč Higgse (port 8191)."
+            _higgsNote.value = t("Na počítači neodpovídá spouštěč Higgse (port 8191).")
             _higgs.value = null
             return@withContext false
         }
@@ -1797,7 +1797,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 return@withContext true
             }
         }
-        _higgsNote.value = "Higgs se nerozjel ani za tři minuty. Zkus to znovu."
+        _higgsNote.value = t("Higgs se nerozjel ani za tři minuty. Zkus to znovu.")
         _higgs.value = "stopped"
         false
     }
@@ -1807,7 +1807,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             val ok = withContext(Dispatchers.IO) { higgsLauncher().stop() }
             _higgs.value = if (ok) "stopped" else _higgs.value
-            onDone(if (ok) "Higgs vypnutý, grafika je volná" else "Higgs jsem nespouštěl, není co vypínat")
+            onDone(if (ok) t("Higgs vypnutý, grafika je volná") else t("Higgs jsem nespouštěl, není co vypínat"))
         }
     }
 
@@ -1870,7 +1870,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (text.isEmpty()) return
         val voice = scene.speakerOf(line)?.voice
         if (voice == null) {
-            updateLine(key) { it.copy(status = VoiceStatus.FAILED, error = "Postava nemá vybraný hlas.") }
+            updateLine(key) { it.copy(status = VoiceStatus.FAILED, error = t("Postava nemá vybraný hlas.")) }
             return
         }
         viewModelScope.launch {
@@ -1879,7 +1879,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 updateLine(key) {
                     it.copy(
                         status = VoiceStatus.FAILED,
-                        error = _higgsNote.value.ifBlank { "Higgs se nepodařilo spustit." }
+                        error = _higgsNote.value.ifBlank { t("Higgs se nepodařilo spustit.") }
                     )
                 }
                 return@launch
@@ -1897,7 +1897,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         val job = client.job(jobId)
                         updateLine(key) { l -> l.copy(progress = job.progress) }
                         if (job.failed) throw IllegalStateException(
-                            job.error.ifBlank { "Namluvení se nepovedlo." }
+                            job.error.ifBlank { t("Namluvení se nepovedlo.") }
                         )
                         if (job.done) {
                             val target = talkStore.audioFile(key)
@@ -1906,7 +1906,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         }
                         Thread.sleep(2_000)
                     }
-                    throw IllegalStateException("Namlouvání trvá neúměrně dlouho, zkus kratší text.")
+                    throw IllegalStateException(t("Namlouvání trvá neúměrně dlouho, zkus kratší text."))
                 }
             }
             result.fold(
@@ -1926,7 +1926,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         it.copy(
                             status = VoiceStatus.FAILED,
                             error = (e as? cz.promptlab.h3video.comfy.ComfyException)?.userMessage
-                                ?: (e.message ?: "Namluvení se nepovedlo.")
+                                ?: (e.message ?: t("Namluvení se nepovedlo."))
                         )
                     }
                 }
@@ -2788,17 +2788,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
                             "chybi uzel",
-                            "Na serveru chybí balík ComfyUI-llama-cpp_vlm — bez něj " +
-                                "překladač nepojede.",
+                            t("Na serveru chybí balík ComfyUI-llama-cpp_vlm — bez něj " +
+                                "překladač nepojede."),
                         )
                     val nabidka = spec.optJSONObject("input")?.optJSONObject("required")
                         ?.nabidkaArr("model")
-                        ?: throw ComfyException("chybi model", "Uzel nenabízí žádný model.")
+                        ?: throw ComfyException("chybi model", t("Uzel nenabízí žádný model."))
                     val model = ImagePromptBuilder.vyberModel(
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
                         "zadny model",
-                        "V models/LLM není žádný GGUF model, ze kterého by šlo překládat.",
+                        t("V models/LLM není žádný GGUF model, ze kterého by šlo překládat."),
                     )
                     val wf = ImagePromptBuilder.buildPreklad(
                         text = zadani,
@@ -2854,7 +2854,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
                             "llama uzel chybi",
-                            "Server nemá uzly llama.cpp — bez nich prompt vylepšit nejde.",
+                            t("Server nemá uzly llama.cpp — bez nich prompt vylepšit nejde."),
                         )
                     val nabidka = spec.getJSONObject("input").getJSONObject("required")
                         .nabidkaArr("model")
@@ -2862,7 +2862,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
                         "zadny model",
-                        "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
+                        t("V models/LLM není žádný GGUF model, ze kterého by šlo psát."),
                     )
                     val wf = ImagePromptBuilder.build(
                         zadani = zadani,
@@ -2878,7 +2878,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Přepis se nepovedl."),
                     PraceNaPromptu.VYLEPSENI,
                 )
             }
@@ -2915,7 +2915,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
                         ?: throw ComfyException(
                             "llama uzel chybi",
-                            "Server nemá uzly llama.cpp — bez nich prompt vylepšit nejde.",
+                            t("Server nemá uzly llama.cpp — bez nich prompt vylepšit nejde."),
                         )
                     val nabidka = spec.getJSONObject("input").getJSONObject("required")
                         .nabidkaArr("model")
@@ -2923,7 +2923,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
                         "zadny model",
-                        "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
+                        t("V models/LLM není žádný GGUF model, ze kterého by šlo psát."),
                     )
                     // Odblokovaný Qwen3-VL fotku vidět umí — potřebuje k sobě
                     // jen svůj projektor. Když na serveru není, jede se dál
@@ -2956,7 +2956,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Přepis se nepovedl."),
                     PraceNaPromptu.VYLEPSENI,
                 )
             }
@@ -2996,7 +2996,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     if (client.objectInfo(Qwen21PeBuilder.NODE_CLASS) == null) throw ComfyException(
                         "TextGenerate chybi",
-                        "Server je starší než ComfyUI 0.37 — chybí uzel na přepis zadání.",
+                        t("Server je starší než ComfyUI 0.37 — chybí uzel na přepis zadání."),
                     )
                     val model =
                         if (proUpravu) Qwen21PeBuilder.MODEL_I2I else Qwen21PeBuilder.MODEL_T2I
@@ -3023,10 +3023,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     Qwen21PeBuilder.parse(syrove) ?: throw ComfyException(
                         "prepis bez JSON",
                         if (Qwen21PeBuilder.jeOdmitnuti(syrove)) {
-                            "Qwenův přepisovač tohle zadání odmítl. " +
-                                "Zkus ✨ Vylepšit (odvázaně) — ten nic nepřepisuje."
+                            t("Qwenův přepisovač tohle zadání odmítl. " +
+                                "Zkus ✨ Vylepšit (odvázaně) — ten nic nepřepisuje.")
                         } else {
-                            "Přepisovač nevrátil použitelný výsledek. Zkus to znovu."
+                            t("Přepisovač nevrátil použitelný výsledek. Zkus to znovu.")
                         },
                     )
                 }
@@ -3045,7 +3045,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Přepis se nepovedl."),
                     PraceNaPromptu.VYLEPSENI,
                 )
             }
@@ -3084,7 +3084,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         zadani: String,
     ): String = prepisSReferencemi(
         client, s.uploadImages, s.frames / 24.0, zadani,
-        storyboard = s.storyboardUcinny,
     )
 
     /**
@@ -3106,8 +3105,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val spec = client.objectInfo(H3RefWriteBuilder.NODE_CLASS)
             ?: throw ComfyException(
                 "universal writer chybi",
-                "Server neumí reference v přepisovači — aktualizuj balík " +
-                    "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+                t("Server neumí reference v přepisovači — aktualizuj balík " +
+                    "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI."),
             )
         val req = spec.getJSONObject("input").getJSONObject("required")
         fun volby(klic: String): List<String> {
@@ -3117,13 +3116,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             volby("caption_model"), H3RefWriteBuilder.CAPTIONER_ODVAZANY,
         ) ?: throw ComfyException(
             "zadny captioner",
-            "Přepisovač nemá čím fotky přečíst — chybí vidoucí GGUF s projektorem.",
+            t("Přepisovač nemá čím fotky přečíst — chybí vidoucí GGUF s projektorem."),
         )
         val writer = H3RefWriteBuilder.vyberOdblokovany(
             volby("writer_model"), H3RefWriteBuilder.WRITER_ODVAZANY,
         ) ?: throw ComfyException(
             "zadny writer",
-            "Přepisovač nemá čím psát — nahraj GGUF do models/LLM.",
+            t("Přepisovač nemá čím psát — nahraj GGUF do models/LLM."),
         )
         val rozliseni = volby("resolution").let { en ->
             en.firstOrNull { it == (pomer ?: _params.value.aspect.label) }
@@ -3188,8 +3187,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
                         ?: throw ComfyException(
                             "rewriter chybi",
-                            "Server nemá balík Prompt Rewriter — nainstaluj " +
-                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+                            t("Server nemá balík Prompt Rewriter — nainstaluj " +
+                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI."),
                         )
                     val req = spec.getJSONObject("input").getJSONObject("required")
                     val nabidka = req.nabidkaArr("model")
@@ -3197,7 +3196,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
                         "zadny model",
-                        "Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM.",
+                        t("Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM."),
                     )
                     val rozliseniEnum = req.nabidkaArr("resolution")
                     val rozliseni = (0 until rozliseniEnum.length())
@@ -3231,7 +3230,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Přepis se nepovedl."),
                     PraceNaPromptu.VYLEPSENI,
                 )
             }
@@ -3242,13 +3241,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _aio.value
         val p = _params.value
-        // Se storyboardem stačí prázdné zadání — děj se vezme z panelů
-        // (ověřeno 28. 9. 2026: 4 panely → 4 záběry po řadě).
-        val zadani = s.prompt.trim().ifBlank {
-            if (s.storyboardUcinny) cz.promptlab.h3video.comfy.H3RefWriteBuilder.ZADANI_JEN_STORYBOARD else ""
-        }
+        val zadani = s.prompt.trim()
         if (zadani.isBlank()) {
-            _rewriteState.value = RewriteState.Fail("Nejdřív napiš aspoň pár slov o tom, co chceš.", PraceNaPromptu.VYLEPSENI)
+            _rewriteState.value = RewriteState.Fail(t("Nejdřív napiš aspoň pár slov o tom, co chceš."), PraceNaPromptu.VYLEPSENI)
             return
         }
         if (cz.promptlab.h3video.data.NezletiliPojistka.zakazano(zadani)) {
@@ -3268,8 +3263,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
                         ?: throw ComfyException(
                             "rewriter chybi",
-                            "Server nemá balík Prompt Rewriter — nainstaluj " +
-                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+                            t("Server nemá balík Prompt Rewriter — nainstaluj " +
+                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI."),
                         )
                     val req = spec.getJSONObject("input").getJSONObject("required")
                     val nabidka = req.nabidkaArr("model")
@@ -3277,7 +3272,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
                         "zadny model",
-                        "Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM.",
+                        t("Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM."),
                     )
                     // Snímky podle režimu karty: Z obrázku pošle první (a při
                     // zapnutém posledním snímku i ten); ostatní jedou z textu.
@@ -3338,7 +3333,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Přepis se nepovedl."),
                     PraceNaPromptu.VYLEPSENI,
                 )
             }
@@ -3369,7 +3364,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private fun doplnReferencniZnacky() {
         val s = _aio.value
-        if (s.mode != AioMode.REFERENCE || s.storyboardZapnuty) return
+        if (s.mode != AioMode.REFERENCE) return
         val pocet = s.refs.count { it.image != null }
         if (pocet == 0) return
         val chybejici = (1..pocet).map { "<Picture $it>" }.filterNot { s.prompt.contains(it) }
@@ -3390,26 +3385,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setAioUseLastFrame(on: Boolean) = updateAio { it.copy(useLastFrame = on) }
 
     fun setAioRefVideoAudio(on: Boolean) = updateAio { it.copy(refVideoAudio = on) }
-
-    /**
-     * Přepnutí storyboardu. Značky `<Picture N>`, které appka sama vložila na
-     * začátek popisu, by po přepnutí ukazovaly na jiné obrázky (mřížka je
-     * `<Picture 1>`, postavy od dvojky) — proto se úvodní řada značek smaže
-     * a u vypnutí doplní znovu. Text, který uživatel napsal, zůstává.
-     */
-    fun setAioStoryboard(on: Boolean) {
-        updateAio {
-            it.copy(
-                storyboard = on,
-                prompt = if (on) bezUvodnichZnacek(it.prompt) else it.prompt,
-            )
-        }
-        if (!on) doplnReferencniZnacky()
-        prevezmiPomerJedineReference()
-    }
-
-    private fun bezUvodnichZnacek(text: String): String =
-        text.replaceFirst(Regex("^(\\s*<Picture \\d+>)+\\s*"), "")
 
     fun setAioUpscaler(u: Upscaler) = updateAio { it.copy(upscaler = u) }
 
@@ -3509,7 +3484,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     "ref" -> s.copy(refs = s.refs.map {
                         if (it.key == key) it.copy(image = target, thumb = thumb) else it
                     })
-                    "sb" -> s.copy(storyboardObr = s.storyboardObr.copy(image = target, thumb = thumb))
                     else -> s.copy(keys = s.keys.map {
                         if (it.key == key) it.copy(image = target, thumb = thumb) else it
                     })
@@ -3517,9 +3491,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             // Nová reference = rovnou i její značka v popisu.
             if (druh == "ref") doplnReferencniZnacky()
-            // Mřížka storyboardu tvar plátna neurčuje (celá mřížka má jiný
-            // tvar než jeden panel).
-            if (druh == "sb") return@launch
             // "keys" chodí jako cokoli jiného než first/last/ref — sjednotit.
             prevezmiPomerZeVstupu(
                 if (druh in setOf("first", "last", "ref")) druh else "key",
@@ -3568,7 +3539,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 "ref" -> s.copy(refs = s.refs.map {
                     if (it.key == key) it.copy(image = null, thumb = null) else it
                 })
-                "sb" -> s.copy(storyboardObr = s.storyboardObr.copy(image = null, thumb = null))
                 else -> s.copy(keys = s.keys.map {
                     if (it.key == key) it.copy(image = null, thumb = null) else it
                 })
@@ -3781,10 +3751,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 onFailure = {
                     ServerCheck(
                         false, false,
-                        "Server neodpovídá.\n\nZkontroluj, že počítač běží, ComfyUI je " +
+                        t("Server neodpovídá.\n\nZkontroluj, že počítač běží, ComfyUI je " +
                             "spuštěné s parametrem --listen 0.0.0.0 a že jsi na stejné síti " +
                             "nebo VPN (např. Tailscale). Náběh ComfyUI po zapnutí počítače " +
-                            "trvá i pár minut – chvíli počkej a zkus to znovu."
+                            "trvá i pár minut – chvíli počkej a zkus to znovu.")
                     )
                 }
             )
@@ -3850,8 +3820,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 onSuccess = { AuditState.Done(it) },
                 onFailure = {
                     AuditState.Failed(
-                        "Kontrola se nedokončila — server neodpovídá. " +
-                            "Zkontroluj spojení tlačítkem výš a zkus to znovu."
+                        t("Kontrola se nedokončila — server neodpovídá. " +
+                            "Zkontroluj spojení tlačítkem výš a zkus to znovu.")
                     )
                 }
             )
@@ -4769,14 +4739,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS) ?: throw ComfyException(
                         "llama uzel chybi",
-                        "Server nemá uzly llama.cpp — bez nich návrh záběrů nejede.",
+                        t("Server nemá uzly llama.cpp — bez nich návrh záběrů nejede."),
                     )
                     fun nabidka(pole: String): List<String> {
                         val a = spec.getJSONObject("input").getJSONObject("required").nabidkaArr(pole)
                         return (0 until a.length()).map { a.getString(it) }
                     }
                     val model = ImagePromptBuilder.vyberModel(nabidka("model")) ?: throw ComfyException(
-                        "zadny model", "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
+                        "zadny model", t("V models/LLM není žádný GGUF model, ze kterého by šlo psát."),
                     )
                     val mmproj = ImagePromptBuilder.vyberMmproj(model, nabidka("mmproj"))
                     val fotky = if (mmproj == "None") emptyList()
@@ -4811,7 +4781,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: (e.message ?: "Chyba"), PraceNaPromptu.VYLEPSENI,
+                    (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
                 )
             }
         }
@@ -4862,14 +4832,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val spec = client.objectInfo(cz.promptlab.h3video.comfy.SbFilmBuilder.CTENI_CLASS)
                         ?: throw ComfyException(
                             "caption chybi",
-                            "Server nemá uzel na čtení obrázku — aktualizuj balík " +
-                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+                            t("Server nemá uzel na čtení obrázku — aktualizuj balík " +
+                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI."),
                         )
                     val nabidka = spec.getJSONObject("input").getJSONObject("required").nabidka("model")
                     val model = H3RefWriteBuilder.vyberOdblokovany(nabidka, H3RefWriteBuilder.CAPTIONER_ODVAZANY)
                         ?: throw ComfyException(
                             "zadny captioner",
-                            "Přepisovač nemá čím obrázek přečíst — chybí vidoucí GGUF s projektorem.",
+                            t("Přepisovač nemá čím obrázek přečíst — chybí vidoucí GGUF s projektorem."),
                         )
                     val jmeno = client.uploadImage(obr.readBytes(), "sbfilm_storyboard.png")
                     val wf = cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
@@ -4932,7 +4902,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: (e.message ?: "Chyba"), PraceNaPromptu.VYLEPSENI,
+                    (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
                 )
             }
         }
@@ -5002,7 +4972,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: (e.message ?: "Chyba"), PraceNaPromptu.VYLEPSENI,
+                    (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
                 )
             }
         }
@@ -5225,14 +5195,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun prepisNavazani(client: ComfyClient, zadani: String): String {
         val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS) ?: throw ComfyException(
             "llama uzel chybi",
-            "Server nemá uzly llama.cpp — bez nich se zadání navázání přepsat nedá.",
+            t("Server nemá uzly llama.cpp — bez nich se zadání navázání přepsat nedá."),
         )
         val nabidka = spec.getJSONObject("input").getJSONObject("required")
             .nabidkaArr("model")
             .let { a -> (0 until a.length()).map { a.getString(it) } }
         val model = ImagePromptBuilder.vyberModel(nabidka) ?: throw ComfyException(
             "zadny model",
-            "V models/LLM není žádný jazykový model, kterým by se zadání přepsalo.",
+            t("V models/LLM není žádný jazykový model, kterým by se zadání přepsalo."),
         )
         val wf = cz.promptlab.h3video.comfy.LongMmPromptBuilder.build(
             zadani = zadani,
@@ -5594,8 +5564,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val spec = client.objectInfo(PromptRewriteBuilder.NODE_CLASS)
                         ?: throw ComfyException(
                             "rewriter chybi",
-                            "Server nemá balík Prompt Rewriter — nainstaluj " +
-                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI.",
+                            t("Server nemá balík Prompt Rewriter — nainstaluj " +
+                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI."),
                         )
                     val req = spec.getJSONObject("input").getJSONObject("required")
                     val nabidka = req.nabidkaArr("model")
@@ -5603,7 +5573,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         (0 until nabidka.length()).map { nabidka.getString(it) }
                     ) ?: throw ComfyException(
                         "zadny model",
-                        "Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM.",
+                        t("Přepisovač nenabízí žádný model — nahraj GGUF do models/LLM."),
                     )
                     val fotka = s.reference.firstOrNull()?.soubor?.takeIf { it.exists() }
                         ?.takeIf { s.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI }
@@ -5635,7 +5605,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Přepis se nepovedl."),
                     PraceNaPromptu.VYLEPSENI,
                 )
             }
@@ -5697,7 +5667,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
                 _rewriteState.value = RewriteState.Fail(
-                    (e as? ComfyException)?.userMessage ?: e.message ?: "Přepis se nepovedl.",
+                    (e as? ComfyException)?.userMessage ?: e.message ?: t("Přepis se nepovedl."),
                     PraceNaPromptu.VYLEPSENI,
                 )
             }
@@ -5712,8 +5682,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     ): Pair<org.json.JSONObject, String> {
         client.objectInfo(Ltx25PromptBuilder.NODE_CLASS) ?: throw ComfyException(
             "uzel chybi",
-            "Server nemá uzel ${Ltx25PromptBuilder.NODE_CLASS} — potřebuje ComfyUI, " +
-                "které zná LTX 2. Odvázaný přepisovač jede i bez něj.",
+            t("Server nemá uzel %s — potřebuje ComfyUI, " +
+                "které zná LTX 2. Odvázaný přepisovač jede i bez něj.").format(Ltx25PromptBuilder.NODE_CLASS),
         )
         val encoder = Ltx25Builder.encoderZPredlohy(getApplication(), scene.rezim)
         val nahrana = fotka?.let { client.uploadImage(it.readBytes(), it.name) }
@@ -5733,7 +5703,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     ): Pair<org.json.JSONObject, String> {
         val spec = client.objectInfo(ImagePromptBuilder.LOADER_CLASS) ?: throw ComfyException(
             "llama uzel chybi",
-            "Server nemá uzly llama.cpp — bez nich odvázaný přepisovač nejede.",
+            t("Server nemá uzly llama.cpp — bez nich odvázaný přepisovač nejede."),
         )
         fun nabidka(pole: String): List<String> {
             val a = spec.getJSONObject("input").getJSONObject("required")
@@ -5742,7 +5712,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
         val model = ImagePromptBuilder.vyberModel(nabidka("model")) ?: throw ComfyException(
             "zadny model",
-            "V models/LLM není žádný GGUF model, ze kterého by šlo psát.",
+            t("V models/LLM není žádný GGUF model, ze kterého by šlo psát."),
         )
         // Bez projektoru fotku neuvidí. Jede se dál naslepo — systémový prompt
         // mu pak řekne, ať si prostředí nevymýšlí.

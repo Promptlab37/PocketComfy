@@ -79,8 +79,8 @@ class GenerationService : Service() {
                                 // Texty všech druhů běhů drží matice v RunTexts.kt.
                                 append(stageText(s.stage, s.kind, s.model))
                                 if (s.stage == Stage.SAMPLING && s.totalSteps > 0)
-                                    append(" · krok ${s.step}/${s.totalSteps}")
-                                s.etaSeconds?.let { append(" · zbývá ~${formatEta(it)}") }
+                                    append(" · " + t("krok %d/%d").format(s.step, s.totalSteps))
+                                s.etaSeconds?.let { append(" · " + t("zbývá ~%s").format(formatEta(it))) }
                             }
                             notify(
                                 NOTIF_PROGRESS,

@@ -126,8 +126,7 @@ fun AllInOneSection(vm: MainViewModel) {
                 // Reference: značky <Picture N> se do popisu doplňují samy
                 // s nahráním fotky; čipy je ukazují a doťuknou chybějící.
                 if (scene.mode == AioMode.REFERENCE) {
-                    // Počítá se jako uzel H3: storyboard je <Picture 1>, postavy
-                    // za ním. FlowRow — šest čipů se na úzký telefon nevejde.
+                    // FlowRow — šest čipů se na úzký telefon nevejde.
                     val pocet = scene.uploadImages.size
                     if (pocet > 0) {
                         androidx.compose.foundation.layout.FlowRow(
@@ -248,10 +247,10 @@ fun AllInOneSection(vm: MainViewModel) {
                 value = when {
                     scene.mode == AioMode.EXTEND -> {
                         val (_, _, nove) = planExtend(scene.seconds)
-                        "%.1f s navíc".format(nove / 24f)
+                        t("%.1f s navíc").format(nove / 24f)
                     }
                     premalovani -> t("prvních %.0f s videa").format(scene.seconds)
-                    else -> "%.1f s (%d snímků)".format(scene.frames / 24f, scene.frames)
+                    else -> t("%.1f s (%d snímků)").format(scene.frames / 24f, scene.frames)
                 },
                 position = scene.seconds,
                 range = 2f..strop,
@@ -311,7 +310,7 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene, postavy: Boolean = fa
                     ObrazekSlot(
                         slot = slot,
                         popisek = if (postavy) t("Postava %d").format(scene.refs.indexOf(slot) + 1)
-                        else "Reference ${scene.refs.indexOf(slot) + 1}",
+                        else t("Reference %d").format(scene.refs.indexOf(slot) + 1),
                         modifier = Modifier.weight(1f),
                         onPick = { uri -> vm.pickAioImage("ref", slot.key, uri) },
                         onClear = { vm.clearAioImage("ref", slot.key) },
@@ -338,36 +337,11 @@ private fun RefsMrizka(vm: MainViewModel, scene: AioScene, postavy: Boolean = fa
 
 @Composable
 private fun ReferenceSekce(vm: MainViewModel, scene: AioScene) {
-    // Storyboard má vlastní sekci s přepínačem nahoře: vypnutý je to jen
-    // jeden řádek, zapnutý pod ním rozbalí široké pole pro mřížku panelů.
-    // Reference se pak jmenují Postavy — nic se nemaže ani nepřehazuje
-    // (návrh prošel kritikem 28. 9. 2026).
-    SectionCard(title = t("Storyboard")) {
-        PrepinacRadek(
-            titulek = t("Experimentální"),
-            detail = "",
-            checked = scene.storyboard,
-            onChange = { vm.setAioStoryboard(it) },
-        )
-        if (scene.storyboard) {
-            Spacer(Modifier.height(12.dp))
-            ObrazekSlot(
-                slot = scene.storyboardObr,
-                popisek = t("Storyboard"),
-                modifier = Modifier.fillMaxWidth(),
-                pomer = 16f / 9f,
-                celyObrazek = true,
-                onPick = { uri -> vm.pickAioImage("sb", 1, uri) },
-                onClear = { vm.clearAioImage("sb", 1) },
-            )
-        }
-    }
-
     SectionCard(
-        title = if (scene.storyboard) t("Postavy") else t("Reference"),
+        title = t("Reference"),
         subtitle = t("Podle nich model drží podobu postav, věcí i stylu")
     ) {
-        RefsMrizka(vm, scene, postavy = scene.storyboard)
+        RefsMrizka(vm, scene)
     }
 
     SectionCard(
@@ -423,7 +397,7 @@ private fun ReferencniVideoObsah(vm: MainViewModel, scene: AioScene) {
     Column {
         VideoRadek(
             soubor = scene.refVideo,
-            prazdny = "Vybrat video z galerie",
+            prazdny = t("Vybrat video z galerie"),
             onPick = { uri -> vm.pickAioVideo("refvideo", uri) },
             onClear = { vm.clearAioVideo("refvideo") },
         )
@@ -432,7 +406,7 @@ private fun ReferencniVideoObsah(vm: MainViewModel, scene: AioScene) {
             PrepinacRadek(
                 titulek = t("Použít i zvuk z videa"),
                 detail = if (scene.refVideoAudio)
-                    "Model dostane zvukovou stopu videa jako referenci"
+                    t("Model dostane zvukovou stopu videa jako referenci")
                 else t("Zvuk z videa se zahodí, model si vytvoří vlastní"),
                 checked = scene.refVideoAudio,
                 onChange = { vm.setAioRefVideoAudio(it) },
@@ -452,7 +426,7 @@ private fun KeyframeSekce(vm: MainViewModel, scene: AioScene) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ObrazekSlot(
                         slot = slot,
-                        popisek = "Snímek ${i + 1}",
+                        popisek = t("Snímek %d").format(i + 1),
                         modifier = Modifier.width(110.dp),
                         onPick = { uri -> vm.pickAioImage("key", slot.key, uri) },
                         onClear = { vm.clearAioImage("key", slot.key) },
@@ -463,8 +437,8 @@ private fun KeyframeSekce(vm: MainViewModel, scene: AioScene) {
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
                         LabeledSlider(
-                            label = "Kde ve videu",
-                            value = "snímek ${slot.position} · %.1f s".format(slot.position / 24f),
+                            label = t("Kde ve videu"),
+                            value = t("snímek %d · %.1f s").format(slot.position, slot.position / 24f),
                             position = slot.position.toFloat(),
                             range = 1f..scene.frames.toFloat(),
                             onChange = { vm.setAioKeyPosition(slot.key, it.roundToInt()) },
@@ -535,7 +509,7 @@ private fun VideoSekce(vm: MainViewModel, scene: AioScene, titulek: String, popi
     SectionCard(title = titulek, subtitle = popis) {
         VideoRadek(
             soubor = scene.sourceVideo,
-            prazdny = "Vybrat video z galerie",
+            prazdny = t("Vybrat video z galerie"),
             onPick = { uri -> vm.pickAioVideo("source", uri) },
             onClear = { vm.clearAioVideo("source") },
         )
@@ -705,7 +679,7 @@ private fun VideoRadek(
                     .clickable(onClick = onClear),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Close, "Odebrat video", Modifier.size(17.dp), TextMid)
+                Icon(Icons.Default.Close, t("Odebrat video"), Modifier.size(17.dp), TextMid)
             }
         }
     }

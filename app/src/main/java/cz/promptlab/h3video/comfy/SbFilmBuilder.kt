@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.comfy
 
+import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.data.SbFilmPlan
 import cz.promptlab.h3video.data.SbFilmScene
 import cz.promptlab.h3video.data.SbUsek
@@ -103,7 +104,7 @@ object SbFilmBuilder {
         pomer: String,
         seed: Long,
     ): JSONObject {
-        require(useky.isNotEmpty() && useky.size == zadani.size) { "úseky a zadání nesedí" }
+        require(useky.isNotEmpty() && useky.size == zadani.size) { t("úseky a zadání nesedí") }
         val wf = JSONObject()
         wf.put(N_UNET, uzel("UNETLoader", "Model", JSONObject().put("unet_name", UNET).put("weight_dtype", "default")))
         wf.put(N_CLIP, uzel("CLIPLoader", "Textový enkodér", JSONObject()

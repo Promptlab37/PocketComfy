@@ -332,22 +332,22 @@ private fun SegmentPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "Segment ${index + 1}",
+                t("Segment %d").format(index + 1),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextHi, fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f)
             )
-            IconAction(Icons.Default.ChevronLeft, "Posunout doleva", index > 0) {
+            IconAction(Icons.Default.ChevronLeft, t("Posunout doleva"), index > 0) {
                 vm.moveSegment(seg.key, -1)
             }
             IconAction(
-                Icons.Default.ChevronRight, "Posunout doprava",
+                Icons.Default.ChevronRight, t("Posunout doprava"),
                 index < scene.segments.lastIndex
             ) { vm.moveSegment(seg.key, +1) }
-            IconAction(Icons.Default.ContentCopy, "Duplikovat", scene.canAdd) {
+            IconAction(Icons.Default.ContentCopy, t("Duplikovat"), scene.canAdd) {
                 vm.duplicateSegment(seg.key)
             }
-            IconAction(Icons.Default.Delete, "Odebrat", scene.segments.size > 1) {
+            IconAction(Icons.Default.Delete, t("Odebrat"), scene.segments.size > 1) {
                 vm.removeSegment(seg.key)
             }
         }
@@ -411,8 +411,8 @@ private fun SegmentPanel(
         if (scene.onlySegment > 0) {
             Spacer(Modifier.height(6.dp))
             Text(
-                "Generovat přepočítá jen segment ${scene.onlySegment}, ostatní se vezmou " +
-                    "z mezipaměti. Po dokončení se volba sama vypne.",
+                t("Generovat přepočítá jen segment %d, ostatní se vezmou " +
+                    "z mezipaměti. Po dokončení se volba sama vypne.").format(scene.onlySegment),
                 style = MaterialTheme.typography.bodySmall, color = Amber
             )
         }

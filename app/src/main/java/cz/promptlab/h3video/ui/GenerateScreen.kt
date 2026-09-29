@@ -224,7 +224,7 @@ private fun ProfilePicker(
                             fontWeight = if (active) FontWeight.SemiBold else FontWeight.Normal
                         )
                         Text(
-                            if (nejde) "Nejde s referencemi" else p.detail,
+                            if (nejde) t("Nejde s referencemi") else p.detail,
                             style = MaterialTheme.typography.bodySmall,
                             color = if (active) TextMid else TextLow
                         )
@@ -451,7 +451,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 )
                 Row {
                     Text(
-                        "${params.frames} snímků · 24 fps",
+                        t("%d snímků · 24 fps").format(params.frames),
                         style = MaterialTheme.typography.bodySmall, color = TextLow,
                         modifier = Modifier.weight(1f)
                     )
@@ -565,7 +565,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                         }
                     }
                     Column {
-                        Text("Velikost", style = MaterialTheme.typography.labelMedium, color = TextLow)
+                        Text(t("Velikost"), style = MaterialTheme.typography.labelMedium, color = TextLow)
                         Spacer(Modifier.height(8.dp))
                         // Pilulky ukazují rovnou výsledná rozlišení pro zvolený poměr stran –
                         // megapixely z tabulky se přepočítávají automaticky, uživatel čísla
@@ -578,7 +578,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                             selected = params.megapixels,
                             label = { mp ->
                                 val r = Resolution.of(pomerPlatna, mp)
-                                if (r == nativni) "${r.label} • nativní" else r.label
+                                if (r == nativni) t("%s • nativní").format(r.label) else r.label
                             },
                             onSelect = { v -> vm.update { it.copy(megapixels = v) } }
                         )
@@ -616,7 +616,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             SectionCard(
                 title = t("Pokročilé"),
                 stav = if (advanced) null else
-                    if (onWorkflowDefaults) "Nastaveno podle workflow"
+                    if (onWorkflowDefaults) t("Nastaveno podle workflow")
                     else t("Změněno oproti workflow"),
                 trailing = {
                     Icon(
@@ -697,7 +697,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                     value = "%.1f".format(params.shiftAudio),
                                     position = params.shiftAudio, range = 1f..10f,
                                     onChange = { v -> vm.update { it.copy(shiftAudio = v) } },
-                                    note = "Hodnota z workflow je 3."
+                                    note = t("Hodnota z workflow je 3.")
                                 )
                             }
                             // 3 kroky ukládá přes SaveVideo bez CRF — posuvník by lhal.
@@ -1185,9 +1185,9 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
             !turbo && active == 0 -> t("Jen zrychlovací z workflow")
             !turbo -> t("Zrychlovací z workflow + %d další").format(active)
             !params.turboLoraOn && active == 0 -> t("Žádná – model jede na plno")
-            !params.turboLoraOn -> "$active bez Turba"
+            !params.turboLoraOn -> t("%d bez Turba").format(active)
             active == 0 -> "Turbo"
-            else -> "Turbo + $active další"
+            else -> t("Turbo + %d další").format(active)
         },
     ) {
         Column {
@@ -1220,7 +1220,7 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
                         colors = sliderColors()
                     )
                     Text(
-                        "Síla %.2f".format(java.util.Locale.US, params.turboLoraStrength),
+                        t("Síla %.2f").format(java.util.Locale.US, params.turboLoraStrength),
                         style = MaterialTheme.typography.bodySmall, color = TextLow
                     )
                     Spacer(Modifier.height(8.dp))
@@ -1234,8 +1234,8 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
                                 known.file,
                                 nazev = known.label,
                                 poznamka = if (onServer)
-                                    "${known.steps} kroků · shift %.2f".format(
-                                        java.util.Locale.US, known.shiftVideo
+                                    t("%d kroků · shift %.2f").format(
+                                        java.util.Locale.US, known.steps, known.shiftVideo
                                     )
                                 else t("Na serveru není – nejdřív ji stáhni do models/loras"),
                                 varovani = !onServer,
@@ -1261,8 +1261,8 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
                                 maxLines = 2
                             )
                             Text(
-                                if (l.enabled) "Síla %.2f".format(java.util.Locale.US, l.strength)
-                                else "Vypnuto",
+                                if (l.enabled) t("Síla %.2f").format(java.util.Locale.US, l.strength)
+                                else t("Vypnuto"),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = if (l.enabled) TextLow else Amber
                             )
@@ -1280,7 +1280,7 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
                                 .clickable { vm.removeLora(l.name) },
                             contentAlignment = Alignment.Center
                         ) {
-                            Icon(Icons.Default.Close, "Odebrat", Modifier.size(16.dp), TextLow)
+                            Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextLow)
                         }
                     }
                     AnimatedVisibility(l.enabled) {
@@ -1499,7 +1499,7 @@ private fun OkrajPasu(doleva: Boolean, vyska: androidx.compose.ui.unit.Dp) {
     ) {
         Icon(
             if (doleva) Icons.Default.ChevronLeft else Icons.Default.ChevronRight,
-            contentDescription = if (doleva) "Další karty vlevo" else "Další karty vpravo",
+            contentDescription = if (doleva) t("Další karty vlevo") else t("Další karty vpravo"),
             modifier = Modifier.size(20.dp),
             tint = Cyan,
         )
@@ -1683,7 +1683,7 @@ fun DarkTextField(
                     IconButton(onClick = onClear, modifier = Modifier.size(44.dp)) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Vymazat text",
+                            contentDescription = t("Vymazat text"),
                             modifier = Modifier.size(20.dp),
                             tint = TextMid
                         )
@@ -1838,7 +1838,7 @@ private fun UnetPicker(
                         style = MaterialTheme.typography.bodySmall, color = TextLow
                     )
                     !vsechny && ostatni.isNotEmpty() -> OutlineButton(
-                        "Zobrazit i ostatní modely (${ostatni.size})",
+                        t("Zobrazit i ostatní modely (%d)").format(ostatni.size),
                         modifier = Modifier.fillMaxWidth(),
                         onClick = { vsechny = true }
                     )

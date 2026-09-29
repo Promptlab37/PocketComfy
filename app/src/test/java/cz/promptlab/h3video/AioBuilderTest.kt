@@ -284,93 +284,23 @@ class AioBuilderTest {
         assertEquals(1, cond.getJSONArray("ref_video_audios.ref_video_audio_0").getInt(1))
     }
 
-    private fun sbScena(prompt: String = "honička v uličce") = AioScene(
-        mode = AioMode.REFERENCE,
-        prompt = prompt,
-        refs = listOf(AioSlot(key = 1, image = File("postava.jpg"))),
-        storyboard = true,
-        storyboardObr = AioSlot(key = 1, image = File("mrizka.jpg")),
-    )
-
+    /**
+     * Storyboard má od 4.98 vlastní kartu (Film ze storyboardu); v All in One
+     * zůstávají reference jen jako postavy/věci a první fotka se kotví.
+     */
     @Test
-    fun `storyboard vypne kotvu a predradi vetu z prirucky`() {
-        val scene = sbScena()
-        // Mrizka jde do uzlu prvni, postavy za ni.
-        assertEquals(listOf("mrizka.jpg", "postava.jpg"), scene.uploadImages.map { it.name })
+    fun `reference bez storyboardu - prompt beze zmeny a kotva`() {
+        val scene = AioScene(
+            mode = AioMode.REFERENCE, prompt = "<Picture 1> liška běží",
+            refs = listOf(AioSlot(key = 1, image = File("postava.jpg"))),
+        )
+        assertEquals(listOf("postava.jpg"), scene.uploadImages.map { it.name })
         val wf = AioBuilder.build(
             videoTemplate(condClass = "MiniMaxH3ReferenceToVideo"),
-            params(), scene, listOf("mrizka.jpg", "postava.jpg"),
+            params(), scene, listOf("postava.jpg"),
         )
-        // Mrizka panelu nesmi byt pripnuta jako snimek 0.
-        assertFalse(wf.keys().asSequence().any { wf.classOf(it) == "H3IdentityAnchor" })
-        assertEquals("6", wf.inputs("7").getJSONArray("conditioning").getString(0))
-        // Mrizka je prvni obrazek = <Picture 1> v uzlu H3.
-        val prvni = wf.inputs("6").getJSONArray("ref_images.ref_image_0").getString(0)
-        assertEquals("mrizka.jpg", wf.inputs(prvni).getString("image"))
-        val prompt = wf.inputs("6").getString("prompt")
-        assertTrue(prompt.startsWith(AioBuilder.STORYBOARD_VETA))
-        // Postava dostane svou znacku — model jinak fotky ignoruje.
-        assertTrue(prompt.contains("The character is shown in <Picture 2>."))
-        assertTrue(prompt.endsWith("honička v uličce"))
-    }
-
-    @Test
-    fun `veta se prida i kdyz popis zacina znackou Picture 1`() {
-        // Do 4.76 ji vyradila znacka, kterou appka do popisu vklada sama.
-        val p = AioBuilder.promptProStoryboard(sbScena("<Picture 1> liška běží"))
-        assertTrue(p.startsWith(AioBuilder.STORYBOARD_VETA))
-    }
-
-    @Test
-    fun `ve strukturovanem zadani jde veta do subject_definitions`() {
-        val text = "subject_definitions:\n<Subject 1> is the fox in <Picture 2>.\n\nsummary:\nx"
-        val p = AioBuilder.promptProStoryboard(sbScena(text))
-        assertTrue(p.startsWith("subject_definitions:\n" + AioBuilder.STORYBOARD_VETA))
-        assertTrue(p.contains("<Subject 1> is the fox in <Picture 2>."))
-        assertTrue(p.endsWith("summary:\nx"))
-    }
-
-    @Test
-    fun `prepis se storyboardem se nemeni`() {
-        val text = "<Picture 1> is a storyboard reference for [Shot 1] and [Shot 2]."
-        assertEquals(text, AioBuilder.promptProStoryboard(sbScena(text)))
-        // Bez storyboardu se prompt nemeni nikdy.
-        assertEquals("x", AioBuilder.promptProStoryboard(sbScena("x").copy(storyboard = false)))
-        // V jinem rezimu storyboard neplati, i kdyby zustal zapnuty.
-        assertEquals("x", AioBuilder.promptProStoryboard(sbScena("x").copy(mode = AioMode.IMAGE)))
-    }
-
-    @Test
-    fun `fotka postavy se nikdy nevezme jako storyboard`() {
-        // Prazdny slot 1 a fotka ve slotu 2 — do 4.76 by fotka sla jako mrizka.
-        val s = AioScene(
-            mode = AioMode.REFERENCE, prompt = "x", storyboard = true,
-            refs = listOf(AioSlot(key = 1), AioSlot(key = 2, image = File("postava.jpg"))),
-        )
-        assertFalse(s.storyboardUcinny)
-        assertEquals(listOf("postava.jpg"), s.uploadImages.map { it.name })
-        assertEquals("Chybí storyboard.", cz.promptlab.h3video.data.aioProblem(s))
-    }
-
-    @Test
-    fun `vypnuti storyboardu nic nesmaze a mrizka do videa nejde`() {
-        val vyp = sbScena().copy(storyboard = false)
-        assertEquals(listOf("postava.jpg"), vyp.uploadImages.map { it.name })
-        assertEquals("mrizka.jpg", vyp.storyboardObr.image?.name)
-        assertTrue(vyp.kotvaUcinna)
-        // Znovu zapnuto = obe sady zpet.
-        assertEquals(listOf("mrizka.jpg", "postava.jpg"), vyp.copy(storyboard = true).uploadImages.map { it.name })
-    }
-
-    @Test
-    fun `se storyboardem nejvys 5 postav a tvar platna se z mrizky nebere`() {
-        val sest = (1..6).map { AioSlot(key = it, image = File("p$it.jpg")) }
-        val s = sbScena().copy(refs = sest)
-        assertFalse(s.canAddRef)
-        assertEquals("Nejvýš 5 postav.", cz.promptlab.h3video.data.aioProblem(s))
-        assertNull(cz.promptlab.h3video.data.aioProblem(s.copy(refs = sest.take(5))))
-        assertFalse(cz.promptlab.h3video.data.vstupUrcujePomer("ref", sbScena()))
-        assertFalse(cz.promptlab.h3video.data.vstupUrcujePomer("sb", sbScena()))
+        assertEquals("<Picture 1> liška běží", wf.inputs("6").getString("prompt"))
+        assertTrue(wf.keys().asSequence().any { wf.classOf(it) == "H3IdentityAnchor" })
     }
 
     @Test

@@ -2,6 +2,7 @@ package cz.promptlab.h3video.ui
 
 import android.net.Uri
 import androidx.compose.foundation.background
+import cz.promptlab.h3video.data.t
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -97,7 +98,7 @@ fun AudioPrehravac(file: File, modifier: Modifier = Modifier) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 if (hraje) Icons.Default.Pause else Icons.Default.PlayArrow,
-                if (hraje) "Pauza" else "Přehrát",
+                if (hraje) t("Pauza") else t("Přehrát"),
                 Modifier
                     .size(46.dp)
                     .clip(RoundedCornerShape(50))

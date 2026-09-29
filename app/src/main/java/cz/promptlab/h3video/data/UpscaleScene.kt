@@ -89,9 +89,10 @@ fun upscaleHints(s: UpscaleScene): List<String> {
         return out
     }
     if (s.tilesPerSide >= 3) {
-        out += "Mřížka ${s.grid} znamená ${s.tilesPerSide * s.tilesPerSide} dlaždic — " +
-            "výsledek kolem ${s.tilesPerSide * 3} tisíc pixelů, ale poběží to " +
-            "násobně déle než 2×2."
+        out += t(
+            "Mřížka %s znamená %d dlaždic — výsledek kolem %d tisíc pixelů, ale poběží to " +
+                "násobně déle než 2×2."
+        ).format(s.grid, s.tilesPerSide * s.tilesPerSide, s.tilesPerSide * 3)
     }
     return out
 }

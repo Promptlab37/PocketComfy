@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.comfy
 
+import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.data.GenParams
 import cz.promptlab.h3video.data.LongScene
 import cz.promptlab.h3video.data.LongStart
@@ -132,7 +133,7 @@ object LongVideoBuilder {
     ): JSONObject {
         val wf = JSONObject()
         val useky = scene.aktivniUseky
-        require(useky.isNotEmpty()) { "Dlouhé video potřebuje aspoň jeden úsek." }
+        require(useky.isNotEmpty()) { t("Dlouhé video potřebuje aspoň jeden úsek.") }
         val navazuje = scene.zacatek == LongStart.EXISTING_VIDEO
         val startMode = if (navazuje) START_EXISTING else START_GENERATED
 

@@ -1,6 +1,7 @@
 package cz.promptlab.h3video.update
 
 import android.content.Context
+import cz.promptlab.h3video.data.t
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -96,7 +97,7 @@ object UpdateChecker {
         val cislo = znacka.trimStart('v', 'V').trim()
         val casti = cislo.split('.')
         if (casti.any { it.toIntOrNull() == null }) throw IllegalStateException(
-            "Vydání „$znacka\" nemá čitelné číslo verze"
+            t("Vydání „%s\" nemá čitelné číslo verze").format(znacka)
         )
         if (casti.size == 1) return casti[0].toInt() > kodTed
 
@@ -121,24 +122,24 @@ object UpdateChecker {
         checkHttp.newCall(req).execute().use { r ->
             if (r.code == 401 || r.code == 403) throw IllegalStateException(
                 if (token.isBlank())
-                    "GitHub odmítl anonymní dotaz (${r.code}). Zkus to za chvíli znovu."
+                    t("GitHub odmítl anonymní dotaz (%d). Zkus to za chvíli znovu.").format(r.code)
                 else
-                    "GitHub token odmítl přístup (${r.code}). Zkontroluj, že je platný a má právo na repozitář."
+                    t("GitHub token odmítl přístup (%d). Zkontroluj, že je platný a má právo na repozitář.").format(r.code)
             )
             if (r.code == 404) throw IllegalStateException(
                 if (token.isBlank())
-                    "Veřejné vydání se zatím nenašlo. Zkus to později."
+                    t("Veřejné vydání se zatím nenašlo. Zkus to později.")
                 else
-                    "Repozitář $OWNER/${repository(token)} nebo jeho vydání se nenašlo."
+                    t("Repozitář %s nebo jeho vydání se nenašlo.").format("$OWNER/${repository(token)}")
             )
-            if (!r.isSuccessful) throw IllegalStateException("GitHub odpověděl ${r.code}")
+            if (!r.isSuccessful) throw IllegalStateException(t("GitHub odpověděl %d").format(r.code))
 
             val j = JSONObject(r.body!!.string())
             val tag = j.optString("tag_name")
             val novejsi = jeNovejsiVydani(tag, currentVersionCode(ctx), currentVersionName(ctx))
 
             val assets = j.optJSONArray("assets")
-                ?: throw IllegalStateException("Vydání neobsahuje soubor APK")
+                ?: throw IllegalStateException(t("Vydání neobsahuje soubor APK"))
             var url: String? = null
             var size = 0L
             for (i in 0 until assets.length()) {
@@ -149,7 +150,7 @@ object UpdateChecker {
                     break
                 }
             }
-            if (url.isNullOrBlank()) throw IllegalStateException("Vydání neobsahuje soubor APK")
+            if (url.isNullOrBlank()) throw IllegalStateException(t("Vydání neobsahuje soubor APK"))
 
             if (!novejsi) return null
             return UpdateInfo(
@@ -175,10 +176,10 @@ object UpdateChecker {
         if (response.code in 300..399) {
             val location = response.header("Location")
             response.close()
-            if (location.isNullOrBlank()) throw IllegalStateException("GitHub nevrátil adresu souboru")
+            if (location.isNullOrBlank()) throw IllegalStateException(t("GitHub nevrátil adresu souboru"))
             // Přesměrování musí zůstat na HTTPS – přes holé http by šlo APK podstrčit.
             if (!location.startsWith("https://")) throw IllegalStateException(
-                "Přesměrování nevede na zabezpečenou adresu – stažení zrušeno."
+                t("Přesměrování nevede na zabezpečenou adresu – stažení zrušeno.")
             )
             response = http.newCall(
                 Request.Builder().url(location).header("User-Agent", "H3Video").build()
@@ -186,7 +187,7 @@ object UpdateChecker {
         }
 
         response.use { r ->
-            if (!r.isSuccessful) throw IllegalStateException("Stažení selhalo (${r.code})")
+            if (!r.isSuccessful) throw IllegalStateException(t("Stažení selhalo (%d)").format(r.code))
             val nazev = info.znacka.filter { it.isLetterOrDigit() || it == '.' }
             val target = File(ctx.cacheDir, "update-$nazev.apk")
             val tmp = File(ctx.cacheDir, target.name + ".part")
@@ -211,7 +212,7 @@ object UpdateChecker {
                 if (!skutecny.equals(ocekavany, ignoreCase = true)) {
                     tmp.delete()
                     throw IllegalStateException(
-                        "Stažený soubor neodpovídá kontrolnímu součtu z vydání – instalace zrušena."
+                        t("Stažený soubor neodpovídá kontrolnímu součtu z vydání – instalace zrušena.")
                     )
                 }
             }

@@ -97,11 +97,11 @@ fun UpscaleSection(vm: MainViewModel) {
                         .clickable { vm.clearUpscaleImage() },
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.Close, "Odebrat", Modifier.size(16.dp), TextMid)
+                    Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextMid)
                 }
             } else {
                 Icon(
-                    Icons.Default.AddPhotoAlternate, "Vybrat fotku",
+                    Icons.Default.AddPhotoAlternate, t("Vybrat fotku"),
                     Modifier.align(Alignment.Center).size(34.dp), TextMid
                 )
             }
@@ -133,7 +133,7 @@ fun UpscaleSection(vm: MainViewModel) {
                 selected = scene.grid,
                 label = {
                     val n = it.substringBefore('x').toIntOrNull() ?: 2
-                    "$it · ~${n * 3} tis. px"
+                    t("%s · ~%d tis. px").format(it, n * 3)
                 },
                 onSelect = { vm.setUpscaleGrid(it) },
             )

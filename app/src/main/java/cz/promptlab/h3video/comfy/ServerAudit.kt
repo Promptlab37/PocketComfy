@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.comfy
 
+import cz.promptlab.h3video.data.t
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -137,42 +138,42 @@ object ServerAudit {
      */
     fun zprava(r: AuditReport): String = buildString {
         if (r.ok) {
-            append("Server má všechno (${r.checkedClasses} druhů uzlů, balík All in One i modely).")
+            append(t("Server má všechno (%d druhů uzlů, balík All in One i modely).").format(r.checkedClasses))
             return@buildString
         }
         if (!r.aioOk) {
-            append("Chybí balík ComfyUI-ALLinONE-MinimaxH3 — bez něj nejedou karty ")
-            append("All in One a Dialogy.\n")
+            append(t("Chybí balík ComfyUI-ALLinONE-MinimaxH3 — bez něj nejedou karty All in One a Dialogy.")).append('\n')
             append("  https://github.com/LeonQ8/ComfyUI-ALLinONE-MinimaxH3\n\n")
         }
         if (r.missingNodes.isNotEmpty()) {
-            append("CHYBĚJÍCÍ UZLY — doinstaluj balík a restartuj ComfyUI:\n")
+            append(t("CHYBĚJÍCÍ UZLY — doinstaluj balík a restartuj ComfyUI:")).append('\n')
             // Seskupeno po balících, ať se stejný odkaz neopakuje u každého uzlu.
             r.missingNodes.groupBy { Katalog.balikProUzel(it) }.forEach { (balik, uzly) ->
                 if (balik == null) {
                     uzly.sorted().forEach { append("• ").append(it).append('\n') }
-                    append("  (neznámý balík — hledej název uzlu v ComfyUI-Manageru)\n")
+                    append("  (").append(t("neznámý balík — hledej název uzlu v ComfyUI-Manageru")).append(")\n")
                 } else {
-                    append("• ").append(balik.nazev).append(" — ").append(balik.karty).append('\n')
-                    append("  chybí: ").append(uzly.sorted().joinToString(", ")).append('\n')
+                    // Katalog je česky (čte se z něj i velikost souboru), překládá se až tady.
+                    append("• ").append(t(balik.nazev)).append(" — ").append(t(balik.karty)).append('\n')
+                    append("  ").append(t("chybí:")).append(' ').append(uzly.sorted().joinToString(", ")).append('\n')
                     if (balik.odkaz.isNotBlank()) append("  ").append(balik.odkaz).append('\n')
                 }
             }
             append('\n')
         }
         if (r.missingModels.isNotEmpty()) {
-            append("CHYBĚJÍCÍ MODELY — stáhni a nakopíruj do složky (restart netřeba):\n")
+            append(t("CHYBĚJÍCÍ MODELY — stáhni a nakopíruj do složky (restart netřeba):")).append('\n')
             r.missingModels.forEach { m ->
                 val info = Katalog.soubor(m.soubor)
                 val slozka = info?.slozka ?: Katalog.slozkaPodleVstupu(m.vstup) ?: "models"
                 append("• ").append(m.soubor).append('\n')
-                append("  → ").append(slozka)
-                info?.karta?.let { append(" · karta ").append(it) }
+                append("  → ").append(t(slozka))
+                info?.karta?.let { append(" · ").append(t("karta")).append(' ').append(t(it)) }
                 append('\n')
                 info?.odkaz?.let { append("  ").append(it).append('\n') }
             }
             append('\n')
         }
-        append("Úplný seznam včetně velikostí je v POZADAVKY.md v repozitáři appky.")
+        append(t("Úplný seznam včetně velikostí je v POZADAVKY.md v repozitáři appky."))
     }
 }

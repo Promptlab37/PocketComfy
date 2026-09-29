@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.higgs
 
+import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.comfy.ComfyException
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
@@ -79,7 +80,7 @@ class HiggsClient(baseUrl: String, private val token: String = "") {
         get("/api/voices").use { r ->
             if (!r.isSuccessful) throw ComfyException(
                 "voices ${r.code}",
-                "Nepodařilo se načíst seznam hlasů (HTTP ${r.code})."
+                t("Nepodařilo se načíst seznam hlasů (HTTP %d).").format(r.code)
             )
             val arr = JSONObject(r.body!!.string()).getJSONArray("voices")
             return (0 until arr.length()).map { i ->
@@ -133,7 +134,7 @@ class HiggsClient(baseUrl: String, private val token: String = "") {
         get("/api/jobs/$id").use { r ->
             if (!r.isSuccessful) throw ComfyException(
                 "job ${r.code}",
-                "Higgs o úloze neví (HTTP ${r.code})."
+                t("Higgs o úloze neví (HTTP %d).").format(r.code)
             )
             val j = JSONObject(r.body!!.string())
             return VoiceJob(
@@ -160,7 +161,7 @@ class HiggsClient(baseUrl: String, private val token: String = "") {
         http.newCall(build("$base/api/jobs/$id/audio?format=wav").build()).execute().use { r ->
             if (!r.isSuccessful) throw ComfyException(
                 "job audio ${r.code}",
-                "Hotový hlas se nepodařilo stáhnout (HTTP ${r.code})."
+                t("Hotový hlas se nepodařilo stáhnout (HTTP %d).").format(r.code)
             )
             target.parentFile?.mkdirs()
             val tmp = File(target.parentFile, target.name + ".part")
@@ -180,22 +181,22 @@ class HiggsClient(baseUrl: String, private val token: String = "") {
             val text = r.body?.string().orEmpty()
             if (r.code == 503) throw ComfyException(
                 "higgs 503: $text",
-                "Higgs se ještě rozjíždí, model se načítá. Zkus to za chvíli."
+                t("Higgs se ještě rozjíždí, model se načítá. Zkus to za chvíli.")
             )
             if (!r.isSuccessful) throw ComfyException(
                 "higgs $what ${r.code}: $text",
                 describeError(text, r.code, what)
             )
             return JSONObject(text).optString("job_id").ifBlank {
-                throw ComfyException("higgs $what bez job_id", "Higgs nevrátil úlohu k $what.")
+                throw ComfyException("higgs $what bez job_id", t("Higgs nevrátil úlohu k %s.").format(t(what)))
             }
         }
     }
 
     private fun describeError(text: String, code: Int, what: String): String = runCatching {
         val detail = JSONObject(text).optString("detail")
-        if (detail.isNotBlank()) detail else "Higgs odmítl $what (HTTP $code)."
-    }.getOrDefault("Higgs odmítl $what (HTTP $code).")
+        if (detail.isNotBlank()) detail else t("Higgs odmítl %s (HTTP %d).").format(t(what), code)
+    }.getOrDefault(t("Higgs odmítl %s (HTTP %d).").format(t(what), code))
 
     private fun build(url: String): Request.Builder {
         val b = Request.Builder().url(url).header("User-Agent", "H3Video")

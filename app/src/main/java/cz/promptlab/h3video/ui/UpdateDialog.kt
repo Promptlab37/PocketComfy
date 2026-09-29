@@ -83,8 +83,8 @@ fun UpdateDialog(
                 Spacer(Modifier.size(10.dp))
                 Text(
                     when (state) {
-                        is UpdateState.Available -> "Je tu ${state.info.versionName}"
-                        is UpdateState.Downloading -> "Stahuji ${state.info.versionName}"
+                        is UpdateState.Available -> t("Je tu %s").format(state.info.versionName)
+                        is UpdateState.Downloading -> t("Stahuji %s").format(state.info.versionName)
                         is UpdateState.Ready -> t("Staženo")
                         else -> t("Aktualizace")
                     },
@@ -148,7 +148,7 @@ fun UpdateDialog(
                         style = MaterialTheme.typography.bodySmall, color = TextMid
                     )
                     Spacer(Modifier.height(18.dp))
-                    GradientButton("Nainstalovat ${state.info.versionName}") {
+                    GradientButton(t("Nainstalovat %s").format(state.info.versionName)) {
                         if (UpdateChecker.canInstall(ctx)) {
                             ctx.startActivity(UpdateChecker.installIntent(ctx, state.apk))
                         } else {

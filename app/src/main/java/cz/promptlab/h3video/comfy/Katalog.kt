@@ -96,7 +96,7 @@ object Katalog {
     )
     private val MASKVID = Balik(
         "MaskVidExperiments", "https://github.com/drozbay/MaskVidExperiments",
-        "All in One → Přemalovat ve videu"
+        "Upravit video → Přemalovat"
     )
     private val H3UPSCALER = Balik(
         "Comfyui_Minimax_h3_latent_Upscaler",
@@ -139,13 +139,27 @@ object Katalog {
     )
     private val LTXV = Balik(
         "ComfyUI-LTXVideo", "https://github.com/Lightricks/ComfyUI-LTXVideo",
-        "Video ze zvuku"
+        "LTX 2.5"
     )
-        private val LSI = Balik(
+    private val LSI = Balik(
         "LSI-Minimax-Segment-Timeline", "", "Časová osa (balík není veřejný)"
     )
+    /** Krea 2 Identity Edit — veřejný balík (pyproject.toml na serveru, 29. 9. 2026). */
     private val KREA = Balik(
-        "nody Krea 2 Edit / H3", "", "Úprava obrázku a video karty (balík není veřejný)"
+        "comfyui-krea2edit (Krea 2 Identity Edit)",
+        "https://github.com/lbouaraba/comfyui-krea2edit",
+        "Úprava obrázku — Krea 2"
+    )
+    /** Pomocné uzly balíku All in One (H3CacheBust, H3IdentityAnchor). */
+    private val ALLINONE = Balik(
+        "ComfyUI-ALLinONE-MinimaxH3",
+        "https://github.com/LeonQ8/ComfyUI-ALLinONE-MinimaxH3",
+        "All in One a Časová osa"
+    )
+    private val SPECTRUM = Balik(
+        "ComfyUI-Spectrum-MiniMax-H3",
+        "https://github.com/xmarre/ComfyUI-Spectrum-MiniMax-H3",
+        "Dlouhé video"
     )
 
     /** Třída uzlu → balík, který ji přináší. */
@@ -237,10 +251,11 @@ object Katalog {
         "LSIMinimaxTimelineRender" to LSI,
         "Krea2EditModelPatch" to KREA,
         "Krea2EditGroundedEncode" to KREA,
-        "SpectrumApplyMiniMaxH3" to KREA,
-        "H3CacheBust" to KREA,
-        "H3IdentityAnchor" to KREA,
-        "MiniMaxH3MemoryEfficientSageAttentionPatch" to KREA,
+        // Třídy ověřené proti NODE_CLASS_MAPPINGS na serveru (29. 9. 2026).
+        "SpectrumApplyMiniMaxH3" to SPECTRUM,
+        "H3CacheBust" to ALLINONE,
+        "H3IdentityAnchor" to ALLINONE,
+        "MiniMaxH3MemoryEfficientSageAttentionPatch" to KJ,
     )
 
     /** Název souboru → kam patří a odkud ho vzít (odkazy ověřené 16. 9. 2026). */
@@ -254,11 +269,11 @@ object Katalog {
             "$HF/Comfy-Org/YuE2/resolve/main/checkpoints/yue2_3b_int8_convrot.safetensors"
         ),
         "ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors" to Soubor(
-            "models/diffusion_models", "Video ze zvuku (21 GB)",
+            "models/diffusion_models", "LTX 2.5 (21 GB)",
             "$HF/Lightricks/LTX-2.5/resolve/main/transformers/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
         ),
         "gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors" to Soubor(
-            "models/text_encoders", "Video ze zvuku (15 GB)",
+            "models/text_encoders", "LTX 2.5 (15 GB)",
             "$HF/Lightricks/LTX-2.5/resolve/main/text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors"
         ),
         "ltx-2.5-video-vae-bf16.safetensors" to Soubor(
@@ -266,11 +281,11 @@ object Katalog {
             "$HF/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-video-vae-bf16.safetensors"
         ),
         "ltx-2.5-audio-vae-bf16.safetensors" to Soubor(
-            "models/vae", "Video ze zvuku — bez něj se zvuk nedostane do latentu",
+            "models/vae", "LTX 2.5 — bez něj se zvuk nedostane do latentu",
             "$HF/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-audio-vae-bf16.safetensors"
         ),
         "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors" to Soubor(
-            "models/latent_upscale_models", "Video ze zvuku — druhý průchod",
+            "models/latent_upscale_models", "LTX 2.5 — druhý průchod",
             "$HF/Lightricks/LTX-2.5/resolve/main/latent_upscale_models/ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
         ),
                 "z_image_turbo_bf16.safetensors" to Soubor(
@@ -298,27 +313,27 @@ object Katalog {
         // Karta Dance — Wan-Dancer 14B. Dvě fáze: globální model rozvrhne
         // pohyb, lokální ho dopiluje. Obojí je samostatný soubor.
         "wan2.2_dancer_14b_global_fp8_scaled.safetensors" to Soubor(
-            "models/diffusion_models", "Dance — Wan-Dancer, 1. fáze (17,1 GB)",
+            "models/diffusion_models", "Pohyb postavy — Wan-Dancer, 1. fáze (17,1 GB)",
             "$HF/Comfy-Org/Wan-Dancer/resolve/main/diffusion_models/wan2.2_dancer_14b_global_fp8_scaled.safetensors"
         ),
         "wan2.2_dancer_14b_local_fp8_scaled.safetensors" to Soubor(
-            "models/diffusion_models", "Dance — Wan-Dancer, 2. fáze (17,1 GB)",
+            "models/diffusion_models", "Pohyb postavy — Wan-Dancer, 2. fáze (17,1 GB)",
             "$HF/Comfy-Org/Wan-Dancer/resolve/main/diffusion_models/wan2.2_dancer_14b_local_fp8_scaled.safetensors"
         ),
         "umt5_xxl_fp16.safetensors" to Soubor(
-            "models/text_encoders", "Dance — textový enkodér Wan (11,4 GB)",
+            "models/text_encoders", "Pohyb postavy — textový enkodér Wan (11,4 GB)",
             "$HF/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/text_encoders/umt5_xxl_fp16.safetensors"
         ),
         "Wan2_1_VAE_bf16.safetensors" to Soubor(
-            "models/vae", "Dance a Wan Animate — VAE Wan 2.1",
+            "models/vae", "Pohyb postavy — VAE Wan 2.1",
             "$HF/Kijai/WanVideo_comfy/resolve/main/Wan2_1_VAE_bf16.safetensors"
         ),
         "clip_vision_h.safetensors" to Soubor(
-            "models/clip_vision", "Dance a Wan Animate — obrazový enkodér (1,2 GB)",
+            "models/clip_vision", "Pohyb postavy — obrazový enkodér (1,2 GB)",
             "$HF/Comfy-Org/Wan_2.1_ComfyUI_repackaged/resolve/main/split_files/clip_vision/clip_vision_h.safetensors"
         ),
         "lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors" to Soubor(
-            "models/loras", "Dance a Wan Animate — zrychlení na 6 kroků",
+            "models/loras", "Pohyb postavy — zrychlení na 6 kroků",
             "$HF/Kijai/WanVideo_comfy/resolve/main/Lightx2v/lightx2v_I2V_14B_480p_cfg_step_distill_rank64_bf16.safetensors"
         ),
         // Upravit video → Vyměnit postavu: SCAIL-2 (Comfy-Org/SCAIL-2).
@@ -389,11 +404,11 @@ object Katalog {
         ),
         // Karta Wan Animate — Wan-Animate 2, nativně v jádře ComfyUI.
         "wan_animate_2_int8_convrot.safetensors" to Soubor(
-            "models/diffusion_models", "Wan Animate — Wan-Animate 2 (16,7 GB)",
+            "models/diffusion_models", "Pohyb postavy (podle videa) — Wan-Animate 2 (16,7 GB)",
             "$HF/Comfy-Org/Wan-Animate-2/resolve/main/diffusion_models/wan_animate_2_int8_convrot.safetensors"
         ),
         "umt5_xxl_fp8_e4m3fn_scaled.safetensors" to Soubor(
-            "models/text_encoders", "Wan Animate — textový enkodér Wan (6,7 GB)",
+            "models/text_encoders", "Pohyb postavy (podle videa) — textový enkodér Wan (6,7 GB)",
             "$HF/Comfy-Org/Wan-Animate-2/resolve/main/text_encoders/umt5_xxl_fp8_e4m3fn_scaled.safetensors"
         ),
         "qwen_image_vae.safetensors" to Soubor(
@@ -421,15 +436,15 @@ object Katalog {
             "$HF/Comfy-Org/Qwen-Image_ComfyUI/resolve/main/split_files/text_encoders/qwen_2.5_vl_7b_fp8_scaled.safetensors"
         ),
         "qwen_image_2.1_int8_convrot.safetensors" to Soubor(
-            "models/diffusion_models", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (7,3 GB)",
+            "models/diffusion_models", "Obrázek, Úprava, Oprava fotky, Domalovat a Výměna tváře — Qwen Image 2.1 (7,3 GB)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/diffusion_models/qwen_image_2.1_int8_convrot.safetensors"
         ),
         "qwen3vl_8b_int8_convrot.safetensors" to Soubor(
-            "models/text_encoders", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (9,4 GB)",
+            "models/text_encoders", "Obrázek, Úprava, Oprava fotky, Domalovat a Výměna tváře — Qwen Image 2.1 (9,4 GB)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/text_encoders/qwen3vl_8b_int8_convrot.safetensors"
         ),
         "qwen_image_2.1_vae_bf16.safetensors" to Soubor(
-            "models/vae", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (0,7 GB, RGBA)",
+            "models/vae", "Obrázek, Úprava, Oprava fotky, Domalovat a Výměna tváře — Qwen Image 2.1 (0,7 GB, RGBA)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors"
         ),
         "qwen-image-2.1-outpaint-v2.safetensors" to Soubor(
@@ -508,7 +523,7 @@ object Katalog {
         ),
         "krea2_identity_edit_v1_2.safetensors" to Soubor("models/loras", "Úprava obrázku"),
         "qwen3vl_32b_minimax_h3_int8_convrot.safetensors" to Soubor(
-            "models/text_encoders", "3 kroky (předloha má enkodér napevno)",
+            "models/text_encoders", "Rychlé video (předloha má enkodér napevno)",
             "$HF/Comfy-Org/MiniMax-H3/resolve/main/text_encoders/qwen3vl_32b_minimax_h3_int8_convrot.safetensors"
         ),
         // Karta 3 kroky stojí na téhle LoRA; předloha ji hledá v podsložce h3.
@@ -521,7 +536,7 @@ object Katalog {
             "$HF/Jackxuanxuan/MiniMax-H3-experimental/resolve/main/minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors"
         ),
         "TaoMate-H3-3step-ComfyUI.safetensors" to Soubor(
-            "models/loras/h3", "Long MiniMax — volba FastVideo VSA a karta 3 kroky",
+            "models/loras/h3", "Long MiniMax — volba FastVideo VSA a karta Rychlé video",
             "$HF/TaoLiveAIGC/TaoMate-H3"
         ),
         "10Eros_Max_h3_fl2va_pruned_int8_convrot.safetensors" to Soubor(

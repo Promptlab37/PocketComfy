@@ -745,10 +745,10 @@ private fun MiniProgress(state: GenState.Running, onExpand: () -> Unit) {
                 Text(
                     buildString {
                         if (state.stage == Stage.SAMPLING && state.totalSteps > 0)
-                            append("krok ${state.step}/${state.totalSteps}")
+                            append(t("krok %d/%d").format(state.step, state.totalSteps))
                         state.etaSeconds?.let {
                             if (isNotEmpty()) append(" · ")
-                            append("zbývá ~${GenerationService.formatEta(it)}")
+                            append(t("zbývá ~%s").format(GenerationService.formatEta(it)))
                         }
                         if (isEmpty()) append(state.label)
                     },
@@ -766,7 +766,7 @@ private fun MiniProgress(state: GenState.Running, onExpand: () -> Unit) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Zobrazit",
+                    t("Zobrazit"),
                     style = MaterialTheme.typography.labelMedium,
                     color = Cyan
                 )
@@ -792,7 +792,7 @@ private fun UpdateBanner(versionName: String, onClick: () -> Unit) {
         Spacer(Modifier.size(10.dp))
         Column(Modifier.weight(1f)) {
             Text(
-                "Je k dispozici $versionName",
+                t("Je k dispozici %s").format(versionName),
                 style = MaterialTheme.typography.bodyMedium,
                 color = TextHi,
                 fontWeight = FontWeight.SemiBold

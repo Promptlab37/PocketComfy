@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.comfy
 
+import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.data.ImageEditScene
 import org.json.JSONArray
 import org.json.JSONObject
@@ -11,7 +12,7 @@ object EditLoraBuilder {
     fun attach(wf: JSONObject, scene: ImageEditScene, consumer: String) {
         val lora = scene.selectedLora
         if (lora.name.isBlank() || lora.strength == 0f) return
-        require(lora.strength.isFinite() && lora.strength in 0f..2f) { "Neplatná síla LoRA" }
+        require(lora.strength.isFinite() && lora.strength in 0f..2f) { t("Neplatná síla LoRA") }
         val inputs = wf.getJSONObject(consumer).getJSONObject("inputs")
         val upstream = inputs.getJSONArray("model")
         wf.put(NODE, JSONObject().put("class_type", "LoraLoaderModelOnly")

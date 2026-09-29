@@ -236,7 +236,7 @@ fun stageDetailText(stage: Stage, kind: RunKind): String = when {
         RunKind.UPSCALE -> t("Prolnutí dlaždic do jedné fotky")
         else -> t("Zapisuji hotový obrázek")
     }
-    else -> stage.detail
+    else -> t(stage.detail)
 }
 
 /** Popisek 4. fáze v pásku fází (ostatní fáze jsou pro všechny stejné). */
