@@ -73,6 +73,8 @@ data class SbCteni(
     /** Mřížka panelů (řádky × sloupce), když ji model uvedl. */
     val radku: Int? = null,
     val sloupcu: Int? = null,
+    /** Hlas každého mluvčího (jméno → „a man in his 30s with a low, calm voice“). */
+    val hlasy: Map<String, String> = emptyMap(),
 )
 
 data class SbPrecteny(
@@ -86,7 +88,11 @@ data class SbPrecteny(
 )
 
 /** Naplánované panely a jestli délky pocházejí z časů vepsaných ve storyboardu. */
-data class SbPlan(val panely: List<SbPanel>, val zeStoryboardu: Boolean)
+data class SbPlan(
+    val panely: List<SbPanel>,
+    val zeStoryboardu: Boolean,
+    val hlasy: Map<String, String> = emptyMap(),
+)
 
 /** Úsek videa: souvislá řada panelů, kterou H3 vykreslí najednou. */
 data class SbUsek(val panely: List<SbPanel>) {
@@ -114,7 +120,9 @@ object SbFilmPlan {
         "This image is a film storyboard. Answer in plain lines only, no other text.\n" +
             "First line: TITLE: <the title printed on the sheet, or none> | TOTAL: <the total " +
             "duration printed on the sheet in seconds, or none> | SHOTS: <the number of shots " +
-            "printed on the sheet, or none> | GRID: <rows>x<columns> of the shot panels\n" +
+            "printed on the sheet, or none> | GRID: <rows>x<columns> of the shot panels | VOICES: <for " +
+            "every speaker who has a line: Name = age, gender and voice in plain English words (pitch, " +
+            "timbre), for example Anna = a woman in her 30s with a warm, low voice; separated by ; — or none>\n" +
             "Then one line per numbered shot panel, in the panel order: PANEL <number> | <the time " +
             "range exactly as printed on that panel, for example 00-04s, or none> | <shot size: " +
             "wide, medium, close-up, extreme close-up, insert or detail> | <camera movement, or " +
@@ -136,6 +144,7 @@ object SbFilmPlan {
         var zaberu: Int? = null
         var radku: Int? = null
         var sloupcu: Int? = null
+        val hlasy = linkedMapOf<String, String>()
         val panely = mutableListOf<SbPrecteny>()
         // Přepisovač slučuje řádky do jednoho (`" ".join(caption.split())`) —
         // před každý PANEL/TITLE se proto zalomení vrátí.
@@ -156,6 +165,13 @@ object SbFilmPlan {
                             "GRID" -> Regex("""(\d+)\s*[x×X]\s*(\d+)""").find(v)?.let {
                                 radku = it.groupValues[1].toIntOrNull()
                                 sloupcu = it.groupValues[2].toIntOrNull()
+                            }
+                            "VOICES" -> v.split(";").forEach { h ->
+                                val (kdo, jak) = h.split("=", limit = 2).let {
+                                    it[0].trim() to it.getOrElse(1) { "" }.trim().trimEnd('.')
+                                }
+                                if (kdo.isNotBlank() && jak.isNotBlank() && SbFilmPrepis.jeMluvci(kdo))
+                                    hlasy[SbFilmPrepis.opravMluvciho(kdo)] = jak
                             }
                         }
                     }
@@ -183,7 +199,7 @@ object SbFilmPlan {
                 }
             }
         }
-        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu)
+        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu, hlasy)
     }
 
     /**
@@ -260,7 +276,7 @@ object SbFilmPlan {
                 repliky = p.repliky,
             )
         }
-        return SbPlan(panely, vepsane != null)
+        return SbPlan(panely, vepsane != null, cteni.hlasy)
     }
 
     private fun vepsaneDelky(cteni: SbCteni, panely: List<SbPrecteny>): List<Double>? {
@@ -373,7 +389,9 @@ object SbFilmPlan {
     const val SYSTEM_NAVRH =
         "You are a film director writing a shot list for a short AI video. Answer in plain lines " +
             "only, no other text. First line: TITLE: <a short title> | TOTAL: <total seconds> | " +
-            "SHOTS: <number of shots>. Then one line per shot, in story order: PANEL <number> | " +
+            "SHOTS: <number of shots> | VOICES: <for every speaker who has a line: Name = age, gender " +
+            "and voice in plain English words (pitch, timbre), separated by ;, or none>. Then one line " +
+            "per shot, in story order: PANEL <number> | " +
             "<start-end seconds, for example 00-04s> | <shot size: wide, medium, close-up, extreme " +
             "close-up, insert or detail> | <camera movement, or static> | <what happens in the shot, " +
             "one short sentence of visible action> | <the spoken lines of that shot as Speaker: " +
@@ -417,7 +435,7 @@ object SbFilmPlan {
             delky[i] = zaokrouhli(delky[i] + krok)
             rozdil = zaokrouhli(rozdil - krok)
         }
-        return SbPlan(panely.mapIndexed { i, p -> p.copy(sekundy = delky[i]) }, false)
+        return SbPlan(panely.mapIndexed { i, p -> p.copy(sekundy = delky[i]) }, false, plan.hlasy)
     }
 
     /** `MM:SS.mmm` jako v příručce H3. */
@@ -450,6 +468,8 @@ data class SbFilmScene(
     val casyZeStoryboardu: Boolean = false,
     /** Zadání úseků z přepisovače (po „Natočit“, před během). */
     val zadaniUseku: List<String> = emptyList(),
+    /** Hlas každého mluvčího — stejný popis jde do všech úseků filmu. */
+    val hlasy: Map<String, String> = emptyMap(),
 ) {
     val useky: List<SbUsek> get() = SbFilmPlan.rozdel(panely)
     val sekundy: Double get() = panely.sumOf { it.sekundy }
@@ -500,6 +520,7 @@ class SbFilmStore(private val ctx: Context) {
             .put("zadaniUseku", org.json.JSONArray().also { a -> s.zadaniUseku.forEach { a.put(it) } })
             .put("nazev", s.nazev)
             .put("casyZeStoryboardu", s.casyZeStoryboardu)
+            .put("hlasy", org.json.JSONObject().also { j -> s.hlasy.forEach { (k, v) -> j.put(k, v) } })
             .put("panely", org.json.JSONArray().also { a ->
                 s.panely.forEach {
                     a.put(org.json.JSONObject().put("cislo", it.cislo).put("popis", it.popis)
@@ -531,6 +552,8 @@ class SbFilmStore(private val ctx: Context) {
             zadaniUseku = (0 until (j.optJSONArray("zadaniUseku")?.length() ?: 0))
                 .map { j.getJSONArray("zadaniUseku").getString(it) },
             nazev = j.optString("nazev"), casyZeStoryboardu = j.optBoolean("casyZeStoryboardu"),
+            hlasy = j.optJSONObject("hlasy")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }
+                .orEmpty().filterValues { it.isNotBlank() },
             panely = panely,
         )
     }.getOrDefault(SbFilmScene())
@@ -642,6 +665,8 @@ object SbFilmPrepis {
         idMluvcich: Map<String, String> = idMluvcich(usek.panely),
         /** Jazyk replik celého filmu — krátká replika („Výborný.“) sama češtinu neprozradí. */
         jazykFilmu: String? = jazykFilmu(usek.panely),
+        /** Hlas každého mluvčího z čtení storyboardu — stejný pro všechny úseky. */
+        hlasy: Map<String, String> = emptyMap(),
     ): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
@@ -692,6 +717,31 @@ object SbFilmPrepis {
             sb.append("language, inside <d>; never translate, shorten or drop a line. The speaker ")
             sb.append("description and the speaker ID stay outside <d>. Speaker IDs for the whole film: ")
             sb.append(idMluvcich.entries.joinToString(", ") { "${it.key} = (${it.value})" }).append(".")
+            // Hlas je v celém filmu stejný: úseky se přepisují zvlášť a bez
+            // pevného popisu by si přepisovač v každém vymyslel jiný.
+            // Jména z popisu hlasů a z replik se můžou lišit velikostí písmen (Muž / MUŽ).
+            fun hlasPro(kdo: String) = hlasy.entries.firstOrNull { it.key.equals(kdo, ignoreCase = true) }?.value
+            val znameHlasy = idMluvcich.keys.filter { !hlasPro(it).isNullOrBlank() }
+            if (znameHlasy.isNotEmpty()) {
+                sb.append(" Voices for the whole film, use these exact words: ")
+                sb.append(znameHlasy.joinToString("; ") { "$it (${idMluvcich[it]}) — ${hlasPro(it)}" }).append(".")
+            }
+            // Herecké podání podle oficiální příručky H3 (4.4 + vzory Ref2VA),
+            // doladěné s kritikem: hlas jednou a pak „in the same … voice“,
+            // podání před <d>, po </d> zavřené rty a tichá reakce (krátké záběry
+            // nesnesou další akci). Příručka se nejmenuje — model by napodobil
+            // její vzorový příklad.
+            // Ověřeno přepisem obou úseků (29. 9. 2026). Zástupný text v ostrých
+            // závorkách („<those words>“) a zákaz „never quote outside <d>“ vedly
+            // k replikám v uvozovkách bez <d> — proto kladně a bez závorek.
+            sb.append("\nActing (only in shots with a listed line): the first time a speaker talks, name ")
+            sb.append("their voice in plain words (the voice given above when there is one); in their later ")
+            sb.append("lines, repeat it as \"in the same ... voice\" with those same words. Before each line, add ")
+            sb.append("a few words of delivery that fit this moment of the story (emotion, tone) and the facial ")
+            sb.append("expression while speaking. Every spoken line stays inside <d>[Language] ...</d> exactly as ")
+            sb.append("listed, and its words appear nowhere else. Right after each line, the speaker closes their ")
+            sb.append("lips and holds a silent facial reaction; add no new action, gesture, laughter or sound, and ")
+            sb.append("keep every shot within its time. The setting, characters and actions stay exactly as listed above.")
         }
         // Obecné pravidlo samo nestačilo: přepisovač napsal „calls out toward the door, “Next!”“
         // (ověřeno přepisem 29. 9. 2026); pokyn přímo u záběru + zákaz uvozovek mimo <d> ano.

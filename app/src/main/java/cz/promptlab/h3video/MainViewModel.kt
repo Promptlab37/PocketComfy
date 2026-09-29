@@ -4894,7 +4894,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     updateSbFilm {
                         it.copy(panely = plan.panely,
                             nazev = cz.promptlab.h3video.data.SbFilmPlan.precti(text).nazev.orEmpty(),
-                            casyZeStoryboardu = false, zadaniUseku = emptyList())
+                            casyZeStoryboardu = false, zadaniUseku = emptyList(), hlasy = plan.hlasy)
                     }
                     _rewriteState.value = RewriteState.Idle
                 }
@@ -5015,7 +5015,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 } else {
                     updateSbFilm {
                         it.copy(panely = plan.panely, nazev = cteni.nazev.orEmpty(),
-                            casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList())
+                            casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy)
                     }
                     _rewriteState.value = RewriteState.Idle
                 }
@@ -5074,6 +5074,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                 s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
                                 cz.promptlab.h3video.data.SbFilmPrepis.idMluvcich(s.panely),
                                 cz.promptlab.h3video.data.SbFilmPrepis.jazykFilmu(s.panely),
+                                s.hlasy,
                             ),
                             hlidatDialogy = false,
                             pomer = s.pomer.kod,

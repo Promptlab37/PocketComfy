@@ -66,4 +66,33 @@ class SbFilmDejTest2 {
         assertTrue(h.contains("never put quoted words outside <d>"))
         assertFalse(radky[i5 + 1].contains("SILENT SHOT"))
     }
+
+    /** Herecké podání (hlas, emoce, reakce) jen u úseku s replikami. */
+    @Test fun `pokyn k hereckemu podani jen s replikami`() {
+        val s = listOf(SbPanel(1, "a", sekundy = 4.0, repliky = "MUŽ: „Dobrý den.“"))
+        val bez = listOf(SbPanel(1, "a", sekundy = 4.0))
+        assertTrue(SbFilmPrepis.hlidka(1, SbUsek(s), 0, 1).contains("Acting (only in shots with a listed line)"))
+        assertFalse(SbFilmPrepis.hlidka(1, SbUsek(bez), 0, 1).contains("Acting (only in shots with a listed line)"))
+        // Příručka se nejmenuje — přepisovač by napodobil její vzorový příklad.
+        assertFalse(SbFilmPrepis.hlidka(1, SbUsek(s), 0, 1).contains("guide"))
+    }
+
+    /** Hlasy ze čtení jdou stejně do všech úseků a zavřené rty po replice. */
+    @Test fun `hlasy postav jsou v kazdem useku stejne`() {
+        val c = SbFilmPlan.precti(
+            "TITLE: none | TOTAL: none | SHOTS: 2 | GRID: 1x2 | VOICES: MUŽ = a man in his 30s with a low, " +
+                "calm voice; DĚJ = nothing; ŽENA = a young woman with a bright voice\n" +
+                "PANEL 1 | none | medium | static | He enters. | MUŽ: \"Dobrý den.\"\n" +
+                "PANEL 2 | none | medium | static | She smiles. | ŽENA: \"Ahoj.\"",
+        )
+        assertEquals(mapOf("MUŽ" to "a man in his 30s with a low, calm voice", "ŽENA" to "a young woman with a bright voice"), c.hlasy)
+        val plan = SbFilmPlan.naplanuj(c)
+        assertEquals(c.hlasy, plan.hlasy)
+        val id = SbFilmPrepis.idMluvcich(plan.panely)
+        val h1 = SbFilmPrepis.hlidka(1, SbUsek(plan.panely.take(1)), 0, 2, true, id, "Czech", plan.hlasy)
+        val h2 = SbFilmPrepis.hlidka(1, SbUsek(plan.panely.drop(1)), 1, 2, true, id, "Czech", plan.hlasy)
+        val veta = "MUŽ (S1) — a man in his 30s with a low, calm voice"
+        assertTrue(h1.contains(veta) && h2.contains(veta))
+        assertTrue(h1.contains("closes their lips"))
+    }
 }
