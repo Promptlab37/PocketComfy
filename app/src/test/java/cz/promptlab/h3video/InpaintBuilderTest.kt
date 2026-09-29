@@ -373,17 +373,17 @@ class InpaintBuilderTest {
     )
 
     /**
-     * Okraj se přilepuje v pixelech, ne v procentech — uzel bere INT s krokem 8.
+     * Okraj se přilepuje v pixelech (krok 8), jen do zvolených směrů.
      * Nezvolené směry musí zůstat na nule, jinak se fotka roztáhne všude.
      */
     @Test fun `okraje se pocitaji v pixelech jen do zvolenych smeru`() {
-        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU), procent = 50,
-            sirka = 1000, vyska = 800)
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU, cz.promptlab.h3video.data.Smer.VLEVO),
+            procent = 50, sirka = 1000, vyska = 800)
         val p = wf.inputs(InpaintBuilder.N_PLATNO)
-        assertEquals(400, p.getInt("bottom"))
-        assertEquals(0, p.getInt("top"))
-        assertEquals(0, p.getInt("left"))
-        assertEquals(0, p.getInt("right"))
+        assertEquals(400, p.getInt("pad_bottom"))
+        assertEquals(0, p.getInt("pad_top"))
+        assertEquals(496, p.getInt("pad_left"))
+        assertEquals(0, p.getInt("pad_right"))
 
         // Krok 8: 33 % z 1000 je 330 → zaokrouhlí se dolů na 328.
         assertEquals(328, InpaintBuilder.okrajPx(1000, 33, true))
@@ -392,94 +392,94 @@ class InpaintBuilderTest {
     }
 
     /**
-     * Jádro opravy viditelného přechodu (3.79).
-     *
-     * `InpaintCropImproved` zpracuje masku **dřív**, než by sám přilepil nové
-     * místo, a to pak do masky zapíše natvrdo jedničky — prolnutí tedy nemělo
-     * na čem pracovat a hranice byla jako nůž. Proto plátno i masku dělá
-     * `ImagePadForOutpaint` a výřez ji dostane už na vstupu.
+     * Graf podle autora outpaint LoRA pro Qwen 2.1 (README + workflow
+     * „Qwen Image 2.1 Outpaint v1.1“). Do 4.95 šlo rozšíření bez LoRA
+     * a Qwen fotku přerámoval: „dolů a doleva“ = zdvojená postava, „doprava“
+     * = šedý pruh, směr se prohazoval (29. 9. 2026).
      */
-    @Test fun `maska pridaneho mista jde do vyrezu na vstup`() {
-        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
-        val v = wf.inputs(InpaintBuilder.N_VYREZ)
-        assertFalse(
-            "vlastní rozšíření uzlu přepíše masku natvrdo a prolnutí zahodí",
-            v.getBoolean("extend_for_outpainting"),
-        )
-        assertEquals(InpaintBuilder.N_PLATNO, v.getJSONArray("image").getString(0))
-        assertEquals(InpaintBuilder.N_PLATNO, v.getJSONArray("mask").getString(0))
-        // Druhý výstup ImagePadForOutpaint je maska přilepené plochy.
-        assertEquals(1, v.getJSONArray("mask").getInt(1))
-        assertEquals("ImagePadForOutpaint",
-            wf.getJSONObject(InpaintBuilder.N_PLATNO).getString("class_type"))
-    }
-
-    /**
-     * Přesah a prolnutí. Bez `mask_expand_pixels` model nesmí sáhnout ani na
-     * pixel původní fotky a strukturu nemá kde protáhnout; bez
-     * `mask_blend_pixels` je vlepení natupo. Diskuze k outpaintingu
-     * doporučují prolnutí 40–80 px.
-     */
-    @Test fun `vyrez ma presah do fotky i prolnuti`() {
-        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
-        val v = wf.inputs(InpaintBuilder.N_VYREZ)
-        assertTrue("přesah do původní fotky", v.getInt("mask_expand_pixels") >= InpaintBuilder.PRESAH_MIN)
-        assertTrue("prolnutí 40–80 px", v.getInt("mask_blend_pixels") in 40..80)
-        // Prah by z náběhu masky ustřihl nejslabší část a udělal z něj schod.
-        assertEquals(0.0, v.getDouble("mask_hipass_filter"), 1e-9)
-        // Změkčení v ImagePadForOutpaint je Pythonovská smyčka přes každý
-        // pixel — na 2K obrázku by běžela sekundy. Dělá to výřez tenzorově.
-        assertEquals(0, wf.inputs(InpaintBuilder.N_PLATNO).getInt("feathering"))
-    }
-
-    /**
-     * Jednotné měřítko. Když se výřez zmenší na cílovou velikost a po
-     * generování zvětší zpět, dostane nová část jinou ostrost než původní
-     * fotka vedle ní — a to je vidět jako šev i při dokonalém prolnutí.
-     */
-    @Test fun `generuje se v jednom meritku`() {
-        val v = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU)).inputs(InpaintBuilder.N_VYREZ)
-        assertFalse(v.getBoolean("output_resize_to_target_size"))
-        assertTrue(v.getBoolean("preresize"))
-        assertEquals("ensure maximum resolution", v.getString("preresize_mode"))
-        assertEquals(2048, v.getInt("preresize_max_width"))
-        assertEquals(2048, v.getInt("preresize_max_height"))
-    }
-
-    /**
-     * Předlohou pro model je **původní fotka**, ne výřez se šedým okrajem.
-     * 25. 9. 2026 Qwen šedý pás z výřezu věrně zkopíroval a rozšíření vyšlo
-     * šedé; se samotnou fotkou jako předlohou pás obsahuje obraz (ověřeno
-     * během). Výřez se šedým plátnem jde jen do latentu, který určuje velikost.
-     */
-    @Test fun `predlohou rozsireni je puvodni fotka, ne sedy vyrez`() {
-        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
-        val text = wf.inputs(InpaintBuilder.N_TEXT)
-        assertEquals(InpaintBuilder.N_IMAGE, text.getJSONArray("images.image_1").getString(0))
-        assertFalse(text.has("images.image_2"))
-        // Výřez se šedým plátnem jde do latentu, ne do předlohy.
-        assertEquals(InpaintBuilder.N_VYREZ, wf.inputs("22").getJSONArray("pixels").getString(0))
-        assertTrue(wf.inputs(InpaintBuilder.N_VYREZ)
-            .getDouble("context_from_mask_extend_factor") >= 5.0)
-        assertFalse(wf.inputs(InpaintBuilder.N_VYREZ).getBoolean("mask_fill_holes"))
-        bezVisicichOdkazu(wf)
-    }
-
-    /**
-     * 4.95: rozšíření je celý nový obraz v novém poměru (oficiální postup
-     * Qwenu 2.1). Maska do latentu a vlepení zpět postavu zdvojovaly.
-     */
-    @Test fun `rozsireni generuje cely obraz bez masky a vlepeni`() {
+    @Test fun `rozsireni jede podle autora outpaint LoRA`() {
         val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU, cz.promptlab.h3video.data.Smer.VLEVO))
-        val tridy = (wf.keys().asSequence().map { wf.getJSONObject(it).getString("class_type") }).toSet()
+        val tridy = wf.keys().asSequence().map { wf.getJSONObject(it).getString("class_type") }.toSet()
+        // Bez masky v latentu: na Qwen 2.1 kreslí na švu obdélník.
         assertFalse(tridy.contains("SetLatentNoiseMask"))
-        assertFalse(tridy.contains("InpaintStitchImproved"))
         assertFalse(tridy.contains("DifferentialDiffusion"))
-        assertEquals("22", wf.inputs(InpaintBuilder.N_SAMPLER).getJSONArray("latent_image").getString(0))
-        assertEquals("50", wf.inputs("60").getJSONArray("images").getString(0))
-        assertEquals(1.0, wf.inputs(InpaintBuilder.N_SAMPLER).getDouble("denoise"), 1e-9)
-        assertTrue(wf.inputs(InpaintBuilder.N_TEXT).getString("prompt").startsWith("Outpainting:"))
+
+        val lora = wf.inputs(InpaintBuilder.N_LORA_ROZSIRENI)
+        assertEquals("qwen-image-2.1-outpaint-v2.safetensors", lora.getString("lora_name"))
+        assertEquals(1.0, lora.getDouble("strength_model"), 1e-9)
+        assertEquals(InpaintBuilder.N_LORA_ROZSIRENI, wf.inputs("4").getJSONArray("model").getString(0))
+
+        val platno = wf.inputs(InpaintBuilder.N_PLATNO)
+        assertEquals("AUSBOSS_NODES_LoadImagePad", wf.getJSONObject(InpaintBuilder.N_PLATNO).getString("class_type"))
+        assertEquals("color", platno.getString("mode"))
+        assertEquals("#808080", platno.getString("fill_color"))
+        assertEquals(32, platno.getInt("feather"))
+        assertEquals(32, platno.getInt("canvas_multiple"))
+        assertEquals(1.0, platno.getDouble("target_megapixels"), 1e-9)
+        assertEquals(InpaintBuilder.N_IMAGE, platno.getJSONArray("source_image").getString(0))
+
+        val text = wf.inputs(InpaintBuilder.N_TEXT)
+        assertEquals(0, text.getInt("resolution"))
+        assertEquals(InpaintBuilder.N_PLATNO, text.getJSONArray("images.image_1").getString(0))
+        assertEquals(0, text.getJSONArray("images.image_1").getInt(1))
+
+        val k = wf.inputs(InpaintBuilder.N_SAMPLER)
+        assertEquals(25, k.getInt("steps"))
+        assertEquals(1.0, k.getDouble("cfg"), 1e-9)
+        assertEquals("euler", k.getString("sampler_name"))
+        assertEquals("simple", k.getString("scheduler"))
+        assertEquals(1.0, k.getDouble("denoise"), 1e-9)
+        // Latent z enkodéru (výstup 2), ne z VAEEncode s maskou.
+        assertEquals(InpaintBuilder.N_TEXT, k.getJSONArray("latent_image").getString(0))
+        assertEquals(2, k.getJSONArray("latent_image").getInt(1))
+
+        val stitch = wf.getJSONObject("51")
+        assertEquals("AUSBOSS_NODES_StitchInpaint", stitch.getString("class_type"))
+        assertEquals("SplitImageWithAlpha", wf.getJSONObject(
+            stitch.getJSONObject("inputs").getJSONArray("inpainted").getString(0)).getString("class_type"))
+        assertEquals(1.0, stitch.getJSONObject("inputs").getDouble("color_match"), 1e-9)
+        assertEquals("51", wf.inputs("60").getJSONArray("images").getString(0))
         bezVisicichOdkazu(wf)
+    }
+
+    /** Spouštěč LoRA je první a beze změny; popis fotky za „ Scene: “. */
+    @Test fun `spoustec lora je doslova a popis jde za scene`() {
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.VPRAVO), prompt = "dřevěný stůl")
+        val spoj = wf.inputs("24")
+        assertEquals(InpaintBuilder.SPOUSTEC_ROZSIRENI, spoj.getString("string_a"))
+        assertEquals(" Scene: ", spoj.getString("delimiter"))
+        assertEquals(InpaintBuilder.N_POPIS, spoj.getJSONArray("string_b").getString(0))
+        assertEquals("24", wf.inputs(InpaintBuilder.N_TEXT).getJSONArray("prompt").getString(0))
+        assertTrue(InpaintBuilder.SPOUSTEC_ROZSIRENI.startsWith("Outpaint the image: replace the solid gray areas"))
+        // Co uživatel napíše, jde do popisovače, ne do spouštěče.
+        val popis = wf.inputs(InpaintBuilder.N_POPIS)
+        assertTrue(popis.getString("prompt").endsWith("Also include in the prompt: dřevěný stůl"))
+        assertEquals(InpaintBuilder.N_PLATNO, popis.getJSONArray("image").getString(0))
+        assertEquals(5, popis.getJSONArray("image").getInt(1))
+        assertEquals(InpaintBuilder.POPIS_FOTKY, InpaintBuilder.zadaniPopisu("  "))
+    }
+
+    /** Doplňková LoRA se řadí ZA outpaint LoRA, nikdy místo ní. */
+    @Test fun `doplnkova lora nevyradi outpaint loru`() {
+        val scene = InpaintScene(
+            prompt = "", model = InpaintModel.QWEN21,
+            rezim = cz.promptlab.h3video.data.InpaintRezim.ROZSIRIT,
+            smery = setOf(cz.promptlab.h3video.data.Smer.DOLU), procent = 50,
+            lora = "moje_qwen_2.1_lora.safetensors", loraSila = 0.8f,
+        )
+        val wf = InpaintBuilder.buildRozsireni(rozsireni, scene, 5L, listOf("foto.png"), 1000, 1000)
+        assertTrue(wf.has(InpaintBuilder.N_LORA_QWEN21))
+        assertEquals(InpaintBuilder.N_LORA_ROZSIRENI,
+            wf.inputs(InpaintBuilder.N_LORA_QWEN21).getJSONArray("model").getString(0))
+        assertEquals(InpaintBuilder.N_LORA_QWEN21, wf.inputs("4").getJSONArray("model").getString(0))
+        assertEquals("1", wf.inputs(InpaintBuilder.N_LORA_ROZSIRENI).getJSONArray("model").getString(0))
+        bezVisicichOdkazu(wf)
+    }
+
+    /** Outpaint LoRA si karta zapojí sama — do nabídky LoRA nepatří. */
+    @Test fun `outpaint lora neni v nabidce`() {
+        assertFalse(cz.promptlab.h3video.data.Qwen21Lora.soubor("qwen-image-2.1-outpaint-v2.safetensors"))
+        assertTrue(cz.promptlab.h3video.data.Qwen21Lora.soubor("moje_qwen_2.1_lora.safetensors"))
     }
 
     @Test fun `rozsireni neposila zadnou masku z telefonu`() {
@@ -490,24 +490,7 @@ class InpaintBuilderTest {
         assertEquals(listOf(File("a.png")), scene.uploadImages)
     }
 
-    @Test fun `pokyn nese smer a vede operace`() {
-        val dolu = InpaintBuilder.zadaniRozsireni("nohy v džínách",
-            setOf(cz.promptlab.h3video.data.Smer.DOLU))
-        assertTrue(dolu.startsWith("Outpainting: extend the canvas of <image1> downward"))
-        assertTrue(dolu.contains("nohy v džínách"))
-        assertFalse(dolu.contains("<image2>"))
-
-        assertEquals("downward and to the left", InpaintBuilder.smeryVetou(
-            setOf(cz.promptlab.h3video.data.Smer.VLEVO, cz.promptlab.h3video.data.Smer.DOLU)))
-        // Pořadí je dané enumem, ne pořadím klikání — jinak by se stejné
-        // zadání pokaždé přeložilo jinak a seed přestal být opakovatelný.
-        assertEquals(
-            InpaintBuilder.smeryVetou(setOf(cz.promptlab.h3video.data.Smer.DOLU, cz.promptlab.h3video.data.Smer.VLEVO)),
-            InpaintBuilder.smeryVetou(setOf(cz.promptlab.h3video.data.Smer.VLEVO, cz.promptlab.h3video.data.Smer.DOLU)),
-        )
-    }
-
-    /** Zadání je u rozšíření nepovinné — model má celou fotku jako referenci. */
+    /** Zadání je u rozšíření nepovinné — popis fotky napíše Qwen3-VL sám. */
     @Test fun `bez zadani se rozsireni spustit smi`() {
         val zaklad = InpaintScene(
             source = File("a.png"),
@@ -520,46 +503,15 @@ class InpaintBuilderTest {
         // Naopak u domalování zadání povinné zůstává.
         assertNotNull(cz.promptlab.h3video.data.inpaintProblem(
             InpaintScene(source = File("a.png"), mask = File("m.png"), prompt = "")))
-
-        val bezVety = InpaintBuilder.zadaniRozsireni("", setOf(cz.promptlab.h3video.data.Smer.DOLU))
-        assertTrue(bezVety.contains("Work out what continues there"))
-        assertFalse(bezVety.contains("Fill the new area with"))
     }
 
     @Test fun `rozsireni predloha nenese zadani predchoziho behu`() {
         val p = JSONObject(rozsireni)
         assertEquals("", p.inputs(InpaintBuilder.N_IMAGE).getString("image"))
-        assertEquals("", p.inputs(InpaintBuilder.N_TEXT).getString("prompt"))
-        listOf("top", "bottom", "left", "right").forEach {
+        assertEquals("", p.inputs(InpaintBuilder.N_PLATNO).getString("image"))
+        assertEquals("", p.inputs(InpaintBuilder.N_POPIS).getString("prompt"))
+        listOf("pad_top", "pad_bottom", "pad_left", "pad_right").forEach {
             assertEquals(it, 0, p.inputs(InpaintBuilder.N_PLATNO).getInt(it))
         }
-    }
-
-
-    /**
-     * Rozjezd se škáluje podle toho, kolik se přilepuje.
-     *
-     * Ve 3.79 byl napevno 48 px. Měření hotového běhu ukázalo, že prolnutí
-     * ani ostrost problém nebyly (barevný skok přes šev 0,83 při běžné
-     * variaci 2,5 uvnitř fotky; ostrost 7,96 nad a 8,01 pod švem) — vidět
-     * byl nesouhlas obsahu, na který model neměl kde navázat.
-     */
-    @Test fun `presah roste s velikosti rozsireni`() {
-        assertEquals(InpaintBuilder.PRESAH_MIN, InpaintBuilder.presahPx(0))
-        assertEquals(InpaintBuilder.PRESAH_MIN, InpaintBuilder.presahPx(300))
-        assertEquals(272, InpaintBuilder.presahPx(816))
-        assertEquals(InpaintBuilder.PRESAH_MAX, InpaintBuilder.presahPx(9000))
-        assertTrue(InpaintBuilder.PRESAH_MIN > 48)
-
-        // Do grafu jde přesah spočítaný z NEJVĚTŠÍHO okraje, ne z prvního.
-        val wf = rozsir(
-            setOf(cz.promptlab.h3video.data.Smer.VPRAVO),
-            procent = 100, sirka = 1200, vyska = 400,
-        )
-        assertEquals(1200, wf.inputs(InpaintBuilder.N_PLATNO).getInt("right"))
-        assertEquals(
-            InpaintBuilder.presahPx(1200),
-            wf.inputs(InpaintBuilder.N_VYREZ).getInt("mask_expand_pixels"),
-        )
     }
 }

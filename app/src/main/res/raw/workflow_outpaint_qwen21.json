@@ -17,7 +17,7 @@
    "device": "default"
   },
   "_meta": {
-   "title": "Textový enkodér"
+   "title": "Qwen3-VL 8B (zadání i popis fotky)"
   }
  },
  "3": {
@@ -29,11 +29,25 @@
    "title": "VAE"
   }
  },
+ "5": {
+  "class_type": "LoraLoaderModelOnly",
+  "inputs": {
+   "model": [
+    "1",
+    0
+   ],
+   "lora_name": "qwen-image-2.1-outpaint-v2.safetensors",
+   "strength_model": 1.0
+  },
+  "_meta": {
+   "title": "Outpaint LoRA v2"
+  }
+ },
  "4": {
   "class_type": "QwenImage21Cache",
   "inputs": {
    "model": [
-    "1",
+    "5",
     0
    ],
    "device": "auto",
@@ -53,76 +67,69 @@
   }
  },
  "15": {
-  "class_type": "ImagePadForOutpaint",
+  "class_type": "AUSBOSS_NODES_LoadImagePad",
   "inputs": {
-   "image": [
+   "image": "",
+   "source_image": [
     "10",
     0
    ],
-   "left": 0,
-   "top": 0,
-   "right": 0,
-   "bottom": 0,
-   "feathering": 0
+   "pad_left": 0,
+   "pad_top": 0,
+   "pad_right": 0,
+   "pad_bottom": 0,
+   "mode": "color",
+   "fill_color": "#808080",
+   "backdrop_blur": 0.5,
+   "feather": 32,
+   "canvas_multiple": 32,
+   "target_megapixels": 1.0
   },
   "_meta": {
-   "title": "Přilepit místo a označit ho"
+   "title": "Šedé plátno #808080, 1 MP po 32"
   }
  },
- "20": {
-  "class_type": "InpaintCropImproved",
+ "23": {
+  "class_type": "TextGenerate",
   "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
    "image": [
     "15",
-    0
+    5
    ],
-   "mask": [
-    "15",
-    1
-   ],
-   "downscale_algorithm": "bilinear",
-   "upscale_algorithm": "bicubic",
-   "preresize": true,
-   "preresize_mode": "ensure maximum resolution",
-   "preresize_min_width": 0,
-   "preresize_min_height": 0,
-   "preresize_max_width": 2048,
-   "preresize_max_height": 2048,
-   "mask_fill_holes": false,
-   "mask_expand_pixels": 48,
-   "mask_invert": false,
-   "mask_blend_pixels": 64,
-   "mask_hipass_filter": 0.0,
-   "extend_for_outpainting": false,
-   "extend_up_factor": 1.0,
-   "extend_down_factor": 1.0,
-   "extend_left_factor": 1.0,
-   "extend_right_factor": 1.0,
-   "context_from_mask_extend_factor": 20.0,
-   "output_resize_to_target_size": false,
-   "output_target_width": 1024,
-   "output_target_height": 1024,
-   "output_padding": "32",
-   "device_mode": "cpu (compatible)"
+   "prompt": "",
+   "max_length": 300,
+   "sampling_mode": "on",
+   "sampling_mode.temperature": 0.3,
+   "sampling_mode.top_k": 64,
+   "sampling_mode.top_p": 0.95,
+   "sampling_mode.min_p": 0.05,
+   "sampling_mode.repetition_penalty": 1.05,
+   "sampling_mode.seed": 20260925,
+   "sampling_mode.presence_penalty": 0.0,
+   "thinking": false,
+   "use_default_template": true,
+   "mtp": "auto"
   },
   "_meta": {
-   "title": "Výřez, přesah a prolnutí"
+   "title": "Popis fotky (Scene)"
   }
  },
- "22": {
-  "class_type": "VAEEncode",
+ "24": {
+  "class_type": "StringConcatenate",
   "inputs": {
-   "pixels": [
-    "20",
-    1
-   ],
-   "vae": [
-    "3",
+   "string_a": "Outpaint the image: replace the solid gray areas with a seamless continuation of the scene, keeping the existing picture unchanged.",
+   "string_b": [
+    "23",
     0
-   ]
+   ],
+   "delimiter": " Scene: "
   },
   "_meta": {
-   "title": "Plátno v novém poměru (určuje jen velikost)"
+   "title": "Spouštěč LoRA + Scene: popis"
   }
  },
  "30": {
@@ -136,16 +143,19 @@
     "3",
     0
    ],
-   "prompt": "",
+   "prompt": [
+    "24",
+    0
+   ],
    "negative_prompt": "",
    "resolution": 0,
    "images.image_1": [
-    "10",
+    "15",
     0
    ]
   },
   "_meta": {
-   "title": "Zadání + reference"
+   "title": "Plátno = image_1, resolution 0"
   }
  },
  "45": {
@@ -170,12 +180,12 @@
     1
    ],
    "latent_image": [
-    "22",
-    0
+    "30",
+    2
    ]
   },
   "_meta": {
-   "title": "Vzorkování celého obrazu v novém poměru"
+   "title": "Vzorkování (latent z enkodéru, bez masky)"
   }
  },
  "50": {
@@ -191,14 +201,44 @@
    ]
   },
   "_meta": {
-   "title": "Zpět do pixelů"
+   "title": "Zpět do pixelů (RGBA)"
+  }
+ },
+ "52": {
+  "class_type": "SplitImageWithAlpha",
+  "inputs": {
+   "image": [
+    "50",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "RGBA → RGB"
+  }
+ },
+ "51": {
+  "class_type": "AUSBOSS_NODES_StitchInpaint",
+  "inputs": {
+   "stitcher": [
+    "15",
+    4
+   ],
+   "inpainted": [
+    "52",
+    0
+   ],
+   "fix_edge_halo": false,
+   "color_match": 1.0
+  },
+  "_meta": {
+   "title": "Původní pixely zpět, prolnutí 32 px"
   }
  },
  "60": {
   "class_type": "SaveImage",
   "inputs": {
    "images": [
-    "50",
+    "51",
     0
    ],
    "filename_prefix": "PocketOutpaintQwen21"

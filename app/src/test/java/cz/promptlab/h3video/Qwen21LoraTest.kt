@@ -114,6 +114,7 @@ class Qwen21LoraTest {
             scena.copy(lora = stare.first()), 1L, listOf("a.png"), 800, 1200,
         )
         assertFalse(cizi.has(InpaintBuilder.N_LORA_QWEN21))
-        assertTrue(cizi.ins("4").getJSONArray("model").getString(0) == "1")
+        // Bez doplňkové LoRA jde model přes outpaint LoRA rozšíření.
+        assertEquals(InpaintBuilder.N_LORA_ROZSIRENI, cizi.ins("4").getJSONArray("model").getString(0))
     }
 }

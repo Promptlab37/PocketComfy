@@ -49,6 +49,7 @@ REM jeste jednou spustit install_runtime.py - viz konec skriptu.
 call :klon https://github.com/Blueforcer/ComfyUI-DLSS5-Enhancer
 REM --- karty s obrazky
 call :klon https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch
+call :klon https://github.com/ausboss/ComfyUI-AusBoss
 call :klon https://github.com/lrzjason/Comfyui-QwenEditUtils
 call :klon https://github.com/cubiq/ComfyUI_essentials
 call :klon https://github.com/ltdrdata/ComfyUI-Impact-Pack
@@ -271,6 +272,9 @@ if /i "!ODP!"=="a" (
   call :stahni "https://huggingface.co/Alissonerdx/BFS-Best-Face-Swap/resolve/main/bfs_head_v1.1_qwen_2.1.safetensors" "models\loras\bfs_head_v1.1_qwen_2.1.safetensors"
   call :stahni "https://huggingface.co/PrunaAI/Pruna-Qwen-Image-2.1/resolve/main/p_qwen_image_2.1_8step_v0.1.safetensors" "models\loras\p_qwen_image_2.1_8step_v0.1.safetensors"
 )
+
+REM Karta Domalovat - rozsireni obrazku (outpaint LoRA pro Qwen 2.1, 0,16 GB).
+call :stahni "https://huggingface.co/ausboss/Qwen-Image-2.1-Outpaint-LoRA/resolve/main/qwen-image-2.1-outpaint-v2.safetensors" "models\loras\qwen-image-2.1-outpaint-v2.safetensors"
 
 REM ------------------------------------------------------------------
 REM  Karta Upravit video - Vymenit postavu (SCAIL-2 a MiniMax H3).

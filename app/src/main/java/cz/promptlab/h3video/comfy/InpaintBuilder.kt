@@ -112,7 +112,8 @@ object InpaintBuilder {
     const val N_LORA_KLEIN = "5"
 
     /** Výřez kolem masky; u rozšíření navíc přesah do fotky a prolnutí. */
-    const val N_VYREZ = "20"
+    const val N_POPIS = "23"
+    const val N_LORA_ROZSIRENI = "5"
 
     /** Přilepení místa a maska přidané plochy (jen u rozšíření). */
     const val N_PLATNO = "15"
@@ -240,31 +241,35 @@ object InpaintBuilder {
     }
 
     /**
-     * Pokyn k rozšíření.
-     *
-     * Vede **operace se směrem**, ne popis výsledku — u Qwenu je to stejný
-     * případ jako u karty Úhel kamery: název úlohy bez pokynu skončí tím, že
-     * model nechá skoro všechno být.
-     *
-     * **Předlohou `<image1>` je původní fotka, NE výřez se šedým okrajem.**
-     * Do 4.38 šel jako `<image1>` výřez s přilepeným šedým plátnem a Qwen
-     * jako editační model ten šedý pás občas věrně zkopíroval — 25. 9. 2026
-     * vyšel přidaný pás jako rovná šedá (rozptyl 0,6), přestože maska byla
-     * správně. Ověřeno pokusem: se samotnou fotkou jako předlohou pás obsahuje
-     * obraz a šev není vidět. Velikost plátna určuje latent, ne předloha.
+     * Spouštěč outpaint LoRA — doslova z její dokumentace
+     * (huggingface.co/ausboss/Qwen-Image-2.1-Outpaint-LoRA): „The instruction
+     * is the trigger. Put it first.“ Za něj graf připojí „ Scene: “ a popis
+     * fotky, který napíše Qwen3-VL (uzel TextGenerate), stejně jako autorův
+     * workflow na Civitai.
      */
-    fun zadaniRozsireni(prompt: String, smery: Set<Smer>): String {
+    const val SPOUSTEC_ROZSIRENI = "Outpaint the image: replace the solid gray areas with a " +
+        "seamless continuation of the scene, keeping the existing picture unchanged."
+
+    /** Pokyn pro popis fotky — doslova z autorova workflow (Qwen Image 2.1 Outpaint v1.1). */
+    const val POPIS_FOTKY = "Write the text-to-image prompt that would generate this exact picture. " +
+        "One paragraph of 50 to 90 words. Begin with the medium and style in a few words, such as " +
+        "\"Photograph\", \"Smartphone photo\", \"Anime illustration\", \"Oil painting\" or \"3D render\". " +
+        "Then describe the subject, the setting, and what fills every part of the frame from edge to " +
+        "edge, including the background and the areas near the borders. Include materials, colours, " +
+        "lighting, time of day, camera angle and framing. Quote any readable text exactly. Use plain " +
+        "factual language; do not start with 'The image' or 'This picture' and do not give opinions. " +
+        "Output only the prompt."
+
+    /**
+     * Zadání pro popisovač. Co uživatel napíše, jde podle autora do popisu
+     * („Extra detail … goes to the captioner, which writes it into the
+     * description“), ne přímo do pokynu pro Qwen — spouštěč LoRA musí zůstat
+     * beze změny.
+     */
+    fun zadaniPopisu(prompt: String): String {
         val text = prompt.trim()
-        val kam = smeryVetou(smery)
-        // Oficiální příručka Qwenu 2.1: „When the operation extends the canvas
-        // outward, name it as outpainting explicitly.“
-        val co = if (text.isEmpty())
-            " Work out what continues there from what the picture already shows."
-        else " The newly added area shows: $text."
-        return "Outpainting: extend the canvas of <image1> $kam. Keep the whole original " +
-            "picture exactly as it is, same size and position, and paint the newly added " +
-            "area so the scene continues naturally: subject, perspective, lighting and " +
-            "background carry on across the edge.$co"
+        return if (text.isEmpty()) POPIS_FOTKY
+        else "$POPIS_FOTKY Also include in the prompt: $text"
     }
 
     /**
@@ -274,26 +279,6 @@ object InpaintBuilder {
     fun okrajPx(rozmer: Int, procent: Int, zvoleny: Boolean): Int =
         if (!zvoleny || rozmer <= 0) 0
         else ((rozmer * procent / 100) / 8) * 8
-
-    /**
-     * Jak hluboko do původní fotky smí model přepisovat — „rozjezd", na kterém
-     * protáhne tvary přes hranici.
-     *
-     * Ve 3.79 byl 48 px a bylo to málo: změřeno na hotovém běhu, že barevný
-     * skok přes šev je 0,83 (uvnitř fotky je běžně 2,5) a ostrost nad a pod
-     * švem je 7,96 / 8,01 — tedy **prolnutí ani ostrost problém nebyly**.
-     * Vidět byl nesouhlas obsahu: model dokresloval na doraz k hranici a
-     * neměl kde navázat tělo, obzor ani podlahu.
-     *
-     * Počítá se z toho, kolik se přilepuje — u velkého rozšíření je potřeba
-     * větší rozjezd než u malého. Strop drží cenu: každý pixel navíc je kus
-     * fotky, který se přepočítá znovu.
-     */
-    fun presahPx(nejvetsiOkraj: Int): Int =
-        (nejvetsiOkraj / 3).coerceIn(PRESAH_MIN, PRESAH_MAX)
-
-    const val PRESAH_MIN = 128
-    const val PRESAH_MAX = 512
 
     fun buildRozsireni(
         ctx: Context, scene: InpaintScene, seed: Long, images: List<String>,
@@ -311,60 +296,43 @@ object InpaintBuilder {
     }
 
     /**
-     * [images] nese jen fotku — maska přidané plochy vzniká v grafu
-     * (`ImagePadForOutpaint`), ne v telefonu.
+     * Rozšíření obrázku přesně podle autora outpaint LoRA pro Qwen Image 2.1
+     * (README na Hugging Face + workflow „Qwen Image 2.1 Outpaint v1.1“ na
+     * Civitai, převzato 1:1): šedé plátno #808080 (AusBoss Load Image + Pad,
+     * prolnutí 32, násobek 32, 1 MP) jako `image_1` s `resolution` 0,
+     * vzorkuje se z latentu enkodéru **bez masky** (Set Latent Noise Mask na
+     * Qwen 2.1 kreslí na švu obdélník), 25 kroků, CFG 1, euler/simple;
+     * RGBA → RGB a AusBoss Stitch Inpaint vrátí původní pixely.
      *
-     * ### Proč přes `ImagePadForOutpaint` a ne přes `extend_for_outpainting`
+     * Bez LoRA Qwen 2.1 fotku přerámuje, zmenší nebo nechá šedou — přesně
+     * to se v appce dělo do 4.95 („dolů a doleva“ = zdvojená postava,
+     * „dolů“ = šedý pruh, 29. 9. 2026).
      *
-     * Do 3.78 se plátno přilepovalo přímo v `InpaintCropImproved`. Jenže ten
-     * uzel zpracuje masku (`mask_expand_pixels`, `mask_blend_pixels`) **dřív**,
-     * než přilepí nové místo, a to pak do masky zapíše natvrdo jedničky
-     * (`expanded_mask = torch.ones`). Bez namalované masky tedy prolnutí
-     * nemělo na čem pracovat a hranice zůstala jako nůž — přesně ten viditelný
-     * přechod, který uživatel nahlásil 22. 9. 2026.
-     *
-     * Teď plátno i masku vyrobí `ImagePadForOutpaint` (s `feathering = 0`,
-     * protože jeho změkčení je Pythonovská smyčka přes každý pixel) a výřez
-     * dostane masku už na vstupu — takže se na ni `mask_expand_pixels`
-     * i `mask_blend_pixels` normálně uplatní.
-     *
-     * ### 4.95: celý obraz v novém poměru, bez masky a bez vlepení
-     *
-     * Qwen 2.1 rozšíření (扩图) podle své příručky dělá jako nový obraz
-     * v novém poměru stran s fotkou jako předlohou — ne jako inpaint do
-     * zamčené fotky. Předloha (fotka) mu neříká, KDE na plátně leží, takže
-     * postavu nakreslil přes celé plátno znovu a vlepená fotka ji pak
-     * zdvojila (ověřeno 29. 9. 2026: „dolů a doleva“ = dvě postavy, „dolů“ =
-     * ruce dvakrát nad sebou). Předloha se šedým nebo protaženým okrajem
-     * nepomůže — model ho věrně překreslí. Výřez teď určuje jen velikost
-     * a zmenšení velkých fotek; maska a přesah se už neuplatní.
+     * Jediná odchylka: autorův LoRA Loader (AusBoss) je tu jádrový
+     * `LoraLoaderModelOnly` se stejnou vahou 1,0.
      */
     fun buildRozsireni(
         template: String, scene: InpaintScene, seed: Long, images: List<String>,
         sirka: Int, vyska: Int,
     ): JSONObject {
         val wf = JSONObject(template)
-        wf.inputs(N_IMAGE).put("image", images.getOrElse(0) { "" })
-        wf.inputs(N_TEXT).put("prompt", zadaniRozsireni(scene.prompt, scene.smery))
-        // Rozšíření jede vždy na Qwen 2.1 — projde jen LoRA pro 2.1.
-        if (cz.promptlab.h3video.data.Qwen21Lora.soubor(scene.lora))
+        val foto = images.getOrElse(0) { "" }
+        wf.inputs(N_IMAGE).put("image", foto)
+        wf.inputs(N_PLATNO).put("image", foto)
+        wf.inputs(N_POPIS).put("prompt", zadaniPopisu(scene.prompt))
+        // Doplňková LoRA jde ZA outpaint LoRA, ne místo ní.
+        if (cz.promptlab.h3video.data.Qwen21Lora.soubor(scene.lora)) {
             zapojLoraQwen21(wf, scene.lora, scene.loraSila)
-        val okraje = listOf(
-            okrajPx(vyska, scene.procent, Smer.NAHORU in scene.smery),
-            okrajPx(vyska, scene.procent, Smer.DOLU in scene.smery),
-            okrajPx(sirka, scene.procent, Smer.VLEVO in scene.smery),
-            okrajPx(sirka, scene.procent, Smer.VPRAVO in scene.smery),
-        )
-        wf.inputs(N_PLATNO).apply {
-            put("top", okraje[0])
-            put("bottom", okraje[1])
-            put("left", okraje[2])
-            put("right", okraje[3])
+            if (wf.has(N_LORA_QWEN21))
+                wf.inputs(N_LORA_QWEN21).put("model", JSONArray().put(N_LORA_ROZSIRENI).put(0))
         }
-        wf.inputs(N_VYREZ).put("mask_expand_pixels", presahPx(okraje.max()))
+        wf.inputs(N_PLATNO).apply {
+            put("pad_top", okrajPx(vyska, scene.procent, Smer.NAHORU in scene.smery))
+            put("pad_bottom", okrajPx(vyska, scene.procent, Smer.DOLU in scene.smery))
+            put("pad_left", okrajPx(sirka, scene.procent, Smer.VLEVO in scene.smery))
+            put("pad_right", okrajPx(sirka, scene.procent, Smer.VPRAVO in scene.smery))
+        }
         wf.inputs(N_SAMPLER).put("seed", seed)
-        // Přilepené místo je prázdné — dokreslovat tam není co, vzniká celé.
-        wf.inputs(N_SAMPLER).put("denoise", 1.0)
         return wf
     }
 
@@ -376,12 +344,13 @@ object InpaintBuilder {
         "Power Lora Loader (rgthree)", "LoraLoaderModelOnly",
         "QwenImage21Cache" -> Stage.MODELS
         "LoadImage", "ImageToMask", "InpaintCropImproved", "GetImageSize",
-        "VAEEncode", "SetLatentNoiseMask" -> Stage.REFERENCES
+        "VAEEncode", "SetLatentNoiseMask", "AUSBOSS_NODES_LoadImagePad" -> Stage.REFERENCES
         "CLIPTextEncode", "ReferenceLatent", "ConditioningZeroOut", "FluxGuidance",
         "InpaintModelConditioning", "Flux2Scheduler", "KSamplerSelect", "RandomNoise",
-        "CFGGuider", "TextEncodeQwenImage21" -> Stage.ENCODING
+        "CFGGuider", "TextEncodeQwenImage21", "TextGenerate", "StringConcatenate" -> Stage.ENCODING
         "KSampler", "SamplerCustomAdvanced" -> Stage.SAMPLING
-        "VAEDecode", "InpaintStitchImproved", "SaveImage" -> Stage.MUXING
+        "VAEDecode", "InpaintStitchImproved", "SaveImage", "SplitImageWithAlpha",
+        "AUSBOSS_NODES_StitchInpaint" -> Stage.MUXING
         else -> Stage.SAMPLING
     }
 

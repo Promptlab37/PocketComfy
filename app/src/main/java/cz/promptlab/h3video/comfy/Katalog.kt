@@ -55,6 +55,10 @@ object Katalog {
         "https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch",
         "Výměna tváře a Domalovat"
     )
+    private val AUSBOSS = Balik(
+        "ComfyUI-AusBoss", "https://github.com/ausboss/ComfyUI-AusBoss",
+        "Domalovat — rozšíření obrázku"
+    )
     private val IMPACT = Balik(
         "ComfyUI-Impact-Pack", "https://github.com/ltdrdata/ComfyUI-Impact-Pack",
         "Výměna tváře"
@@ -202,6 +206,8 @@ object Katalog {
         "LoadImageWithFilename" to PRAVEEN,
         "InpaintCropImproved" to INPAINT,
         "InpaintStitchImproved" to INPAINT,
+        "AUSBOSS_NODES_LoadImagePad" to AUSBOSS,
+        "AUSBOSS_NODES_StitchInpaint" to AUSBOSS,
         "ImageResize+" to ESSENTIALS,
         "ImpactGaussianBlurMask" to IMPACT,
         "MiniMaxH3TeaCache" to TEACACHE,
@@ -425,6 +431,10 @@ object Katalog {
         "qwen_image_2.1_vae_bf16.safetensors" to Soubor(
             "models/vae", "Obrázek, Úprava, Oprava fotky, Úhel kamery a Domalovat — Qwen Image 2.1 (0,7 GB, RGBA)",
             "$HF/Comfy-Org/Qwen-Image-2.1/resolve/main/vae/qwen_image_2.1_vae_bf16.safetensors"
+        ),
+        "qwen-image-2.1-outpaint-v2.safetensors" to Soubor(
+            "models/loras", "Domalovat — rozšíření obrázku, Qwen 2.1 (0,16 GB, bez ní se fotka posune nebo zůstane šedá)",
+            "$HF/ausboss/Qwen-Image-2.1-Outpaint-LoRA/resolve/main/qwen-image-2.1-outpaint-v2.safetensors"
         ),
         "elusarcas-qwen2-1-detailer-v1.safetensors" to Soubor(
             "models/loras", "Oprava fotky (vždy), Detailer v Úpravě a Obrázku — Qwen 2.1 (80 MB)",

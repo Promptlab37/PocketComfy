@@ -141,10 +141,17 @@ object Qwen21Lora {
     /** Detailer má na kartách vlastní vypínač — do nabídky nepatří. */
     fun jeDetailer(normalizovany: String): Boolean = "detailer" in normalizovany && je(normalizovany)
 
+    /**
+     * Vestavěné LoRA, které si karta zapojí sama: detailer a outpaint LoRA
+     * rozšíření obrázku (Domalovat → Rozšířit, od 4.96). Do nabídky nepatří.
+     */
+    fun jeVestavena(normalizovany: String): Boolean =
+        jeDetailer(normalizovany) || ("outpaint" in normalizovany && je(normalizovany))
+
     /** Podle jména souboru (karta Domalovat metadata nečte). */
     fun soubor(jmeno: String): Boolean {
         val n = jmeno.lowercase(Locale.ROOT).replace(Regex("[^a-z0-9]"), "")
-        return je(n) && !jeDetailer(n)
+        return je(n) && !jeVestavena(n)
     }
 }
 
@@ -154,7 +161,7 @@ object EditLoras {
 
     fun compatibility(motor: EditMotor, name: String, metadata: JSONObject? = null): LoraCompatibility {
         val filename = normalized(name)
-        if (filename.contains("krea2identityedit") || Qwen21Lora.jeDetailer(filename)) {
+        if (filename.contains("krea2identityedit") || Qwen21Lora.jeVestavena(filename)) {
             return LoraCompatibility.BUILT_IN
         }
         // Pouze údaje o základním modelu, nikdy popis nebo trénovací prompty.

@@ -13,7 +13,7 @@ object ImageLoras {
         val metadata = file.metadata?.let { m -> listOf("ss_base_model_version", "ss_sd_model_name",
             "modelspec.architecture", "modelspec.implementation", "base_model", "base_model_name_or_path")
             .mapNotNull { m.optString(it).takeIf(String::isNotBlank) }.joinToString(" ") }.orEmpty()
-        if (Qwen21Lora.jeDetailer(norm(file.name))) return LoraCompatibility.BUILT_IN
+        if (Qwen21Lora.jeVestavena(norm(file.name))) return LoraCompatibility.BUILT_IN
         val fromMetadata = classify(model, norm(metadata))
         return if (fromMetadata != LoraCompatibility.UNKNOWN) fromMetadata else classify(model, norm(file.name))
     }
