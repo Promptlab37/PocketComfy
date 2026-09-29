@@ -35,6 +35,7 @@ is missing on your machine).
 | VideoHelperSuite / KJNodes* | VHS_VideoCombine, PathchSageAttentionKJ, INTConstant, ModelPreviewOverrideKJ, ImageConcanate, ResizeMask | video cards, live preview, Face swap |
 | Krea 2 Edit nodes* | Krea2EditModelPatch, Krea2EditGroundedEncode, SpectrumApplyMiniMaxH3, H3CacheBust | Image edit, video cards |
 | ComfyUI-Inpaint-CropAndStitch | InpaintCropImproved/Stitch | Face swap, Inpaint |
+| [ComfyUI-AusBoss](https://github.com/ausboss/ComfyUI-AusBoss) | AUSBOSS_NODES_LoadImagePad, AUSBOSS_NODES_StitchInpaint | Inpaint → Extend |
 | ComfyUI-MiniMaxH3-TeaCache | MiniMaxH3TeaCache | video cards (optional speed-up) |
 | ComfyUI_essentials | ImageResize+ | Face swap |
 | Impact Pack* | ImpactGaussianBlurMask | Face swap |

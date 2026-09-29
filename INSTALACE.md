@@ -53,6 +53,7 @@ takže bez čehokoli dalšího):
 | rgthree-comfy | video karty, Výměna tváře |
 | ComfyUI-SeedVR2_VideoUpscaler | Zvětšit |
 | ComfyUI-Inpaint-CropAndStitch | Výměna tváře |
+| ComfyUI-AusBoss | Domalovat → Rozšířit |
 | Comfyui-QwenEditUtils | Oprava fotky |
 | ComfyUI_essentials, KJNodes, VideoHelperSuite, Impact Pack | pomocné uzly |
 
