@@ -5067,8 +5067,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val radku = cteni.radku ?: 0
                     val sloupcu = cteni.sloupcu ?: 0
                     val opravene = mutableMapOf<Int, String>()
-                    val poRadcich = radku >= 2 && sloupcu >= 1 && cteni.panely.any { it.repliky.isNotBlank() } &&
-                        radku * sloupcu >= cteni.panely.size
+                    val nalady = mutableMapOf<Int, String>()
+                    // Po řádcích i bez replik: čte se tam i nálada (EMOCE), kterou
+                    // celé čtení vynechává (29. 9. 2026).
+                    val poRadcich = radku >= 2 && sloupcu >= 1 && radku * sloupcu >= cteni.panely.size
                     // Teď už je známý skutečný počet řádků.
                     val skutecne = if (poRadcich) radku else 0
                     trvaniPrepisu.edit().putInt("odhad_posledni_radky", skutecne).apply()
@@ -5096,15 +5098,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                 krok = 1 + r,
                             )
                             opravene += cz.promptlab.h3video.data.SbFilmPlan.prectiRepliky(odpoved)
+                            nalady += cz.promptlab.h3video.data.SbFilmPlan.prectiNalady(odpoved)
                         }
                     }
-                    prvni to opravene
+                    Triple(prvni, opravene, nalady)
                 }
             }
-            vysledek.onSuccess { (text, repliky) ->
+            vysledek.onSuccess { (text, repliky, nalady) ->
                 val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(text).let { c ->
                     // Repliky z ostřejšího čtení po řádcích mají přednost.
-                    c.copy(panely = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(c.panely, repliky))
+                    c.copy(panely = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(c.panely, repliky).map { p ->
+                        // Nálada z řádků do popisu záběru → herecké podání.
+                        p.copy(popis = cz.promptlab.h3video.data.SbFilmPlan.doplnNaladu(p.popis, nalady[p.cislo]))
+                    })
                 }
                 val plan = cz.promptlab.h3video.data.SbFilmPlan.naplanuj(cteni)
                 if (plan.panely.isEmpty()) {
@@ -5131,16 +5137,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * „Natočit“: přepisovač napíše zadání každého úseku (přesný seznam záběrů
      * s časy — [cz.promptlab.h3video.data.SbFilmPrepis]) a běh jde do fronty.
      */
-    /** Natočit: hotové (a případně upravené) prompty se použijí, jinak se napíšou. */
+    /**
+     * Natočit: jen s hotovým scénářem (krok 2 „Napsat scénář“). Do 5.09 se
+     * chybějící scénář napsal skrytě tady — uživatel pak nevěděl, co se
+     * stane, když krok přeskočí (29. 9. 2026). Tlačítko hlídá sbFilmProblem.
+     */
     private fun natocitSbFilm() {
         val s = _sbFilm.value
-        if (s.zadaniUseku.size == s.useky.size && s.zadaniUseku.isNotEmpty()) {
-            val p = _params.value
-            settings.save(p)
-            RunQueue.add(makeRunner(p))
-            return
-        }
-        pripravitSbPrompty(potomNatocit = true)
+        if (_rewriteState.value is RewriteState.Busy) return
+        if (cz.promptlab.h3video.data.sbFilmProblem(s) != null) return
+        val p = _params.value
+        settings.save(p)
+        RunQueue.add(makeRunner(p))
     }
 
     /** Uživatel upravil prompt úseku v náhledu. */
@@ -5153,7 +5161,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * a ukáže se v náhledu (uživatel 28. 9. 2026: „přidej náhled promptu“).
      * Jakákoli změna plánu prompty zahodí (zadaniUseku = emptyList()).
      */
-    fun pripravitSbPrompty(potomNatocit: Boolean = false) {
+    fun pripravitSbPrompty() {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _sbFilm.value
         val useky = s.useky
@@ -5188,11 +5196,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             vysledek.onSuccess { zadani ->
                 updateSbFilm { it.copy(zadaniUseku = zadani) }
                 _rewriteState.value = RewriteState.Idle
-                if (potomNatocit) {
-                    val p = _params.value
-                    settings.save(p)
-                    RunQueue.add(makeRunner(p))
-                }
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
                 _rewriteState.value = RewriteState.Fail(

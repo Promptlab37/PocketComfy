@@ -229,24 +229,59 @@ object SbFilmPlan {
      */
     fun otazkaRadku(prvni: Int, posledni: Int): String =
         "This image is one row of a film storyboard: the shot panels numbered $prvni to $posledni, " +
-            "left to right. Answer in plain lines only, one line per panel: PANEL <number> | <every " +
-            "spoken line printed with that panel, copied letter by letter exactly as printed, in its " +
-            "original language, as Speaker: \"line\", separated by ; — or none>. Keep the exact " +
-            "spelling, including colloquial words and punctuation. Do not translate or correct anything. " +
-            "Text labelled as action, plot, description, emotion, mood or a note (for example DĚJ, AKCE, " +
-            "POPIS, EMOCE) is not a spoken line — leave it out. A panel with no printed line gets none."
+            "left to right. Answer in plain lines only, one line per panel, exactly in this form: " +
+            "PANEL <number> | <every spoken line printed with that panel, with the speaker's name as " +
+            "printed, copied letter by letter exactly as printed, in its original language, as " +
+            "Speaker: \"line\", separated by ; — or none> | MOOD: <the text printed after EMOCE, " +
+            "NÁLADA, EMOTION or MOOD on that panel, copied exactly, or none>\n" +
+            "For example: PANEL 3 | ANNA: \"Kde je?\" | MOOD: Anna je netrpělivá.\n" +
+            "Keep the exact spelling, including colloquial words and punctuation. Do not translate or " +
+            "correct anything. Text labelled as action, plot, description, emotion, mood or a note (for " +
+            "example DĚJ, AKCE, POPIS, EMOCE) is not a spoken line — never put it among the lines. A " +
+            "panel with no printed line gets none."
 
     /** Odpověď [otazkaRadku] → číslo panelu → repliky. */
     fun prectiRepliky(text: String): Map<Int, String> {
         val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
         return radky.lines().mapNotNull { r ->
-            val casti = r.trim().split("|", limit = 2).map { it.trim() }
-            if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            val casti = r.trim().split("|").map { it.trim() }
+            if (casti.size < 2 || !casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
             val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
             // Prázdný panel se vrací jako "" — přesnější čtení tím říká „tady
             // replika není“; celé čtení ji 29. 9. 2026 zdvojilo ze sousedního panelu.
-            n to casti[1].takeUnless { it.equals("none", true) }.orEmpty().trim()
+            // Pole MOOD (od 5.10) do replik nepatří.
+            // Třetí pole je nálada — i když model návěští MOOD vynechá (ověřeno
+            // 29. 9. 2026), jinak by ji postava řekla nahlas.
+            val repliky = casti[1].takeUnless { NALADA_POLE.containsMatchIn(it) }.orEmpty()
+            n to repliky.takeUnless { it.equals("none", true) }.orEmpty().trim()
         }.toMap()
+    }
+
+    private val NALADA_POLE = Regex("""(?i)^\s*MOOD\s*:""")
+
+    /**
+     * Odpověď [otazkaRadku] → číslo panelu → nálada (text za EMOCE / NÁLADA).
+     * Celé čtení ji 29. 9. 2026 vynechalo a nahradilo vlastním shrnutím;
+     * ostřejší čtení po řádcích ji opíše, jak je vytištěná.
+     */
+    fun prectiNalady(text: String): Map<Int, String> {
+        val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
+        return radky.lines().mapNotNull { r ->
+            val casti = r.trim().split("|").map { it.trim() }
+            if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
+            val pole = casti.drop(1).firstOrNull { NALADA_POLE.containsMatchIn(it) }
+                ?.substringAfter(":") ?: casti.getOrNull(2)
+            val nalada = pole?.trim()?.trim('"', '„', '“', '”')?.trim()
+                ?.takeUnless { it.isEmpty() || it.equals("none", true) } ?: return@mapNotNull null
+            n to nalada
+        }.toMap()
+    }
+
+    /** Doplní náladu do popisu panelu jako „Mood: …“ (jen když tam ještě není). */
+    fun doplnNaladu(popis: String, nalada: String?): String {
+        if (nalada.isNullOrBlank() || popis.contains("Mood:", ignoreCase = true)) return popis
+        return popis.trimEnd() + " Mood: " + nalada.trimEnd('.') + "."
     }
 
     /** `00-04s`, `0:00–0:04`, `27–30 s` → (od, do) v sekundách. */
@@ -606,15 +641,22 @@ fun sbFilmProblem(s: SbFilmScene): String? = when (s.zdroj) {
     SbZdroj.STORYBOARD -> when {
         s.storyboard == null -> t("Vyber obrázek se storyboardem.")
         s.panely.isEmpty() -> t("Nejdřív storyboard přečti.")
-        else -> null
+        else -> scenarProblem(s)
     }
     // Bez obrázku storyboardu musí mít H3 aspoň jednu referenci — Ref2VA
     // bez předloh přepisovač odmítne.
     SbZdroj.DEJ -> when {
         s.postavy.isEmpty() -> t("Přidej aspoň jednu fotku postavy.")
         s.panely.isEmpty() -> t("Nejdřív nech navrhnout záběry.")
-        else -> null
+        else -> scenarProblem(s)
     }
+}
+
+/** Natočit jde až s hotovým scénářem (krok 2) — žádné skryté psaní při natáčení. */
+private fun scenarProblem(s: SbFilmScene): String? = when {
+    s.zadaniUseku.size != s.useky.size -> t("Nejdřív napiš scénář.")
+    s.zadaniUseku.any { it.isBlank() } -> t("Doplň scénář.")
+    else -> null
 }
 
 class SbFilmStore(private val ctx: Context) {
@@ -785,6 +827,30 @@ object SbFilmPrepis {
     private fun ciziZaber(t: String, n: Int) =
         ODKAZ_ZABERU.findAll(t).any { (it.groupValues[1].toIntOrNull() ?: 0) > n }
 
+    /**
+     * Replika opsaná v uvozovkách MIMO `<d>` (např. v shrnutí: „asks in Czech,
+     * “To bylo na mě?”“) se smaže — jinak je v promptu dvakrát a H3 ji může
+     * říct navíc (scénář uživatele 29. 9. 2026). Uvnitř `<d>` se nic nemění.
+     */
+    fun odstranCitaceReplik(text: String): String {
+        val repliky = REPLIKA_D.findAll(text)
+            .map { it.value.removePrefix("<d>").removeSuffix("</d>").replace(Regex("""^\s*\[[^\]]*]\s*"""), "").trim() }
+            .filter { it.length >= 4 }.toSet()
+        if (repliky.isEmpty()) return text
+        fun cisti(usek: String): String = repliky.fold(usek) { acc, r ->
+            val konec = if (r.last() in ".?!…") "." else ""
+            Regex("""[,:]?\s*[“"„«]\s*""" + Regex.escape(r) + """\s*[”"“»]""").replace(acc, konec)
+        }
+        val out = StringBuilder()
+        var od = 0
+        REPLIKA_D.findAll(text).forEach { m ->
+            out.append(cisti(text.substring(od, m.range.first))).append(m.value)
+            od = m.range.last + 1
+        }
+        out.append(cisti(text.substring(od)))
+        return out.toString()
+    }
+
     /** Věty textu; tečka nebo vykřičník uvnitř `<d>…</d>` větu nekončí. */
     private fun vety(t: String): List<String> {
         val chranene = REPLIKA_D.findAll(t).map { it.range }.toList()
@@ -808,7 +874,8 @@ object SbFilmPrepis {
      * úseku. Odstraní se jen tyhle kousky: řádek s `<Audio>`, věta s ním,
      * záběr mimo úsek ze seznamu. Věta s replikou `<d>` se nikdy nemaže.
      */
-    fun ocistiPrepis(text: String, pocetZaberu: Int): String {
+    fun ocistiPrepis(puvodni: String, pocetZaberu: Int): String {
+        val text = odstranCitaceReplik(puvodni)
         if (!vadnyPrepis(text, pocetZaberu)) return text
         val radky = text.split("\n").mapNotNull { r ->
             val bezD = REPLIKA_D.replace(r, "")

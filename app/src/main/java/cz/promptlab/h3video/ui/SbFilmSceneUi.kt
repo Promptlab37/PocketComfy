@@ -57,9 +57,13 @@ import cz.promptlab.h3video.ui.theme.TextLow
 import cz.promptlab.h3video.ui.theme.TextMid
 
 /**
- * Karta **Film ze storyboardu**: storyboard → Přečíst → plán → Natočit
- * (spodní tlačítko). Návrh prošel kritikem 28. 9. 2026: délky počítá appka,
- * plán je vidět a jde upravit, nic navíc.
+ * Karta **Film ze storyboardu** ve třech očíslovaných krocích:
+ * 1 · Storyboard (Přečíst) nebo 1 · Děj (Navrhnout záběry) → 2 · záběry
+ * (Napsat scénář) → 3 · Scénář → Natočit film. Natočit jde až s hotovým
+ * scénářem (uživatel 29. 9. 2026: „aby každému bylo jasné, jak ty kroky
+ * udělat“). Zvýrazněné (Amber) je jen tlačítko dalšího kroku; hotový krok
+ * má neutrální „…znovu“. Plátno je nad krokem 2 — poměr stran jde do
+ * přepisovače a jeho změna scénář smaže. Návrh prošel kritikem.
  */
 @Composable
 @OptIn(ExperimentalLayoutApi::class)
@@ -110,14 +114,14 @@ fun SbFilmSection(vm: MainViewModel) {
         )
     }
 
-    if (scene.zdroj == SbZdroj.STORYBOARD) SectionCard(title = t("Storyboard")) {
+    if (scene.zdroj == SbZdroj.STORYBOARD) SectionCard(title = "1 · " + t("Storyboard")) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             StoryboardPole(scene, onPick = { vm.pickSbStoryboard(it) }, onClear = { vm.clearSbStoryboard() })
             if (scene.storyboard != null) {
                 OutlineButton(
                     if (cte) t("Čtu storyboard…")
                     else if (scene.panely.isEmpty()) t("Přečíst storyboard") else t("Přečíst znovu"),
-                    color = Amber,
+                    color = if (scene.panely.isEmpty()) Amber else TextMid,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.precistSbStoryboard() }
             }
@@ -138,7 +142,7 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(title = t("Děj")) {
+    SectionCard(title = if (scene.zdroj == SbZdroj.DEJ) "1 · " + t("Děj") else t("Děj")) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             DarkTextField(
                 value = scene.dej,
@@ -157,7 +161,7 @@ fun SbFilmSection(vm: MainViewModel) {
                 OutlineButton(
                     if (navrhuje) t("Navrhuji záběry…")
                     else if (scene.panely.isEmpty()) t("Navrhnout záběry") else t("Navrhnout znovu"),
-                    color = Amber,
+                    color = if (scene.panely.isEmpty()) Amber else TextMid,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.navrhnoutSbZabery() }
                 if (akce == MainViewModel.SbAkce.NAVRH) {
@@ -168,9 +172,27 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
+    SectionCard(title = t("Plátno")) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            PillRow(
+                items = SbRozliseni.entries.toList(),
+                selected = scene.rozliseni,
+                label = { it.title },
+                onSelect = { vm.setSbRozliseni(it) },
+            )
+            PillRow(
+                items = LongMmPomer.entries.toList(),
+                selected = scene.pomer,
+                label = { it.title },
+                onSelect = { vm.setSbPomer(it) },
+            )
+        }
+    }
+
     if (scene.panely.isNotEmpty()) {
         val useky = scene.useky
-        SectionCard(title = scene.nazev.ifBlank { t("Záběry") }) {
+        val scenarHotovy = scene.zadaniUseku.size == useky.size && useky.isNotEmpty()
+        SectionCard(title = "2 · " + scene.nazev.ifBlank { t("Záběry") }) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     listOfNotNull(
@@ -201,9 +223,9 @@ fun SbFilmSection(vm: MainViewModel) {
                 Spacer(Modifier.height(8.dp))
                 val pripravuje = bezi && akce == MainViewModel.SbAkce.NATOCENI
                 OutlineButton(
-                    if (pripravuje) t("Píšu prompty…")
-                    else if (scene.zadaniUseku.isEmpty()) t("Připravit prompty") else t("Připravit znovu"),
-                    color = Amber,
+                    if (pripravuje) t("Píšu scénář…")
+                    else if (!scenarHotovy) t("Napsat scénář") else t("Napsat znovu"),
+                    color = if (scenarHotovy) TextMid else Amber,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.pripravitSbPrompty() }
                 if (akce == MainViewModel.SbAkce.NATOCENI) {
@@ -213,10 +235,10 @@ fun SbFilmSection(vm: MainViewModel) {
             }
         }
 
-        // Náhled promptů pro H3 — přesně to, co dostane model; jde upravit
+        // Scénář = prompty pro H3, přesně to, co dostane model; jde upravit
         // a Natočit film použije tuhle podobu.
-        if (scene.zadaniUseku.size == useky.size && useky.isNotEmpty()) {
-            SectionCard(title = t("Prompt pro H3")) {
+        if (scenarHotovy) {
+            SectionCard(title = "3 · " + t("Scénář")) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     scene.zadaniUseku.forEachIndexed { k, text ->
                         Text(
@@ -237,22 +259,6 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(title = t("Plátno")) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            PillRow(
-                items = SbRozliseni.entries.toList(),
-                selected = scene.rozliseni,
-                label = { it.title },
-                onSelect = { vm.setSbRozliseni(it) },
-            )
-            PillRow(
-                items = LongMmPomer.entries.toList(),
-                selected = scene.pomer,
-                label = { it.title },
-                onSelect = { vm.setSbPomer(it) },
-            )
-        }
-    }
 
 }
 

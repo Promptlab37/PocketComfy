@@ -169,6 +169,10 @@ internal val SLOVNIK_D: Map<String, String> = mapOf(
     "%d kroky" to "%d steps",
     "Nastavení modelu" to "Model settings",
     "Krok %d z %d" to "Step %d of %d",
+    "Napsat scénář" to "Write script",
+    "Píšu scénář…" to "Writing script…",
+    "Napsat znovu" to "Write again",
+    "Scénář" to "Script",
 
     // ---- aktualizace
     "Je tu %s" to "%s is here",
