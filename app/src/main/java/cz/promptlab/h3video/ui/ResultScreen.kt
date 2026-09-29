@@ -23,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudQueue
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Refresh
@@ -119,6 +120,10 @@ fun ResultScreen(
      * nepoznáš (replika, která se neudělala jako dialog, prázdné povinné pole).
      */
     warnings: List<String> = emptyList(),
+    /** Výsledek zůstal na serveru (mobilní data) — místo přehrávače „Stáhnout“. */
+    naServeru: Boolean = false,
+    stahovani: cz.promptlab.h3video.engine.RucniStahovani.Stav? = null,
+    onStahnout: () -> Unit = {},
 ) {
     val ctx = LocalContext.current
     val saved = item.inGallery
@@ -156,7 +161,7 @@ fun ResultScreen(
             // a velikost souboru, protože s ním člověk pracuje dál jinde.
             (if (item.isModel3d) {
                 val f = item.fileName.substringAfterLast('.', "glb").uppercase()
-                val mb = item.file(ctx).length() / (1024.0 * 1024.0)
+                val mb = (if (naServeru) item.serverBytes else item.file(ctx).length()) / (1024.0 * 1024.0)
                 "%s · %.1f MB".format(f, mb)
             } else if (item.seconds > 0f) "%.1f s · %s".format(item.seconds, item.resolution)
             else item.resolution) +
@@ -203,6 +208,9 @@ fun ResultScreen(
             }
             if (onFavorite != null) FavoriteButton(item, onFavorite)
         }
+        if (naServeru) {
+            NaServeruKarta(item, stahovani, onStahnout)
+        } else
         // Karta Úprava obrázku vrací PNG – přehrávač by na něm jen zčernal.
         if (item.isImage) {
             // Dekóduje se na pozadí a se stropem ~4096 px na hranu – gigapixel
@@ -302,7 +310,10 @@ fun ResultScreen(
                 )
             }
         }
-        if (podSebe) {
+        // Uložit a sdílet potřebují soubor v telefonu — u výsledku na serveru
+        // je nahrazuje tlačítko Stáhnout výš.
+        if (naServeru) Unit
+        else if (podSebe) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 ulozit(Modifier.fillMaxWidth())
                 sdilet(Modifier.fillMaxWidth())
@@ -344,18 +355,18 @@ fun ResultScreen(
             onEditVideo?.let { t("Upravit video") to it },
             onExtendVideo?.let { t("Prodloužit") to it },
         )
-        if (item.isVideoFile && videoAkce.isNotEmpty()) AkceRada(t("Pokračuj s videem"), videoAkce)
+        if (!naServeru && item.isVideoFile && videoAkce.isNotEmpty()) AkceRada(t("Pokračuj s videem"), videoAkce)
 
         val hudbaAkce = listOfNotNull(
             onMusicToVideo?.let { t("Video ze zvuku") to it },
             onMusicToDance?.let { t("Tanec na hudbu") to it },
         )
-        if (item.isAudio && hudbaAkce.isNotEmpty()) AkceRada(t("Pokračuj s hudbou"), hudbaAkce)
+        if (!naServeru && item.isAudio && hudbaAkce.isNotEmpty()) AkceRada(t("Pokračuj s hudbou"), hudbaAkce)
 
         // Rozcestník: z hotového obrázku se pokračuje jedním klepnutím —
         // rozhýbat do videa, upravit, nebo zvětšit. Bez stahování a
         // znovunahrávání.
-        if (item.isImage &&
+        if (!naServeru && item.isImage &&
             (onAnimate != null || onEdit != null || onExtend != null || onInpaint != null ||
                 onUpscale != null)
         ) {
@@ -705,6 +716,57 @@ private fun AkceRada(nadpis: String, akce: List<Pair<String, () -> Unit>>) {
     ) {
         akce.forEachIndexed { i, (popisek, akce) ->
             OutlineButton(popisek, color = if (i == 0) Cyan else TextMid, onClick = akce)
+        }
+    }
+}
+
+/**
+ * Výsledek, který zůstal na serveru: velikost a tlačítko Stáhnout. Během
+ * stahování průběh, při chybě hláška a znovu tlačítko (dotáhne se od místa,
+ * kde skončilo).
+ */
+@Composable
+private fun NaServeruKarta(
+    item: VideoItem,
+    stav: cz.promptlab.h3video.engine.RucniStahovani.Stav?,
+    onStahnout: () -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(Surface1)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Icon(Icons.Default.CloudQueue, null, Modifier.size(40.dp), Cyan)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            if (item.serverBytes > 0) t("Na serveru · %.0f MB").format(item.serverBytes / (1024.0 * 1024.0))
+            else t("Na serveru"),
+            style = MaterialTheme.typography.bodyMedium, color = TextHi,
+        )
+        Spacer(Modifier.height(12.dp))
+        val prubeh = stav?.prubeh
+        if (prubeh != null) {
+            androidx.compose.material3.LinearProgressIndicator(
+                progress = { prubeh }, modifier = Modifier.fillMaxWidth(), color = Cyan,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(t("Stahuji… %d %%").format((prubeh * 100).toInt()),
+                style = MaterialTheme.typography.bodySmall, color = TextMid)
+        } else {
+            stav?.chyba?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = Danger, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(8.dp))
+            }
+            if (stav?.chybi != true) OutlineButton(
+                t("Stáhnout do telefonu"),
+                modifier = Modifier.fillMaxWidth(),
+                color = Cyan,
+                icon = { Icon(Icons.Default.Download, null, Modifier.size(18.dp), Cyan) },
+                onClick = onStahnout,
+            )
         }
     }
 }

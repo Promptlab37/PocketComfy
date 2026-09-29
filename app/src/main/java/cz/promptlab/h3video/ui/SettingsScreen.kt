@@ -443,6 +443,23 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                 }
             ) {}
 
+            val velkeNaDatech by vm.velkeNaDatech.collectAsStateWithLifecycle()
+            SectionCard(
+                title = t("Velké výsledky přes mobilní data"),
+                trailing = {
+                    Switch(
+                        checked = velkeNaDatech,
+                        onCheckedChange = { vm.setVelkeNaDatech(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = Violet,
+                            uncheckedTrackColor = Surface2,
+                            uncheckedBorderColor = Outline1,
+                        )
+                    )
+                }
+            ) {}
+
             SectionCard(
                 title = t("Ukládat vše do telefonu"),
                 subtitle = t("Normálně vypnuté – stahuješ si jen to, co chceš"),

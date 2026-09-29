@@ -189,6 +189,8 @@ private fun Root(vm: MainViewModel = viewModel()) {
     val history by vm.history.collectAsStateWithLifecycle()
     val historyBytes by vm.historyBytes.collectAsStateWithLifecycle()
     val savingResults by vm.savingResults.collectAsStateWithLifecycle()
+    val rucniStahovani by vm.rucniStahovani.collectAsStateWithLifecycle()
+    val kontext = androidx.compose.ui.platform.LocalContext.current
     // Akce „Pokračuj s…" do karty, kterou si uživatel skryl, se nenabízí.
     val skryteKarty by vm.skryteKartyUcinne.collectAsStateWithLifecycle()
     val skryteVolby by vm.skryteVolby.collectAsStateWithLifecycle()
@@ -423,9 +425,13 @@ private fun Root(vm: MainViewModel = viewModel()) {
                         .statusBarsPadding()
                         .navigationBarsPadding()
                 ) {
+                    val vysledek = history.firstOrNull { it.id == s.item.id } ?: s.item
                     ResultScreen(
-                        item = history.firstOrNull { it.id == s.item.id } ?: s.item,
+                        item = vysledek,
                         warnings = s.warnings,
+                        naServeru = vysledek.naServeru(kontext),
+                        stahovani = rucniStahovani[vysledek.id],
+                        onStahnout = { vm.stahnoutVysledek(vysledek) },
                         onClose = { GenerationEngine.dismissResult() },
                         onAgain = {
                             GenerationEngine.dismissResult()
@@ -525,6 +531,9 @@ private fun Root(vm: MainViewModel = viewModel()) {
             ) {
                 ResultScreen(
                     item = open,
+                    naServeru = open.naServeru(kontext),
+                    stahovani = rucniStahovani[open.id],
+                    onStahnout = { vm.stahnoutVysledek(open) },
                     onClose = { opened = null },
                     onAgain = { opened = null; vm.selectTab(Tab.CREATE) },
                     onDiscard = if (open.retez.isNotBlank()) {

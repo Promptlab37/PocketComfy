@@ -2,6 +2,8 @@ package cz.promptlab.h3video.data
 
 /** Anglické překlady textů z MainViewModel.kt a MainActivity.kt (klíč = přesná česká věta z kódu). */
 internal val SLOVNIK_A: Map<String, String> = mapOf(
+    "Na serveru už soubor není." to "The file is no longer on the server.",
+    "Stažení se nepovedlo. Zkus to znovu." to "The download failed. Try again.",
     // MainActivity — lišta, proužek hotovo, mini průběh, aktualizace
     "Klepni pro zobrazení" to "Tap to view",
     "Odklidit" to "Dismiss",

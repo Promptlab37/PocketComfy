@@ -1705,7 +1705,7 @@ object GenerationEngine {
     }
 
     private suspend fun finishFromHistory(
-        client: ComfyClient, promptId: String, params: GenParams?
+        client: ComfyClient, promptId: String, params: GenParams?,
     ) {
         publish(Stage.DOWNLOADING, 0.90f)
 
@@ -1823,11 +1823,20 @@ object GenerationEngine {
         )
         val url = client.viewUrl(filename, subfolder, type)
 
+        // Mobilní data + Spořič dat (nebo vypnutý přepínač): velký výsledek
+        // zůstane na serveru a stáhne se tlačítkem. Jen u čerstvého běhu —
+        // obnova po restartu a „Zkusit znovu“ stahují vždy. Řetěz Long MiniMax
+        // navazuje na soubor v telefonu, ten se stahuje vždy.
+        val limit = if (params != null && params.mode != cz.promptlab.h3video.data.Mode.LONGMM &&
+            longMmRetez.isBlank() && cz.promptlab.h3video.util.Sit.odlozitVelke(app, settings)
+        ) cz.promptlab.h3video.util.Sit.PRAH_VELKYCH else -1L
+        var naServeru = -1L
+
         var dl = 0
         while (true) {
             try {
                 transferStartedAt = System.currentTimeMillis()
-                client.download(url, target) { done, total ->
+                naServeru = client.download(url, target, limit, navazat = true) { done, total ->
                     transferDone = done
                     transferTotal = total
                     val p = if (total > 0) (done.toFloat() / total).coerceIn(0f, 1f) else 0f
@@ -1874,7 +1883,8 @@ object GenerationEngine {
         // tlačítkem, až se bude líbit. Upravený obrázek jde do Obrázků, video
         // do Filmů.
         val zvuk = isSound(target.name)
-        val saved = settings.autoSaveToGallery && (
+        val jenServer = naServeru >= 0
+        val saved = !jenServer && settings.autoSaveToGallery && (
             when {
                 jenObrazek -> MediaSaver.saveImageToGallery(app, target, "H3_$createdAt.$pripona")
                 zvuk -> MediaSaver.saveAudioToGallery(app, target, "H3_$createdAt.$pripona")
@@ -1891,6 +1901,8 @@ object GenerationEngine {
             // model po blocích, u obrázku je nula.
             seconds = when {
                 jenObrazek -> 0f
+                // Soubor v telefonu není — délka ze zadání, přeměří se po stažení.
+                jenServer -> params?.realSeconds ?: 0f
                 zvuk -> params?.seconds?.toFloat() ?: 0f
                 // Skutečná délka hotového souboru. Dřív se brala z hlavního
                 // posuvníku appky, jenže karty, které si délku řídí samy
@@ -1902,7 +1914,8 @@ object GenerationEngine {
             },
             // Skutečné rozměry hotového souboru. Do 4.58 se brala volba plátna
             // pro video — u Opravy tak u fotky 1792×2368 svítilo „480×864".
-            resolution = skutecneRozmery(target, jenObrazek) ?: params?.resolution?.label ?: label,
+            resolution = (if (jenServer) null else skutecneRozmery(target, jenObrazek))
+                ?: params?.resolution?.label ?: label,
             seed = params?.seed ?: 0L,
             twoImages = false,
             inGallery = saved,
@@ -1914,6 +1927,10 @@ object GenerationEngine {
             // Ke které scéně výsledek patří. Jen Long MiniMax; podle toho se
             // pak nabízí video, na které se má navazovat.
             retez = longMmRetez,
+            serverFile = if (jenServer) filename else "",
+            serverSubfolder = if (jenServer) subfolder else "",
+            serverType = if (jenServer) type else "",
+            serverBytes = naServeru.coerceAtLeast(0L),
         )
         history.add(item)
         settings.activePromptId = null

@@ -27,7 +27,20 @@ data class VideoItem(
      * což se 22. 9. 2026 stalo. U ostatních karet zůstává prázdné.
      */
     val retez: String = "",
+    /**
+     * Výsledek zůstal na serveru (ComfyUI output): jméno, podsložka a typ pro
+     * `/view`. Prázdné = stažený jako vždy. Adresa serveru se neukládá —
+     * doma a přes Tailscale je jiná, bere se aktuální.
+     */
+    val serverFile: String = "",
+    val serverSubfolder: String = "",
+    val serverType: String = "",
+    /** Velikost na serveru v bajtech (0 = neznámá). */
+    val serverBytes: Long = 0L,
 ) {
+    /** Výsledek je jen na serveru — v telefonu soubor není, ale stáhnout se dá. */
+    fun naServeru(ctx: Context): Boolean = serverFile.isNotBlank() && !file(ctx).isFile
+
     val displayTitle: String
         get() = title.ifBlank { prompt.lineSequence().firstOrNull { it.isNotBlank() }?.trim()?.take(96) ?: fileName }
 
@@ -87,7 +100,8 @@ class HistoryStore(private val ctx: Context) {
         if (decoded.damaged && !sp.contains("items_recovery")) {
             sp.edit().putString("items_recovery", raw).apply()
         }
-        val list = decoded.items.filter { it.file(ctx).isFile }
+        // Záznam „Na serveru“ soubor v telefonu nemá, ale je platný.
+        val list = decoded.items.filter { it.file(ctx).isFile || it.serverFile.isNotBlank() }
         val sorted = list.sortedByDescending { it.createdAt }
         // Záznam bez souboru se rovnou i smaže – jinak by mrtvá metadata rostla donekonečna.
         if (list.size != decoded.items.size) persist(sorted)
@@ -99,6 +113,11 @@ class HistoryStore(private val ctx: Context) {
         list.removeAll { it.id == item.id }
         list.add(0, item)
         persist(list)
+    }
+
+    /** Přepíše záznam (po dodatečném stažení: skutečná délka, rozměry). */
+    fun update(item: VideoItem) = synchronized(lock) {
+        persist(allLocked().map { if (it.id == item.id) item else it })
     }
 
     fun markInGallery(id: String) = synchronized(lock) {

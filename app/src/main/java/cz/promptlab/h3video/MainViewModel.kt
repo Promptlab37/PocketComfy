@@ -2228,7 +2228,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val ids = items.map { it.id }.toSet()
                     val candidates = historyStore.all().filter { it.id in ids }
                     val moved = candidates.filter {
-                        cz.promptlab.h3video.data.HistoryTrash.move(it.file(getApplication()), kosFile(it))
+                        it.naServeru(getApplication()) ||
+                            cz.promptlab.h3video.data.HistoryTrash.move(it.file(getApplication()), kosFile(it))
                     }
                     historyStore.removeEntries(moved.map { it.id }.toSet())
                     moved
@@ -2257,7 +2258,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             try {
                 val restored = withContext(Dispatchers.IO) {
                     val moved = items.filter {
-                        cz.promptlab.h3video.data.HistoryTrash.move(kosFile(it), it.file(getApplication()))
+                        (it.serverFile.isNotBlank() && !kosFile(it).isFile) ||
+                            cz.promptlab.h3video.data.HistoryTrash.move(kosFile(it), it.file(getApplication()))
                     }
                     historyStore.restoreEntries(moved)
                     moved
@@ -2275,7 +2277,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Doplní do galerie telefonu videa, která tam z nějakého důvodu chybí. */
     fun saveAllToGallery(onDone: (Int) -> Unit = {}) {
         viewModelScope.launch {
-            val missing = _history.value.filterNot { it.inGallery }
+            val missing = _history.value.filterNot { it.inGallery || it.naServeru(getApplication()) }
             var ok = 0
             withContext(Dispatchers.IO) {
                 missing.forEach { item ->
@@ -2298,6 +2300,77 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     var autoSaveToGallery: Boolean
         get() = settings.autoSaveToGallery
         set(v) { settings.autoSaveToGallery = v; _autoSave.value = v }
+
+    // ------------------------------------------- výsledky „Na serveru“ (5.03)
+
+    private val _velkeNaDatech = MutableStateFlow(settings.velkeNaDatech)
+    val velkeNaDatech: StateFlow<Boolean> = _velkeNaDatech.asStateFlow()
+
+    fun setVelkeNaDatech(v: Boolean) {
+        settings.velkeNaDatech = v
+        _velkeNaDatech.value = v
+    }
+
+    val rucniStahovani = cz.promptlab.h3video.engine.RucniStahovani.stav
+
+    /**
+     * „Stáhnout do telefonu“ u výsledku, který zůstal na serveru. Stejná cesta
+     * jako po generování (`/view`, `.part`, opakování); po stažení se záznam
+     * přeměří (délka, rozměry) a případně uloží do galerie telefonu.
+     */
+    fun stahnoutVysledek(item: VideoItem) {
+        if (item.serverFile.isBlank()) return
+        val rs = cz.promptlab.h3video.engine.RucniStahovani
+        if (!rs.zaber(item.id)) return
+        val app = getApplication<Application>()
+        rs.scope.launch {
+            val client = ComfyClient(settings.serverUrl)
+            val vysledek = runCatching {
+                // Vypnuté ComfyUI (hraní, restart) nahodit jako u generování.
+                if (!client.isAlive() && client.launcherStav() != "running") cekejNaComfy(client)
+                val cil = item.file(app)
+                val url = client.viewUrl(item.serverFile, item.serverSubfolder, item.serverType.ifBlank { "output" })
+                var pokus = 0
+                while (true) {
+                    try {
+                        client.download(url, cil, navazat = true) { hotovo, celkem ->
+                            if (celkem > 0) rs.nastav(item.id, cz.promptlab.h3video.engine.RucniStahovani.Stav(
+                                prubeh = (hotovo.toFloat() / celkem).coerceIn(0f, 1f)))
+                        }
+                        break
+                    } catch (e: Exception) {
+                        if ((e as? ComfyException)?.message == "download 404") throw e
+                        if (++pokus >= 3) throw e
+                        kotlinx.coroutines.delay(2500L * pokus)
+                    }
+                }
+                cil
+            }
+            vysledek.onSuccess { cil ->
+                val rozmery = runCatching {
+                    val r = if (item.isImage) cz.promptlab.h3video.util.ImageUtils.rozmery(cil)
+                    else if (item.isVideoFile) cz.promptlab.h3video.util.ImageUtils.rozmeryVidea(cil) else null
+                    r?.let { (w, h) -> "${w}×$h" }
+                }.getOrNull()
+                var novy = item.copy(
+                    seconds = if (item.isVideoFile) delkaVidea(cil) ?: item.seconds else item.seconds,
+                    resolution = rozmery ?: item.resolution,
+                )
+                if (settings.autoSaveToGallery && MediaSaver.saveItem(app, novy)) novy = novy.copy(inGallery = true)
+                historyStore.update(novy)
+                rs.nastav(item.id, null)
+                withContext(Dispatchers.Main) { refreshHistory() }
+            }.onFailure { e ->
+                val chybi = (e as? ComfyException)?.message == "download 404"
+                val zprava = when {
+                    chybi -> t("Na serveru už soubor není.")
+                    e is ComfyException && !e.userMessage.startsWith("download") -> e.userMessage
+                    else -> t("Stažení se nepovedlo. Zkus to znovu.")
+                }
+                rs.nastav(item.id, cz.promptlab.h3video.engine.RucniStahovani.Stav(chyba = zprava, chybi = chybi))
+            }
+        }
+    }
 
     /** Výběr fotek ze Souborů (nejnovější nahoře) místo systémového výběru. */
     private val _vyberZeSouboru = MutableStateFlow(settings.vyberZeSouboru)

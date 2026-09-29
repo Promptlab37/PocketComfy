@@ -2,6 +2,10 @@ package cz.promptlab.h3video.data
 
 /** Anglické překlady textů z ui/ (klíč = přesná česká věta z kódu). */
 internal val SLOVNIK_D: Map<String, String> = mapOf(
+    "Na serveru · %.0f MB" to "On the server · %.0f MB",
+    "Na serveru" to "On the server",
+    "Stáhnout do telefonu" to "Download to phone",
+    "Velké výsledky přes mobilní data" to "Large results over mobile data",
     "Odebrat fotku" to "Remove photo",
     "Odebrat hlas" to "Remove voice",
     // ---- společné prvky (Components, GenerateScreen, přehrávač)

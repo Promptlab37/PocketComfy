@@ -292,8 +292,9 @@ private fun AssetMenu(item: VideoItem, onRename: () -> Unit, onDelete: () -> Uni
 @Composable
 private fun AssetThumbnail(item: VideoItem, modifier: Modifier = Modifier) {
     val ctx = LocalContext.current
-    var thumb by remember(item.id, item.fileName) { mutableStateOf<Bitmap?>(null) }
-    LaunchedEffect(item.id, item.fileName) {
+    val naServeru = item.naServeru(ctx)
+    var thumb by remember(item.id, item.fileName, naServeru) { mutableStateOf<Bitmap?>(null) }
+    LaunchedEffect(item.id, item.fileName, naServeru) {
         thumb = withContext(Dispatchers.IO) {
             runCatching {
                 when {
@@ -323,6 +324,8 @@ private fun AssetThumbnail(item: VideoItem, modifier: Modifier = Modifier) {
                 Icon(Icons.Default.PlayArrow, t("Přehrát"), Modifier.padding(6.dp).size(22.dp), Color.White)
             }
         }
+        if (naServeru) Icon(Icons.Default.CloudQueue, t("Na serveru"),
+            Modifier.align(Alignment.TopEnd).padding(6.dp).background(Ink, RoundedCornerShape(50)).padding(3.dp).size(16.dp), Cyan)
         if (item.inGallery) Icon(Icons.Default.CheckCircle, t("Uloženo v telefonu"),
             Modifier.align(Alignment.BottomStart).padding(6.dp).background(Ink, RoundedCornerShape(50)).size(18.dp), Ok)
     }

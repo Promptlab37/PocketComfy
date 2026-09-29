@@ -97,6 +97,14 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("autoSave", false)
         set(v) = sp.edit().putBoolean("autoSave", v).apply()
 
+    /**
+     * Stahovat velké výsledky i přes mobilní data. Výchozí zapnuto = beze
+     * změny proti starším verzím; se Spořičem dat se odkládají i tak.
+     */
+    var velkeNaDatech: Boolean
+        get() = sp.getBoolean("velkeNaDatech", true)
+        set(v) = sp.edit().putBoolean("velkeNaDatech", v).apply()
+
     /** Fotky a videa vybírat ze Souborů místo systémového výběru (viz ui.VyberFotek). */
     var vyberZeSouboru: Boolean
         get() = sp.getBoolean("vyber_ze_souboru", false)

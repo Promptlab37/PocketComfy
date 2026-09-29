@@ -562,19 +562,37 @@ class ComfyClient(baseUrl: String) {
         return url.toString()
     }
 
-    /** Stáhne soubor do [target] a hlásí přenesené i celkové bajty. */
-    fun download(url: String, target: File, onProgress: (done: Long, total: Long) -> Unit) {
-        val req = Request.Builder().url(url).build()
+    /**
+     * Stáhne soubor do [target] a hlásí přenesené i celkové bajty.
+     *
+     * [maxBytes] > 0: když server ohlásí větší soubor, nic se nestáhne a vrátí
+     * se jeho velikost (výsledek pak zůstane na serveru). Jinak vrací -1.
+     * Rozestažený `.part` se dotahuje přes `Range` — přerušené stažení na
+     * datech nezačíná od nuly.
+     */
+    fun download(
+        url: String, target: File, maxBytes: Long = -1L,
+        /** Dotáhnout existující `.part` (jen u výsledků, kde je jméno jednoznačné). */
+        navazat: Boolean = false,
+        onProgress: (done: Long, total: Long) -> Unit,
+    ): Long {
+        target.parentFile?.mkdirs()
+        val tmp = File(target.parentFile, target.name + ".part")
+        if (!navazat) tmp.delete()
+        val uz = if (tmp.isFile) tmp.length() else 0L
+        val req = Request.Builder().url(url).apply {
+            if (uz > 0) header("Range", "bytes=$uz-")
+        }.build()
         http.newCall(req).execute().use { r ->
             if (!r.isSuccessful) throw ComfyException("download ${r.code}")
             val bodyStream = r.body!!.byteStream()
-            val total = r.body!!.contentLength()
-            target.parentFile?.mkdirs()
-            val tmp = File(target.parentFile, target.name + ".part")
-            tmp.outputStream().use { out ->
+            val navazuje = r.code == 206 && uz > 0
+            val total = r.body!!.contentLength().let { if (it >= 0 && navazuje) it + uz else it }
+            if (maxBytes > 0 && total > maxBytes) return total
+            java.io.FileOutputStream(tmp, navazuje).use { out ->
                 val buf = ByteArray(64 * 1024)
                 var read: Int
-                var done = 0L
+                var done = if (navazuje) uz else 0L
                 var lastReport = 0L
                 while (bodyStream.read(buf).also { read = it } != -1) {
                     out.write(buf, 0, read)
@@ -591,6 +609,7 @@ class ComfyClient(baseUrl: String) {
                 tmp.delete()
             }
         }
+        return -1L
     }
 
     // ---------------------------------------------------------------- websocket
