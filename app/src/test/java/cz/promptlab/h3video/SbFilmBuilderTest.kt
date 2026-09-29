@@ -6,6 +6,8 @@ import cz.promptlab.h3video.data.LongMmPomer
 import cz.promptlab.h3video.data.SbFilmPlan
 import cz.promptlab.h3video.data.SbFilmPrepis
 import cz.promptlab.h3video.data.SbFilmScene
+import cz.promptlab.h3video.data.SbModel
+import cz.promptlab.h3video.comfy.Stage
 import cz.promptlab.h3video.data.SbPanel
 import org.json.JSONArray
 import org.json.JSONObject
@@ -124,23 +126,63 @@ class SbFilmBuilderTest {
         )
     }
 
-    /** Volba kroků (5.06): mění se jen počet kroků, nic jiného v grafu. */
-    @Test
-    fun `kroky podle volby a nic jineho se nemeni`() {
-        fun g(k: Int) = SbFilmBuilder.buildFilm(scene.copy(kroky = k), useky, zadani, listOf("sb.png", "p1.png"), "16:9", 7L)
-        assertEquals(8, graf().vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
-        for (k in SbFilmScene.KROKY) {
-            val a = g(k)
-            assertEquals(k, a.vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
-            a.vstupy(SbFilmBuilder.N_KROKY).put("steps", 8)
-            assertEquals(graf().toString(), a.toString())
+    /** Všechny odkazy grafu vedou na uzly, které v grafu jsou. */
+    private fun odkazyPlati(g: JSONObject) {
+        for (id in g.keys()) {
+            val vstupy = g.getJSONObject(id).getJSONObject("inputs")
+            for (k in vstupy.keys()) {
+                val v = vstupy.get(k)
+                if (v is JSONArray && v.length() == 2 && v.get(0) is String)
+                    assertTrue("$id.$k -> ${v.get(0)}", g.has(v.getString(0)))
+            }
         }
-        // Hodnota mimo nabídku (starý nebo poškozený záznam) → výchozích 8.
-        assertEquals(8, g(12).vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
-        assertEquals(8, g(-3).vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
-        assertEquals(listOf(4, 8, 16, 20), SbFilmScene.KROKY)
-        assertEquals(20, SbFilmScene.platneKroky(20))
-        assertEquals(8, SbFilmScene.platneKroky(0))
-        assertEquals(8, SbFilmScene().kroky)
+    }
+
+    private fun g(s: SbFilmScene) = SbFilmBuilder.buildFilm(s, useky, zadani, listOf("sb.png", "p1.png"), "16:9", 7L)
+
+    /** 5.07: Turbo = autorova sestava beze změny, 8 kroků, žádná volba kroků. */
+    @Test
+    fun `turbo je sestava autora s 8 kroky`() {
+        val t = g(scene.copy(model = SbModel.TURBO, krokyKvalita = 25))
+        odkazyPlati(t)
+        assertEquals(8, t.vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+        assertEquals("simple", t.vstupy(SbFilmBuilder.N_KROKY).getString("scheduler"))
+        assertTrue(t.has(SbFilmBuilder.N_LORA))
+        assertFalse(t.has(SbFilmBuilder.N_SHIFT))
+        assertEquals(0.8, t.vstupy(SbFilmBuilder.N_LORA).getDouble("strength"), 1e-9)
+        assertEquals(SbFilmBuilder.N_LORA, t.vstupy(SbFilmBuilder.N_KROKY).getJSONArray("model").getString(0))
+        assertEquals(SbFilmBuilder.N_LORA, t.vstupy(SbFilmBuilder.N_SETUP).getJSONArray("model").getString(0))
+        assertEquals(graf().toString(), t.toString())
+    }
+
+    /** 5.07: Kvalita = plný model jako profil Kvalita v All in One, kroky podle volby. */
+    @Test
+    fun `kvalita je plny model se shiftem a volbou kroku`() {
+        val k = g(scene.copy(model = SbModel.KVALITA))
+        odkazyPlati(k)
+        assertFalse(k.has(SbFilmBuilder.N_LORA))
+        assertTrue(k.toString().contains("turbo").not())
+        val sh = k.vstupy(SbFilmBuilder.N_SHIFT)
+        assertEquals("MiniMaxH3SigmaShift", k.getJSONObject(SbFilmBuilder.N_SHIFT).getString("class_type"))
+        assertEquals(12.191111, sh.getDouble("shift_video"), 1e-9)
+        assertEquals(3.0, sh.getDouble("shift_audio"), 1e-9)
+        assertEquals(SbFilmBuilder.N_POZORNOST, sh.getJSONArray("model").getString(0))
+        // Plán kroků i úseky berou model ZA shiftem.
+        assertEquals(SbFilmBuilder.N_SHIFT, k.vstupy(SbFilmBuilder.N_KROKY).getJSONArray("model").getString(0))
+        assertEquals(SbFilmBuilder.N_SHIFT, k.vstupy(SbFilmBuilder.N_SETUP).getJSONArray("model").getString(0))
+        assertEquals("beta", k.vstupy(SbFilmBuilder.N_KROKY).getString("scheduler"))
+        assertEquals("euler", k.vstupy(SbFilmBuilder.N_SAMPLER).getString("sampler_name"))
+        assertEquals(10, k.vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+        assertEquals(20, g(scene.copy(model = SbModel.KVALITA, krokyKvalita = 20)).vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+        // Mimo rozsah 10–30 se hodnota srovná.
+        assertEquals(30, scene.copy(model = SbModel.KVALITA, krokyKvalita = 99).kroky)
+        assertEquals(10, scene.copy(model = SbModel.KVALITA, krokyKvalita = 4).kroky)
+        assertEquals(8, scene.copy(model = SbModel.TURBO, krokyKvalita = 20).kroky)
+        assertEquals(SbModel.TURBO, SbFilmScene().model)
+        assertEquals(10, SbFilmScene().krokyKvalita)
+        assertEquals(Stage.MODELS, SbFilmBuilder.stageForClass("MiniMaxH3SigmaShift"))
+        // Grafy pro kontrolu proti /object_info.
+        val dir = File("build/sbfilm-grafy").also { it.mkdirs() }
+        File(dir, "film_kvalita.json").writeText(k.toString(2))
     }
 }

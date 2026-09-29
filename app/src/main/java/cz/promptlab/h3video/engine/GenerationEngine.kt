@@ -1211,7 +1211,7 @@ object GenerationEngine {
             editScene?.motor == cz.promptlab.h3video.data.EditMotor.QWEN21 -> editScene.qwen21Steps
             // Film: kroky všech úseků dohromady (viz SbFilmBuilder.globalniKrok).
             sbFilmScene != null ->
-                cz.promptlab.h3video.data.SbFilmScene.platneKroky(sbFilmScene.kroky) * sbFilmScene.useky.size
+                sbFilmScene.kroky * sbFilmScene.useky.size
             else -> effective.steps
         }
         // Podle tříd uzlů se u šablon balíku poznávají fáze běhu.

@@ -223,12 +223,24 @@ fun SbFilmSection(vm: MainViewModel) {
                 label = { it.title },
                 onSelect = { vm.setSbPomer(it) },
             )
-            Text(t("Kroky"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+        }
+    }
+
+    SectionCard(title = t("Model")) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             PillRow(
-                items = SbFilmScene.KROKY,
-                selected = scene.kroky,
-                label = { "$it" },
-                onSelect = { vm.setSbKroky(it) },
+                items = cz.promptlab.h3video.data.SbModel.entries.toList(),
+                selected = scene.model,
+                label = { it.title },
+                onSelect = { vm.setSbModel(it) },
+            )
+            // Kroky jen u plného modelu — Turbo má sestavu autora (8 kroků).
+            if (scene.model == cz.promptlab.h3video.data.SbModel.KVALITA) cz.promptlab.h3video.ui.LabeledSlider(
+                label = t("Kroky"),
+                value = "${scene.kroky}",
+                position = scene.kroky.toFloat(),
+                range = SbFilmScene.KVALITA_MIN_KROKU.toFloat()..SbFilmScene.KVALITA_MAX_KROKU.toFloat(),
+                onChange = { vm.setSbKrokyKvalita(Math.round(it)) },
             )
         }
     }

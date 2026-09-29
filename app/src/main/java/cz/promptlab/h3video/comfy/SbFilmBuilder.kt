@@ -3,6 +3,7 @@ package cz.promptlab.h3video.comfy
 import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.data.SbFilmPlan
 import cz.promptlab.h3video.data.SbFilmScene
+import cz.promptlab.h3video.data.SbModel
 import cz.promptlab.h3video.data.SbUsek
 import org.json.JSONArray
 import org.json.JSONObject
@@ -28,9 +29,14 @@ import org.json.JSONObject
  * zadání jde do `SegmentStep.prompt_override`, kde se nic nepřepočítává
  * (`_segment_step_prompt_media`). Ověřeno během 2×5 s 28. 9. 2026.
  *
- * Model, LoRA a vzorkování jsou jako Turbo na kartě Long MiniMax (autorova
- * sestava balíku): `fl2va` + ref2v Turbo LoRA 0,8, `euler`/`simple`, kroky
- * podle volby na kartě ([SbFilmScene.kroky], výchozí 8).
+ * Dva modely ([SbFilmScene.model]):
+ *  - **Turbo** — autorova sestava balíku (jako Turbo na kartě Long MiniMax):
+ *    `fl2va` + ref2v Turbo LoRA 0,8, `euler`/`simple`, 8 kroků, bez shiftu
+ *    (autor má `MiniMaxH3SigmaShift` v předloze vypnutý).
+ *  - **Kvalita** — plný model bez LoRA jako profil Kvalita v All in One:
+ *    `MiniMaxH3SigmaShift` 12,191111/3, `euler`/`beta`, kroky 10–30.
+ *    Plán kroků i nastavení úseků berou model ZA shiftem (jako uzel 9
+ *    v šablonách All in One), jinak by sigmy shift nerespektovaly.
  */
 object SbFilmBuilder {
 
@@ -68,6 +74,7 @@ object SbFilmBuilder {
     const val N_SAGE = "18"
     const val N_POZORNOST = "400"
     const val N_LORA = "271"
+    const val N_SHIFT = "204"
     const val N_ADAPTER = "269"
     const val N_MEDIA = "280"
     const val N_KONTEXT = "328"
@@ -87,7 +94,9 @@ object SbFilmBuilder {
     const val VAE_ZVUK = "minimax_h3_audio_vae_fp32.safetensors"
     const val LORA = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors"
     const val LORA_SILA = 0.8
-    const val KROKU = SbFilmScene.VYCHOZI_KROKY
+    const val KROKU = SbFilmScene.TURBO_KROKY
+    const val SHIFT_VIDEO = 12.191111
+    const val SHIFT_AUDIO = 3.0
     const val KONTEXT_SNIMKU = 22
     const val ROZLISENI = "480P"
     const val CONTINUITY = "latent_guide"
@@ -115,9 +124,18 @@ object SbFilmBuilder {
         wf.put(N_SAGE, uzel("MiniMaxH3MemoryEfficientSageAttentionPatch", "Sage", JSONObject().put("model", odkaz(N_UNET))))
         wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Pozornost", JSONObject()
             .put("model", odkaz(N_SAGE)).put("attention", "comfy kitchen attention")))
-        wf.put(N_LORA, uzel("MiniMaxH3TurboLoRA", "Turbo LoRA", JSONObject()
-            .put("model", odkaz(N_POZORNOST)).put("lora_name", LORA)
-            .put("strength", LORA_SILA).put("low_vram", false)))
+        val turbo = scene.model == SbModel.TURBO
+        val model = if (turbo) {
+            wf.put(N_LORA, uzel("MiniMaxH3TurboLoRA", "Turbo LoRA", JSONObject()
+                .put("model", odkaz(N_POZORNOST)).put("lora_name", LORA)
+                .put("strength", LORA_SILA).put("low_vram", false)))
+            N_LORA
+        } else {
+            wf.put(N_SHIFT, uzel("MiniMaxH3SigmaShift", "Shift", JSONObject()
+                .put("model", odkaz(N_POZORNOST))
+                .put("shift_video", SHIFT_VIDEO).put("shift_audio", SHIFT_AUDIO)))
+            N_SHIFT
+        }
         wf.put(N_ADAPTER, uzel("MiniMaxH3EasyModelAdapter_SatoDive", "Balík H3", JSONObject()
             .put("text_encoder", odkaz(N_CLIP)).put("video_vae", odkaz(N_VAE))
             .put("audio_vae", odkaz(N_VAE_ZVUK)).put("ref2va_model", odkaz(N_UNET))))
@@ -165,11 +183,11 @@ object SbFilmBuilder {
             .put("media", odkaz(N_MEDIA))))
 
         wf.put(N_KROKY, uzel("BasicScheduler", "Kroky", JSONObject()
-            .put("model", odkaz(N_LORA)).put("scheduler", "simple")
-            .put("steps", SbFilmScene.platneKroky(scene.kroky)).put("denoise", 1.0)))
+            .put("model", odkaz(model)).put("scheduler", if (turbo) "simple" else "beta")
+            .put("steps", scene.kroky).put("denoise", 1.0)))
         wf.put(N_SAMPLER, uzel("KSamplerSelect", "Sampler", JSONObject().put("sampler_name", "euler")))
         wf.put(N_SETUP, uzel("MiniMaxH3EasySegmentSampleSetup_SatoDive", "Nastavení úseků", JSONObject()
-            .put("h3_context", odkaz(N_KONTEXT, 1)).put("model", odkaz(N_LORA))
+            .put("h3_context", odkaz(N_KONTEXT, 1)).put("model", odkaz(model))
             .put("sampler", odkaz(N_SAMPLER)).put("sigmas", odkaz(N_KROKY))))
 
         var predchozi: String? = null
@@ -199,7 +217,7 @@ object SbFilmBuilder {
         }.toMap()
 
     fun stageForClass(cls: String?): Stage = when (cls) {
-        "UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3TurboLoRA",
+        "UNETLoader", "CLIPLoader", "VAELoader", "MiniMaxH3TurboLoRA", "MiniMaxH3SigmaShift",
         "MiniMaxH3EasyModelAdapter_SatoDive", "MiniMaxH3MemoryEfficientSageAttentionPatch",
         "ModelAttentionBackend" -> Stage.MODELS
         "LoadImage", "MiniMaxH3EasyMediaBridge_SatoDive" -> Stage.REFERENCES

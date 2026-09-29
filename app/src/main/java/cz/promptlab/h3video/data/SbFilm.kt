@@ -37,6 +37,18 @@ enum class SbZdroj(private val titleCs: String) {
  * 720p na přání uživatele 28. 9. 2026 — má 2,25× víc bodů, běh je řádově
  * delší.
  */
+/**
+ * Model filmu. Turbo = sestava autora balíku (Turbo LoRA, 8 kroků), Kvalita =
+ * plný model bez LoRA jako profil Kvalita v All in One (euler + beta, shift
+ * 12,19/3); kroky volí uživatel, ověřeně dobré je 10.
+ */
+enum class SbModel(private val titleCs: String) {
+    TURBO("Turbo"),
+    KVALITA("Kvalita");
+
+    val title: String get() = t(titleCs)
+}
+
 enum class SbRozliseni(val kod: String, private val titleCs: String) {
     R480("480P", "480p"),
     R720("720P", "720p");
@@ -548,9 +560,15 @@ data class SbFilmScene(
     val zadaniUseku: List<String> = emptyList(),
     /** Hlas každého mluvčího — stejný popis jde do všech úseků filmu. */
     val hlasy: Map<String, String> = emptyMap(),
-    /** Kroky vzorkování každého úseku (jen hodnoty z [KROKY]). */
-    val kroky: Int = VYCHOZI_KROKY,
+    val model: SbModel = SbModel.TURBO,
+    /** Kroky plného modelu (Kvalita). Turbo má pevných [TURBO_KROKY]. */
+    val krokyKvalita: Int = KVALITA_KROKY,
 ) {
+    /** Kroky, se kterými se opravdu vzorkuje. */
+    val kroky: Int
+        get() = if (model == SbModel.TURBO) TURBO_KROKY
+        else krokyKvalita.coerceIn(KVALITA_MIN_KROKU, KVALITA_MAX_KROKU)
+
     val useky: List<SbUsek> get() = SbFilmPlan.rozdel(panely)
     val sekundy: Double get() = panely.sumOf { it.sekundy }
 
@@ -565,14 +583,12 @@ data class SbFilmScene(
         const val MAX_POSTAV = 3
         val DELKY = listOf(15, 30, 45)
 
-        /**
-         * Turbo LoRA je destilovaná na 4 kroky, 8 byla pevná hodnota do 5.05.
-         * Víc kroků je volba uživatele (zkouška), síla LoRA se s nimi nemění.
-         */
-        val KROKY = listOf(4, 8, 16, 20)
-        const val VYCHOZI_KROKY = 8
-
-        fun platneKroky(k: Int): Int = if (k in KROKY) k else VYCHOZI_KROKY
+        /** Turbo: sestava autora balíku, kroky se nemění (5.06 je nabízel — chyba). */
+        const val TURBO_KROKY = 8
+        /** Plný model: 10 kroků uživatel ověřil (lepší než Turbo), strop jen prodlužuje čas. */
+        const val KVALITA_KROKY = 10
+        const val KVALITA_MIN_KROKU = 10
+        const val KVALITA_MAX_KROKU = 30
     }
 }
 
@@ -606,7 +622,8 @@ class SbFilmStore(private val ctx: Context) {
             .put("rozliseni", s.rozliseni.name)
             .put("zdroj", s.zdroj.name)
             .put("cilSekund", s.cilSekund)
-            .put("kroky", s.kroky)
+            .put("model", s.model.name)
+            .put("krokyKvalita", s.krokyKvalita)
             .put("zadaniUseku", org.json.JSONArray().also { a -> s.zadaniUseku.forEach { a.put(it) } })
             .put("nazev", s.nazev)
             .put("casyZeStoryboardu", s.casyZeStoryboardu)
@@ -639,7 +656,10 @@ class SbFilmStore(private val ctx: Context) {
             rozliseni = runCatching { SbRozliseni.valueOf(j.optString("rozliseni")) }.getOrDefault(SbRozliseni.R480),
             zdroj = runCatching { SbZdroj.valueOf(j.optString("zdroj")) }.getOrDefault(SbZdroj.STORYBOARD),
             cilSekund = j.optInt("cilSekund", 30),
-            kroky = SbFilmScene.platneKroky(j.optInt("kroky", SbFilmScene.VYCHOZI_KROKY)),
+            // „kroky“ z 5.06 se nečtou — patřily k Turbo, kde se měnit nemají.
+            model = runCatching { SbModel.valueOf(j.optString("model")) }.getOrDefault(SbModel.TURBO),
+            krokyKvalita = j.optInt("krokyKvalita", SbFilmScene.KVALITA_KROKY)
+                .coerceIn(SbFilmScene.KVALITA_MIN_KROKU, SbFilmScene.KVALITA_MAX_KROKU),
             zadaniUseku = (0 until (j.optJSONArray("zadaniUseku")?.length() ?: 0))
                 .map { j.getJSONArray("zadaniUseku").getString(it) },
             nazev = j.optString("nazev"), casyZeStoryboardu = j.optBoolean("casyZeStoryboardu"),
