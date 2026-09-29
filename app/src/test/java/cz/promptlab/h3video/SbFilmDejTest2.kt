@@ -95,4 +95,16 @@ class SbFilmDejTest2 {
         assertTrue(h1.contains(veta) && h2.contains(veta))
         assertTrue(h1.contains("closes their lips"))
     }
+
+    /** Rešerše 29. 9. 2026: typ úlohy z příručky zabrání vymyšlenému <Audio 1>. */
+    @Test
+    fun `hlidka pojmenuje ulohu a rozsah zaberu`() {
+        val panely = (1..4).map { SbPanel(it, "x", sekundy = 2.0) }
+        val h = SbFilmPrepis.hlidka(1, SbUsek(panely), 1, 2)
+        assertTrue(h.contains("The task is [reference generation] only"))
+        assertTrue(h.contains("<Picture 1> and the <Subject K> defined from it."))
+        assertTrue(h.contains("This part has 4 shots, [Shot 1] to [Shot 4], and every field refers only to them."))
+        assertTrue(SbFilmPrepis.hlidka(3, SbUsek(panely.take(1)), 0, 1)
+            .contains("<Picture 1> to <Picture 3> and the <Subject K> defined from them. This part has 1 shot, [Shot 1],"))
+    }
 }

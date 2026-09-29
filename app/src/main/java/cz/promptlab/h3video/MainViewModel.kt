@@ -5003,9 +5003,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             vysledek.onSuccess { (text, repliky) ->
                 val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(text).let { c ->
                     // Repliky z ostřejšího čtení po řádcích mají přednost.
-                    c.copy(panely = c.panely.map { p ->
-                        repliky[p.cislo]?.let { p.copy(repliky = cz.promptlab.h3video.data.SbFilmPrepis.sloucit(p.repliky, it)) } ?: p
-                    })
+                    c.copy(panely = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(c.panely, repliky))
                 }
                 val plan = cz.promptlab.h3video.data.SbFilmPlan.naplanuj(cteni)
                 if (plan.panely.isEmpty()) {
@@ -5066,19 +5064,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
                     useky.mapIndexed { k, u ->
-                        prepisSReferencemi(
-                            client, s.uploadImages, u.sekundy,
-                            cz.promptlab.h3video.data.SbFilmPrepis.zadani(s, k, useky.size),
-                            storyboard = s.seStoryboardem,
-                            hlidka = cz.promptlab.h3video.data.SbFilmPrepis.hlidka(
-                                s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
-                                cz.promptlab.h3video.data.SbFilmPrepis.idMluvcich(s.panely),
-                                cz.promptlab.h3video.data.SbFilmPrepis.jazykFilmu(s.panely),
-                                s.hlasy,
-                            ),
-                            hlidatDialogy = false,
-                            pomer = s.pomer.kod,
+                        val sp = cz.promptlab.h3video.data.SbFilmPrepis
+                        val hlidka = sp.hlidka(
+                            s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
+                            sp.idMluvcich(s.panely), sp.jazykFilmu(s.panely), s.hlasy,
+                            predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
                         )
+                        suspend fun prepis(h: String) = prepisSReferencemi(
+                            client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),
+                            storyboard = s.seStoryboardem, hlidka = h,
+                            hlidatDialogy = false, pomer = s.pomer.kod,
+                        )
+                        // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
+                        // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
+                        sp.ocistiPrepis(prepis(hlidka), u.panely.size)
                     }
                 }
             }

@@ -122,15 +122,18 @@ object SbFilmPlan {
             "duration printed on the sheet in seconds, or none> | SHOTS: <the number of shots " +
             "printed on the sheet, or none> | GRID: <rows>x<columns> of the shot panels | VOICES: <for " +
             "every speaker who has a line: Name = age, gender and voice in plain English words (pitch, " +
-            "timbre), for example Anna = a woman in her 30s with a warm, low voice; separated by ; — or none>\n" +
+            "timbre), for example Anna = a woman in her 30s with a warm, low voice; separated by ;. Always " +
+            "give a voice for every speaker, guessed from how they look>\n" +
             "Then one line per numbered shot panel, in the panel order: PANEL <number> | <the time " +
             "range exactly as printed on that panel, for example 00-04s, or none> | <shot size: " +
             "wide, medium, close-up, extreme close-up, insert or detail> | <camera movement, or " +
             "static> | <what happens in the panel, one short sentence> | <every spoken line " +
             "printed with that panel, copied word for word in its original language, as " +
             "Speaker: \"line\", separated by ; — or none>\n" +
-            "Text labelled as action, plot, description or a note (for example DĚJ, AKCE, POPIS, " +
-            "ACTION, NOTE) is not a spoken line: put it into the action field, never into the lines.\n" +
+            "Text labelled as action, plot, description, emotion, mood or a note (for example DĚJ, AKCE, " +
+            "POPIS, EMOCE, ACTION, MOOD, NOTE) is not a spoken line: put it into the action field, never " +
+            "into the lines. A panel with no printed line gets none; each line belongs only to the panel " +
+            "it is printed in.\n" +
             "Skip boxes that are only colour, texture or environment swatches. Do not invent " +
             "panels, times or lines that are not on the sheet: if no time is printed, write none."
 
@@ -214,18 +217,19 @@ object SbFilmPlan {
             "spoken line printed with that panel, copied letter by letter exactly as printed, in its " +
             "original language, as Speaker: \"line\", separated by ; — or none>. Keep the exact " +
             "spelling, including colloquial words and punctuation. Do not translate or correct anything. " +
-            "Text labelled as action, plot, description or a note (for example DĚJ, AKCE, POPIS) is not " +
-            "a spoken line — leave it out."
+            "Text labelled as action, plot, description, emotion, mood or a note (for example DĚJ, AKCE, " +
+            "POPIS, EMOCE) is not a spoken line — leave it out. A panel with no printed line gets none."
 
     /** Odpověď [otazkaRadku] → číslo panelu → repliky. */
     fun prectiRepliky(text: String): Map<Int, String> {
         val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
         return radky.lines().mapNotNull { r ->
             val casti = r.trim().split("|", limit = 2).map { it.trim() }
-            if (casti.size < 2 || !casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
             val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
-            val rep = casti[1].takeUnless { it.isBlank() || it.equals("none", true) } ?: return@mapNotNull null
-            n to rep
+            // Prázdný panel se vrací jako "" — přesnější čtení tím říká „tady
+            // replika není“; celé čtení ji 29. 9. 2026 zdvojilo ze sousedního panelu.
+            n to casti[1].takeUnless { it.equals("none", true) }.orEmpty().trim()
         }.toMap()
     }
 
@@ -255,12 +259,20 @@ object SbFilmPlan {
         val zdroj = cteni.panely.sortedBy { it.cislo }.take(MAX_PANELU)
         if (zdroj.isEmpty()) return SbPlan(emptyList(), false)
         val vepsane = vepsaneDelky(cteni, zdroj)
-        var delky = vepsane ?: zdroj.map { odhad(it.typ, it.kamera) }
-        val soucet = delky.sum()
-        if (soucet > MAX_CELKEM_S) {
-            // Dolů, ať zaokrouhlení nepřeleze strop.
-            val k = MAX_CELKEM_S / soucet
-            delky = delky.map { kotlin.math.floor(it * k * 10) / 10 }
+        // Mluvený panel trvá tak dlouho, jak dlouho se replika říká — do 5.04
+        // se délka brala z typu záběru (3–3,5 s) a krátká věta nechala 2 s
+        // ticha („videa jsou utahaná“, 29. 9. 2026). Vepsaný čas platí, jen
+        // se nezkrátí pod délku řeči (useknutá replika).
+        val reci = zdroj.map { delkaReci(it.repliky)?.coerceAtMost(MAX_PANEL_S) }
+        var delky = vepsane?.mapIndexed { i, d -> maxOf(d, reci[i] ?: 0.0) }
+            ?: zdroj.mapIndexed { i, p -> reci[i] ?: odhadTicha(p.typ, p.kamera) }
+        if (delky.sum() > MAX_CELKEM_S) {
+            // Nejdřív ubrat ticho, řeč až nakonec; když to nestačí, poměrně.
+            delky = rozlozCas(delky, reci, MAX_CELKEM_S)
+            if (delky.sum() > MAX_CELKEM_S + 1e-9) {
+                val k = MAX_CELKEM_S / delky.sum()
+                delky = delky.map { kotlin.math.floor(it * k * 10) / 10 }
+            }
         }
         // Číslo panelu zůstává takové, jaké je ve storyboardu: přepisovač vidí
         // celý obrázek a podle čísla panel dohledává. Jen když model čísla
@@ -315,6 +327,77 @@ object SbFilmPlan {
         return (if (pohyb) maxOf(zaklad, 4.5) else zaklad).coerceIn(MIN_PANEL_S, MAX_PANEL_S)
     }
 
+    /**
+     * Tempo řeči pro odhad délky mluveného panelu. Neověřený odhad (kritik
+     * 29. 9. 2026) — jediné místo, kde se dá doladit.
+     */
+    const val SLABIK_ZA_S = 5.5
+    const val NASTUP_S = 0.3
+    const val DOZVUK_S = 0.5
+    /** Rezerva za poslední replikou úseku — tam už nic nenavazuje (useknutá slabika). */
+    const val REZERVA_KONCE_S = 0.5
+
+    /** Slabiky: skupiny samohlásek (ou/au/eu jedna) + slabikotvorné r/l (vlk, krk). */
+    fun slabiky(text: String): Int {
+        val t = text.lowercase()
+        val sam = Regex("ou|au|eu|[aeiouyáéíóúůýě]").findAll(t).count()
+        val sou = "bcčdďfghjkmnňpqřsštťvwxzž"
+        // Jen mezi dvěma souhláskami — „spadl“ je jedna slabika.
+        val rl = Regex("(?<=[$sou])[rl](?=[$sou])").findAll(t).count()
+        return maxOf(1, sam + rl)
+    }
+
+    /** Jak dlouho zabere říct repliky panelu (null = panel je tichý). */
+    fun delkaReci(repliky: String): Double? {
+        val r = SbFilmPrepis.repliky(repliky)
+        if (r.isEmpty()) return null
+        val s = r.sumOf { (_, co) -> NASTUP_S + slabiky(co) / SLABIK_ZA_S + 0.2 * co.count { it == ',' } + DOZVUK_S } +
+            0.3 * (r.size - 1)
+        return maxOf(MIN_PANEL_S, s)
+    }
+
+    /** Tichý panel: krátká reakce, delší jen celek nebo pohyb kamery. */
+    fun odhadTicha(typ: String, kamera: String): Double {
+        val k = kamera.lowercase()
+        val pohyb = k.isNotBlank() && "static" !in k && "none" !in k
+        val t = typ.lowercase()
+        return when {
+            pohyb -> 3.5
+            "wide" in t || "establish" in t || "long" in t -> 2.5
+            else -> MIN_PANEL_S
+        }
+    }
+
+    /**
+     * Rozloží čas na [cil]: přidává nejdřív tichým panelům (do 6 s), pak
+     * mluveným nad řeč (do +0,8 s), a až potom všem. Ubírá nejdřív tichým
+     * (do minima) a pak mluveným jen po odhad řeči — replika se nezkrátí.
+     */
+    fun rozlozCas(delky: List<Double>, reci: List<Double?>, cil: Double, strop: Double = MAX_USEK_S): List<Double> {
+        val d = delky.map { zaokrouhli(it) }.toMutableList()
+        var rozdil = zaokrouhli(cil - d.sum())
+        val krok = 0.1
+        fun kandidat(pridat: Boolean): Int? {
+            val idx = d.indices
+            return if (pridat) {
+                idx.filter { reci[it] == null && d[it] + krok <= 6.0 + 1e-9 }.minByOrNull { d[it] }
+                    ?: idx.filter { reci[it] != null && d[it] + krok <= reci[it]!! + 0.8 + 1e-9 }.minByOrNull { d[it] - reci[it]!! }
+                    ?: idx.filter { d[it] + krok <= strop + 1e-9 }.minByOrNull { d[it] }
+            } else {
+                idx.filter { reci[it] == null && d[it] - krok >= MIN_PANEL_S - 1e-9 }.maxByOrNull { d[it] }
+                    ?: idx.filter { reci[it] != null && d[it] - krok >= reci[it]!! - 1e-9 }.maxByOrNull { d[it] - reci[it]!! }
+            }
+        }
+        var pojistka = 5000
+        while (kotlin.math.abs(rozdil) >= 0.05 && pojistka-- > 0) {
+            val pridat = rozdil > 0
+            val i = kandidat(pridat) ?: break
+            d[i] = zaokrouhli(d[i] + if (pridat) krok else -krok)
+            rozdil = zaokrouhli(rozdil - if (pridat) krok else -krok)
+        }
+        return d
+    }
+
     /** Na desetiny sekundy — jemněji model stejně nestřihá. */
     private fun zaokrouhli(s: Double): Double = (s * 10).roundToInt() / 10.0
 
@@ -323,7 +406,15 @@ object SbFilmPlan {
      * nejmenším nejdelším úsekem (vyvažuje se čas, ne počet panelů). Panel
      * delší než strop se nejdřív rozpůlí.
      */
-    fun rozdel(panely: List<SbPanel>): List<SbUsek> {
+    fun rozdel(panely: List<SbPanel>): List<SbUsek> = rozdelBezRezervy(panely).map { u ->
+        // Konec úseku je skutečný konec videa: poslední replika potřebuje
+        // rezervu, jinak se useká poslední slabika. Strop H3 je 15 s.
+        val posledni = u.panely.lastOrNull()
+        if (posledni == null || delkaReci(posledni.repliky) == null || u.sekundy + REZERVA_KONCE_S > 15.0) u
+        else SbUsek(u.panely.dropLast(1) + posledni.copy(sekundy = zaokrouhli(posledni.sekundy + REZERVA_KONCE_S)))
+    }
+
+    private fun rozdelBezRezervy(panely: List<SbPanel>): List<SbUsek> {
         if (panely.isEmpty()) return emptyList()
         val kusy = panely.flatMap { p ->
             if (p.sekundy <= MAX_USEK_S) listOf(p)
@@ -417,24 +508,11 @@ object SbFilmPlan {
         val cteni = precti(text)
         val plan = naplanuj(cteni.copy(celkemVepsano = null, zaberuVepsano = null))
         if (plan.panely.isEmpty()) return plan
-        val soucet = plan.panely.sumOf { it.sekundy }
-        val k = cilSekund / soucet
-        // Strop panelu je tu úsek (14 s), ne 8 s: když model navrhne málo
-        // záběrů na dlouhý film, musí se délka dorovnat i tak.
-        var panely = plan.panely.map { it.copy(sekundy = zaokrouhli((it.sekundy * k).coerceIn(MIN_PANEL_S, MAX_USEK_S))) }
-        // Po mezích může součet ujet — rozdíl se rozdělí mezi panely, které
-        // mají ještě místo (po desetinách, ať se zaokrouhlení nesčítá).
-        val delky = panely.map { it.sekundy }.toMutableList()
-        var rozdil = zaokrouhli(cilSekund - delky.sum())
-        var pojistka = 1000
-        while (kotlin.math.abs(rozdil) >= 0.05 && pojistka-- > 0) {
-            val krok = if (rozdil > 0) 0.1 else -0.1
-            val i = delky.indices
-                .filter { if (krok > 0) delky[it] + krok <= MAX_USEK_S + 1e-9 else delky[it] + krok >= MIN_PANEL_S - 1e-9 }
-                .maxByOrNull { if (krok > 0) MAX_USEK_S - delky[it] else delky[it] } ?: break
-            delky[i] = zaokrouhli(delky[i] + krok)
-            rozdil = zaokrouhli(rozdil - krok)
-        }
+        // Čas navíc (uživatel zvolil 15/30/45 s) jde nejdřív do tichých
+        // záběrů, ne do pomlk za replikou.
+        val reci = plan.panely.map { delkaReci(it.repliky) }
+        val delky = rozlozCas(plan.panely.map { it.sekundy }, reci, cilSekund.toDouble())
+        val panely = plan.panely
         return SbPlan(panely.mapIndexed { i, p -> p.copy(sekundy = delky[i]) }, false, plan.hlasy)
     }
 
@@ -575,12 +653,15 @@ object SbFilmPrepis {
      * Štítky, kterými storyboard značí popis děje nebo poznámku, ne postavu.
      * Text za nimi se nesmí dostat do `<d>` — H3 by ho řekl nahlas.
      */
+    /** Štítky nálady — text za nimi jde do popisu jako „Mood: …“ (herecké podání). */
+    private val EMOCE = setOf("emoce", "emotion", "emotions", "nálada", "nalada", "mood", "pocit", "pocity")
+
     private val NE_MLUVCI = setOf(
         "děj", "dej", "akce", "popis", "poznámka", "poznamka", "scéna", "scena", "záběr", "zaber",
         "kamera", "titulek", "střih", "strih", "zvuk", "hudba", "ruch", "ruchy",
         "action", "plot", "description", "note", "notes", "scene", "shot", "camera", "caption",
         "direction", "stage direction", "sfx", "sound", "music",
-    )
+    ) + EMOCE
 
     /** Je to jméno postavy (a ne štítek popisu)? */
     fun jeMluvci(jmeno: String): Boolean = jmeno.trim().lowercase() !in NE_MLUVCI
@@ -609,7 +690,9 @@ object SbFilmPrepis {
         if (dej.isEmpty()) return text to ""
         val repliky = vse.filter { jeMluvci(it.first) }
             .joinToString("; ") { (kdo, co) -> "$kdo: „$co“" }
-        return repliky to dej.joinToString(" ") { it.second }
+        return repliky to dej.joinToString(" ") { (kdo, co) ->
+            if (kdo.trim().lowercase() in EMOCE) "Mood: ${co.trimEnd('.')}." else co
+        }
     }
 
     /**
@@ -624,6 +707,97 @@ object SbFilmPrepis {
         if (b.isEmpty()) return zCelku
         val spojene = if (a.size == b.size) a.zip(b).map { (x, y) -> x.first to y.second } else b
         return spojene.joinToString("; ") { (kdo, co) -> "$kdo: „${opravHacky(co)}“" }
+    }
+
+    private fun normalizuj(t: String) = t.lowercase()
+        .replace(Regex("""[„“”"«»‚‘’']"""), "").replace("…", "...")
+        .replace(Regex("""\s+"""), " ").trim()
+
+    /**
+     * Repliky z celku + ostřejší čtení po řádcích. Když řádek panel vypsal bez
+     * repliky a tutéž větu přisoudil sousednímu panelu, je replika v celku
+     * zdvojená a panel ji ztratí. Dvě skutečně stejné repliky vedle sebe řádek
+     * vypíše u obou panelů, takže se nesmažou.
+     */
+    fun slucCteni(panely: List<SbPrecteny>, radky: Map<Int, String>): List<SbPrecteny> = panely.map { p ->
+        val r = radky[p.cislo] ?: return@map p
+        if (r.isNotBlank()) return@map p.copy(repliky = sloucit(p.repliky, r))
+        val celek = repliky(p.repliky).map { normalizuj(it.second) }
+        val uSouseda = listOf(p.cislo - 1, p.cislo + 1).mapNotNull { radky[it] }
+            .flatMap { repliky(it) }.map { normalizuj(it.second) }
+        if (celek.isNotEmpty() && celek.all { it in uSouseda }) p.copy(repliky = "") else p
+    }
+
+    private val CIZI_STOPA = Regex("""<(Audio|Video)\s*\d+>""")
+    private val ODKAZ_ZABERU = Regex("""\[Shot (\d+)]""")
+    private val REPLIKA_D = Regex("""<d>.*?</d>""", RegexOption.DOT_MATCHES_ALL)
+
+    /**
+     * Vadný přepis úseku: vymyšlená `<Audio>`/`<Video>` (žádné nejsou) nebo
+     * odkaz na záběr, který v úseku není.
+     */
+    fun vadnyPrepis(text: String, pocetZaberu: Int): Boolean =
+        CIZI_STOPA.containsMatchIn(text) ||
+            ODKAZ_ZABERU.findAll(text).any { (it.groupValues[1].toIntOrNull() ?: 0) > pocetZaberu }
+
+    private fun ciziZaber(t: String, n: Int) =
+        ODKAZ_ZABERU.findAll(t).any { (it.groupValues[1].toIntOrNull() ?: 0) > n }
+
+    /** Věty textu; tečka nebo vykřičník uvnitř `<d>…</d>` větu nekončí. */
+    private fun vety(t: String): List<String> {
+        val chranene = REPLIKA_D.findAll(t).map { it.range }.toList()
+        val out = mutableListOf<String>()
+        var od = 0
+        Regex("""(?<=[.!?])\s+""").findAll(t).forEach { m ->
+            if (chranene.none { m.range.first in it }) {
+                out += t.substring(od, m.range.last + 1)
+                od = m.range.last + 1
+            }
+        }
+        out += t.substring(od)
+        return out
+    }
+
+    /**
+     * Přepis úseku bez vymyšlených stop a cizích záběrů — deterministicky, aby
+     * úsek vyšel napoprvé (29. 9. 2026: opakovaný přepis s kontrolní větou
+     * vadu neodstranil, přepis je hladový). Model občas přidá `<Audio 1>` do
+     * definic, shrnutí i retence a do seznamu „appears in“ záběry z jiného
+     * úseku. Odstraní se jen tyhle kousky: řádek s `<Audio>`, věta s ním,
+     * záběr mimo úsek ze seznamu. Věta s replikou `<d>` se nikdy nemaže.
+     */
+    fun ocistiPrepis(text: String, pocetZaberu: Int): String {
+        if (!vadnyPrepis(text, pocetZaberu)) return text
+        val radky = text.split("\n").mapNotNull { r ->
+            val bezD = REPLIKA_D.replace(r, "")
+            // „[Shot 6] …“ — celý záběr, který v úseku není; s replikou zůstane.
+            val zacatek = Regex("""^\s*\[Shot (\d+)]""").find(r)?.groupValues?.get(1)?.toIntOrNull()
+            if (zacatek != null && zacatek > pocetZaberu && bezD == r) return@mapNotNull null
+            // Řádek, který celý patří vymyšlené stopě (definice, retence).
+            if (Regex("""^\s*<(Audio|Video)\s*\d+>""").containsMatchIn(r)) return@mapNotNull null
+            if (!CIZI_STOPA.containsMatchIn(bezD) && !ciziZaber(bezD, pocetZaberu)) return@mapNotNull r
+            // Seznam „(appears in [Shot 1], [Shot 3], [Shot 6])“ → jen záběry úseku.
+            var s = Regex("""\(appears in ([^)]*)\)""").replace(r) { m ->
+                val zbyle = ODKAZ_ZABERU.findAll(m.groupValues[1]).map { it.groupValues[1].toInt() }
+                    .filter { it <= pocetZaberu }.toList()
+                if (zbyle.isEmpty()) "" else "(appears in ${zbyle.joinToString(", ") { "[Shot $it]" }})"
+            }.replace(Regex("""\s+:"""), ":")
+            // Zbytek po větách: věta s vymyšlenou stopou nebo cizím záběrem pryč.
+            s = vety(s).filter { v ->
+                val vBezD = REPLIKA_D.replace(v, "")
+                vBezD != v || (!CIZI_STOPA.containsMatchIn(vBezD) && !ciziZaber(vBezD, pocetZaberu))
+            }.joinToString("").trimEnd()
+            s.ifBlank { null }
+        }
+        // Pole, které tím zůstalo prázdné, dostane N/A (tvar šesti polí se nemění).
+        val out = mutableListOf<String>()
+        radky.forEachIndexed { i, r ->
+            out += r
+            val pole = Regex("""^[a-z_]+:$""").matches(r.trim())
+            val dalsi = radky.getOrNull(i + 1)
+            if (pole && (dalsi == null || dalsi.isBlank() || Regex("""^[a-z_]+:$""").matches(dalsi.trim()))) out += "N/A"
+        }
+        return out.joinToString("\n")
     }
 
     /** `t’` / `d’` na konci slova je ť / ď, jak ho model vidí v tištěném písmu. */
@@ -667,6 +841,8 @@ object SbFilmPrepis {
         jazykFilmu: String? = jazykFilmu(usek.panely),
         /** Hlas každého mluvčího z čtení storyboardu — stejný pro všechny úseky. */
         hlasy: Map<String, String> = emptyMap(),
+        /** Poslední panel předchozího úseku — co se už stalo, ať se to neopakuje. */
+        predchozi: SbPanel? = null,
     ): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
@@ -683,6 +859,9 @@ object SbFilmPrepis {
         if (k > 0) {
             sb.append(" This part continues directly from the previous part: the first moment picks up ")
             sb.append("the motion of the previous shot before the first cut.")
+            predchozi?.popis?.takeIf { it.isNotBlank() }?.let {
+                sb.append(" The previous part ended with: ").append(it.trim().trimEnd('.')).append(".")
+            }
         }
         sb.append(" Write exactly these ${usek.panely.size} timed shots, in this order, one per line of ")
         sb.append("the list, with these start times, and nothing after the last one:")
@@ -697,14 +876,14 @@ object SbFilmPrepis {
             val repl = repliky(p.repliky)
             repl.forEach { (kdo, text) ->
                 val tag = jazykFilmu ?: "Language"
-                sb.append("\n    spoken in this shot: $kdo (${idMluvcich[kdo] ?: "S?"}) says <d>[$tag] $text</d>")
+                sb.append("\n    spoken right as this shot begins: $kdo (${idMluvcich[kdo] ?: "S?"}) says <d>[$tag] $text</d>")
             }
             // Záběr bez napsané repliky: „doktorka volá ke dveřím“ bez textu
             // přepisovač popsal jako volání a H3 si slova vymyslel (29. 9. 2026).
             if (repl.isEmpty()) {
                 sb.append("\n    SILENT SHOT — nobody speaks. If the action above mentions calling, shouting or ")
-                sb.append("saying something, show it only as a silent gesture (for example beckoning toward ")
-                sb.append("the door) and quote no words.")
+                sb.append("saying something, show it only as a silent look or ")
+                sb.append("small gesture and quote no words.")
             }
             t += p.sekundy
         }
@@ -724,7 +903,9 @@ object SbFilmPrepis {
             val znameHlasy = idMluvcich.keys.filter { !hlasPro(it).isNullOrBlank() }
             if (znameHlasy.isNotEmpty()) {
                 sb.append(" Voices for the whole film, use these exact words: ")
-                sb.append(znameHlasy.joinToString("; ") { "$it (${idMluvcich[it]}) — ${hlasPro(it)}" }).append(".")
+                sb.append(znameHlasy.joinToString("; ") {
+                    "$it (${idMluvcich[it]}) — ${hlasPro(it)}, speaking at a lively, natural pace"
+                }).append(".")
             }
             // Herecké podání podle oficiální příručky H3 (4.4 + vzory Ref2VA),
             // doladěné s kritikem: hlas jednou a pak „in the same … voice“,
@@ -735,13 +916,16 @@ object SbFilmPrepis {
             // závorkách („<those words>“) a zákaz „never quote outside <d>“ vedly
             // k replikám v uvozovkách bez <d> — proto kladně a bez závorek.
             sb.append("\nActing (only in shots with a listed line): the first time a speaker talks, name ")
-            sb.append("their voice in plain words (the voice given above when there is one); in their later ")
+            if (znameHlasy.isNotEmpty()) sb.append("their voice with the words given above; in their later ")
+            else sb.append("their voice in plain words from how they look (age, gender, pitch, timbre); in their later ")
             sb.append("lines, repeat it as \"in the same ... voice\" with those same words. Before each line, add ")
             sb.append("a few words of delivery that fit this moment of the story (emotion, tone) and the facial ")
             sb.append("expression while speaking. Every spoken line stays inside <d>[Language] ...</d> exactly as ")
-            sb.append("listed, and its words appear nowhere else. Right after each line, the speaker closes their ")
-            sb.append("lips and holds a silent facial reaction; add no new action, gesture, laughter or sound, and ")
-            sb.append("keep every shot within its time. The setting, characters and actions stay exactly as listed above.")
+            sb.append("listed, and its words appear nowhere else. Each line starts right as its shot begins, at a ")
+            sb.append("lively, natural conversational pace, and the next speaker answers right on the cut, like a real ")
+            sb.append("quick exchange. After the line the speaker closes their lips with a brief natural reaction until ")
+            sb.append("the cut; add no new action, laughter or sound. The setting, characters and actions stay exactly ")
+            sb.append("as listed above.")
         }
         // Obecné pravidlo samo nestačilo: přepisovač napsal „calls out toward the door, “Next!”“
         // (ověřeno přepisem 29. 9. 2026); pokyn přímo u záběru + zákaz uvozovek mimo <d> ano.
@@ -751,8 +935,17 @@ object SbFilmPrepis {
         sb.append("\nEach shot shows only the action of its own panel. Never repeat an action from an ")
         sb.append("earlier shot or an earlier part, and do not use storyboard panels that are not in ")
         sb.append("this list — they are either in another part or cut from the film.")
-        sb.append("\nTotal ${"%.1f".format(java.util.Locale.ROOT, usek.sekundy)} seconds. Do not introduce ")
-        sb.append("<Video> or <Audio> labels and do not refer to any reference that was not provided.\n]")
+        // Příručka Ref2VA zná <Audio N> pro převzatý zvuk; repliky „slovo od slova“
+        // si model vykládal jako převzatou stopu a přidal <Audio 1>. Pojmenovat
+        // úlohu jejím typem z příručky to odstranilo u obou úseků (přepis 29. 9. 2026).
+        val n = usek.panely.size
+        sb.append("\nTotal ${"%.1f".format(java.util.Locale.ROOT, usek.sekundy)} seconds. The task is ")
+        sb.append("[reference generation] only: the voices and sounds are generated together with the picture, ")
+        sb.append("so the only labels are ")
+        sb.append(if (pocetObrazku == 1) "<Picture 1> and the <Subject K> defined from it."
+        else "<Picture 1> to <Picture $pocetObrazku> and the <Subject K> defined from them.")
+        sb.append(" This part has $n ${if (n == 1) "shot, [Shot 1]" else "shots, [Shot 1] to [Shot $n]"}")
+        sb.append(", and every field refers only to them.\n]")
         return sb.toString()
     }
 }

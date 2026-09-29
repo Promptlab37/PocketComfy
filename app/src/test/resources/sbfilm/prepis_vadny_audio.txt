@@ -1,0 +1,25 @@
+subject_definitions:
+<Subject 1> is the distressed woman in <Picture 1>, holding a wet phone, looking anxious and panicked inside a mobile service shop.
+<Subject 2> is the calm technician in <Picture 1>, wearing a blue shirt, listening professionally behind a counter.
+<Audio 1> is the synchronized audio track of the spoken lines from the original prompt, containing the voices of <Subject 1> (S1) and <Subject 2> (S2).
+
+summary:
+[reference generation] The target video is a 13-second cinematic sequence in a mobile service shop, following a distressed woman (S1) who drops her phone in water and interacts with a calm technician (S2). The shots strictly follow the storyboard panels from <Picture 1>, with each shot matching its panel’s composition, subject placement, and emotional tone. All dialogue is preserved verbatim in Czech within <d> tags, delivered in the specified voice tones and facial expressions, with no additional action or sound beyond what is listed. The audio track <Audio 1> is fully reused as the complete synchronized spoken layer.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 3], [Shot 6]): fully_preserved - her distressed appearance, wet phone, anxious gestures, and emotional state are retained.
+<Subject 2> (appears in [Shot 2], [Shot 4], [Shot 7]): fully_preserved - his calm demeanor, blue shirt, professional posture, and facial expressions are retained.
+<Audio 1>: fully_copy - the complete synchronized audio track is reused as the target video’s final spoken layer, including all lines, speaker IDs, and timing.
+
+detailed_description:
+The target video uses a realistic, emotionally expressive cinematic style with natural indoor lighting and a slightly shallow depth of field to emphasize facial expressions. The camera remains static in every shot, matching the storyboard panel composition exactly.
+[Shot 1] A close-up shot begins with <Subject 1>, the woman holding her wet phone tightly, eyes wide with panic, mouth slightly open as she rushes into the mobile service shop. She looks directly at the camera with a distressed expression. In the same panicked voice, she says, <d>[Czech] Prosím vás, spadl mi telefon do vody!</d> She closes her lips immediately after, holding a silent, wide-eyed reaction.
+[Shot 2] At 00:03.000, the shot cuts to a medium frame matching <Picture 1>’s panel 2. <Subject 2>, the technician in his blue shirt, sits behind the counter, looking at her calmly with a neutral expression. He speaks in a measured, professional voice, saying, <d>[Czech] Dobře, podíváme se na to.</d> He closes his lips after speaking, maintaining his calm gaze.
+[Shot 3] At 00:06.500, the shot cuts to a close-up matching <Picture 1>’s panel 3. <Subject 1> is now visibly anxious, hands gesturing nervously as she waits. Her eyes dart around, mouth slightly parted in worry. In the same nervous voice, she says, <d>[Czech] Co mám teď hned udělat?</d> She closes her lips immediately after, holding a silent, tense facial reaction.
+[Shot 4] At 00:09.500, the shot cuts to a medium frame matching <Picture 1>’s panel 4. <Subject 2> gestures with his hands as he speaks, maintaining eye contact with <Subject 1>. He delivers his advice in a clear, calm voice, saying, <d>[Czech] Dejte ho do rýže.</d> He closes his lips after speaking, holding a neutral expression.
+
+overall_soundscape:
+N/A
+
+non_diegetic_music:
+N/A

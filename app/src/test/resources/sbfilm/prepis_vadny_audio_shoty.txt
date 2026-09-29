@@ -1,0 +1,25 @@
+subject_definitions:
+<Subject 1> is the distressed young woman in <Picture 1>, with a wet phone in her hand, wearing casual clothes, looking anxious and panicked.
+<Subject 2> is the calm technician in <Picture 1>, wearing a blue shirt, standing behind a counter, speaking professionally and composed.
+<Audio 1> is the synchronized audio track of the spoken lines from the original prompt, containing the exact Czech dialogue for <Subject 1> (S1) and <Subject 2> (S2).
+
+summary:
+[reference generation] The target video is a 10.2-second cinematic short film in a medium-shot, static-camera style, set inside a mobile service shop. It features <Subject 1>, a distressed woman holding a wet phone, and <Subject 2>, a calm technician behind the counter. The scene unfolds through four timed shots, each corresponding to one storyboard panel from <Picture 1>. Dialogue is delivered in Czech by <Subject 1> (S1) and <Subject 2> (S2), with their voices defined as specified. No on-screen text or captions appear except those explicitly requested.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 3], [Shot 6]): fully_preserved - her distressed appearance, wet phone, anxious facial expression, and casual clothing are retained.
+<Subject 2> (appears in [Shot 2], [Shot 4], [Shot 7]): fully_preserved - his calm demeanor, blue shirt, professional posture, and composed delivery are retained.
+<Audio 1>: fully_copy - the complete synchronized audio track is reused as the target video’s final audio, including all spoken lines in their exact original language and timing.
+
+detailed_description:
+The target video uses a realistic, cinematic style with natural indoor lighting and muted color tones to emphasize emotional contrast. The camera remains static throughout, matching the storyboard panels from <Picture 1> exactly.
+[Shot 1] A medium shot centers on <Subject 1>, the young woman in her 20s with a high, anxious voice, holding a wet phone as she rushes into the mobile service shop. Her eyes are wide and her mouth slightly open in panic. She says, <d>[Czech] Prosím vás, spadl mi telefon do vody!</d> She closes her lips immediately after speaking, holding the phone tightly while her shoulders tense.
+[Shot 2] At 00:03.000, the shot cuts to a medium over-the-shoulder view from behind <Subject 1>, showing <Subject 2>, the technician in his 30s with a calm, low voice, standing calmly behind the counter. He looks directly at her with a reassuring expression. He says, <d>[Czech] Dobře, podíváme se na to.</d> He closes his lips after speaking and maintains steady eye contact.
+[Shot 3] At 00:05.600, the shot cuts back to a medium shot of <Subject 1>, now standing anxiously with hands gesturing slightly as she waits for advice. Her brow is furrowed and her gaze is fixed on the technician. She says, <d>[Czech] Co mám teď hned udělat?</d> She closes her lips after speaking, tilting her head slightly in anticipation.
+[Shot 4] At 00:07.700, the shot cuts to a medium shot of <Subject 2>, who gestures with his hands as he speaks clearly and confidently. He says, <d>[Czech] Dejte ho do rýže.</d> He closes his lips after speaking, then nods slightly with a neutral expression.
+
+overall_soundscape:
+The ambient sound of the mobile service shop — including faint background chatter, soft electronic beeps, and low HVAC hum — continues throughout the video without interruption.
+
+non_diegetic_music:
+N/A

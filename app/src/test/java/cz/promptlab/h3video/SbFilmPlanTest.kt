@@ -78,9 +78,9 @@ class SbFilmPlanTest {
         val spatne = ironMask.replace("TOTAL: 30", "TOTAL: 80")
         val plan = SbFilmPlan.naplanuj(SbFilmPlan.precti(spatne))
         assertFalse(plan.zeStoryboardu)
-        // wide + pohyb kamery = 4,5 s; insert static = 2,5 s
-        assertEquals(4.5, plan.panely[0].sekundy, 0.001)
-        assertEquals(2.5, plan.panely[1].sekundy, 0.001)
+        // Tichý panel (5.05): pohyb kamery 3,5 s, statický detail 2 s.
+        assertEquals(3.5, plan.panely[0].sekundy, 0.001)
+        assertEquals(2.0, plan.panely[1].sekundy, 0.001)
     }
 
     @Test
@@ -114,13 +114,15 @@ class SbFilmPlanTest {
         """.trimIndent()
         val plan = SbFilmPlan.naplanuj(SbFilmPlan.precti(text))
         assertFalse(plan.zeStoryboardu)
-        assertEquals(listOf(4.0, 3.0, 2.5, 4.5), plan.panely.map { it.sekundy })
+        // Tiché panely (5.05): celek 2,5 s, reakce 2 s, pohyb kamery 3,5 s.
+        assertEquals(listOf(2.5, 2.0, 2.0, 3.5), plan.panely.map { it.sekundy })
         assertEquals(1, SbFilmPlan.rozdel(plan.panely).size)
     }
 
     @Test
     fun `pres strop celkem se zkrati pomerne`() {
-        val c = SbCteni(null, null, null, (1..12).map { SbPrecteny(it, null, null, "wide", "tracking", "x") })
+        val dlouha = "ANNA: „Tohle je opravdu hodně dlouhá replika, kterou postava říká celou, bez přestávky a bez spěchu.“"
+        val c = SbCteni(null, null, null, (1..12).map { SbPrecteny(it, null, null, "wide", "tracking", "x", dlouha) })
         val p = SbFilmPlan.naplanuj(c)
         val celkem = p.panely.sumOf { it.sekundy }
         assertTrue(celkem <= SbFilmPlan.MAX_CELKEM_S && celkem >= SbFilmPlan.MAX_CELKEM_S - 1.5)
@@ -168,5 +170,48 @@ class SbFilmPlanTest {
         val useky = SbFilmPlan.rozdel(listOf(SbPanel(1, "dlouhy", sekundy = 18.0)))
         assertEquals(2, useky.size)
         assertTrue(useky.all { it.sekundy == 9.0 })
+    }
+
+    /**
+     * Tempo (5.05): mluvený panel trvá, jak dlouho se replika říká — do 5.04
+     * dostal 3–3,5 s podle typu záběru a krátká věta nechala ~2 s ticha.
+     * Čísla z posledního filmu (servis mobilů) podle kritika.
+     */
+    @Test
+    fun `delka panelu podle repliky`() {
+        assertEquals(11, SbFilmPlan.slabiky("Prosím vás, spadl mi telefon do vody!"))
+        assertEquals(6, SbFilmPlan.slabiky("Dejte ho do rýže."))
+        assertEquals(2, SbFilmPlan.slabiky("vlk krk"))
+        assertEquals(3.0, SbFilmPlan.delkaReci("ŽENA: „Prosím vás, spadl mi telefon do vody!“")!!, 0.05)
+        assertEquals(2.0, SbFilmPlan.delkaReci("MUŽ: „Dejte ho do rýže.“")!!, 0.05)
+        assertEquals(null, SbFilmPlan.delkaReci(""))
+    }
+
+    @Test
+    fun `vepsany cas se nezkrati pod replicu a ticho se ubira drive`() {
+        val c = SbCteni(null, null, null, listOf(
+            SbPrecteny(1, 0.0, 1.0, "medium", "static", "a", "ŽENA: „Prosím vás, spadl mi telefon do vody!“"),
+            SbPrecteny(2, 1.0, 5.0, "medium", "static", "b"),
+        ))
+        val d = SbFilmPlan.naplanuj(c).panely.map { it.sekundy }
+        assertTrue(d[0] >= 3.0 - 1e-9)
+        // Rozložení na cílovou délku: čas navíc jde do tichého panelu.
+        val r = SbFilmPlan.rozlozCas(listOf(3.0, 2.0), listOf(3.0, null), 8.0)
+        assertEquals(3.0, r[0], 0.001)
+        assertEquals(5.0, r[1], 0.001)
+        // Ubírání: řeč se nezkrátí pod odhad.
+        val u = SbFilmPlan.rozlozCas(listOf(4.0, 3.0), listOf(3.0, null), 4.0)
+        assertTrue(u[0] >= 3.0 - 1e-9)
+    }
+
+    @Test
+    fun `posledni replika useku ma rezervu`() {
+        val p = listOf(
+            SbPanel(1, "a", sekundy = 3.0, repliky = "ŽENA: „Prosím vás, spadl mi telefon do vody!“"),
+            SbPanel(2, "b", sekundy = 2.0, repliky = "MUŽ: „Dejte ho do rýže.“"),
+        )
+        val u = SbFilmPlan.rozdel(p).single()
+        assertEquals(2.5, u.panely.last().sekundy, 0.001)
+        assertEquals(3.0, u.panely.first().sekundy, 0.001)
     }
 }

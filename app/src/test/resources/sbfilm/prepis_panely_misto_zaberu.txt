@@ -1,0 +1,25 @@
+subject_definitions:
+<Subject 1> is the young woman in <Picture 1>, with long dark hair, wearing a light-colored top, holding a wet phone, and displaying distressed or anxious expressions.
+<Subject 2> is the technician in <Picture 1>, with short dark hair, wearing a blue shirt, and showing calm, professional, or exhausted expressions.
+<Picture 1> is a storyboard reference for [Shot 1], [Shot 2], [Shot 3], and [Shot 4], defining their viewpoint, subject placement, and visual look.
+
+summary:
+[reference generation] The target video consists of four timed shots continuing directly from the previous part, each corresponding to one storyboard panel from <Picture 1>. It features <Subject 1> reacting with thoughtfulness and uncertainty, followed by her asking a follow-up question, then <Subject 2> looking shocked, and finally him covering his face while she waits. The dialogue is generated in Czech as specified, with voices matching the described timbres and pacing for each speaker.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 6]): fully_preserved - her appearance, emotional state, and actions are retained as defined in <Picture 1>.
+<Subject 2> (appears in [Shot 3], [Shot 4], [Shot 7], [Shot 8]): fully_preserved - his appearance, emotional state, and actions are retained as defined in <Picture 1>.
+<Picture 1> ([Shot 1] to [Shot 4]): fully_preserved - the visual composition, subject placement, and environment of each shot are preserved exactly as defined by the storyboard panels.
+
+detailed_description:
+The target video is in a realistic, cinematic documentary style with natural indoor lighting and muted color tones. The setting remains inside a mobile service shop with visible background elements such as counters, shelves, and signage consistent with the reference panels.
+[Shot 1] At 00:00.000, a close-up shot begins with <Subject 1> (S1), the young woman with long dark hair, holding her wet phone. She looks down at it thoughtfully, her hand resting on her chin, eyes slightly narrowed in concentration and confusion. Her expression is pensive and puzzled. The camera remains static. No dialogue or sound occurs.
+[Shot 2] At 00:02.000, the shot cuts to a medium frame of <Subject 1> (S1), still holding her phone but now gesturing slightly with her free hand as she looks directly ahead with uncertainty. She speaks in her high, anxious voice at a lively, natural pace: <d>[Czech] A basmati, nebo jasmínové?</d> She closes her lips immediately after speaking, maintaining a look of mild bewilderment.
+[Shot 3] At 00:04.800, the shot cuts to a close-up of <Subject 2> (S2), the technician in his blue shirt. His eyes are wide open and his mouth slightly agape, conveying shock and confusion. He remains silent. The camera is static. No dialogue or sound occurs.
+[Shot 4] At 00:06.800, the shot cuts to a medium frame of <Subject 2> (S2), now with one hand raised to cover his forehead, eyes half-closed in exhaustion. <Subject 1> (S1) remains visible in the background, waiting patiently. He speaks in his calm, low voice at a lively, natural pace: <d>[Czech] To je... vlastně skoro jedno.</d> He closes his lips immediately after speaking, maintaining a weary expression.
+
+overall_soundscape:
+Silence throughout all shots except for the spoken lines inside <d>. No ambient sound or background noise is added.
+
+non_diegetic_music:
+N/A

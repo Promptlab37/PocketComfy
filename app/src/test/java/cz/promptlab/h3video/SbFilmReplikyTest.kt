@@ -5,6 +5,7 @@ import cz.promptlab.h3video.data.SbFilmPrepis
 import cz.promptlab.h3video.data.SbPanel
 import cz.promptlab.h3video.data.SbUsek
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -30,7 +31,9 @@ class SbFilmReplikyTest {
         val r = SbFilmPlan.prectiRepliky(
             "PANEL 5 | Kamarád: „Aspoň ti to uklidí cestu k vypínači.“ PANEL 6 | Pepa: „Pusť nějakou hudbu.“; Al: „Trouba předehřátá na 250 stupňů.“ PANEL 7 | none",
         )
-        assertEquals(setOf(5, 6), r.keys)
+        // Panel bez repliky je informace „tady replika není“ (5.05).
+        assertEquals(setOf(5, 6, 7), r.keys)
+        assertEquals("", r[7])
         assertTrue(r[5]!!.contains("k vypínači"))
     }
 
@@ -71,5 +74,92 @@ class SbFilmReplikyTest {
         assertTrue(h.contains("Kamarád (S3) says <d>[Czech] Výborný.</d>"))
         assertTrue(!h.contains("Rozsviť"))
         assertTrue(h.contains("never translate"))
+    }
+
+    /**
+     * Skutečný běh 29. 9. 2026 (servis mobilů): celé čtení zdvojilo repliky do
+     * panelů 5 a 7, řádek je správně nechal prázdné.
+     */
+    @Test
+    fun `zdvojena replika ze souseda se smaze, stejne repliky u obou zustanou`() {
+        val celek = SbFilmPlan.precti(
+            "TITLE: none | TOTAL: none | SHOTS: none | GRID: 2x4 | VOICES: none " +
+                "PANEL 5 | none | close-up | static | The woman looks thoughtful. | ŽENA: „A basmati, nebo jasmínové?“ " +
+                "PANEL 6 | none | medium | static | The woman asks. | ŽENA: „A basmati, nebo jasmínové?“ " +
+                "PANEL 7 | none | close-up | static | The technician is shocked. | MUŽ: „To je... vlastně skoro jedno.“ " +
+                "PANEL 8 | none | medium | static | He rubs his face. | MUŽ: „To je... vlastně skoro jedno.“"
+        )
+        val radek = SbFilmPlan.prectiRepliky(
+            "PANEL 5 | PANEL 6 | ŽENA: „A basmati, nebo jasmínové?“ PANEL 7 | PANEL 8 | MUŽ: „To je... vlastně skoro jedno.“"
+        )
+        val p = SbFilmPrepis.slucCteni(celek.panely, radek).associate { it.cislo to it.repliky }
+        assertEquals("", p[5])
+        assertEquals("", p[7])
+        assertTrue(p[6]!!.contains("basmati"))
+        assertTrue(p[8]!!.contains("skoro jedno"))
+        // Dvě skutečně stejné repliky vedle sebe: řádek je vypsal u obou → zůstanou.
+        val stejne = SbFilmPrepis.slucCteni(celek.panely,
+            SbFilmPlan.prectiRepliky("PANEL 5 | ŽENA: „A basmati, nebo jasmínové?“ PANEL 6 | ŽENA: „A basmati, nebo jasmínové?“"))
+        assertTrue(stejne.first { it.cislo == 5 }.repliky.contains("basmati"))
+    }
+
+    @Test
+    fun `emoce jde do popisu jako Mood`() {
+        val (rep, dej) = SbFilmPrepis.oddelDej("EMOCE: „Žena je vyděšená a ve stresu.“; ŽENA: „Prosím vás!“")
+        assertEquals("ŽENA: „Prosím vás!“", rep)
+        assertEquals("Mood: Žena je vyděšená a ve stresu.", dej)
+    }
+
+    @Test
+    fun `vadny prepis se pozna`() {
+        assertTrue(SbFilmPrepis.vadnyPrepis("<Audio 1> is the synchronized audio track", 4))
+        assertTrue(SbFilmPrepis.vadnyPrepis("<Subject 1> (appears in [Shot 1], [Shot 6])", 4))
+        assertFalse(SbFilmPrepis.vadnyPrepis("[Shot 4] At 00:09.500, <Subject 2> says <d>[Czech] Dejte ho do rýže.</d>", 4))
+    }
+
+    private fun vzor(nazev: String) =
+        javaClass.getResource("/sbfilm/$nazev")!!.readText(Charsets.UTF_8)
+
+    /**
+     * Skutečné vadné přepisy z 29. 9. 2026 (4 záběry): vymyšlené <Audio 1>
+     * a [Shot 6]/[Shot 7] v retenci. Čištění je odstraní, repliky a záběry
+     * zůstanou beze změny.
+     */
+    @Test
+    fun `cisteni odstrani vymyslene stopy a cizi zabery`() {
+        for (nazev in listOf("prepis_vadny_audio_shoty.txt", "prepis_vadny_audio.txt")) {
+            val puvodni = vzor(nazev)
+            val cisty = SbFilmPrepis.ocistiPrepis(puvodni, 4)
+            assertFalse(nazev, SbFilmPrepis.vadnyPrepis(cisty, 4))
+            // Popis záběrů beze změny, repliky všechny.
+            fun popis(t: String) = t.substringAfter("detailed_description:").substringBefore("overall_soundscape:")
+            assertEquals(nazev, popis(puvodni), popis(cisty))
+            assertEquals(nazev, 4, Regex("<d>").findAll(popis(cisty)).count())
+            // Šest polí v pořadí a žádné prázdné.
+            val pole = listOf("subject_definitions:", "summary:", "retention_analysis:",
+                "detailed_description:", "overall_soundscape:", "non_diegetic_music:")
+            assertEquals(nazev, pole, cisty.lines().filter { it.trim() in pole }.map { it.trim() })
+            assertTrue(nazev, cisty.contains("<Subject 1> (appears in [Shot 1], [Shot 3]): fully_preserved"))
+            assertTrue(nazev, cisty.contains("<Subject 2> (appears in [Shot 2], [Shot 4]): fully_preserved"))
+            assertTrue(nazev, cisty.contains("<Subject 2> is the calm technician"))
+            assertTrue(nazev, cisty.contains("[reference generation] The target video is"))
+        }
+        // Čistý přepis zůstane znak po znaku stejný.
+        val dobry = "summary:\n[reference generation] Two shots.\n\nretention_analysis:\n" +
+            "<Subject 1> (appears in [Shot 1]): fully_preserved - ok."
+        assertEquals(dobry, SbFilmPrepis.ocistiPrepis(dobry, 2))
+    }
+
+    /** Úsek 2 (panely 5–8) po opravě hlídky: v retenci čísla panelů místo záběrů. */
+    @Test
+    fun `cisteni opravi cisla panelu v retenci`() {
+        val puvodni = vzor("prepis_panely_misto_zaberu.txt")
+        val cisty = SbFilmPrepis.ocistiPrepis(puvodni, 4)
+        assertFalse(SbFilmPrepis.vadnyPrepis(cisty, 4))
+        assertTrue(cisty.contains("<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved"))
+        assertTrue(cisty.contains("<Subject 2> (appears in [Shot 3], [Shot 4]): fully_preserved"))
+        assertEquals(puvodni.substringAfter("summary:").substringBefore("retention_analysis:"),
+            cisty.substringAfter("summary:").substringBefore("retention_analysis:"))
+        assertEquals(puvodni.substringAfter("detailed_description:"), cisty.substringAfter("detailed_description:"))
     }
 }
