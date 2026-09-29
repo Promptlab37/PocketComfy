@@ -30,6 +30,33 @@ enum class TypKroku(
     // obrázku (max 1024) a jedna zpráva po nahrání modelu (1000), psaní mlčí.
     PREPIS_USEKU(57.0, 117.0, false),
     NAVRH(20.0, 20.0, false),
+    /**
+     * Odvázaný vylepšovač (llama.cpp). Uzel během psaní hlásí jen „obrázek
+     * 1 z 1“, žádné tokeny — appka to brala jako psaní a čas skákal
+     * (uživatel 29. 9. 2026). Změřeno: bez fotky 11 s, s fotkou 28 s,
+     * s fotkou po videu 77 s.
+     */
+    ODVAZANY(12.0, 60.0, false),
+    ODVAZANY_FOTO(28.0, 77.0, false),
+    /** Vylepšovač MiniMax (Universal Writer): při psaní taky mlčí, ~50 s / 117 s studený. */
+    VYLEPSENI_H3(57.0, 117.0, false),
+    ;
+
+    companion object {
+        /**
+         * Samostatný přepis, který průběh psaní nehlásí → odhad podle času.
+         * null = přepisovač hlásí tokeny (8B PromptWriter), zůstává starý odhad.
+         */
+        fun proGraf(wf: org.json.JSONObject): TypKroku? {
+            val tridy = wf.keys().asSequence().mapNotNull { wf.optJSONObject(it)?.optString("class_type") }.toSet()
+            val sFotkou = "LoadImage" in tridy
+            return when {
+                "llama_cpp_instruct_adv" in tridy -> if (sFotkou) ODVAZANY_FOTO else ODVAZANY
+                "MiniMaxH3UniversalWriter" in tridy -> VYLEPSENI_H3
+                else -> null
+            }
+        }
+    }
 }
 
 data class KrokAkce(val typ: TypKroku, val studeny: Boolean = false)

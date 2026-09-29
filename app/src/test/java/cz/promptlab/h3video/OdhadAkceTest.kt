@@ -121,4 +121,18 @@ class OdhadAkceTest {
             assertTrue(tridy(g).toString(), OdhadAkce.TEXTOVE_TRIDY.containsAll(tridy(g)))
         }
     }
+
+    /** 5.12: odvázaný vylepšovač a MiniMax Writer se odhadují podle času (tokeny nehlásí). */
+    @Test
+    fun `samostatne vylepsovace se poznaji podle grafu`() {
+        assertEquals(TypKroku.ODVAZANY, TypKroku.proGraf(ImagePromptBuilder.graf("x", "m.gguf", 1L, "s", 100, 0.7)))
+        assertEquals(TypKroku.ODVAZANY_FOTO, TypKroku.proGraf(
+            ImagePromptBuilder.graf("x", "m.gguf", 1L, "s", 100, 0.7, mmproj = "p.gguf", obrazky = listOf("a.png"))))
+        assertEquals(TypKroku.VYLEPSENI_H3, TypKroku.proGraf(
+            H3RefWriteBuilder.build("x", listOf("a.png"), 5.0, "16:9", "c.gguf", "w.gguf", 1L)))
+        assertNull(TypKroku.proGraf(SbFilmBuilder.buildCteni("sb.png", "m.gguf", 1L)))
+        // Studená fotka po videu 77 s, teplá bez fotky 12 s.
+        val k = listOf(KrokAkce(TypKroku.ODVAZANY_FOTO, studeny = true))
+        assertEquals(77L, OdhadAkce.spocitej(k, vychozi, 0, null, 0.0).zbyvaS)
+    }
 }

@@ -2751,6 +2751,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val promptId = java.util.UUID.randomUUID().toString()
         val clientId = java.util.UUID.randomUUID().toString()
         _rewriteProgress.value = null
+        // Samostatný vylepšovač, který při psaní průběh nehlásí: jednokrokový
+        // plán → odhad podle naměřené délky (5.12). Vícekrokové akce mají svůj.
+        val samostatnyTyp = if (krok == null && _planAkce.value == null) cz.promptlab.h3video.data.TypKroku.proGraf(wf) else null
+        if (samostatnyTyp != null) _planAkce.value = PlanAkce(listOf(cz.promptlab.h3video.data.KrokAkce(samostatnyTyp)))
+        @Suppress("NAME_SHADOWING")
+        val krok = if (samostatnyTyp != null) 0 else krok
         val planKrok = krok?.let { _planAkce.value?.kroky?.getOrNull(it) }
         if (krok != null && planKrok != null) {
             // První krok akce je studený, když na serveru naposledy běželo něco
@@ -2928,6 +2934,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             ws?.cancel()
             _rewriteProgress.value = null
             _prubehPrepisu.value = PrubehPrepisu()
+            if (samostatnyTyp != null) _planAkce.value = null
             // Jen vlastní — zastavený starý přepis nesmí smazat odkaz na nový.
             if (prepisNaServeru?.second == promptId) {
                 prepisNaServeru = null
