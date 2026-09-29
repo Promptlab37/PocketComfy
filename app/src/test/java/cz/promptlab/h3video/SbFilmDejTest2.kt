@@ -47,4 +47,23 @@ class SbFilmDejTest2 {
         assertFalse(h.contains("Žena pochopí narážku"))
         assertTrue(h.contains("MUŽ (S1) says"))
     }
+
+    /**
+     * Záběr bez repliky je tichý (29. 9. 2026: „doktorka volá ke dveřím“ bez
+     * textu — přepisovač napsal volání a H3 si vymyslel slova).
+     */
+    @Test fun `zaber bez repliky je tichy`() {
+        val panely = listOf(
+            SbPanel(5, "Doktorka zvedne hlavu.", sekundy = 3.5, repliky = "ŽENA: „Další!“"),
+            SbPanel(6, "Doktorka volá ke dveřím.", sekundy = 3.5),
+        )
+        val h = SbFilmPrepis.hlidka(2, SbUsek(panely), 1, 2)
+        val radky = h.lines()
+        val i5 = radky.indexOfFirst { it.contains("panel 5") }
+        val i6 = radky.indexOfFirst { it.contains("panel 6") }
+        assertTrue(radky[i5 + 1].contains("<d>"))
+        assertTrue(radky[i6 + 1].contains("SILENT SHOT"))
+        assertTrue(h.contains("never put quoted words outside <d>"))
+        assertFalse(radky[i5 + 1].contains("SILENT SHOT"))
+    }
 }

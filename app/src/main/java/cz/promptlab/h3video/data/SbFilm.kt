@@ -669,9 +669,17 @@ object SbFilmPrepis {
             if (p.typ.isNotBlank()) sb.append(", ${p.typ}")
             if (p.kamera.isNotBlank()) sb.append(", camera ${p.kamera}")
             sb.append(": ${p.popis}")
-            repliky(p.repliky).forEach { (kdo, text) ->
+            val repl = repliky(p.repliky)
+            repl.forEach { (kdo, text) ->
                 val tag = jazykFilmu ?: "Language"
                 sb.append("\n    spoken in this shot: $kdo (${idMluvcich[kdo] ?: "S?"}) says <d>[$tag] $text</d>")
+            }
+            // Záběr bez napsané repliky: „doktorka volá ke dveřím“ bez textu
+            // přepisovač popsal jako volání a H3 si slova vymyslel (29. 9. 2026).
+            if (repl.isEmpty()) {
+                sb.append("\n    SILENT SHOT — nobody speaks. If the action above mentions calling, shouting or ")
+                sb.append("saying something, show it only as a silent gesture (for example beckoning toward ")
+                sb.append("the door) and quote no words.")
             }
             t += p.sekundy
         }
@@ -685,6 +693,11 @@ object SbFilmPrepis {
             sb.append("description and the speaker ID stay outside <d>. Speaker IDs for the whole film: ")
             sb.append(idMluvcich.entries.joinToString(", ") { "${it.key} = (${it.value})" }).append(".")
         }
+        // Obecné pravidlo samo nestačilo: přepisovač napsal „calls out toward the door, “Next!”“
+        // (ověřeno přepisem 29. 9. 2026); pokyn přímo u záběru + zákaz uvozovek mimo <d> ano.
+        sb.append("\nA SILENT SHOT has no voice at all: never write calling, shouting, talking or an ")
+        sb.append("off-screen voice in it, and never put quoted words outside <d> anywhere — the video ")
+        sb.append("speaks every quoted or described utterance, and without an exact <d> line it invents the words.")
         sb.append("\nEach shot shows only the action of its own panel. Never repeat an action from an ")
         sb.append("earlier shot or an earlier part, and do not use storyboard panels that are not in ")
         sb.append("this list — they are either in another part or cut from the film.")
