@@ -131,7 +131,7 @@ internal val SLOVNIK_B: Map<String, String> = mapOf(
     "Úprava obrázku — Krea 2 (13,5 GB)" to "Image edit — Krea 2 (13.5 GB)",
     "Rychlé video (předloha má enkodér napevno)" to "Quick video (the template has the encoder hard-wired)",
     "Long MiniMax — volba FastVideo VSA" to "Long MiniMax — FastVideo VSA option",
-    "Long MiniMax — volba FastVideo VSA a karta Rychlé video" to "Long MiniMax — FastVideo VSA option and the Quick video card",
+    "Long MiniMax, Film ze storyboardu — volba 3 + 2 a karta Rychlé video" to "Long MiniMax, Film from storyboard — 3 + 2 option and the Quick video card",
     "Long MiniMax — volba Eros Max" to "Long MiniMax — Eros Max option",
     "Long MiniMax — volba Realističtější podání" to "Long MiniMax — More realistic rendering option",
     "živý náhled u videa" to "live video preview",

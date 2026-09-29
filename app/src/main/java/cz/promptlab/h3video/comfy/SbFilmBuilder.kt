@@ -37,6 +37,10 @@ import org.json.JSONObject
  *    `MiniMaxH3SigmaShift` 12,191111/3, `euler`/`beta`, kroky 10–30.
  *    Plán kroků i nastavení úseků berou model ZA shiftem (jako uzel 9
  *    v šablonách All in One), jinak by sigmy shift nerespektovaly.
+ *  - **3 + 2** — navazující záběr sestavy 3 + 2 z Long MiniMax
+ *    (`LongMmBuilder.zapojShiftNavazani`): TaoMate LoRA 1,0, shift 12/3 jen
+ *    na vzorkovacím modelu, plán kroků z holého UNETu (`simple`, 3 kroky),
+ *    `res_multistep`.
  */
 object SbFilmBuilder {
 
@@ -97,6 +101,9 @@ object SbFilmBuilder {
     const val KROKU = SbFilmScene.TURBO_KROKY
     const val SHIFT_VIDEO = 12.191111
     const val SHIFT_AUDIO = 3.0
+    /** 3 + 2: posun z karty „3 kroky“ / Long MM (`LongMmBuilder.SHIFT_VIDEO`). */
+    const val SHIFT_VIDEO_32 = 12.0
+    const val LORA_32 = "h3\\TaoMate-H3-3step-ComfyUI.safetensors"
     const val KONTEXT_SNIMKU = 22
     const val ROZLISENI = "480P"
     const val CONTINUITY = "latent_guide"
@@ -124,17 +131,30 @@ object SbFilmBuilder {
         wf.put(N_SAGE, uzel("MiniMaxH3MemoryEfficientSageAttentionPatch", "Sage", JSONObject().put("model", odkaz(N_UNET))))
         wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Pozornost", JSONObject()
             .put("model", odkaz(N_SAGE)).put("attention", "comfy kitchen attention")))
-        val turbo = scene.model == SbModel.TURBO
-        val model = if (turbo) {
-            wf.put(N_LORA, uzel("MiniMaxH3TurboLoRA", "Turbo LoRA", JSONObject()
-                .put("model", odkaz(N_POZORNOST)).put("lora_name", LORA)
-                .put("strength", LORA_SILA).put("low_vram", false)))
-            N_LORA
-        } else {
-            wf.put(N_SHIFT, uzel("MiniMaxH3SigmaShift", "Shift", JSONObject()
-                .put("model", odkaz(N_POZORNOST))
-                .put("shift_video", SHIFT_VIDEO).put("shift_audio", SHIFT_AUDIO)))
-            N_SHIFT
+        // model = co vzorkuje úseky, rozvrh = z čeho BasicScheduler počítá sigmy.
+        val (model, rozvrh) = when (scene.model) {
+            SbModel.TURBO -> {
+                wf.put(N_LORA, uzel("MiniMaxH3TurboLoRA", "Turbo LoRA", JSONObject()
+                    .put("model", odkaz(N_POZORNOST)).put("lora_name", LORA)
+                    .put("strength", LORA_SILA).put("low_vram", false)))
+                N_LORA to N_LORA
+            }
+            SbModel.KVALITA -> {
+                wf.put(N_SHIFT, uzel("MiniMaxH3SigmaShift", "Shift", JSONObject()
+                    .put("model", odkaz(N_POZORNOST))
+                    .put("shift_video", SHIFT_VIDEO).put("shift_audio", SHIFT_AUDIO)))
+                N_SHIFT to N_SHIFT
+            }
+            SbModel.TRIPLUSDVA -> {
+                wf.put(N_LORA, uzel("MiniMaxH3TurboLoRA", "TaoMate LoRA", JSONObject()
+                    .put("model", odkaz(N_POZORNOST)).put("lora_name", LORA_32)
+                    .put("strength", 1.0).put("low_vram", false)))
+                wf.put(N_SHIFT, uzel("MiniMaxH3SigmaShift", "Shift", JSONObject()
+                    .put("model", odkaz(N_LORA))
+                    .put("shift_video", SHIFT_VIDEO_32).put("shift_audio", SHIFT_AUDIO)))
+                // Rozvrh z holého modelu, stejně jako navázání v Long MM.
+                N_SHIFT to N_UNET
+            }
         }
         wf.put(N_ADAPTER, uzel("MiniMaxH3EasyModelAdapter_SatoDive", "Balík H3", JSONObject()
             .put("text_encoder", odkaz(N_CLIP)).put("video_vae", odkaz(N_VAE))
@@ -183,9 +203,11 @@ object SbFilmBuilder {
             .put("media", odkaz(N_MEDIA))))
 
         wf.put(N_KROKY, uzel("BasicScheduler", "Kroky", JSONObject()
-            .put("model", odkaz(model)).put("scheduler", if (turbo) "simple" else "beta")
+            .put("model", odkaz(rozvrh))
+            .put("scheduler", if (scene.model == SbModel.KVALITA) "beta" else "simple")
             .put("steps", scene.kroky).put("denoise", 1.0)))
-        wf.put(N_SAMPLER, uzel("KSamplerSelect", "Sampler", JSONObject().put("sampler_name", "euler")))
+        wf.put(N_SAMPLER, uzel("KSamplerSelect", "Sampler", JSONObject().put("sampler_name",
+            if (scene.model == SbModel.TRIPLUSDVA) "res_multistep" else "euler")))
         wf.put(N_SETUP, uzel("MiniMaxH3EasySegmentSampleSetup_SatoDive", "Nastavení úseků", JSONObject()
             .put("h3_context", odkaz(N_KONTEXT, 1)).put("model", odkaz(model))
             .put("sampler", odkaz(N_SAMPLER)).put("sigmas", odkaz(N_KROKY))))

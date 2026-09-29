@@ -73,6 +73,34 @@ fun SbFilmSection(vm: MainViewModel) {
     val cte = bezi && akce == MainViewModel.SbAkce.CTENI
     val navrhuje = bezi && akce == MainViewModel.SbAkce.NAVRH
 
+    // Model nahoře, pod ním jeho nastavení (uživatel 29. 9. 2026, kritik).
+    SectionCard(title = t("Model")) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            PillRow(
+                items = cz.promptlab.h3video.data.SbModel.entries.toList(),
+                selected = scene.model,
+                label = { it.title },
+                onSelect = { vm.setSbModel(it) },
+            )
+            // Turbo a 3 + 2 mají kroky v receptu — jen souhrn, nic k rozbalení.
+            val kvalita = scene.model == cz.promptlab.h3video.data.SbModel.KVALITA
+            SkladaciSekce(
+                title = t("Nastavení modelu"),
+                souhrn = (if (scene.kroky in 2..4) t("%d kroky") else t("%d kroků")).format(scene.kroky),
+                klic = "sbfilm_model_nastaveni",
+                rozbalitelne = kvalita,
+            ) {
+                LabeledSlider(
+                    label = t("Kroky"),
+                    value = "${scene.kroky}",
+                    position = scene.kroky.toFloat(),
+                    range = SbFilmScene.KVALITA_MIN_KROKU.toFloat()..SbFilmScene.KVALITA_MAX_KROKU.toFloat(),
+                    onChange = { vm.setSbKrokyKvalita(Math.round(it)) },
+                )
+            }
+        }
+    }
+
     SectionCard(title = t("Plán")) {
         PillRow(
             items = SbZdroj.entries.toList(),
@@ -226,24 +254,6 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(title = t("Model")) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            PillRow(
-                items = cz.promptlab.h3video.data.SbModel.entries.toList(),
-                selected = scene.model,
-                label = { it.title },
-                onSelect = { vm.setSbModel(it) },
-            )
-            // Kroky jen u plného modelu — Turbo má sestavu autora (8 kroků).
-            if (scene.model == cz.promptlab.h3video.data.SbModel.KVALITA) cz.promptlab.h3video.ui.LabeledSlider(
-                label = t("Kroky"),
-                value = "${scene.kroky}",
-                position = scene.kroky.toFloat(),
-                range = SbFilmScene.KVALITA_MIN_KROKU.toFloat()..SbFilmScene.KVALITA_MAX_KROKU.toFloat(),
-                onChange = { vm.setSbKrokyKvalita(Math.round(it)) },
-            )
-        }
-    }
 }
 
 @Composable

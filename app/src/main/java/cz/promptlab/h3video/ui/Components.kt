@@ -145,6 +145,8 @@ fun SkladaciSekce(
     title: String,
     souhrn: String,
     klic: String,
+    /** false = jen řádek se souhrnem, bez šipky (nic k nastavení). */
+    rozbalitelne: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     var rozbaleno by androidx.compose.runtime.saveable.rememberSaveable(klic) {
@@ -157,7 +159,7 @@ fun SkladaciSekce(
                 .clip(RoundedCornerShape(14.dp))
                 .background(Surface1)
                 .border(1.dp, Outline1, RoundedCornerShape(14.dp))
-                .clickable { rozbaleno = !rozbaleno }
+                .then(if (rozbalitelne) Modifier.clickable { rozbaleno = !rozbaleno } else Modifier)
                 .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -170,7 +172,7 @@ fun SkladaciSekce(
                     modifier = Modifier.padding(top = 1.dp)
                 )
             }
-            Icon(
+            if (rozbalitelne) Icon(
                 if (rozbaleno) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                 if (rozbaleno) t("Sbalit") else t("Rozbalit"),
                 Modifier.size(22.dp),
@@ -178,7 +180,7 @@ fun SkladaciSekce(
             )
         }
         androidx.compose.animation.AnimatedVisibility(
-            visible = rozbaleno,
+            visible = rozbalitelne && rozbaleno,
             enter = androidx.compose.animation.fadeIn() +
                 androidx.compose.animation.expandVertically(),
             exit = androidx.compose.animation.fadeOut() +

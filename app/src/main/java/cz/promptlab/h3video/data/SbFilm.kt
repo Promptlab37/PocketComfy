@@ -40,11 +40,15 @@ enum class SbZdroj(private val titleCs: String) {
 /**
  * Model filmu. Turbo = sestava autora balíku (Turbo LoRA, 8 kroků), Kvalita =
  * plný model bez LoRA jako profil Kvalita v All in One (euler + beta, shift
- * 12,19/3); kroky volí uživatel, ověřeně dobré je 10.
+ * 12,19/3); kroky volí uživatel, ověřeně dobré je 10. 3 + 2 = navazující
+ * záběr sestavy 3 + 2 z Long MiniMax (TaoMate, 3 kroky, res_multistep, shift
+ * 12/3) — dva průchody v úsecích balík neumí, jede ta část, co v Long MM
+ * vzorkuje navázání. Nové hodnoty jen na konec (ukládá se jméno).
  */
 enum class SbModel(private val titleCs: String) {
     TURBO("Turbo"),
-    KVALITA("Kvalita");
+    KVALITA("Kvalita"),
+    TRIPLUSDVA("3 + 2");
 
     val title: String get() = t(titleCs)
 }
@@ -566,8 +570,11 @@ data class SbFilmScene(
 ) {
     /** Kroky, se kterými se opravdu vzorkuje. */
     val kroky: Int
-        get() = if (model == SbModel.TURBO) TURBO_KROKY
-        else krokyKvalita.coerceIn(KVALITA_MIN_KROKU, KVALITA_MAX_KROKU)
+        get() = when (model) {
+            SbModel.TURBO -> TURBO_KROKY
+            SbModel.TRIPLUSDVA -> TRIPLUSDVA_KROKY
+            SbModel.KVALITA -> krokyKvalita.coerceIn(KVALITA_MIN_KROKU, KVALITA_MAX_KROKU)
+        }
 
     val useky: List<SbUsek> get() = SbFilmPlan.rozdel(panely)
     val sekundy: Double get() = panely.sumOf { it.sekundy }
@@ -585,6 +592,8 @@ data class SbFilmScene(
 
         /** Turbo: sestava autora balíku, kroky se nemění (5.06 je nabízel — chyba). */
         const val TURBO_KROKY = 8
+        /** 3 + 2: TaoMate je tříkroková destilace, kroky jsou součást receptu. */
+        const val TRIPLUSDVA_KROKY = 3
         /** Plný model: 10 kroků uživatel ověřil (lepší než Turbo), strop jen prodlužuje čas. */
         const val KVALITA_KROKY = 10
         const val KVALITA_MIN_KROKU = 10

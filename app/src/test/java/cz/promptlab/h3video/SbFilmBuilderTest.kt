@@ -153,6 +153,7 @@ class SbFilmBuilderTest {
         assertEquals(SbFilmBuilder.N_LORA, t.vstupy(SbFilmBuilder.N_KROKY).getJSONArray("model").getString(0))
         assertEquals(SbFilmBuilder.N_LORA, t.vstupy(SbFilmBuilder.N_SETUP).getJSONArray("model").getString(0))
         assertEquals(graf().toString(), t.toString())
+        File(File("build/sbfilm-modely").also { it.mkdirs() }, "film_turbo.json").writeText(t.toString(2))
     }
 
     /** 5.07: Kvalita = plný model jako profil Kvalita v All in One, kroky podle volby. */
@@ -182,7 +183,38 @@ class SbFilmBuilderTest {
         assertEquals(10, SbFilmScene().krokyKvalita)
         assertEquals(Stage.MODELS, SbFilmBuilder.stageForClass("MiniMaxH3SigmaShift"))
         // Grafy pro kontrolu proti /object_info.
-        val dir = File("build/sbfilm-grafy").also { it.mkdirs() }
+        val dir = File("build/sbfilm-modely").also { it.mkdirs() }
         File(dir, "film_kvalita.json").writeText(k.toString(2))
+    }
+
+    /** 5.08: 3 + 2 = navazující záběr sestavy 3 + 2 z Long MiniMax, beze změny receptu. */
+    @Test
+    fun `triplusdva jako navazani long minimax`() {
+        val g = g(scene.copy(model = SbModel.TRIPLUSDVA, krokyKvalita = 25))
+        odkazyPlati(g)
+        val lora = g.vstupy(SbFilmBuilder.N_LORA)
+        assertEquals(cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA.lora, lora.getString("lora_name"))
+        assertEquals("h3\\TaoMate-H3-3step-ComfyUI.safetensors", lora.getString("lora_name"))
+        assertEquals(1.0, lora.getDouble("strength"), 1e-9)
+        assertEquals(SbFilmBuilder.N_POZORNOST, lora.getJSONArray("model").getString(0))
+        val sh = g.vstupy(SbFilmBuilder.N_SHIFT)
+        assertEquals(SbFilmBuilder.N_LORA, sh.getJSONArray("model").getString(0))
+        assertEquals(12.0, sh.getDouble("shift_video"), 1e-9)
+        assertEquals(3.0, sh.getDouble("shift_audio"), 1e-9)
+        // Stejné jako LongMmBuilder (posun z karty 3 kroky).
+        assertEquals(cz.promptlab.h3video.comfy.LongMmBuilder.SHIFT_VIDEO, sh.getDouble("shift_video"), 1e-9)
+        assertEquals(SbFilmBuilder.N_SHIFT, g.vstupy(SbFilmBuilder.N_SETUP).getJSONArray("model").getString(0))
+        val kroky = g.vstupy(SbFilmBuilder.N_KROKY)
+        assertEquals(SbFilmBuilder.N_UNET, kroky.getJSONArray("model").getString(0))
+        assertEquals("simple", kroky.getString("scheduler"))
+        assertEquals(3, kroky.getInt("steps"))
+        assertEquals(1.0, kroky.getDouble("denoise"), 1e-9)
+        assertEquals("res_multistep", g.vstupy(SbFilmBuilder.N_SAMPLER).getString("sampler_name"))
+        assertEquals(cz.promptlab.h3video.data.LongMmModel.TRIPLUSDVA.kroky, kroky.getInt("steps"))
+        // Kroky patří k receptu, volba Kvality je neovlivní.
+        assertEquals(3, scene.copy(model = SbModel.TRIPLUSDVA, krokyKvalita = 30).kroky)
+        // Stored names: nové hodnoty jen na konec.
+        assertEquals(listOf("TURBO", "KVALITA", "TRIPLUSDVA"), SbModel.entries.map { it.name })
+        File(File("build/sbfilm-modely").also { it.mkdirs() }, "film_32.json").writeText(g.toString(2))
     }
 }

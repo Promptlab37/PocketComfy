@@ -536,7 +536,7 @@ object Katalog {
             "$HF/Jackxuanxuan/MiniMax-H3-experimental/resolve/main/minimax_h3_fastvideo_vsa_datafree_1300step_4step_int8_convrot.safetensors"
         ),
         "TaoMate-H3-3step-ComfyUI.safetensors" to Soubor(
-            "models/loras/h3", "Long MiniMax — volba FastVideo VSA a karta Rychlé video",
+            "models/loras/h3", "Long MiniMax, Film ze storyboardu — volba 3 + 2 a karta Rychlé video",
             "$HF/TaoLiveAIGC/TaoMate-H3"
         ),
         "10Eros_Max_h3_fl2va_pruned_int8_convrot.safetensors" to Soubor(
