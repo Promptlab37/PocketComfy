@@ -270,7 +270,7 @@ object Katalog {
         ),
         "ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors" to Soubor(
             "models/diffusion_models", "LTX 2.5 (21 GB)",
-            "$HF/Lightricks/LTX-2.5/resolve/main/transformers/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
+            "$HF/Lightricks/LTX-2.5/resolve/main/diffusion_models/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
         ),
         "gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors" to Soubor(
             "models/text_encoders", "LTX 2.5 (15 GB)",
@@ -582,7 +582,7 @@ object Katalog {
         ),
         "minimax_h3_latent_upscaler_3d_fp16.safetensors" to Soubor(
             "models/latent_upscale_models", "Dlouh\u00e9 video \u2014 rychl\u00fd prvn\u00ed z\u00e1b\u011br",
-            "$HF/LBH-123-AI/Minimax_h3_latent_Upscaler/resolve/main/minimax_h3_latent_upscaler_3d_fp16.safetensors"
+            "$HF/LBH-123-AI/Minimax_h3_latent_Upscaler/resolve/main/minimax_h3_latent_upscaler_3d_conv_v1/minimax_h3_latent_upscaler_3d_conv_v1_fp16.safetensors"
         ),
         // Karta 3D model (3.04). Uzly jsou v jádru ComfyUI od 0.34, chybět
         // můžou jen váhy.

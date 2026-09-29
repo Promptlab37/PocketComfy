@@ -110,7 +110,7 @@ if /i "!ODP!"=="a" (
 
 set /p ODP="Rychle video a Long MiniMax (3 + 2) - latentni zvetsovac, cca 0,7 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
-  call :stahni "https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler/resolve/main/minimax_h3_latent_upscaler_3d_fp16.safetensors" "models\latent_upscale_models\minimax_h3_latent_upscaler_3d_fp16.safetensors"
+  call :stahni "https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler/resolve/main/minimax_h3_latent_upscaler_3d_conv_v1/minimax_h3_latent_upscaler_3d_conv_v1_fp16.safetensors" "models\latent_upscale_models\minimax_h3_latent_upscaler_3d_fp16.safetensors"
 )
 
 set /p ODP="Karta Rychle video - textovy enkoder int8, cca 25,3 GB. Stahnout? [a/n] "
@@ -189,7 +189,7 @@ set /p ODP="Karta LTX 2.5, cca 38 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   REM Vsechny tri rezimy karty: Z textu, Z obrazku a Ze zvuku. V rezimu
   REM Ze zvuku si graf pocet snimku spocita z delky zvuku.
-  call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/transformers/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors" "models\diffusion_models\ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
+  call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/diffusion_models/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors" "models\diffusion_models\ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"
   call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/text_encoders/gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors" "models\text_encoders\gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors"
   call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-video-vae-bf16.safetensors" "models\vae\ltx-2.5-video-vae-bf16.safetensors"
   call :stahni "https://huggingface.co/Lightricks/LTX-2.5/resolve/main/vae/ltx-2.5-audio-vae-bf16.safetensors" "models\vae\ltx-2.5-audio-vae-bf16.safetensors"
