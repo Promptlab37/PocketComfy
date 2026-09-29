@@ -4829,6 +4829,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setSbPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateSbFilm { it.copy(pomer = v, zadaniUseku = emptyList()) }
 
     fun setSbRozliseni(v: cz.promptlab.h3video.data.SbRozliseni) = updateSbFilm { it.copy(rozliseni = v) }
+    fun setSbKroky(v: Int) = updateSbFilm { it.copy(kroky = cz.promptlab.h3video.data.SbFilmScene.platneKroky(v)) }
 
     /** Přepnutí zdroje plánu — plán z druhé cesty neplatí. */
     fun setSbZdroj(v: cz.promptlab.h3video.data.SbZdroj) = updateSbFilm {

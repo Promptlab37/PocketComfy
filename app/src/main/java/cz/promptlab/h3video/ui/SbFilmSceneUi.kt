@@ -223,6 +223,13 @@ fun SbFilmSection(vm: MainViewModel) {
                 label = { it.title },
                 onSelect = { vm.setSbPomer(it) },
             )
+            Text(t("Kroky"), style = MaterialTheme.typography.labelMedium, color = TextLow)
+            PillRow(
+                items = SbFilmScene.KROKY,
+                selected = scene.kroky,
+                label = { "$it" },
+                onSelect = { vm.setSbKroky(it) },
+            )
         }
     }
 }

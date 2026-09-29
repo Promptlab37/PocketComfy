@@ -548,6 +548,8 @@ data class SbFilmScene(
     val zadaniUseku: List<String> = emptyList(),
     /** Hlas každého mluvčího — stejný popis jde do všech úseků filmu. */
     val hlasy: Map<String, String> = emptyMap(),
+    /** Kroky vzorkování každého úseku (jen hodnoty z [KROKY]). */
+    val kroky: Int = VYCHOZI_KROKY,
 ) {
     val useky: List<SbUsek> get() = SbFilmPlan.rozdel(panely)
     val sekundy: Double get() = panely.sumOf { it.sekundy }
@@ -562,6 +564,15 @@ data class SbFilmScene(
     companion object {
         const val MAX_POSTAV = 3
         val DELKY = listOf(15, 30, 45)
+
+        /**
+         * Turbo LoRA je destilovaná na 4 kroky, 8 byla pevná hodnota do 5.05.
+         * Víc kroků je volba uživatele (zkouška), síla LoRA se s nimi nemění.
+         */
+        val KROKY = listOf(4, 8, 16, 20)
+        const val VYCHOZI_KROKY = 8
+
+        fun platneKroky(k: Int): Int = if (k in KROKY) k else VYCHOZI_KROKY
     }
 }
 
@@ -595,6 +606,7 @@ class SbFilmStore(private val ctx: Context) {
             .put("rozliseni", s.rozliseni.name)
             .put("zdroj", s.zdroj.name)
             .put("cilSekund", s.cilSekund)
+            .put("kroky", s.kroky)
             .put("zadaniUseku", org.json.JSONArray().also { a -> s.zadaniUseku.forEach { a.put(it) } })
             .put("nazev", s.nazev)
             .put("casyZeStoryboardu", s.casyZeStoryboardu)
@@ -627,6 +639,7 @@ class SbFilmStore(private val ctx: Context) {
             rozliseni = runCatching { SbRozliseni.valueOf(j.optString("rozliseni")) }.getOrDefault(SbRozliseni.R480),
             zdroj = runCatching { SbZdroj.valueOf(j.optString("zdroj")) }.getOrDefault(SbZdroj.STORYBOARD),
             cilSekund = j.optInt("cilSekund", 30),
+            kroky = SbFilmScene.platneKroky(j.optInt("kroky", SbFilmScene.VYCHOZI_KROKY)),
             zadaniUseku = (0 until (j.optJSONArray("zadaniUseku")?.length() ?: 0))
                 .map { j.getJSONArray("zadaniUseku").getString(it) },
             nazev = j.optString("nazev"), casyZeStoryboardu = j.optBoolean("casyZeStoryboardu"),

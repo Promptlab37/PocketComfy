@@ -123,4 +123,24 @@ class SbFilmBuilderTest {
             SbFilmBuilder.buildCteni("sb.png", H3RefWriteBuilder.CAPTIONER_ODVAZANY, 3L).toString(2),
         )
     }
+
+    /** Volba kroků (5.06): mění se jen počet kroků, nic jiného v grafu. */
+    @Test
+    fun `kroky podle volby a nic jineho se nemeni`() {
+        fun g(k: Int) = SbFilmBuilder.buildFilm(scene.copy(kroky = k), useky, zadani, listOf("sb.png", "p1.png"), "16:9", 7L)
+        assertEquals(8, graf().vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+        for (k in SbFilmScene.KROKY) {
+            val a = g(k)
+            assertEquals(k, a.vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+            a.vstupy(SbFilmBuilder.N_KROKY).put("steps", 8)
+            assertEquals(graf().toString(), a.toString())
+        }
+        // Hodnota mimo nabídku (starý nebo poškozený záznam) → výchozích 8.
+        assertEquals(8, g(12).vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+        assertEquals(8, g(-3).vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+        assertEquals(listOf(4, 8, 16, 20), SbFilmScene.KROKY)
+        assertEquals(20, SbFilmScene.platneKroky(20))
+        assertEquals(8, SbFilmScene.platneKroky(0))
+        assertEquals(8, SbFilmScene().kroky)
+    }
 }

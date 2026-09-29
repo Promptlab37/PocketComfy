@@ -29,7 +29,8 @@ import org.json.JSONObject
  * (`_segment_step_prompt_media`). Ověřeno během 2×5 s 28. 9. 2026.
  *
  * Model, LoRA a vzorkování jsou jako Turbo na kartě Long MiniMax (autorova
- * sestava balíku): `fl2va` + ref2v Turbo LoRA 0,8, `euler`/`simple`, 8 kroků.
+ * sestava balíku): `fl2va` + ref2v Turbo LoRA 0,8, `euler`/`simple`, kroky
+ * podle volby na kartě ([SbFilmScene.kroky], výchozí 8).
  */
 object SbFilmBuilder {
 
@@ -86,7 +87,7 @@ object SbFilmBuilder {
     const val VAE_ZVUK = "minimax_h3_audio_vae_fp32.safetensors"
     const val LORA = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors"
     const val LORA_SILA = 0.8
-    const val KROKU = 8
+    const val KROKU = SbFilmScene.VYCHOZI_KROKY
     const val KONTEXT_SNIMKU = 22
     const val ROZLISENI = "480P"
     const val CONTINUITY = "latent_guide"
@@ -164,7 +165,8 @@ object SbFilmBuilder {
             .put("media", odkaz(N_MEDIA))))
 
         wf.put(N_KROKY, uzel("BasicScheduler", "Kroky", JSONObject()
-            .put("model", odkaz(N_LORA)).put("scheduler", "simple").put("steps", KROKU).put("denoise", 1.0)))
+            .put("model", odkaz(N_LORA)).put("scheduler", "simple")
+            .put("steps", SbFilmScene.platneKroky(scene.kroky)).put("denoise", 1.0)))
         wf.put(N_SAMPLER, uzel("KSamplerSelect", "Sampler", JSONObject().put("sampler_name", "euler")))
         wf.put(N_SETUP, uzel("MiniMaxH3EasySegmentSampleSetup_SatoDive", "Nastavení úseků", JSONObject()
             .put("h3_context", odkaz(N_KONTEXT, 1)).put("model", odkaz(N_LORA))
