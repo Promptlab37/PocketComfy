@@ -18,6 +18,8 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -58,6 +60,9 @@ fun PrubehPrepisu(
     val busy = (stav as? MainViewModel.RewriteState.Busy)?.takeIf { it.druh == druh } ?: return
     val prubeh by vm.prubehPrepisu.collectAsStateWithLifecycle()
     val napsano by vm.rewriteProgress.collectAsStateWithLifecycle()
+    val plan by vm.planAkce.collectAsStateWithLifecycle()
+    // Bar vícekrokové akce nesmí couvnout (počet kroků se upřesní po prvním čtení).
+    var podilMinule by remember(busy.od) { mutableFloatStateOf(0f) }
 
     var ted by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(busy.od) {
@@ -87,7 +92,37 @@ fun PrubehPrepisu(
         obvykleNacitaniS = prubeh.obvykleNacitaniS,
         obvykleCelkemS = prubeh.obvykleCelkemS,
     )
+    // Akce z víc kroků (Film ze storyboardu): odhad celé akce, ne jen kroku.
+    val akce = plan?.let { pl ->
+        val krok = pl.kroky.getOrNull(pl.k)
+        val zivy = krok?.typ?.tokeny == true && prubeh.prvniTokenOd > 0L &&
+            (napsano?.first ?: 0) - prubeh.prvniHodnota >= cz.promptlab.h3video.data.OdhadPrepisu.MIN_TOKENU &&
+            (ted - prubeh.prvniTokenOd) / 1000.0 >= cz.promptlab.h3video.data.OdhadPrepisu.MIN_SEKUND
+        cz.promptlab.h3video.data.OdhadAkce.spocitej(
+            kroky = pl.kroky,
+            casy = vm::ocekavani,
+            k = pl.k,
+            vKrokuS = if (pl.krokOd > 0L) (ted - pl.krokOd) / 1000.0 else null,
+            ubehloS = (ted - pl.zacatek) / 1000.0,
+            tokenZbyvaS = if (zivy) odhad.zbyvaS?.toDouble() else null,
+            predchoziPodil = podilMinule,
+        )
+    }
+    akce?.let { a -> SideEffect { podilMinule = a.podil } }
     val detail = buildString {
+        val pl = plan
+        if (pl != null && akce != null) {
+            if (pl.kroky.size > 1) {
+                append(t("Krok %d z %d").format(pl.k + 1, pl.kroky.size))
+                append(" · ")
+            }
+            append(t("uběhlo %s").format(minSek(((ted - pl.zacatek) / 1000).coerceAtLeast(0))))
+            akce.zbyvaS?.let {
+                append(" · ")
+                append(t("zbývá asi %s").format(minSek(it)))
+            }
+            return@buildString
+        }
         append(t("uběhlo %s").format(minSek(ubehlo)))
         odhad.zbyvaS?.let {
             append(" · ")
@@ -119,7 +154,7 @@ fun PrubehPrepisu(
                 .padding(horizontal = 10.dp, vertical = 6.dp),
         )
     }
-    odhad.podil?.let { podil ->
+    (akce?.podil?.takeIf { it > 0f } ?: odhad.podil.takeIf { akce == null })?.let { podil ->
         Spacer(Modifier.height(6.dp))
         LinearProgressIndicator(
             progress = { podil },

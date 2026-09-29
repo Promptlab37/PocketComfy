@@ -503,6 +503,14 @@ class ComfyClient(baseUrl: String) {
         }
     }.getOrNull()
 
+    /** Poslední hotová úloha serveru (`/history?max_items=1`); null = nejde přečíst. */
+    fun posledniUloha(): JSONObject? = runCatching {
+        get("/history?max_items=1").use { r ->
+            if (!r.isSuccessful) return null
+            JSONObject(r.body!!.string())
+        }
+    }.getOrNull()
+
     /** Cílené přerušení – přeruší jen naši úlohu, cizí běžící práci nechá být. */
     fun interrupt(promptId: String?) {
         runCatching {

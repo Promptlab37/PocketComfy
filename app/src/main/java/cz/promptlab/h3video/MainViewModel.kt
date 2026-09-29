@@ -2475,6 +2475,40 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     val prubehPrepisu: StateFlow<PrubehPrepisu> = _prubehPrepisu.asStateFlow()
 
     /**
+     * Plán vícekrokové akce (čtení storyboardu, návrh, příprava promptů) —
+     * odhad času celé akce, ne jen právě běžícího běhu ([cz.promptlab.h3video.data.OdhadAkce]).
+     * Zakládá a ruší ho jen akce, mezi kroky se nemaže.
+     */
+    data class PlanAkce(
+        val kroky: List<cz.promptlab.h3video.data.KrokAkce>,
+        val k: Int = 0,
+        /** Kdy právě běžící krok opustil frontu serveru (0 = ještě čeká). */
+        val krokOd: Long = 0L,
+        val zacatek: Long = System.currentTimeMillis(),
+    )
+
+    private val _planAkce = MutableStateFlow<PlanAkce?>(null)
+    val planAkce: StateFlow<PlanAkce?> = _planAkce.asStateFlow()
+
+    /** Naučené délky kroku; výchozí jsou naměřené na serveru. */
+    fun ocekavani(typ: cz.promptlab.h3video.data.TypKroku) = cz.promptlab.h3video.data.Ocekavani(
+        trvaniPrepisu.getFloat("odhad_${typ.name}_teply", typ.teplyS.toFloat()).toDouble(),
+        trvaniPrepisu.getFloat("odhad_${typ.name}_studeny", typ.studenyS.toFloat()).toDouble(),
+    )
+
+    private fun naucKrok(krok: cz.promptlab.h3video.data.KrokAkce, trvaniS: Double) {
+        if (trvaniS <= 0) return
+        val (studeny, hodnota) = cz.promptlab.h3video.data.OdhadAkce.nauc(ocekavani(krok.typ), krok.studeny, trvaniS)
+        trvaniPrepisu.edit()
+            .putFloat("odhad_${krok.typ.name}_${if (studeny) "studeny" else "teply"}", hodnota.toFloat())
+            .apply()
+    }
+
+    private fun upravPlan(zmena: (PlanAkce) -> PlanAkce) {
+        _planAkce.value?.let { _planAkce.value = zmena(it) }
+    }
+
+    /**
      * Před každým přepisem či překladem: běží ComfyUI? Když ne, požádá
      * spouštěče na počítači, ať ho nahodí, a počká — stejně jako generování
      * (GenerationEngine). Do 4.46 to vylepšovače nedělaly a na vypnutém
@@ -2572,11 +2606,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Přepis se na serveru rozběhl (skončilo čekání ve frontě). */
     private fun prepisBezi(faze: FazePrepisu) {
         val p = _prubehPrepisu.value
+        val od = if (p.beziOd == 0L) System.currentTimeMillis() else p.beziOd
         _prubehPrepisu.value = p.copy(
             faze = if (p.faze == FazePrepisu.PSANI) p.faze else faze,
             predTebou = 0,
-            beziOd = if (p.beziOd == 0L) System.currentTimeMillis() else p.beziOd,
+            beziOd = od,
         )
+        // Krok plánu opustil frontu — od teď se mu počítá čas.
+        upravPlan { if (it.krokOd == 0L) it.copy(krokOd = od) else it }
     }
 
     /** Klíč pro zapamatovanou délku: třídy uzlů a soubory modelů v grafu. */
@@ -2698,6 +2735,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         client: ComfyClient,
         wf: org.json.JSONObject,
         uzelNahledu: String,
+        /** Index kroku v [planAkce] — vícekroková akce karty Film ze storyboardu. */
+        krok: Int? = null,
     ): String {
         // Zastaveno ještě před odesláním (při zapínání ComfyUI, nahrávání fotek).
         if (_rewriteState.value !is RewriteState.Busy) {
@@ -2712,7 +2751,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val promptId = java.util.UUID.randomUUID().toString()
         val clientId = java.util.UUID.randomUUID().toString()
         _rewriteProgress.value = null
-        val klic = klicTrvani(wf)
+        val planKrok = krok?.let { _planAkce.value?.kroky?.getOrNull(it) }
+        if (krok != null && planKrok != null) {
+            // První krok akce je studený, když na serveru naposledy běželo něco
+            // jiného než text (video vytlačí jazykový model: 17 s × 96 s).
+            val studeny = krok == 0 && cz.promptlab.h3video.data.OdhadAkce.jeStudeny(client.posledniUloha())
+            upravPlan { p ->
+                p.copy(k = krok, krokOd = 0L, kroky = p.kroky.mapIndexed { i, x ->
+                    if (i == krok) x.copy(studeny = studeny || x.studeny) else x
+                })
+            }
+        }
+        // Tokeny hlásí jen přepis úseku; čtení (znaky) a návrh jedou podle času.
+        val tokenovyKrok = planKrok?.typ?.tokeny
+        val maxTokenu = wf.keys().asSequence().mapNotNull {
+            wf.optJSONObject(it)?.optJSONObject("inputs")?.takeIf { i -> i.has("max_new_tokens") }?.optInt("max_new_tokens")
+        }.firstOrNull() ?: 0
+        // Vlastní klíč podle typu kroku — celé čtení a čtení řádku si dřív
+        // přepisovaly minulou délku (stejný graf, 17 s × 8 s).
+        val klic = if (planKrok != null) "prepis_s_krok_" + planKrok.typ.name else klicTrvani(wf)
         _prubehPrepisu.value = PrubehPrepisu(
             obvykleTokeny = trvaniPrepisu.getInt(klic + "_tokeny", 0),
             obvyklaRychlost = trvaniPrepisu.getFloat(klic + "_rychlost", 0f).toDouble(),
@@ -2733,6 +2790,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         "progress" -> {
                             val max = data.optInt("max", 0)
                             val hodnota = data.optInt("value", 0)
+                            // Balík hlásí „progress“ i při nahrávání modelu (max 1000).
+                            if (tokenovyKrok == false) {
+                                prepisBezi(if (max == 1000) FazePrepisu.MODEL else FazePrepisu.PSANI)
+                                return
+                            }
+                            if (tokenovyKrok == true && max != maxTokenu) {
+                                prepisBezi(FazePrepisu.MODEL)
+                                return
+                            }
                             if (max > 0) _rewriteProgress.value = hodnota to max
                             prepisBezi(FazePrepisu.PSANI)
                             val p = _prubehPrepisu.value
@@ -2758,6 +2824,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }.getOrNull()
         try {
             prepisNaServeru = client to promptId
+            val odeslano = System.currentTimeMillis()
             zaradPrepis(client, wf, clientId, promptId)
             // Rozhoduje server, ne hodiny. Do 4.50 tu byla mez „pět minut bez
             // zprávy": zamčený telefon uspí appku, po odemčení ta mez hned
@@ -2767,7 +2834,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             var neznama = 0
             var nedostupnyOd = 0L
             var kolo = 0
+            var cekal = false
+            var prerovnano = false
             while (true) {
+                // Krok čekal ve frontě: rozhoduje, co běželo těsně před ním.
+                if (cekal && !prerovnano && krok != null && _prubehPrepisu.value.beziOd > 0L) {
+                    prerovnano = true
+                    if (cz.promptlab.h3video.data.OdhadAkce.jeStudeny(client.posledniUloha())) upravPlan { p ->
+                        p.copy(kroky = p.kroky.mapIndexed { i, x -> if (i == krok) x.copy(studeny = true) else x })
+                    }
+                }
                 val h = client.history(promptId)
                 if (h != null) {
                     val status = h.optJSONObject("status")
@@ -2799,6 +2875,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         }
                         if (p.beziOd > 0L) ed.putInt(klic, ((konec - p.beziOd) / 1000).toInt())
                         ed.apply()
+                        // Skutečná délka kroku (bez fronty) do odhadu akce.
+                        if (krok != null) _planAkce.value?.kroky?.getOrNull(krok)?.let {
+                            naucKrok(it, (konec - (if (p.beziOd > 0L) p.beziOd else odeslano)) / 1000.0)
+                        }
                         val hotovy = text.getString(0)
                         if (hotovy.contains(cz.promptlab.h3video.data.NezletiliPojistka.ZNACKA))
                             throw ComfyException(
@@ -2814,6 +2894,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     when {
                         pred > 0 -> {
                             neznama = 0; nedostupnyOd = 0L
+                            cekal = true
                             if (_prubehPrepisu.value.beziOd == 0L) _prubehPrepisu.value =
                                 _prubehPrepisu.value.copy(faze = FazePrepisu.FRONTA, predTebou = pred)
                         }
@@ -3221,6 +3302,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         pomer: String? = null,
         /** Film ze storyboardu nese repliky po panelech — globální hlídka by je dala do každého úseku. */
         hlidatDialogy: Boolean = true,
+        /** Index kroku v [planAkce] (příprava promptů filmu). */
+        krok: Int? = null,
     ): String {
         val spec = client.objectInfo(H3RefWriteBuilder.NODE_CLASS)
             ?: throw ComfyException(
@@ -3263,7 +3346,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             storyboard = storyboard,
             hlidka = hlidka,
         )
-        return spustPrepisAPockej(client, wf, H3RefWriteBuilder.N_PREVIEW)
+        return spustPrepisAPockej(client, wf, H3RefWriteBuilder.N_PREVIEW, krok = krok)
     }
 
     /**
@@ -4860,7 +4943,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
-        viewModelScope.launch {
+        _planAkce.value = PlanAkce(listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.NAVRH)))
+        viewModelScope.launch { try {
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
@@ -4888,7 +4972,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         mmproj = mmproj,
                         obrazky = fotky,
                     )
-                    spustPrepisAPockej(client, wf, ImagePromptBuilder.N_PREVIEW)
+                    spustPrepisAPockej(client, wf, ImagePromptBuilder.N_PREVIEW, krok = 0)
                 }
             }
             vysledek.onSuccess { text ->
@@ -4911,7 +4995,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
                 )
             }
-        }
+        } finally { _planAkce.value = null } }
     }
 
     fun setSbPanelSekundy(index: Int, sekundy: Double) = updateSbFilm { s ->
@@ -4952,7 +5036,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val obr = s.storyboard ?: return
         _sbAkce.value = SbAkce.CTENI
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
-        viewModelScope.launch {
+        // Celé čtení + řádky mřížky; kolik řádků, se ví až po prvním čtení.
+        val minuleRadku = trvaniPrepisu.getInt("odhad_posledni_radky", 2)
+        _planAkce.value = PlanAkce(
+            listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_CELE)) + List(minuleRadku) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) },
+        )
+        viewModelScope.launch { try {
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
@@ -4972,15 +5061,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val wf = cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
                         jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
                     )
-                    val prvni = spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP)
+                    val prvni = spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP, krok = 0)
                     // Repliky znovu po řádcích mřížky, v ostřejším výřezu.
                     val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(prvni)
                     val radku = cteni.radku ?: 0
                     val sloupcu = cteni.sloupcu ?: 0
                     val opravene = mutableMapOf<Int, String>()
-                    if (radku >= 2 && sloupcu >= 1 && cteni.panely.any { it.repliky.isNotBlank() } &&
+                    val poRadcich = radku >= 2 && sloupcu >= 1 && cteni.panely.any { it.repliky.isNotBlank() } &&
                         radku * sloupcu >= cteni.panely.size
-                    ) {
+                    // Teď už je známý skutečný počet řádků.
+                    val skutecne = if (poRadcich) radku else 0
+                    trvaniPrepisu.edit().putInt("odhad_posledni_radky", skutecne).apply()
+                    upravPlan { it.copy(kroky = it.kroky.take(1) + List(skutecne) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) }) }
+                    if (poRadcich) {
                         val bmp = android.graphics.BitmapFactory.decodeFile(obr.absolutePath)
                         if (bmp != null) for (r in 0 until radku) {
                             val v = bmp.height / radku
@@ -5000,6 +5093,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                     ),
                                 ),
                                 cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
+                                krok = 1 + r,
                             )
                             opravene += cz.promptlab.h3video.data.SbFilmPlan.prectiRepliky(odpoved)
                         }
@@ -5030,7 +5124,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
                 )
             }
-        }
+        } finally { _planAkce.value = null } }
     }
 
     /**
@@ -5066,7 +5160,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (useky.isEmpty()) return
         _sbAkce.value = SbAkce.NATOCENI
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
-        viewModelScope.launch {
+        _planAkce.value = PlanAkce(List(useky.size) {
+            cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU)
+        })
+        viewModelScope.launch { try {
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
@@ -5080,7 +5177,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         suspend fun prepis(h: String) = prepisSReferencemi(
                             client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),
                             storyboard = s.seStoryboardem, hlidka = h,
-                            hlidatDialogy = false, pomer = s.pomer.kod,
+                            hlidatDialogy = false, pomer = s.pomer.kod, krok = k,
                         )
                         // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
                         // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
@@ -5102,7 +5199,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
                 )
             }
-        }
+        } finally { _planAkce.value = null } }
     }
 
     private val longMmStore = cz.promptlab.h3video.data.LongMmStore(app)
