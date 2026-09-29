@@ -17,6 +17,9 @@ import java.io.File
 const val MAX_SPEAKERS = 9
 const val MAX_LINES = 3
 
+/** [Line.spokenVoice] u zvuku, který uživatel k replice vložil sám. */
+const val VLASTNI_ZVUK = "vlastni"
+
 /** Ticho mezi replikami, aby si postavy neskákaly do řeči. */
 private const val PAUSE_SECONDS = 0.6f
 
@@ -25,13 +28,20 @@ private const val TAIL_SECONDS = 0.8f
 
 /** Odkud se bere hlas postavy. */
 sealed interface VoiceSource {
+    /** Čím hlas vznikl – podle toho se pozná, že replika mluví jiným hlasem. */
+    val klic: String
+
     /** Hotový hlas z knihovny Higgse (Ana, Eva, Marek…). */
     @Immutable
-    data class Library(val voiceId: String, val voiceName: String) : VoiceSource
+    data class Library(val voiceId: String, val voiceName: String) : VoiceSource {
+        override val klic: String get() = "lib:$voiceId"
+    }
 
     /** Klon z nahrávky – vlastní vzorek řeči. */
     @Immutable
-    data class Sample(val file: File, val label: String) : VoiceSource
+    data class Sample(val file: File, val label: String) : VoiceSource {
+        override val klic: String get() = "sample:${file.name}"
+    }
 }
 
 /** Stav namlouvání jedné repliky. */
@@ -64,6 +74,11 @@ data class Line(
     val spokenText: String = "",
     /** Skutečná délka namluvené repliky v sekundách. */
     val audioSeconds: Float = 0f,
+    /**
+     * Čím zvuk vznikl: [VoiceSource.klic], nebo [VLASTNI_ZVUK] u vloženého
+     * souboru. Prázdné = nahrávka ze starší verze (bere se jako platná).
+     */
+    val spokenVoice: String = "",
 ) {
     /** Hlas sedí na aktuální text? Po přepsání repliky je starý zvuk k ničemu. */
     val voiceCurrent: Boolean
@@ -83,7 +98,18 @@ data class TalkScene(
     val withImage: List<Speaker> get() = speakers.filter { it.image != null }
 
     /** Repliky s hotovým hlasem – v pořadí, v jakém dostanou `<Audio N>`. */
-    val voiced: List<Line> get() = lines.filter { it.voiceCurrent }
+    val voiced: List<Line> get() = lines.filter { hlasPlati(it) }
+
+    /**
+     * Hotový zvuk repliky platí: sedí text i hlas postavy, která ji teď říká.
+     * Po změně nebo odebrání hlasu (i po přepnutí mluvčího) se nahrávka nemaže,
+     * jen přestane platit — vrácením původního hlasu zase platí.
+     */
+    fun hlasPlati(line: Line): Boolean {
+        if (!line.voiceCurrent) return false
+        val hlas = line.spokenVoice
+        return hlas.isEmpty() || hlas == VLASTNI_ZVUK || hlas == speakerOf(line)?.voice?.klic
+    }
 
     val written: List<Line> get() = lines.filter { it.text.isNotBlank() }
 

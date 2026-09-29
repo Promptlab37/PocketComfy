@@ -44,6 +44,7 @@ class TalkStore(private val ctx: Context) {
                     .put("speaker", l.speakerKey)
                     .put("text", l.text)
                     .put("spoken", l.spokenText)
+                    .put("spokenVoice", l.spokenVoice)
                     .put("audio", l.audio?.name ?: "")
                     .put("seconds", l.audioSeconds.toDouble())
             )
@@ -104,6 +105,7 @@ class TalkStore(private val ctx: Context) {
                     audio = audio,
                     status = if (audio != null) VoiceStatus.READY else VoiceStatus.NONE,
                     spokenText = o.optString("spoken"),
+                    spokenVoice = o.optString("spokenVoice"),
                     audioSeconds = o.optDouble("seconds", 0.0).toFloat(),
                 )
             }
@@ -123,8 +125,28 @@ class TalkStore(private val ctx: Context) {
     /** Smaže soubory postavy, která ze scény zmizela. */
     fun forgetSpeaker(key: Int) {
         runCatching { imageFile(key).delete() }
-        dir().listFiles { f -> f.name.startsWith("sample_$key.") }?.forEach { it.delete() }
+        smazVzorky(key)
     }
+
+    /** Vzorky hlasu postavy (`sample_<key>.…` i `sample_<key>_<čas>.…`), kromě [krome]. */
+    fun smazVzorky(key: Int, krome: File? = null) {
+        dir().listFiles { f ->
+            (f.name.startsWith("sample_$key.") || f.name.startsWith("sample_${key}_")) && f != krome
+        }?.forEach { it.delete() }
+    }
+
+    /**
+     * Zkopíruje vzorek hlasu do složky scény — jen odsud se po restartu načte.
+     * Název nese čas: nahrávky replik si pamatují soubor, ze kterého vznikly,
+     * takže nový vzorek nesmí přepsat starý pod stejným jménem.
+     */
+    fun ulozVzorek(key: Int, zdroj: File): File? = runCatching {
+        val pripona = zdroj.extension.ifBlank { "wav" }
+        val cil = File(dir(), "sample_${key}_${System.currentTimeMillis()}.$pripona")
+        zdroj.copyTo(cil, overwrite = true)
+        smazVzorky(key, krome = cil)
+        cil
+    }.getOrNull()
 
     fun forgetLine(key: Int) {
         runCatching { audioFile(key).delete() }

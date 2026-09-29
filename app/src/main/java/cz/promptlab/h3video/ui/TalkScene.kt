@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -110,13 +111,17 @@ fun TalkSceneSection(vm: MainViewModel) {
     ) {
         Column {
             scene.speakers.forEachIndexed { index, speaker ->
-                SpeakerRow(
-                    speaker = speaker,
-                    number = index + 1,
-                    voices = voices.map { it.id to it.name },
-                    canRemove = scene.speakers.size > 1,
-                    vm = vm,
-                )
+                // Stav řádku (rozbalený výběr, běžící nahrávání) patří postavě,
+                // ne pozici — po odebrání jiné postavy se nesmí přestěhovat.
+                key(speaker.key) {
+                    SpeakerRow(
+                        speaker = speaker,
+                        number = index + 1,
+                        voices = voices.map { it.id to it.name },
+                        canRemove = scene.speakers.size > 1,
+                        vm = vm,
+                    )
+                }
                 Spacer(Modifier.height(12.dp))
             }
             if (scene.canAddSpeaker) {
@@ -193,7 +198,7 @@ fun TalkSceneSection(vm: MainViewModel) {
             }
 
             val pending = scene.lines.count {
-                it.text.isNotBlank() && !it.voiceCurrent && scene.speakerOf(it)?.voice != null
+                it.text.isNotBlank() && !scene.hlasPlati(it) && scene.speakerOf(it)?.voice != null
             }
             if (pending > 0) {
                 Spacer(Modifier.height(12.dp))
@@ -322,14 +327,36 @@ private fun SpeakerRow(
                 Box(
                     Modifier
                         .align(Alignment.BottomEnd)
-                        .padding(6.dp)
-                        .size(26.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(Color.Black.copy(alpha = .62f))
+                        .size(40.dp)
                         .clickable(onClick = shoot),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(Icons.Default.PhotoCamera, t("Vyfotit"), Modifier.size(15.dp), Color.White)
+                    Box(
+                        Modifier
+                            .size(26.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Color.Black.copy(alpha = .62f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.PhotoCamera, t("Vyfotit"), Modifier.size(15.dp), Color.White)
+                    }
+                }
+                if (speaker.image != null) Box(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .size(40.dp)
+                        .clickable { vm.clearSpeakerImage(speaker.key) },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        Modifier
+                            .size(26.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Surface2),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Close, t("Odebrat fotku"), Modifier.size(14.dp), TextMid)
+                    }
                 }
             }
 
@@ -373,26 +400,47 @@ private fun SpeakerRow(
                             1.dp,
                             if (speaker.voice != null) Violet.copy(alpha = .5f) else Outline1,
                             RoundedCornerShape(12.dp)
-                        )
-                        .clickable {
-                            voicesOpen = !voicesOpen
-                            if (voicesOpen && voices.isEmpty()) vm.loadVoices()
-                        }
-                        .padding(horizontal = 12.dp, vertical = 11.dp),
+                        ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.GraphicEq, null, Modifier.size(16.dp), Cyan)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        when (val v = speaker.voice) {
-                            is VoiceSource.Library -> v.voiceName
-                            is VoiceSource.Sample -> v.label
-                            null -> t("Vybrat hlas")
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (speaker.voice != null) TextHi else TextMid,
-                        maxLines = 1
-                    )
+                    // Rozbalení a křížek jsou sousedé, ne vnořené klikání —
+                    // každý má vlastní plochu.
+                    Row(
+                        Modifier
+                            .weight(1f)
+                            .clickable {
+                                voicesOpen = !voicesOpen
+                                if (voicesOpen && voices.isEmpty()) vm.loadVoices()
+                            }
+                            .padding(horizontal = 12.dp, vertical = 11.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(Icons.Default.GraphicEq, null, Modifier.size(16.dp), Cyan)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            when (val v = speaker.voice) {
+                                is VoiceSource.Library -> v.voiceName
+                                is VoiceSource.Sample -> v.label
+                                null -> t("Vybrat hlas")
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (speaker.voice != null) TextHi else TextMid,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    if (speaker.voice != null) Box(
+                        Modifier
+                            .size(40.dp)
+                            .clickable {
+                                voicesOpen = false
+                                vm.clearSpeakerVoice(speaker.key)
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Close, t("Odebrat hlas"), Modifier.size(16.dp), TextMid)
+                    }
                 }
             }
         }
@@ -449,6 +497,7 @@ private fun LineCard(
     onPickAudio: () -> Unit,
 ) {
     val speaker = scene.speakerOf(line)
+    val hlasPlati = scene.hlasPlati(line)
 
     Column(
         Modifier
@@ -515,9 +564,9 @@ private fun LineCard(
                     Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(if (line.voiceCurrent) Ok.copy(alpha = .18f) else Cyan.copy(alpha = .16f))
+                        .background(if (hlasPlati) Ok.copy(alpha = .18f) else Cyan.copy(alpha = .16f))
                         .clickable(enabled = speaker?.voice != null && line.status != VoiceStatus.RUNNING) {
-                            if (line.voiceCurrent) onTogglePlay() else vm.speakLine(line.key)
+                            if (hlasPlati) onTogglePlay() else vm.speakLine(line.key)
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -525,12 +574,12 @@ private fun LineCard(
                         line.status == VoiceStatus.RUNNING ->
                             CircularProgressIndicator(Modifier.size(18.dp), color = Cyan, strokeWidth = 2.dp)
                         playing -> Icon(Icons.Default.Stop, t("Zastavit"), Modifier.size(18.dp), Ok)
-                        line.voiceCurrent ->
+                        hlasPlati ->
                             Icon(Icons.Default.PlayArrow, t("Přehrát repliku"), Modifier.size(18.dp), Ok)
                         else -> Icon(Icons.Default.RecordVoiceOver, t("Namluvit"), Modifier.size(18.dp), Cyan)
                     }
                 }
-                if (line.voiceCurrent && line.status != VoiceStatus.RUNNING) {
+                if (hlasPlati && line.status != VoiceStatus.RUNNING) {
                     Spacer(Modifier.width(8.dp))
                     Box(
                         Modifier
@@ -546,7 +595,7 @@ private fun LineCard(
                 Spacer(Modifier.width(10.dp))
                 val note = when {
                     line.status == VoiceStatus.FAILED && line.error.isNotBlank() -> line.error to Amber
-                    line.voiceCurrent -> t("Hlas je hotový (%.1f s)").format(line.audioSeconds) to Ok
+                    hlasPlati -> t("Hlas je hotový (%.1f s)").format(line.audioSeconds) to Ok
                     line.audio != null -> t("Text se změnil – namluv znovu") to Amber
                     speaker?.voice == null -> t("Postava nemá vybraný hlas") to Amber
                     else -> t("Ťukni pro namluvení") to TextLow
@@ -558,7 +607,7 @@ private fun LineCard(
             // sedí i délka videa a časy replik v promptu.
             Spacer(Modifier.height(6.dp))
             TagChip(
-                text = if (line.voiceCurrent) t("Vyměnit za vlastní zvuk") else t("Vložit vlastní zvuk"),
+                text = if (hlasPlati) t("Vyměnit za vlastní zvuk") else t("Vložit vlastní zvuk"),
                 active = false,
             ) { onPickAudio() }
             if (line.status == VoiceStatus.RUNNING) {
@@ -582,6 +631,11 @@ private fun RecordVoiceButton(onRecorded: (java.io.File) -> Unit) {
     val ctx = LocalContext.current
     val recorder = remember { VoiceRecorder(ctx) }
     var recording by remember { mutableStateOf(false) }
+    // Sbalený výběr (třeba po odebrání hlasu) nesmí nechat běžet mikrofon
+    // ani po chvíli hlas znovu nastavit — rozdělaná nahrávka se zahodí.
+    DisposableEffect(recorder) {
+        onDispose { if (recording) recorder.stop()?.delete() }
+    }
     val askMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) { recorder.start(); recording = true }
     }

@@ -1033,7 +1033,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         written.firstOrNull { s.speakerOf(it)?.voice == null }?.let {
             return t("Postava, která mluví, potřebuje vybraný hlas.")
         }
-        written.firstOrNull { !it.voiceCurrent }?.let {
+        written.firstOrNull { !s.hlasPlati(it) }?.let {
             return if (it.audio == null) t("Nech repliky namluvit.")
             else t("Replika se změnila – nech ji namluvit znovu.")
         }
@@ -1686,6 +1686,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSpeakerVoice(key: Int, voice: VoiceSource?) = updateSpeaker(key) { it.copy(voice = voice) }
 
+    /** Křížek u hlasu: postava zůstane bez hlasu, vzorek ze složky scény pryč. */
+    fun clearSpeakerVoice(key: Int) {
+        setSpeakerVoice(key, null)
+        viewModelScope.launch(Dispatchers.IO) { talkStore.smazVzorky(key) }
+    }
+
+    /**
+     * Pořadí výběrů fotky u postavy. Import je asynchronní — když uživatel
+     * fotku vybere a hned odebere, dokončený import ji nesmí vrátit zpátky.
+     */
+    private val fotkaPostavyTah = mutableMapOf<Int, Int>()
+
+    /** Křížek na fotce postavy. */
+    fun clearSpeakerImage(key: Int) {
+        fotkaPostavyTah[key] = (fotkaPostavyTah[key] ?: 0) + 1
+        updateSpeaker(key) { it.copy(image = null, thumb = null) }
+        viewModelScope.launch(Dispatchers.IO) { runCatching { talkStore.imageFile(key).delete() } }
+    }
+
     /** Přidá repliku; ve výchozím stavu ji říká ten, kdo nemluvil naposledy. */
     fun addLine() = updateScene { s ->
         if (!s.canAddLine) s
@@ -1727,23 +1746,47 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun pickSpeakerImage(key: Int, uri: Uri?) {
         if (uri == null) return
+        val tah = (fotkaPostavyTah[key] ?: 0) + 1
+        fotkaPostavyTah[key] = tah
         viewModelScope.launch {
             val target = talkStore.imageFile(key)
             val thumb = withContext(Dispatchers.IO) {
                 ImageUtils.importToApp(getApplication(), uri, target)
             } ?: return@launch
+            // Mezitím odebráno nebo vybráno jiné — tenhle import už neplatí.
+            if (fotkaPostavyTah[key] != tah) return@launch
             updateSpeaker(key) { it.copy(image = target, thumb = thumb) }
         }
     }
 
-    fun setSpeakerSample(key: Int, file: File, label: String) =
-        setSpeakerVoice(key, VoiceSource.Sample(file, label))
+    /**
+     * Vzorek hlasu (mikrofon z cache, nebo importovaný soubor) se přesune do
+     * složky scény. Do 4.98 zůstával jinde, než odkud se načítá, a klonovaný
+     * hlas po restartu appky tiše zmizel.
+     */
+    fun setSpeakerSample(key: Int, file: File, label: String) {
+        viewModelScope.launch {
+            val ulozeny = withContext(Dispatchers.IO) {
+                talkStore.ulozVzorek(key, file).also { runCatching { file.delete() } }
+            } ?: return@launch
+            setSpeakerVoice(key, VoiceSource.Sample(ulozeny, label))
+        }
+    }
 
     fun pickSpeakerSample(key: Int, uri: Uri?) {
         if (uri == null) return
         viewModelScope.launch {
             val f = importMedia(uri, "sample_$key") ?: return@launch
-            setSpeakerSample(key, f, f.name)
+            // Popisek podle jména, které uživatel vybral, ne interní kopie.
+            val jmeno = withContext(Dispatchers.IO) {
+                runCatching {
+                    getApplication<Application>().contentResolver.query(uri, null, null, null, null)?.use { c ->
+                        val i = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        if (i >= 0 && c.moveToFirst()) c.getString(i) else null
+                    }
+                }.getOrNull()
+            }
+            setSpeakerSample(key, f, jmeno ?: f.name)
         }
     }
 
@@ -1854,6 +1897,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         audio = soubor,
                         // Aby zvuk platil za aktuální, musí sedět s textem repliky.
                         spokenText = l.text.trim(),
+                        spokenVoice = cz.promptlab.h3video.data.VLASTNI_ZVUK,
                         status = VoiceStatus.READY,
                         audioSeconds = delka,
                         error = "",
@@ -1873,6 +1917,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             updateLine(key) { it.copy(status = VoiceStatus.FAILED, error = t("Postava nemá vybraný hlas.")) }
             return
         }
+        // Hlas zachycený na startu — kdyby se během namlouvání změnil,
+        // hotová nahrávka se správně označí jako neaktuální.
+        val klicHlasu = voice.klic
         viewModelScope.launch {
             updateLine(key) { it.copy(status = VoiceStatus.RUNNING, progress = 0f, error = "") }
             if (!ensureHiggs()) {
@@ -1916,7 +1963,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         it.copy(
                             audio = file, status = VoiceStatus.READY,
                             progress = 1f, error = "", spokenText = text,
-                            audioSeconds = seconds,
+                            audioSeconds = seconds, spokenVoice = klicHlasu,
                         )
                     }
                     fitLengthToLines()
@@ -1967,7 +2014,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun speakAll() {
         val scene = _scene.value
         scene.lines
-            .filter { it.text.isNotBlank() && !it.voiceCurrent && scene.speakerOf(it)?.voice != null }
+            .filter { it.text.isNotBlank() && !scene.hlasPlati(it) && scene.speakerOf(it)?.voice != null }
             .forEach { speakLine(it.key) }
     }
 

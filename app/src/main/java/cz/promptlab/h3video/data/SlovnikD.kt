@@ -2,6 +2,8 @@ package cz.promptlab.h3video.data
 
 /** Anglické překlady textů z ui/ (klíč = přesná česká věta z kódu). */
 internal val SLOVNIK_D: Map<String, String> = mapOf(
+    "Odebrat fotku" to "Remove photo",
+    "Odebrat hlas" to "Remove voice",
     // ---- společné prvky (Components, GenerateScreen, přehrávač)
     "Rozbalit" to "Expand",
     "Právě běží" to "Running now",
