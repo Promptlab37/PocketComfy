@@ -90,4 +90,22 @@ class SbFilmKrokyTest {
         assertEquals("Prosím, vyndejte věci.", SbFilmPlan.prectiRepliky(bez)[2])
         assertEquals("Strážný je klidný a profesionální.", SbFilmPlan.prectiNalady(bez)[2])
     }
+
+    /** 5.11: vzhled postav z čtení (skutečná odpověď serveru 29. 9. 2026) jde do každého úseku. */
+    @Test
+    fun `vzhled postav se precte a da do kazdeho useku`() {
+        val c = SbFilmPlan.precti(
+            "TITLE: none | TOTAL: none | SHOTS: none | GRID: 2x4 | VOICES: Žena = a woman in her 30s with a warm, " +
+                "high voice | LOOKS: Žena = brown hair in a bun, beige sweater; Dog = golden retriever with golden fur " +
+                "PANEL 1 | none | wide | static | A woman arrives. | ŽENA: \"Jdeme na dovolenou!\""
+        )
+        assertEquals(mapOf("Žena" to "brown hair in a bun, beige sweater", "Dog" to "golden retriever with golden fur"), c.vzhled)
+        assertEquals(c.vzhled, SbFilmPlan.naplanuj(c).vzhled)
+        val usek = cz.promptlab.h3video.data.SbUsek(listOf(SbPanel(1, "A woman arrives.", sekundy = 3.0)))
+        val h = SbFilmPrepis.hlidka(1, usek, 1, 2, true, vzhled = c.vzhled)
+        assertTrue(h.contains("Žena — brown hair in a bun, beige sweater; Dog — golden retriever with golden fur."))
+        assertTrue(h.contains("with exactly these looks"))
+        assertFalse(SbFilmPrepis.hlidka(1, usek, 1, 2, true).contains("these looks"))
+        assertTrue(SbFilmPlan.OTAZKA_CTENI.contains("LOOKS:"))
+    }
 }

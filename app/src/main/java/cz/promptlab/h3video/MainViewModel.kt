@@ -4985,7 +4985,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     updateSbFilm {
                         it.copy(panely = plan.panely,
                             nazev = cz.promptlab.h3video.data.SbFilmPlan.precti(text).nazev.orEmpty(),
-                            casyZeStoryboardu = false, zadaniUseku = emptyList(), hlasy = plan.hlasy)
+                            casyZeStoryboardu = false, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled)
                     }
                     _rewriteState.value = RewriteState.Idle
                 }
@@ -5120,7 +5120,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 } else {
                     updateSbFilm {
                         it.copy(panely = plan.panely, nazev = cteni.nazev.orEmpty(),
-                            casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy)
+                            casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled)
                     }
                     _rewriteState.value = RewriteState.Idle
                 }
@@ -5181,6 +5181,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
                             sp.idMluvcich(s.panely), sp.jazykFilmu(s.panely), s.hlasy,
                             predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
+                            vzhled = s.vzhled,
                         )
                         suspend fun prepis(h: String) = prepisSReferencemi(
                             client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),

@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -125,7 +126,7 @@ fun SbFilmSection(vm: MainViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.precistSbStoryboard() }
             }
-            if (akce == MainViewModel.SbAkce.CTENI) {
+            if (akce == MainViewModel.SbAkce.CTENI) SjedKPrubehu(cte) {
                 PrubehPrepisu(vm, barva = Amber)
                 chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             }
@@ -164,7 +165,7 @@ fun SbFilmSection(vm: MainViewModel) {
                     color = if (scene.panely.isEmpty()) Amber else TextMid,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.navrhnoutSbZabery() }
-                if (akce == MainViewModel.SbAkce.NAVRH) {
+                if (akce == MainViewModel.SbAkce.NAVRH) SjedKPrubehu(navrhuje) {
                     PrubehPrepisu(vm, barva = Amber)
                     chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                 }
@@ -228,7 +229,7 @@ fun SbFilmSection(vm: MainViewModel) {
                     color = if (scenarHotovy) TextMid else Amber,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.pripravitSbPrompty() }
-                if (akce == MainViewModel.SbAkce.NATOCENI) {
+                if (akce == MainViewModel.SbAkce.NATOCENI) SjedKPrubehu(pripravuje) {
                     PrubehPrepisu(vm, barva = Amber)
                     chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
                 }
@@ -260,6 +261,25 @@ fun SbFilmSection(vm: MainViewModel) {
     }
 
 
+}
+
+/**
+ * Průběh akce karty. Když akce začne, obrazovka k němu sama sjede — dřív
+ * zůstal schovaný pod okrajem a vypadalo to, že se nic neděje (uživatel
+ * 29. 9. 2026 u „Napsat scénář“).
+ */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
+@Composable
+private fun SjedKPrubehu(bezi: Boolean, content: @Composable () -> Unit) {
+    val pozadavek = androidx.compose.runtime.remember { androidx.compose.foundation.relocation.BringIntoViewRequester() }
+    Column(androidx.compose.ui.Modifier.bringIntoViewRequester(pozadavek)) { content() }
+    androidx.compose.runtime.LaunchedEffect(bezi) {
+        if (bezi) {
+            // Až se průběh vykreslí (má výšku), jinak není kam sjet.
+            kotlinx.coroutines.delay(150)
+            pozadavek.bringIntoView()
+        }
+    }
 }
 
 @Composable

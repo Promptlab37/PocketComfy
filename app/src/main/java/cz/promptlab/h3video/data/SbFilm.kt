@@ -91,6 +91,8 @@ data class SbCteni(
     val sloupcu: Int? = null,
     /** Hlas každého mluvčího (jméno → „a man in his 30s with a low, calm voice“). */
     val hlasy: Map<String, String> = emptyMap(),
+    /** Vzhled postav a zvířat (jméno → „long dark hair, beige knit cardigan“). */
+    val vzhled: Map<String, String> = emptyMap(),
 )
 
 data class SbPrecteny(
@@ -108,6 +110,7 @@ data class SbPlan(
     val panely: List<SbPanel>,
     val zeStoryboardu: Boolean,
     val hlasy: Map<String, String> = emptyMap(),
+    val vzhled: Map<String, String> = emptyMap(),
 )
 
 /** Úsek videa: souvislá řada panelů, kterou H3 vykreslí najednou. */
@@ -139,7 +142,11 @@ object SbFilmPlan {
             "printed on the sheet, or none> | GRID: <rows>x<columns> of the shot panels | VOICES: <for " +
             "every speaker who has a line: Name = age, gender and voice in plain English words (pitch, " +
             "timbre), for example Anna = a woman in her 30s with a warm, low voice; separated by ;. Always " +
-            "give a voice for every speaker, guessed from how they look>\n" +
+            "give a voice for every speaker, guessed from how they look> | LOOKS: <for every person and " +
+            "animal who appears in more than one panel: Name = how they look in the panel where they first " +
+            "appear (hair, clothing and its colours for people; breed and fur colour for animals), for " +
+            "example Anna = long red hair, green raincoat; Dog = golden retriever with golden fur; separated " +
+            "by ;. Use the printed speaker names where there are any>\n" +
             "Then one line per numbered shot panel, in the panel order: PANEL <number> | <the time " +
             "range exactly as printed on that panel, for example 00-04s, or none> | <shot size: " +
             "wide, medium, close-up, extreme close-up, insert or detail> | <camera movement, or " +
@@ -164,6 +171,7 @@ object SbFilmPlan {
         var radku: Int? = null
         var sloupcu: Int? = null
         val hlasy = linkedMapOf<String, String>()
+        val vzhled = linkedMapOf<String, String>()
         val panely = mutableListOf<SbPrecteny>()
         // Přepisovač slučuje řádky do jednoho (`" ".join(caption.split())`) —
         // před každý PANEL/TITLE se proto zalomení vrátí.
@@ -192,6 +200,13 @@ object SbFilmPlan {
                                 if (kdo.isNotBlank() && jak.isNotBlank() && SbFilmPrepis.jeMluvci(kdo))
                                     hlasy[SbFilmPrepis.opravMluvciho(kdo)] = jak
                             }
+                            "LOOKS" -> v.split(";").forEach { h ->
+                                val (kdo, jak) = h.split("=", limit = 2).let {
+                                    it[0].trim() to it.getOrElse(1) { "" }.trim().trimEnd('.')
+                                }
+                                if (kdo.isNotBlank() && jak.isNotBlank() && !jak.equals("none", true))
+                                    vzhled[SbFilmPrepis.opravMluvciho(kdo)] = jak
+                            }
                         }
                     }
                 }
@@ -218,7 +233,7 @@ object SbFilmPlan {
                 }
             }
         }
-        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu, hlasy)
+        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu, hlasy, vzhled)
     }
 
     /**
@@ -339,7 +354,7 @@ object SbFilmPlan {
                 repliky = p.repliky,
             )
         }
-        return SbPlan(panely, vepsane != null, cteni.hlasy)
+        return SbPlan(panely, vepsane != null, cteni.hlasy, cteni.vzhled)
     }
 
     private fun vepsaneDelky(cteni: SbCteni, panely: List<SbPrecteny>): List<Double>? {
@@ -564,7 +579,7 @@ object SbFilmPlan {
         val reci = plan.panely.map { delkaReci(it.repliky) }
         val delky = rozlozCas(plan.panely.map { it.sekundy }, reci, cilSekund.toDouble())
         val panely = plan.panely
-        return SbPlan(panely.mapIndexed { i, p -> p.copy(sekundy = delky[i]) }, false, plan.hlasy)
+        return SbPlan(panely.mapIndexed { i, p -> p.copy(sekundy = delky[i]) }, false, plan.hlasy, plan.vzhled)
     }
 
     /** `MM:SS.mmm` jako v příručce H3. */
@@ -599,6 +614,8 @@ data class SbFilmScene(
     val zadaniUseku: List<String> = emptyList(),
     /** Hlas každého mluvčího — stejný popis jde do všech úseků filmu. */
     val hlasy: Map<String, String> = emptyMap(),
+    /** Vzhled postav a zvířat — stejný popis jde do všech úseků filmu. */
+    val vzhled: Map<String, String> = emptyMap(),
     val model: SbModel = SbModel.TURBO,
     /** Kroky plného modelu (Kvalita). Turbo má pevných [TURBO_KROKY]. */
     val krokyKvalita: Int = KVALITA_KROKY,
@@ -679,6 +696,7 @@ class SbFilmStore(private val ctx: Context) {
             .put("nazev", s.nazev)
             .put("casyZeStoryboardu", s.casyZeStoryboardu)
             .put("hlasy", org.json.JSONObject().also { j -> s.hlasy.forEach { (k, v) -> j.put(k, v) } })
+            .put("vzhled", org.json.JSONObject().also { j -> s.vzhled.forEach { (k, v) -> j.put(k, v) } })
             .put("panely", org.json.JSONArray().also { a ->
                 s.panely.forEach {
                     a.put(org.json.JSONObject().put("cislo", it.cislo).put("popis", it.popis)
@@ -715,6 +733,8 @@ class SbFilmStore(private val ctx: Context) {
                 .map { j.getJSONArray("zadaniUseku").getString(it) },
             nazev = j.optString("nazev"), casyZeStoryboardu = j.optBoolean("casyZeStoryboardu"),
             hlasy = j.optJSONObject("hlasy")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }
+                .orEmpty().filterValues { it.isNotBlank() },
+            vzhled = j.optJSONObject("vzhled")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }
                 .orEmpty().filterValues { it.isNotBlank() },
             panely = panely,
         )
@@ -952,6 +972,8 @@ object SbFilmPrepis {
         hlasy: Map<String, String> = emptyMap(),
         /** Poslední panel předchozího úseku — co se už stalo, ať se to neopakuje. */
         predchozi: SbPanel? = null,
+        /** Vzhled postav a zvířat z čtení storyboardu — stejný pro všechny úseky. */
+        vzhled: Map<String, String> = emptyMap(),
     ): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
@@ -1000,6 +1022,15 @@ object SbFilmPrepis {
         // které patří do dalšího úseku (28. 9. 2026).
         // 28. 9. 2026 úsek 2 začal „ruka otáčí klíčem v zámku dveří“ z panelu 2
         // a ve filmu se dveře odemykaly podruhé.
+        // Vzhled je v celém filmu stejný: bez pevného popisu si přepisovač
+        // v úseku 2 vymyslel modrý svetr a bílého psa z vzoru příručky
+        // (film uživatele 29. 9. 2026, na storyboardu béžový svetr a zlatý retrívr).
+        if (vzhled.isNotEmpty()) {
+            sb.append("\nCharacters for the whole film: define each of them in subject_definitions as a ")
+            sb.append("<Subject K> with exactly these looks, and keep the looks identical in every shot unless ")
+            sb.append("a shot's action says they change clothes: ")
+            sb.append(vzhled.entries.joinToString("; ") { "${it.key} — ${it.value}" }).append(".")
+        }
         if (usek.panely.any { repliky(it.repliky).isNotEmpty() }) {
             sb.append("\nEvery spoken line listed above goes into its shot word for word, in its original ")
             sb.append("language, inside <d>; never translate, shorten or drop a line. The speaker ")
