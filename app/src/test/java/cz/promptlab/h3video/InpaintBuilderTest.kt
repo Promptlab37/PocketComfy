@@ -465,6 +465,23 @@ class InpaintBuilderTest {
         bezVisicichOdkazu(wf)
     }
 
+    /**
+     * 4.95: rozšíření je celý nový obraz v novém poměru (oficiální postup
+     * Qwenu 2.1). Maska do latentu a vlepení zpět postavu zdvojovaly.
+     */
+    @Test fun `rozsireni generuje cely obraz bez masky a vlepeni`() {
+        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU, cz.promptlab.h3video.data.Smer.VLEVO))
+        val tridy = (wf.keys().asSequence().map { wf.getJSONObject(it).getString("class_type") }).toSet()
+        assertFalse(tridy.contains("SetLatentNoiseMask"))
+        assertFalse(tridy.contains("InpaintStitchImproved"))
+        assertFalse(tridy.contains("DifferentialDiffusion"))
+        assertEquals("22", wf.inputs(InpaintBuilder.N_SAMPLER).getJSONArray("latent_image").getString(0))
+        assertEquals("50", wf.inputs("60").getJSONArray("images").getString(0))
+        assertEquals(1.0, wf.inputs(InpaintBuilder.N_SAMPLER).getDouble("denoise"), 1e-9)
+        assertTrue(wf.inputs(InpaintBuilder.N_TEXT).getString("prompt").startsWith("Outpainting:"))
+        bezVisicichOdkazu(wf)
+    }
+
     @Test fun `rozsireni neposila zadnou masku z telefonu`() {
         val scene = InpaintScene(
             source = File("a.png"), mask = File("m.png"),
@@ -476,7 +493,7 @@ class InpaintBuilderTest {
     @Test fun `pokyn nese smer a vede operace`() {
         val dolu = InpaintBuilder.zadaniRozsireni("nohy v džínách",
             setOf(cz.promptlab.h3video.data.Smer.DOLU))
-        assertTrue(dolu.startsWith("Extend the picture in <image1> downward"))
+        assertTrue(dolu.startsWith("Outpainting: extend the canvas of <image1> downward"))
         assertTrue(dolu.contains("nohy v džínách"))
         assertFalse(dolu.contains("<image2>"))
 
@@ -544,27 +561,5 @@ class InpaintBuilderTest {
             InpaintBuilder.presahPx(1200),
             wf.inputs(InpaintBuilder.N_VYREZ).getInt("mask_expand_pixels"),
         )
-    }
-
-    /**
-     * Měkká maska. Bez ní je `SetLatentNoiseMask` tvrdé „tady přepisuj, tady
-     * ne" — a protože VAE Qwenu 2.1 zmenšuje 16×, pixelové změkčení masky se
-     * do latentu promítne jen jako pár buněk a vzorkovač dostane ostrou hranu.
-     * `DifferentialDiffusion` z masky udělá **rozvrh**: čím nižší hodnota, tím
-     * později se místo odemkne k přepisu, takže přechod vzniká průběhem difuze.
-     *
-     * Změřeno na stejné fotce a stejném zadání (22. 9. 2026): sloupců, kde je
-     * svislý skok přes šev víc než 4× vyšší než okolní textura, kleslo
-     * **ze 118 na 30** a nejsilnější skok z 34,9 na 22,0.
-     */
-    @Test fun `model jde do sampleru pres mekkou masku`() {
-        val wf = rozsir(setOf(cz.promptlab.h3video.data.Smer.DOLU))
-        val zdroj = wf.inputs(InpaintBuilder.N_SAMPLER).getJSONArray("model").getString(0)
-        assertEquals("DifferentialDiffusion", wf.getJSONObject(zdroj).getString("class_type"))
-        // A ta měkká maska musí viset na cache modelu, ne naopak.
-        assertEquals("QwenImage21Cache", wf.getJSONObject(
-            wf.inputs(zdroj).getJSONArray("model").getString(0)).getString("class_type"))
-        // Náběh 160 px měřením nic nepřinesl (30 -> 28), zůstává 64.
-        assertEquals(64, wf.inputs(InpaintBuilder.N_VYREZ).getInt("mask_blend_pixels"))
     }
 }

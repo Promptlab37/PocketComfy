@@ -256,18 +256,15 @@ object InpaintBuilder {
     fun zadaniRozsireni(prompt: String, smery: Set<Smer>): String {
         val text = prompt.trim()
         val kam = smeryVetou(smery)
-        // Bez zadání se model řídí jen tím, co na fotce vidí — má ji celou
-        // jako <image2>, takže scénu dotáhne sám. Věta ho k tomu musí
-        // vyloženě vyzvat, jinak je v pokusu nechat všechno být.
+        // Oficiální příručka Qwenu 2.1: „When the operation extends the canvas
+        // outward, name it as outpainting explicitly.“
         val co = if (text.isEmpty())
-            " Work out what continues there from what the photo already shows."
-        else " Fill the new area with: $text."
-        return "Extend the picture in <image1> $kam and paint the empty area that " +
-            "was added there.$co " +
-            "Continue the subject, the perspective, the lighting and the background " +
-            "across the seam so the added part looks like it was always in the frame: " +
-            "bodies, edges, horizon and floor must line up exactly where they meet. " +
-            "Match the grain, focus and colour of the original."
+            " Work out what continues there from what the picture already shows."
+        else " The newly added area shows: $text."
+        return "Outpainting: extend the canvas of <image1> $kam. Keep the whole original " +
+            "picture exactly as it is, same size and position, and paint the newly added " +
+            "area so the scene continues naturally: subject, perspective, lighting and " +
+            "background carry on across the edge.$co"
     }
 
     /**
@@ -330,6 +327,17 @@ object InpaintBuilder {
      * protože jeho změkčení je Pythonovská smyčka přes každý pixel) a výřez
      * dostane masku už na vstupu — takže se na ni `mask_expand_pixels`
      * i `mask_blend_pixels` normálně uplatní.
+     *
+     * ### 4.95: celý obraz v novém poměru, bez masky a bez vlepení
+     *
+     * Qwen 2.1 rozšíření (扩图) podle své příručky dělá jako nový obraz
+     * v novém poměru stran s fotkou jako předlohou — ne jako inpaint do
+     * zamčené fotky. Předloha (fotka) mu neříká, KDE na plátně leží, takže
+     * postavu nakreslil přes celé plátno znovu a vlepená fotka ji pak
+     * zdvojila (ověřeno 29. 9. 2026: „dolů a doleva“ = dvě postavy, „dolů“ =
+     * ruce dvakrát nad sebou). Předloha se šedým nebo protaženým okrajem
+     * nepomůže — model ho věrně překreslí. Výřez teď určuje jen velikost
+     * a zmenšení velkých fotek; maska a přesah se už neuplatní.
      */
     fun buildRozsireni(
         template: String, scene: InpaintScene, seed: Long, images: List<String>,
