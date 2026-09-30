@@ -4936,10 +4936,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Storyboard + scénář: text scénáře. Plán platí dál, dokud se nepřečte znovu. */
     fun setSbScenar(text: String) = updateSbFilm {
-        // Nově vložený scénář (prázdné pole → text) předvyplní plátno podle „Formát: 9:16“; pak už ho řídí uživatel.
-        val pomer = if (it.scenar.isBlank() && text.isNotBlank())
-            cz.promptlab.h3video.data.SbScenar.rozeber(text)?.pomer ?: it.pomer else it.pomer
-        it.copy(scenar = text, pomer = pomer, zadaniUseku = if (pomer != it.pomer) emptyList() else it.zadaniUseku)
+        // Plátno řídí jen uživatel (5.29): „Formát: 9:16“ ve scénáři ho dřív při každém
+        // novém vložení přepnul na výšku, i když měl uživatel nastaveno na šířku.
+        it.copy(scenar = text)
     }
 
     /** Scénář ze souboru .txt / .md / .docx / .pdf (5.20) — text jde do pole, jde upravit. */
@@ -4950,8 +4949,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             if (text.isNullOrBlank()) {
                 android.widget.Toast.makeText(getApplication(), t("V souboru není text."), android.widget.Toast.LENGTH_SHORT).show()
             } else {
-                // Soubor nahrazuje celý scénář — plátno podle jeho formátu jako u nového vložení.
-                updateSbFilm { it.copy(scenar = "") }
                 setSbScenar(text)
             }
         }

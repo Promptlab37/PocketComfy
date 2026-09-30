@@ -51,7 +51,7 @@ class SbScenarDarMudrcuTest {
         assertTrue(h, h.contains("Della — mladá žena; má krátké hnědé kudrliny"))
         assertFalse(h, h.contains("dlouhé hnědé vlasy"))
         assertFalse(h.contains("Anna"))
-        // Plátno: nově vložený scénář předvyplní 9:16, příprava ho už nemění (VM) — tady jen formát.
+        // Formát ve scénáři se přečte, ale plátno řídí jen uživatel (5.29).
         assertEquals(LongMmPomer.NAVYSKU, SbScenar.pomerZ("9:16"))
     }
 }
