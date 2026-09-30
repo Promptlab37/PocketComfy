@@ -31,9 +31,9 @@ import org.json.JSONObject
  * (`_segment_step_prompt_media`). Ověřeno během 2×5 s 28. 9. 2026.
  *
  * Dva modely ([SbFilmScene.model]):
- *  - **Turbo** — autorova sestava balíku (jako Turbo na kartě Long MiniMax):
- *    `fl2va` + ref2v Turbo LoRA 0,8, `euler`/`simple`, 8 kroků, bez shiftu
- *    (autor má `MiniMaxH3SigmaShift` v předloze vypnutý).
+ *  - **Turbo** — od 5.46 oficiální ref2v 8step v1.0 (lightx2v) podle specifikace
+ *    autora LoRA: síla 1,0, shift 12/3, `euler`/`simple`, 8 kroků (uživatel:
+ *    „dej to na 8 kroků“). Dřív Comfy-Org 4step v0.1 na 0,8 se 7 kroky bez shiftu.
  *  - **Kvalita** — plný model bez LoRA jako profil Kvalita v All in One:
  *    `MiniMaxH3SigmaShift` 12,191111/3, `euler`/`beta`, kroky 10–30.
  *    Plán kroků i nastavení úseků berou model ZA shiftem (jako uzel 9
@@ -97,8 +97,10 @@ object SbFilmBuilder {
     const val CLIP = "qwen3vl_32b_minimax_h3_nvfp4_awq.safetensors"
     const val VAE = "minimax_h3_video_vae_fp16.safetensors"
     const val VAE_ZVUK = "minimax_h3_audio_vae_fp32.safetensors"
-    const val LORA = "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors"
-    const val LORA_SILA = 0.8
+    const val LORA = "minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors"
+    const val LORA_SILA = 1.0
+    /** Shift obrazu Turbo LoRA podle lightx2v (HF disc. 51). */
+    const val SHIFT_VIDEO_TURBO = 12.0
     const val KROKU = SbFilmScene.TURBO_KROKY
     const val SHIFT_VIDEO = 12.191111
     const val SHIFT_AUDIO = 3.0
@@ -150,7 +152,10 @@ object SbFilmBuilder {
                 wf.put(N_LORA, uzel("MiniMaxH3TurboLoRA", "Turbo LoRA", JSONObject()
                     .put("model", odkaz(N_POZORNOST)).put("lora_name", LORA)
                     .put("strength", LORA_SILA).put("low_vram", false)))
-                N_LORA to N_LORA
+                wf.put(N_SHIFT, uzel("MiniMaxH3SigmaShift", "Shift", JSONObject()
+                    .put("model", odkaz(N_LORA))
+                    .put("shift_video", SHIFT_VIDEO_TURBO).put("shift_audio", shiftZvuk)))
+                N_SHIFT to N_SHIFT
             }
             SbModel.KVALITA -> {
                 wf.put(N_SHIFT, uzel("MiniMaxH3SigmaShift", "Shift", JSONObject()

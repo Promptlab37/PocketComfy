@@ -1,5 +1,6 @@
 package cz.promptlab.h3video.ui
 
+import androidx.compose.foundation.layout.offset
 import cz.promptlab.h3video.data.t
 
 import android.Manifest
@@ -344,7 +345,9 @@ private fun SpeakerRow(
                 if (speaker.image != null) Box(
                     Modifier
                         .align(Alignment.TopEnd)
-                        .size(40.dp)
+                        // 48 dp dotyková plocha, viditelný křížek zůstává na místě (audit 30. 9. 2026).
+                        .offset(x = 4.dp, y = (-4).dp)
+                        .size(48.dp)
                         .clickable { vm.clearSpeakerImage(speaker.key) },
                     contentAlignment = Alignment.Center
                 ) {
@@ -369,16 +372,7 @@ private fun SpeakerRow(
                         modifier = Modifier.weight(1f)
                     )
                     if (canRemove) {
-                        Box(
-                            Modifier
-                                .size(28.dp)
-                                .clip(RoundedCornerShape(50))
-                                .background(Surface2)
-                                .clickable { vm.removeSpeaker(speaker.key) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Close, t("Odebrat postavu"), Modifier.size(14.dp), TextMid)
-                        }
+                        KrizekOdebrat(onClick = { vm.removeSpeaker(speaker.key) }, popis = t("Odebrat postavu"), modifier = Modifier, velikost = 28.dp, ikona = 14.dp, tvar = RoundedCornerShape(50), pozadi = Surface2, barva = TextMid)
                     }
                 }
                 Spacer(Modifier.height(8.dp))
@@ -513,16 +507,7 @@ private fun LineCard(
                 modifier = Modifier.weight(1f)
             )
             if (canRemove) {
-                Box(
-                    Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(Surface2)
-                        .clickable { vm.removeLine(line.key) },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Close, t("Odebrat repliku"), Modifier.size(14.dp), TextMid)
-                }
+                KrizekOdebrat(onClick = { vm.removeLine(line.key) }, popis = t("Odebrat repliku"), modifier = Modifier, velikost = 28.dp, ikona = 14.dp, tvar = RoundedCornerShape(50), pozadi = Surface2, barva = TextMid)
             }
         }
 

@@ -462,17 +462,24 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // Vsechno, co se nemeni pri kazdem behu, je sbalene do jedne sekce.
         // Hlavni obrazovka tak zustava: vstupy, zadani, Generovat.
         // Kvalita a rychlost videa: stav jedním pohledem, nastavuje se na jednom místě (5.39).
-        if (mode in setOf(Mode.ALLINONE, Mode.TALK, Mode.LONG, Mode.TIMELINE, Mode.THREESTEP, Mode.LONGMM, Mode.SBFILM)) {
-            val sb by vm.sbFilm.collectAsStateWithLifecycle()
+        // Upravit video: přemalování a výměna postavy přes H3 jedou na grafu All in One
+        // (Sage, TeaCache i shift), Podle předlohy jen na Sage; Zadání a SCAIL nic z toho.
+        val up = vm.uprava.collectAsStateWithLifecycle().value
+        val upAio = mode == Mode.UPRAVA_VIDEA && (up.rezim == cz.promptlab.h3video.data.UpravaRezim.PREMALOVAT ||
+            (up.rezim == cz.promptlab.h3video.data.UpravaRezim.POSTAVA && up.motorPostavy == cz.promptlab.h3video.data.PostavaMotor.H3))
+        val upPredloha = mode == Mode.UPRAVA_VIDEA && up.rezim == cz.promptlab.h3video.data.UpravaRezim.PREDLOHA
+        if (mode in setOf(Mode.ALLINONE, Mode.TALK, Mode.LONG, Mode.TIMELINE, Mode.THREESTEP, Mode.LONGMM, Mode.SBFILM) ||
+            upAio || upPredloha
+        ) {
             val lm by vm.longMm.collectAsStateWithLifecycle()
             KvalitaVideaRadek(
                 vm, params,
-                // TeaCache dosazují jen All in One a Dialogy (audit 30. 9. 2026).
-                sTeaCache = mode == Mode.ALLINONE || mode == Mode.TALK,
-                // Shift zvuku: Film jen mimo Turbo, Long MM jen u dvou průchodů.
+                // TeaCache dosazují jen grafy All in One (audit 30. 9. 2026).
+                sTeaCache = mode == Mode.ALLINONE || mode == Mode.TALK || upAio,
+                // Shift zvuku: Film ve všech modelech (Turbo má shift od 5.46), Long MM jen u dvou průchodů.
                 sShiftem = when (mode) {
-                    Mode.SBFILM -> sb.model != cz.promptlab.h3video.data.SbModel.TURBO
                     Mode.LONGMM -> lm.dvaPruchody
+                    Mode.UPRAVA_VIDEA -> upAio
                     else -> true
                 },
             )
@@ -1282,15 +1289,7 @@ private fun LoraCard(vm: MainViewModel, params: cz.promptlab.h3video.data.GenPar
                             colors = switchColors()
                         )
                         Spacer(Modifier.size(4.dp))
-                        Box(
-                            Modifier
-                                .size(34.dp)
-                                .clip(RoundedCornerShape(50))
-                                .clickable { vm.removeLora(l.name) },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextLow)
-                        }
+                        KrizekOdebrat(onClick = { vm.removeLora(l.name) }, popis = t("Odebrat"), modifier = Modifier, velikost = 34.dp, ikona = 16.dp, tvar = RoundedCornerShape(50), barva = TextLow)
                     }
                     AnimatedVisibility(l.enabled) {
                         Slider(
@@ -1689,7 +1688,7 @@ fun DarkTextField(
             },
             trailingIcon = if (onClear != null && value.isNotEmpty()) {
                 {
-                    IconButton(onClick = onClear, modifier = Modifier.size(44.dp)) {
+                    IconButton(onClick = onClear) {
                         Icon(
                             Icons.Default.Close,
                             contentDescription = t("Vymazat text"),

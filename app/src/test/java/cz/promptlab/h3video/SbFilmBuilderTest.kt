@@ -140,18 +140,21 @@ class SbFilmBuilderTest {
 
     private fun g(s: SbFilmScene) = SbFilmBuilder.buildFilm(s, useky, zadani, listOf("sb.png", "p1.png"), "16:9", 7L)
 
-    /** 5.07: Turbo = autorova sestava beze změny, 7 kroků jako předlohy SatoDive (5.41), žádná volba kroků. */
+    /** 5.46: Turbo = ref2v 8step v1.0 (lightx2v) podle specifikace: 8 kroků, síla 1,0, shift 12/3. */
     @Test
-    fun `turbo je sestava autora se 7 kroky`() {
+    fun `turbo je ref2v 8step s osmi kroky a shiftem`() {
         val t = g(scene.copy(model = SbModel.TURBO, krokyKvalita = 25))
         odkazyPlati(t)
-        assertEquals(7, t.vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+        assertEquals(8, t.vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
         assertEquals("simple", t.vstupy(SbFilmBuilder.N_KROKY).getString("scheduler"))
-        assertTrue(t.has(SbFilmBuilder.N_LORA))
-        assertFalse(t.has(SbFilmBuilder.N_SHIFT))
-        assertEquals(0.8, t.vstupy(SbFilmBuilder.N_LORA).getDouble("strength"), 1e-9)
-        assertEquals(SbFilmBuilder.N_LORA, t.vstupy(SbFilmBuilder.N_KROKY).getJSONArray("model").getString(0))
-        assertEquals(SbFilmBuilder.N_LORA, t.vstupy(SbFilmBuilder.N_SETUP).getJSONArray("model").getString(0))
+        assertEquals("minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors",
+            t.vstupy(SbFilmBuilder.N_LORA).getString("lora_name"))
+        assertEquals(1.0, t.vstupy(SbFilmBuilder.N_LORA).getDouble("strength"), 1e-9)
+        assertEquals(12.0, t.vstupy(SbFilmBuilder.N_SHIFT).getDouble("shift_video"), 1e-9)
+        assertEquals(3.0, t.vstupy(SbFilmBuilder.N_SHIFT).getDouble("shift_audio"), 1e-9)
+        assertEquals(SbFilmBuilder.N_LORA, t.vstupy(SbFilmBuilder.N_SHIFT).getJSONArray("model").getString(0))
+        assertEquals(SbFilmBuilder.N_SHIFT, t.vstupy(SbFilmBuilder.N_KROKY).getJSONArray("model").getString(0))
+        assertEquals(SbFilmBuilder.N_SHIFT, t.vstupy(SbFilmBuilder.N_SETUP).getJSONArray("model").getString(0))
         assertEquals(graf().toString(), t.toString())
         File(File("build/sbfilm-modely").also { it.mkdirs() }, "film_turbo.json").writeText(t.toString(2))
     }
@@ -178,7 +181,7 @@ class SbFilmBuilderTest {
         // Mimo rozsah 10–30 se hodnota srovná.
         assertEquals(30, scene.copy(model = SbModel.KVALITA, krokyKvalita = 99).kroky)
         assertEquals(10, scene.copy(model = SbModel.KVALITA, krokyKvalita = 4).kroky)
-        assertEquals(7, scene.copy(model = SbModel.TURBO, krokyKvalita = 20).kroky)
+        assertEquals(8, scene.copy(model = SbModel.TURBO, krokyKvalita = 20).kroky)
         assertEquals(SbModel.TURBO, SbFilmScene().model)
         assertEquals(10, SbFilmScene().krokyKvalita)
         assertEquals(Stage.MODELS, SbFilmBuilder.stageForClass("MiniMaxH3SigmaShift"))

@@ -288,16 +288,7 @@ private fun RefsRada(vm: MainViewModel, plne: List<cz.promptlab.h3video.data.Aio
                         contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize(),
                     )
                 }
-                Box(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                        .size(22.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(Surface2)
-                        .clickable { vm.clearUpravaRef(slot.key) },
-                    contentAlignment = Alignment.Center,
-                ) { Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(14.dp), TextMid) }
+                KrizekOdebrat(onClick = { vm.clearUpravaRef(slot.key) }, popis = t("Odebrat"), modifier = Modifier.align(Alignment.TopEnd).padding(4.dp), velikost = 22.dp, ikona = 14.dp, tvar = RoundedCornerShape(6.dp), pozadi = Surface2, barva = TextMid, roh = Alignment.TopEnd)
             }
         }
         if (lzePridat) {
@@ -409,14 +400,7 @@ internal fun VideoVyber(
                 modifier = Modifier.weight(1f),
             )
             if (video != null) {
-                Icon(
-                    Icons.Default.Close, t("Odebrat"),
-                    Modifier
-                        .size(20.dp)
-                        .clip(RoundedCornerShape(6.dp))
-                        .clickable { onClear() },
-                    TextMid
-                )
+                KrizekOdebrat(onClick = onClear, popis = t("Odebrat"), velikost = 20.dp, ikona = 20.dp, tvar = RoundedCornerShape(6.dp), barva = TextMid)
             }
         }
         if (chyba != null) {
@@ -448,16 +432,7 @@ private fun UpravaFotka(
                 nahled.asImageBitmap(), popisek,
                 contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize(),
             )
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(6.dp)
-                    .size(28.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Surface2)
-                    .clickable { onClear() },
-                contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextMid) }
+            KrizekOdebrat(onClick = onClear, popis = t("Odebrat"), modifier = Modifier.align(Alignment.TopEnd).padding(6.dp), velikost = 28.dp, ikona = 16.dp, tvar = RoundedCornerShape(8.dp), pozadi = Surface2, barva = TextMid, roh = Alignment.TopEnd)
         } else {
             Icon(
                 Icons.Default.AddPhotoAlternate, t("Vybrat fotku"),

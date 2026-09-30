@@ -594,18 +594,7 @@ private fun ObrazekSlot(
                     modifier = Modifier.fillMaxSize(),
                     contentScale = if (celyObrazek) ContentScale.Fit else ContentScale.Crop,
                 )
-                Box(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .size(26.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(Surface2)
-                        .clickable(onClick = onClear),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Close, t("Odebrat obrázek"), Modifier.size(15.dp), TextMid)
-                }
+                KrizekOdebrat(onClick = { onClear() }, popis = t("Odebrat obrázek"), modifier = Modifier.align(Alignment.TopEnd).padding(6.dp), velikost = 26.dp, ikona = 15.dp, tvar = RoundedCornerShape(50), pozadi = Surface2, barva = TextMid, roh = Alignment.TopEnd)
             } else {
                 Icon(
                     Icons.Default.AddPhotoAlternate, popisek,
@@ -622,7 +611,7 @@ private fun ObrazekSlot(
             )
             if (onRemove != null) {
                 // Ikona s dotykovou plochou místo drobného textu.
-                androidx.compose.material3.IconButton(onClick = onRemove, modifier = Modifier.size(36.dp)) {
+                androidx.compose.material3.IconButton(onClick = onRemove) {
                     Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextLow)
                 }
             }
@@ -670,15 +659,7 @@ private fun VideoRadek(
             }
         }
         if (soubor != null) {
-            Box(
-                Modifier
-                    .size(30.dp)
-                    .clip(RoundedCornerShape(50))
-                    .clickable(onClick = onClear),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Close, t("Odebrat video"), Modifier.size(17.dp), TextMid)
-            }
+            KrizekOdebrat(onClick = { onClear() }, popis = t("Odebrat video"), modifier = Modifier, velikost = 30.dp, ikona = 17.dp, tvar = RoundedCornerShape(50), barva = TextMid)
         }
     }
 }

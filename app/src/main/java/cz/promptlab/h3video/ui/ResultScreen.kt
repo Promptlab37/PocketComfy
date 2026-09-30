@@ -462,18 +462,7 @@ fun ResultScreen(
     }
 
     // Křížek v rohu: zavřít má jít hned, ne až po odrolování na konec.
-    Box(
-        Modifier
-            .align(Alignment.TopEnd)
-            .padding(top = 8.dp, end = 8.dp)
-            .size(44.dp)
-            .clip(RoundedCornerShape(50))
-            .background(Surface1.copy(alpha = 0.85f))
-            .clickable { onClose() },
-        contentAlignment = Alignment.Center
-    ) {
-        Icon(Icons.Default.Close, t("Zavřít"), Modifier.size(24.dp), TextHi)
-    }
+    KrizekOdebrat(onClick = { onClose() }, popis = t("Zavřít"), modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp), velikost = 44.dp, ikona = 24.dp, tvar = RoundedCornerShape(50), pozadi = Surface1.copy(alpha = 0.85f), barva = TextHi, roh = Alignment.TopEnd)
     }
 }
 

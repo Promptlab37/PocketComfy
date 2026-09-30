@@ -152,6 +152,22 @@ class AppSettings(ctx: Context) {
         get() = sp.getString("activeLabel", "")!!
         set(v) = sp.edit().putString("activeLabel", v).apply()
 
+    /** Názvy úloh čekajících ve frontě — po zániku procesu se podle nich hlásí ztráta. */
+    var cekajiciFronta: String
+        get() = sp.getString("cekajiciFronta", "")!!
+        set(v) = sp.edit().putString("cekajiciFronta", v).apply()
+
+    /** Zadání, seed a karta rozdělané úlohy — galerie je po navázání nemá odkud vzít. */
+    var activePrompt: String
+        get() = sp.getString("activePrompt", "")!!
+        set(v) = sp.edit().putString("activePrompt", v).apply()
+    var activeSeed: Long
+        get() = sp.getLong("activeSeed", 0L)
+        set(v) = sp.edit().putLong("activeSeed", v).apply()
+    var activeMode: String
+        get() = sp.getString("activeMode", "")!!
+        set(v) = sp.edit().putString("activeMode", v).apply()
+
     /**
      * Běží rozdělaná úloha z karty All in One? Ta má vlastní čísla uzlů, takže
      * bez téhle informace by ukazatel průběhu po restartu appky hlásil fáze

@@ -557,6 +557,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     runCatching { ComfyClient(settings.serverUrl).isAlive() }.getOrDefault(false)
                 }
                 if (alive) {
+                    // Server naskočil po výpadku a appka má zapsané rozdělané generování →
+                    // navázat hned, ne až po dalším studeném startu (audit 30. 9. 2026).
+                    if (offlineSince != 0L && settings.activePromptId != null &&
+                        GenerationEngine.state.value !is GenState.Running
+                    ) runCatching { GenerationEngine.resumeIfPending() }
                     offlineSince = 0L
                     _serverStatus.value = ServerStatus(ServerState.ONLINE)
                     // Balík se ověřuje jen když o něm nic nevíme (start appky,
@@ -1186,8 +1191,44 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             return
         }
+        if (cekaVeFronte) {
+            viewModelScope.launch {
+                val snimek = withContext(Dispatchers.IO) { snimekVstupu() }
+                RunQueue.add(seSnimkem(makeRunner(p), snimek))
+            }
+            return
+        }
         RunQueue.add(makeRunner(p))
     }
+
+    /**
+     * Snímek vstupních souborů všech karet pro běh, který bude čekat ve frontě
+     * (audit 30. 9. 2026). Pevné odkazy nic nekopírují: výměna fotky ve slotu
+     * zapíše nový soubor, odkaz dál drží ten zadaný. Výsledky a šablony se vynechají.
+     */
+    private fun snimekVstupu(): GenerationEngine.SnimekVstupu? = runCatching {
+        val koren = getApplication<Application>().filesDir
+        val cil = File(frontaDir(), "snimek_" + System.nanoTime())
+        val mapa = HashMap<String, File>()
+        koren.walkTopDown()
+            .onEnter { it == koren || it.name !in SNIMEK_VYNECHAT }
+            .filter { it.isFile && !it.name.endsWith(".part") }
+            .forEach { f ->
+                val n = File(cil, f.relativeTo(koren).path)
+                n.parentFile?.mkdirs()
+                if (runCatching { android.system.Os.link(f.absolutePath, n.absolutePath) }.isSuccess) mapa[f.absolutePath] = n
+            }
+        GenerationEngine.SnimekVstupu(cil, mapa)
+    }.getOrNull()
+
+    private fun seSnimkem(run: QueuedRun, snimek: GenerationEngine.SnimekVstupu?): QueuedRun =
+        if (snimek == null) run else run.copy(spust = {
+            GenerationEngine.pouzijSnimek(snimek)
+            try { run.spust() } finally { GenerationEngine.pouzijSnimek(null) }
+        })
+
+    /** Adresáře s výsledky a stahovanými šablonami — do snímku vstupů nepatří. */
+    private val SNIMEK_VYNECHAT = setOf("videos", "templates", "nahledy3d")
 
     /** Karty, jejichž vstupní soubory se musí pro frontu zkopírovat. */
     private val KARTY_SE_SOUBORY = setOf(Mode.UPRAVA_VIDEA, Mode.VYLEPSENI_VIDEA, Mode.ANIMATE, Mode.DANCE)
@@ -1236,6 +1277,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             val mez = System.currentTimeMillis() - 2 * 24 * 3600 * 1000L
             frontaDir().listFiles()?.filter { it.lastModified() < mez }?.forEach { it.delete() }
+            // Snímky vstupů bez čekající fronty (proces mezitím zanikl) pryč.
+            if (RunQueue.queue.value.isEmpty() && !GenerationEngine.isRunning) {
+                frontaDir().listFiles { f -> f.isDirectory && f.name.startsWith("snimek_") }
+                    ?.forEach { runCatching { it.deleteRecursively() } }
+            }
         }
     }
 
@@ -5569,6 +5615,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (cz.promptlab.h3video.data.sbFilmProblem(s) != null) return
         val p = _params.value
         settings.save(p)
+        if (GenerationEngine.isRunning || RunQueue.queue.value.isNotEmpty()) {
+            viewModelScope.launch {
+                val snimek = withContext(Dispatchers.IO) { snimekVstupu() }
+                RunQueue.add(seSnimkem(makeRunner(p), snimek))
+            }
+            return
+        }
         RunQueue.add(makeRunner(p))
     }
 

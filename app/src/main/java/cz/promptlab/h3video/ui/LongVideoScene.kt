@@ -315,18 +315,7 @@ private fun RefDlazdice(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().aspectRatio(1f),
             )
-            Box(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(3.dp)
-                    .size(20.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(Color.Black.copy(alpha = .55f))
-                    .clickable { onRemove() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(Icons.Default.Close, null, Modifier.size(12.dp), TextMid)
-            }
+            KrizekOdebrat(onClick = { onRemove() }, popis = t("Odebrat"), modifier = Modifier.align(Alignment.TopEnd).padding(3.dp), velikost = 20.dp, ikona = 12.dp, tvar = RoundedCornerShape(6.dp), pozadi = Color.Black.copy(alpha = .55f), barva = TextMid, roh = Alignment.TopEnd)
         } else {
             Icon(
                 Icons.Default.AddPhotoAlternate, null,

@@ -148,11 +148,15 @@ object H3RefWriteBuilder {
             "panel says'. Copy a printed caption or spoken line word for word. Keep the panel " +
             "order. Ignore only borders, panel numbers and timecodes."
 
+    /**
+     * Jen osoba sama (5.46): dřív „any distinguishing object it carries“ — z fotky
+     * lékařky s žebříkem se žebřík dostal do popisu postavy a model ho nesl do
+     * každého záběru místo stolu ze storyboardu (film uživatele 30. 9. 2026).
+     */
     const val OTAZKA_POSTAVA =
-        "Describe the main subject so it can be recognised again in another shot: who or " +
-            "what it is, age and build if it is a person, hair, clothing and their colours, " +
-            "and any distinguishing object it carries. State only what is visible. Answer in " +
-            "two or three sentences."
+        "Describe only the person so they can be recognised again in another shot: gender, " +
+            "age and build, face, hair, and the clothing they wear with its colours. Describe " +
+            "the person alone, as if cut out of the photo. Answer in two or three sentences."
 
     /**
      * @param zadani co chce uživatel, klidně česky — model píše anglicky

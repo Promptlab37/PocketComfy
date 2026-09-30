@@ -699,9 +699,9 @@ data class SbFilmScene(
 
         /**
          * Turbo: sestava autora balíku, kroky se nemění (5.06 je nabízel — chyba).
-         * 7 kroků jako v předlohách SatoDive (složka Workflows); dřív tu bylo 8.
+         * 8 kroků podle specifikace ref2v 8step v1.0 (lightx2v), od 5.46; dřív 7 podle předloh SatoDive.
          */
-        const val TURBO_KROKY = 7
+        const val TURBO_KROKY = 8
         /** 3 + 2: TaoMate je tříkroková destilace, kroky jsou součást receptu. */
         const val TRIPLUSDVA_KROKY = 3
         /** Plný model: 10 kroků uživatel ověřil (lepší než Turbo), strop jen prodlužuje čas. */
@@ -1244,6 +1244,10 @@ object SbFilmPrepis {
             sb.append(" ").append(jmenaFotek.mapIndexed { i, j -> "<Picture ${prvniPostava + i}> is $j" }.joinToString(", "))
             sb.append(": define each of them in subject_definitions as a <Subject K> with the face, hair, body and ")
             sb.append("clothing from their picture, and keep them identical in every shot.")
+            // Z fotky jen osoba (5.46): prostředí, rekvizity a póza fotky do filmu nepatří
+            // (lékařka nesla žebřík z fotky a stála u cihlové zdi, film 30. 9. 2026).
+            if (seStoryboardem) sb.append(" Their pictures give only the person; the setting, props, poses and ")
+                .append("framing of every shot come from the storyboard in <Picture 1>.")
         } else if (pocetObrazku >= prvniPostava) {
             sb.append(" ").append((prvniPostava..pocetObrazku).joinToString(", ") { "<Picture $it>" })
             sb.append(" show the characters: define each one in subject_definitions as a <Subject K> ")

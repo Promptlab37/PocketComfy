@@ -114,5 +114,11 @@ object RunQueue {
     fun remove(id: Long) = jadro.remove(id)
 
     /** Zapne hlídač — volá se při startu aplikace, ať běží od první chvíle. */
-    fun init() { jadro }
+    fun init() {
+        // Fronta žije jen v procesu; když proces zanikl s čekajícími úlohami,
+        // říct to (audit 30. 9. 2026) — jinak by se tiše ztratily.
+        GenerationEngine.nahlasZtracenouFrontu()
+        jadro
+        scope.launch { jadro.queue.collect { q -> GenerationEngine.zapisFrontu(q.map { it.title }) } }
+    }
 }

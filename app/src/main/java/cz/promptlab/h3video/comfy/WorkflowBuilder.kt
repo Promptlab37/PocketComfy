@@ -138,8 +138,10 @@ object WorkflowBuilder {
         // Přeskakuje kroky, jejichž vstup se skoro nezměnil. Hodnoty jsou
         // doporučené autorem uzlu (thresh 0.15, start 2, end -2); total_steps
         // musí sedět na skutečný počet kroků běhu.
+        // Časová osa vzorkuje v LSIMinimaxTimelineRender přímo z N_SPECTRUM — TeaCache
+        // by visela mimo řetěz, proto ji karta nenabízí a graf ji nevkládá (audit 30. 9. 2026).
         var modelPredSamplerem = N_SPECTRUM
-        if (p.teaCache) {
+        if (p.teaCache && timelineData.isBlank()) {
             wf.put(
                 N_TEACACHE, JSONObject()
                     .put(

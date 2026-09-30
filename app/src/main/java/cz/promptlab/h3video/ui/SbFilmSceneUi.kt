@@ -322,12 +322,7 @@ private fun StoryboardPole(
         if (nahled != null) {
             // Celá mřížka bez ořezu.
             Image(nahled.asImageBitmap(), t("Storyboard"), Modifier.fillMaxSize(), contentScale = ContentScale.Fit)
-            Box(
-                Modifier.align(Alignment.TopEnd).padding(6.dp).size(28.dp)
-                    .clip(RoundedCornerShape(50)).background(Color.Black.copy(alpha = .55f))
-                    .clickable(onClick = onClear),
-                contentAlignment = Alignment.Center,
-            ) { Icon(Icons.Default.Close, t("Odebrat obrázek"), Modifier.size(15.dp), TextMid) }
+            KrizekOdebrat(onClick = onClear, popis = t("Odebrat obrázek"), modifier = Modifier.align(Alignment.TopEnd).padding(6.dp), velikost = 28.dp, ikona = 15.dp, pozadi = Color.Black.copy(alpha = .55f), barva = TextMid, roh = Alignment.TopEnd)
         } else {
             Icon(Icons.Default.AddPhotoAlternate, t("Storyboard"), Modifier.size(28.dp), TextMid)
         }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -572,4 +573,45 @@ fun TextVesel(
             else hotovo = true
         },
     )
+}
+
+/**
+ * Křížek „Odebrat“ (audit 30. 9. 2026): vzhled zůstává malý, ale dotyková plocha
+ * má vždy aspoň 48 dp — dřív šlo na fotce snadno ťuknout vedle a otevřít výběr.
+ * [roh] = roh, ke kterému je křížek přišpendlený; plocha se k němu posune tak,
+ * aby viditelný křížek zůstal přesně na svém místě.
+ */
+@Composable
+fun KrizekOdebrat(
+    onClick: () -> Unit,
+    popis: String?,
+    modifier: Modifier = Modifier,
+    velikost: androidx.compose.ui.unit.Dp = 28.dp,
+    ikona: androidx.compose.ui.unit.Dp = 16.dp,
+    tvar: androidx.compose.ui.graphics.Shape = RoundedCornerShape(50),
+    pozadi: Color = Color.Transparent,
+    barva: Color = TextLow,
+    roh: Alignment? = null,
+) {
+    val plocha = maxOf(48.dp, velikost)
+    val navic = (plocha - velikost) / 2
+    val posun = when (roh) {
+        Alignment.TopEnd -> Modifier.offset(x = navic, y = -navic)
+        Alignment.TopStart -> Modifier.offset(x = -navic, y = -navic)
+        Alignment.BottomEnd -> Modifier.offset(x = navic, y = navic)
+        Alignment.BottomStart -> Modifier.offset(x = -navic, y = navic)
+        else -> Modifier
+    }
+    Box(
+        modifier
+            .then(posun)
+            .size(plocha)
+            .clip(RoundedCornerShape(50))
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(Modifier.size(velikost).clip(tvar).background(pozadi), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Close, popis, Modifier.size(ikona), barva)
+        }
+    }
 }

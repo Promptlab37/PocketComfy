@@ -155,16 +155,7 @@ fun FaceSwapSection(vm: MainViewModel) {
                                 if (scene.maskPainted) Ok else Cyan
                             )
                         }
-                        Box(
-                            Modifier
-                                .size(28.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(Surface2)
-                                .clickable { vm.clearSwap("target") },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextMid)
-                        }
+                        KrizekOdebrat(onClick = { vm.clearSwap("target") }, popis = t("Odebrat"), modifier = Modifier, velikost = 28.dp, ikona = 16.dp, tvar = RoundedCornerShape(8.dp), pozadi = Surface2, barva = TextMid, roh = Alignment.TopEnd)
                     }
                 } else {
                     Icon(
@@ -197,18 +188,7 @@ fun FaceSwapSection(vm: MainViewModel) {
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),
                 )
-                Box(
-                    Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(6.dp)
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Surface2)
-                        .clickable { vm.clearSwap("face") },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(Icons.Default.Close, t("Odebrat"), Modifier.size(16.dp), TextMid)
-                }
+                KrizekOdebrat(onClick = { vm.clearSwap("face") }, popis = t("Odebrat"), modifier = Modifier.align(Alignment.TopEnd).padding(6.dp), velikost = 28.dp, ikona = 16.dp, tvar = RoundedCornerShape(8.dp), pozadi = Surface2, barva = TextMid, roh = Alignment.TopEnd)
             } else {
                 Icon(
                     Icons.Default.Face, t("Vybrat tvář"),

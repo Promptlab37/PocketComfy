@@ -560,8 +560,16 @@ object Katalog {
             "models/loras", "Turbo LoRA 4step v1.2",
             "$HF/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_fl2v_turbo_4step_v1.2_768p_comfyui_bf16.safetensors"
         ),
+        "minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors" to Soubor(
+            "models/loras", "Turbo LoRA 4step v1.0",
+            "$HF/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_fl2v_turbo_4step_v1.0_768p_comfyui_bf16.safetensors"
+        ),
+        "minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors" to Soubor(
+            "models/loras", "Turbo LoRA 8step v1.0 (544p)",
+            "$HF/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_fl2v_turbo_8step_v1.0_comfyui_bf16.safetensors"
+        ),
         "minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors" to Soubor(
-            "models/loras", "Turbo LoRA ref2v 8step v1.0",
+            "models/loras", "Film ze storyboardu — Turbo (ref2v 8step v1.0)",
             "$HF/lightx2v/Minimax-h3-Turbo/resolve/main/minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors"
         ),
         "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors" to Soubor(

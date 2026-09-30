@@ -160,6 +160,32 @@ object GenerationEngine {
 
     private lateinit var app: Context
     private lateinit var settings: AppSettings
+
+    /**
+     * Snímek vstupních souborů pro běh, který čekal ve frontě (audit 30. 9. 2026):
+     * cesta → pevný odkaz pořízený při zařazení. Karty přepisují fotky na stejném
+     * místě, takže bez snímku by čekající běh nahrál až pozdější výběr.
+     */
+    class SnimekVstupu(val koren: File, val mapa: Map<String, File>)
+    @Volatile private var snimekProDalsi: SnimekVstupu? = null
+    @Volatile private var snimekBehu: SnimekVstupu? = null
+
+    internal fun zapisFrontu(nazvy: List<String>) {
+        if (::settings.isInitialized) settings.cekajiciFronta = nazvy.joinToString(", ")
+    }
+
+    internal fun nahlasZtracenouFrontu() {
+        if (!::settings.isInitialized) return
+        val z = settings.cekajiciFronta
+        if (z.isBlank()) return
+        settings.cekajiciFronta = ""
+        runCatching { GenerationService.notifyFailed(app, t("Appka byla mezitím ukončena, úlohy z fronty se ztratily: %s").format(z)) }
+    }
+
+    /** Nastaví snímek pro nejbližší [start] — volá ho běh z fronty těsně před startem. */
+    fun pouzijSnimek(s: SnimekVstupu?) { snimekProDalsi = s }
+
+    private fun zdroj(f: File): File = snimekBehu?.mapa?.get(f.absolutePath)?.takeIf { it.exists() } ?: f
     private lateinit var history: HistoryStore
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -635,6 +661,9 @@ object GenerationEngine {
         runCatching { GenerationService.start(app) }
             .onFailure { Log.w(TAG, "sluzbu na popredi se nepodarilo spustit", it) }
 
+        // Snímek patří jen tomuhle běhu; běh mimo frontu žádný nemá.
+        val snimek = snimekProDalsi.also { snimekProDalsi = null }
+        snimekBehu = snimek
         job = scope.launch {
             runCatching {
                 runGeneration(
@@ -648,6 +677,7 @@ object GenerationEngine {
             }
                 .onFailure { e ->
                     if (e is kotlinx.coroutines.CancellationException) throw e
+                    if (!kotlin.coroutines.coroutineContext.isActive) return@onFailure  // zrušený běh už stav nenastavuje (audit 30. 9. 2026)
                     Log.e(TAG, "generation failed", e)
                     fail((e as? ComfyException)?.userMessage ?: (e.message ?: t("Neznámá chyba")))
                 }
@@ -655,7 +685,17 @@ object GenerationEngine {
         // Ať job skončí jakkoli (hotovo, chyba, zrušení uprostřed blokujícího
         // volání), socket nesmí zůstat viset — jinak by jeho guard zablokoval
         // připojení příštího běhu a starý listener by mu sahal do stavu.
-        job?.invokeOnCompletion { closeSocket(); uvolniGrafikuPoBehu() }
+        // Jen vlastní socket: když mezitím začal nový běh, starý job mu spojení nezavírá.
+        val tentoJob = job
+        tentoJob?.invokeOnCompletion {
+            if (job === tentoJob) closeSocket()
+            uvolniGrafikuPoBehu()
+            // Soubory jsou nahrané na serveru — snímek už není potřeba.
+            if (snimek != null) {
+                if (snimekBehu === snimek) snimekBehu = null
+                runCatching { snimek.koren.deleteRecursively() }
+            }
+        }
         // Až PO vzniku jobu – publish() zahazuje stavy bez aktivního jobu
         // (ochrana proti vzkříšení po Zrušit) a před launch by úvodní stav
         // nepustil. Stav Running tak naskočí okamžitě, ne až s prvním hlášením
@@ -760,6 +800,7 @@ object GenerationEngine {
                 finishFromHistory(client, pid, null)
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) throw e
+                if (!kotlin.coroutines.coroutineContext.isActive) return@onFailure
                 fail((e as? ComfyException)?.userMessage ?: e.message ?: t("Nepodařilo se navázat na generování"))
             }
         }
@@ -829,6 +870,7 @@ object GenerationEngine {
             }.onFailure {
                 // Zrušení uživatelem není selhání (dřív „StandaloneCoroutine was cancelled“).
                 if (it is kotlinx.coroutines.CancellationException) throw it
+                if (!kotlin.coroutines.coroutineContext.isActive) return@onFailure
                 fail(
                     (it as? ComfyException)?.userMessage ?: it.message ?: t("Stažení se nepovedlo"),
                     canRetryDownload = true,
@@ -1131,7 +1173,7 @@ object GenerationEngine {
 
             // Upravit video → Podle předlohy: MiniMax H3 + Fun ControlNet z APK.
             cnScene != null ->
-                cz.promptlab.h3video.comfy.H3ControlNetBuilder.build(app, cnScene, seed, cnVideo)
+                cz.promptlab.h3video.comfy.H3ControlNetBuilder.build(app, cnScene, seed, cnVideo, sage = effective.sageAttention)
 
             // Upravit video → Vyměnit postavu: SCAIL-2 z APK.
             scailScene != null ->
@@ -1336,6 +1378,9 @@ object GenerationEngine {
 
         settings.activePromptId = promptId
         settings.activeLabel = label
+        settings.activePrompt = effective.prompt
+        settings.activeSeed = seed
+        settings.activeMode = effective.mode.name
 
         // --- 4. sledování (nesmí selhat kvůli síti)
         connectSocket(client, promptId)
@@ -1524,15 +1569,23 @@ object GenerationEngine {
         // ComfyUI nestartuje samo – na počítači nic neběží, dokud si to appka
         // neřekne. Požádáme spouštěče; když neodpoví ani ten, je vypnutý celý
         // počítač a čekat nemá smysl.
-        val launched = withContext(Dispatchers.IO) { client.requestServerStart() }
-        if (!launched) {
-            val launcherUp = withContext(Dispatchers.IO) { client.launcherAlive() }
-            if (!launcherUp) throw ComfyException(
+        // Krátký výpadek (Tailscale se po odemčení teprve připojuje) nesmí běh hned shodit:
+        // zkoušet ~4 minuty s rostoucím odstupem (audit 30. 9. 2026).
+        val zacatekPokusu = System.currentTimeMillis()
+        var pauza = 5_000L
+        while (true) {
+            if (withContext(Dispatchers.IO) { client.isAlive() }) return
+            val launched = withContext(Dispatchers.IO) { client.requestServerStart() }
+            if (launched || withContext(Dispatchers.IO) { client.launcherAlive() }) break
+            if (System.currentTimeMillis() - zacatekPokusu > 240_000) throw ComfyException(
                 "launcher offline",
                 t("Počítač neodpovídá.\n\n" +
                     "Zkontroluj, že je zapnutý a přihlášený a že máš v telefonu " +
                     "zapnutý Tailscale.\n\nAdresa: %s").format(settings.serverUrl)
             )
+            publish(Stage.STARTING, 0.004f, note = t("Počítač zatím neodpovídá, zkouším to znovu…"), offline = true)
+            delay(pauza)
+            pauza = (pauza * 2).coerceAtMost(30_000L)
         }
         publish(
             Stage.STARTING, 0.005f,
@@ -1595,7 +1648,8 @@ object GenerationEngine {
         return "ref_$hex.$ext"
     }
 
-    private suspend fun uploadMediaWithRetry(client: ComfyClient, file: File, progress: Float): String {
+    private suspend fun uploadMediaWithRetry(client: ComfyClient, puvodni: File, progress: Float): String {
+        val file = zdroj(puvodni)
         if (!file.exists() || file.length() == 0L) throw ComfyException(
             "media unreadable", t("Soubor se nepodařilo načíst. Zkus ho vybrat znovu.")
         )
@@ -1618,7 +1672,7 @@ object GenerationEngine {
 
     // Soubor je už narovnaný a zmenšený při výběru, takže stačí přečíst bajty.
     private suspend fun readImage(file: File): ByteArray? = withContext(Dispatchers.IO) {
-        runCatching { file.readBytes() }.getOrNull()?.takeIf { it.isNotEmpty() }
+        runCatching { zdroj(file).readBytes() }.getOrNull()?.takeIf { it.isNotEmpty() }
     }
 
     private suspend fun uploadWithRetry(
@@ -1961,7 +2015,8 @@ object GenerationEngine {
         val item = VideoItem(
             id = promptId,
             fileName = target.name,
-            prompt = params?.prompt.orEmpty(),
+            // Po navázání (params = null) ze zápisu při odeslání (audit 30. 9. 2026).
+            prompt = params?.prompt ?: settings.activePrompt,
             createdAt = createdAt,
             // U hudby je délka rovnou v zadání (seconds); u videa ji počítá
             // model po blocích, u obrázku je nula.
@@ -1982,10 +2037,10 @@ object GenerationEngine {
             // pro video — u Opravy tak u fotky 1792×2368 svítilo „480×864".
             resolution = (if (jenServer) null else skutecneRozmery(target, jenObrazek))
                 ?: params?.resolution?.label ?: label,
-            seed = params?.seed ?: 0L,
+            seed = params?.seed ?: settings.activeSeed,
             twoImages = false,
             inGallery = saved,
-            mode = params?.mode?.name.orEmpty(),
+            mode = params?.mode?.name ?: settings.activeMode,
             // Jen u čerstvého běhu — po navázání či opakovaném stažení by
             // startedAt měřil jen to čekání, ne skutečné generování.
             tookSeconds = if (params != null && startedAt > 0)
@@ -2061,11 +2116,12 @@ object GenerationEngine {
                 override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
                     // Spojení spadlo (uspaný telefon). To není chyba úlohy – jen se
                     // přestane chodit jemný průběh, /history to pohlídá.
-                    socket = null
+                    // Jen vlastní spojení — starý socket nesmí vynulovat odkaz na nový.
+                    if (socket === webSocket) socket = null
                 }
 
                 override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                    socket = null
+                    if (socket === webSocket) socket = null
                 }
             })
         }.getOrNull()

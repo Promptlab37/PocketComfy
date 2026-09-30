@@ -248,4 +248,6 @@ internal val SLOVNIK_D: Map<String, String> = mapOf(
     "Stahování bylo zrušeno." to "The download was cancelled.",
     "Stažení selhalo, zkus to znovu." to "The download failed, try again.",
     "Stahování se zaseklo, zkouším jinak." to "The download got stuck, trying another way.",
+    "Počítač zatím neodpovídá, zkouším to znovu…" to "The PC isn't responding yet, trying again…",
+    "Appka byla mezitím ukončena, úlohy z fronty se ztratily: %s" to "The app was closed in the meantime, the queued jobs were lost: %s",
 )

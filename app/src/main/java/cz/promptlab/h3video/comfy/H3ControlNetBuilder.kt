@@ -43,6 +43,8 @@ object H3ControlNetBuilder {
     const val N_SEED = "129"
     const val N_KROKY = "124"
     const val N_ULOZ = "911"
+    /** Plná přesnost pozornosti, když je Sage vypnutá (přebíjí --use-sage-attention serveru). */
+    const val N_POZORNOST = "174"
 
     const val KROKY_RYCHLE = 4
     const val KROKY_KVALITA = 20
@@ -56,8 +58,8 @@ object H3ControlNetBuilder {
         .openRawResource(R.raw.workflow_h3_controlnet)
         .bufferedReader().use { it.readText() }.also { cached = it }
 
-    fun build(ctx: Context, scene: UpravaScene, seed: Long, video: String): JSONObject =
-        build(template(ctx), scene, seed, video)
+    fun build(ctx: Context, scene: UpravaScene, seed: Long, video: String, sage: Boolean = true): JSONObject =
+        build(template(ctx), scene, seed, video, sage)
 
     /** Snímky na mřížce 17n+5 při 24 fps (vzorec ze šablony). */
     fun snimku(sekundy: Float): Int {
@@ -65,7 +67,7 @@ object H3ControlNetBuilder {
         return z + (5 - z % 17 + 17) % 17
     }
 
-    fun build(template: String, scene: UpravaScene, seed: Long, video: String): JSONObject {
+    fun build(template: String, scene: UpravaScene, seed: Long, video: String, sage: Boolean = true): JSONObject {
         val wf = JSONObject(template)
         val sekundy = scene.predlohaDelka
         wf.inputs(N_VIDEO).apply {
@@ -91,6 +93,16 @@ object H3ControlNetBuilder {
             wf.remove(N_RYCHLE)
             wf.inputs(N_CONTROLNET).put("model", JSONArray().put(N_MODEL).put(0))
             wf.inputs(N_KROKY).put("steps", KROKY_KVALITA)
+        }
+        // Společné nastavení „Zrychlení a vzorkování“ (audit 30. 9. 2026): Sage vypnutá =
+        // pytorch attention hned za modelem, stejně jako v ostatních kartách H3.
+        if (!sage) {
+            wf.put(N_POZORNOST, JSONObject()
+                .put("class_type", "ModelAttentionBackend")
+                .put("_meta", JSONObject().put("title", "Pozornost"))
+                .put("inputs", JSONObject().put("model", JSONArray().put(N_MODEL).put(0)).put("attention", "pytorch attention")))
+            val dalsi = if (scene.predlohaRychle) N_RYCHLE else N_CONTROLNET
+            wf.inputs(dalsi).put("model", JSONArray().put(N_POZORNOST).put(0))
         }
 
         val zadani = wf.inputs(N_ZADANI)
