@@ -1074,6 +1074,24 @@ object SbFilmPrepis {
     }
 
     /**
+     * Replika na začátek záběru (5.32). Zadání říká „spoken right as this shot
+     * begins“, ale přepisovač ji v Daru mudrců (30. 9. 2026) dal až za objetí na
+     * konec záběru. V řádku `[Shot k]` se první věta s `<d>` (a hned následující
+     * věta se zavřením rtů) přesune za úvodní větu záběru.
+     */
+    fun replikaNaZacatek(text: String): String = text.split("\n").joinToString("\n") { r ->
+        if (!Regex("""^\s*\[Shot \d+]""").containsMatchIn(r)) return@joinToString r
+        val v = vety(r).map { it.trim() }.filter { it.isNotEmpty() }
+        val i = v.indexOfFirst { REPLIKA_D.containsMatchIn(it) }
+        if (i < 2) return@joinToString r
+        val presun = mutableListOf(i)
+        if (i + 1 < v.size && !REPLIKA_D.containsMatchIn(v[i + 1]) && Regex("""(?i)\blips\b""").containsMatchIn(v[i + 1])) presun += i + 1
+        val cast = presun.map { v[it].replace(Regex("""(?i),?\s+(as|when|until) the shot ends(?=[.!?]?$)"""), "") }
+        val zbytek = v.filterIndexed { k, _ -> k !in presun }
+        (listOf(zbytek[0]) + cast + zbytek.drop(1)).joinToString(" ")
+    }
+
+    /**
      * Přepis úseku bez vymyšlených stop a cizích záběrů — deterministicky, aby
      * úsek vyšel napoprvé (29. 9. 2026: opakovaný přepis s kontrolní větou
      * vadu neodstranil, přepis je hladový). Model občas přidá `<Audio 1>` do

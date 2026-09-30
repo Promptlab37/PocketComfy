@@ -5618,7 +5618,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
                 val cisty = sp.opravObrazky(sp.ocistiPrepis(text, u.panely.size), s.uploadImages.size)
                 // Se scénářem i vymyšlené značky (<Product>) → <Subject K> (5.22).
-                return if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty) else cisty
+                // Se scénářem i replika vždy na začátek záběru (5.32).
+                return if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) sp.replikaNaZacatek(cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty)) else cisty
             }
             var prompt = napis()
             // Se scénářem: každá replika úseku musí být v promptu v <d> (5.27). Chybí-li,

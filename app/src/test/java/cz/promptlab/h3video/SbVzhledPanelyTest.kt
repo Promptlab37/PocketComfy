@@ -56,3 +56,19 @@ class SbJenZmineneTest {
         assertEquals(listOf("Jim"), z("She looks at Jim's watch."))
     }
 }
+
+class SbReplikaNaZacatekTest {
+    @Test
+    fun `dar mudrcu usek 4`() {
+        val r = "[Shot 2] At 00:05.000, the shot cuts to a medium static frame. Jim (S2) holds up his empty coat pocket. " +
+            "Della (S1) understands and places the necklace on the table. They embrace. " +
+            "Jim says in his warm voice: <d>[Czech] Prodal jsem je, abych ti mohl koupit ty hřebeny.</d> He closes his lips after speaking as the shot ends."
+        assertEquals(
+            "[Shot 2] At 00:05.000, the shot cuts to a medium static frame. Jim says in his warm voice: <d>[Czech] Prodal jsem je, abych ti mohl koupit ty hřebeny.</d> " +
+                "He closes his lips after speaking. Jim (S2) holds up his empty coat pocket. Della (S1) understands and places the necklace on the table. They embrace.",
+            cz.promptlab.h3video.data.SbFilmPrepis.replikaNaZacatek("summary:\nx\n$r").lines().last(),
+        )
+        val ok = "[Shot 1] A close-up. Della says <d>[Czech] A já.</d> She closes her lips. Jim looks."
+        assertEquals(ok, cz.promptlab.h3video.data.SbFilmPrepis.replikaNaZacatek(ok))
+    }
+}
