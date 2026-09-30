@@ -99,6 +99,25 @@ class SbScenarVariantyTest {
         assertEquals(listOf("medium", "close-up", "close-up", "medium"), plan.panely.map { it.typ })
     }
 
+    /** Skutečný přepis úseku 2 svatebního filmu (30. 9. 2026): jazyk a replika mimo <d>. */
+    @Test
+    fun `svatba - cestina z celeho scenare a citace repliky pryc`() {
+        val text = File("src/test/resources/scenar_svatba.txt").readText()
+        val s = SbScenar.rozeber(text)!!
+        val plan = SbFilmPlan.naplanuj(SbScenar.cteni(s, null))
+        val sc = SbFilmScene(storyboard = File("s.png"), zdroj = SbZdroj.SCENAR, scenar = text,
+            panely = SbScenar.doplnPanely(plan.panely, s))
+        // Repliky samy češtinu neprozradí, scénář ano.
+        assertNull(SbFilmPrepis.jazykFilmu(sc.panely))
+        assertEquals("Czech", SbFilmPrepis.jazykFilmu(sc))
+        // Jiné volby beze změny.
+        assertNull(SbFilmPrepis.jazykFilmu(sc.copy(zdroj = SbZdroj.STORYBOARD)))
+        val prepis = File("src/test/resources/prepis_svatba_usek2.txt").readText()
+        val cisty = SbFilmPrepis.ocistiPrepis(prepis, 2)
+        assertEquals(1, Regex("Na ten den si pamatuju").findAll(cisty).count())
+        assertTrue(cisty.contains("<d>[Language] Na ten den si pamatuju.</d>"))
+    }
+
     @Test
     fun `markdown, emoji, pomlcky a nadpisy`() {
         v("V1").let {

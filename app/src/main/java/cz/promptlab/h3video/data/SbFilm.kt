@@ -1041,6 +1041,16 @@ object SbFilmPrepis {
     fun jazykFilmu(panely: List<SbPanel>): String? =
         DialogyH3.jazyk(panely.flatMap { repliky(it.repliky) }.map { DialogyH3.Replika(it.first, it.second) })
 
+    /**
+     * Jazyk filmu pro scénu. U scénáře (5.16) i podle celého textu scénáře:
+     * krátké repliky („Tati, podívej.“, „Na ten den si pamatuju.“) češtinu
+     * samy neprozradí a H3 pak dostal `<d>[Language]` (svatební film 30. 9. 2026).
+     */
+    fun jazykFilmu(s: SbFilmScene): String? = jazykFilmu(s.panely)
+        ?: if (s.zdroj == SbZdroj.SCENAR && s.panely.any { repliky(it.repliky).isNotEmpty() })
+            DialogyH3.jazyk(listOf(DialogyH3.Replika("scénář", s.scenar)))
+        else null
+
     /** Stálá ID mluvčích přes celý film (S1, S2… podle prvního výskytu). */
     fun idMluvcich(panely: List<SbPanel>): Map<String, String> =
         panely.flatMap { repliky(it.repliky).map { r -> r.first } }.distinct()

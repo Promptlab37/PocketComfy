@@ -1,0 +1,23 @@
+subject_definitions:
+<Subject 1> is the younger man in <Picture 1>, with brown hair and a green shirt.
+<Subject 2> is the older man in <Picture 1>, with white hair and a red sweater.
+<Picture 1> is a storyboard reference for [Shot 1] and [Shot 2], defining their viewpoint, subject placement, and visual style.
+
+summary:
+[reference generation] The target video continues directly from the previous part, showing two men in a cozy, warmly lit room with bookshelves and a floral tablecloth. In [Shot 1], a close-up shows hands holding a smartphone displaying a restored wedding photo beside the cracked original; the woman on screen blinks and smiles gently while the man remains still. In [Shot 2], at 00:04.000, a medium shot shows the younger man showing the phone to his father, who looks at the photo and smiles softly. The spoken line “Na ten den si pamatuju.” is delivered by <Subject 2> (S2) as the shot begins. All characters retain their defined appearances throughout; no on-screen text or captions are added.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved - brown hair, green shirt.
+<Subject 2> (appears in [Shot 1], [Shot 2]): fully_preserved - white hair, red sweater.
+<Picture 1> ([Shot 1] and [Shot 2] storyboard reference): fully_preserved - the cozy, warmly lit room with bookshelves and floral tablecloth is retained as the setting.
+
+detailed_description:
+The target video uses a warm, cinematic documentary style with soft, natural lighting and a shallow depth of field. The camera remains static in both shots to preserve the emotional stillness of the moment.
+[Shot 1] A close-up shot begins with hands holding a smartphone over a cracked wedding photo lying beside it on a floral tablecloth. The phone screen displays a restored, clear version of the same wedding photo. On the screen, the bride blinks gently and offers a soft smile; her image is framed as a picture within the display. The groom remains motionless in his original pose. No dialogue or sound occurs — this is a silent shot. The younger man’s green shirt and the older man’s red sweater are visible only through their hands and partial framing.
+[Shot 2] At 00:04.000, the shot cuts to a medium frame where <Subject 1> (S1), the younger man in his green shirt, holds the smartphone toward <Subject 2> (S2), the older man in his red sweater. <Subject 2> (S2) looks at the restored photo on the screen and smiles softly, his expression gentle and reflective. The camera remains static as the shot holds for a moment to let the emotion settle. As the shot begins, <Subject 2> (S2) speaks in his soft, gentle, slightly husky voice at a lively, natural pace: <d>[Language] Na ten den si pamatuju.</d> He closes his lips after speaking, maintaining a still, thoughtful expression until the cut.
+
+overall_soundscape:
+N/A
+
+non_diegetic_music:
+N/A

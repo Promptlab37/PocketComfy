@@ -5436,7 +5436,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return useky.mapIndexed { k, u ->
             val hlidka = sp.hlidka(
                 s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
-                sp.idMluvcich(s.panely), sp.jazykFilmu(s.panely), s.hlasy,
+                sp.idMluvcich(s.panely), sp.jazykFilmu(s), s.hlasy,
                 predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
                 vzhled = s.vzhled, kontinuita = s.kontinuita,
             )
