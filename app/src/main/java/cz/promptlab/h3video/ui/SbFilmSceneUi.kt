@@ -133,6 +133,33 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
+    // Storyboard bez textu + scénář zvlášť (5.14): obrázek i scénář, jedno tlačítko.
+    if (scene.zdroj == SbZdroj.SCENAR) SectionCard(title = "1 · " + t("Storyboard a scénář")) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            StoryboardPole(scene, onPick = { vm.pickSbStoryboard(it) }, onClear = { vm.clearSbStoryboard() })
+            DarkTextField(
+                value = scene.scenar,
+                onValueChange = { vm.setSbScenar(it) },
+                placeholder = t("Vlož scénář"),
+                minHeight = 160.dp,
+                onClear = { vm.setSbScenar("") },
+                rostouci = true,
+            )
+            if (scene.storyboard != null && scene.scenar.isNotBlank()) {
+                OutlineButton(
+                    if (cte) t("Čtu storyboard a scénář…")
+                    else if (scene.panely.isEmpty()) t("Přečíst storyboard a scénář") else t("Přečíst znovu"),
+                    color = if (scene.panely.isEmpty()) Amber else TextMid,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { if (!bezi) vm.precistSbScenar() }
+            }
+            if (akce == MainViewModel.SbAkce.CTENI) SjedKPrubehu(cte) {
+                PrubehPrepisu(vm, barva = Amber)
+                chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            }
+        }
+    }
+
     SectionCard(title = t("Postavy")) {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             scene.postavy.forEachIndexed { i, p ->
@@ -143,7 +170,8 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(title = if (scene.zdroj == SbZdroj.DEJ) "1 · " + t("Děj") else t("Děj")) {
+    // Se scénářem Děj nemá smysl — scénář ho nahrazuje (5.14).
+    if (scene.zdroj != SbZdroj.SCENAR) SectionCard(title = if (scene.zdroj == SbZdroj.DEJ) "1 · " + t("Děj") else t("Děj")) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             DarkTextField(
                 value = scene.dej,
@@ -173,6 +201,40 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
+    // Podkresová hudba (YuE2) — jen když ji server umí.
+    val hudbaDostupna by vm.sbHudbaDostupna.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(Unit) { vm.overSbHudbu() }
+    // Hudba se přidává až k hotovému filmu, který se uživateli líbí (5.13).
+    val historie by vm.history.collectAsStateWithLifecycle()
+    val film = androidx.compose.runtime.remember(historie) { vm.posledniFilmProHudbu() }
+    if (hudbaDostupna && film != null) SectionCard(title = t("Podkresová hudba")) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            run {
+                DarkTextField(
+                    value = scene.hudbaStyl,
+                    onValueChange = { vm.setSbHudbaStyl(it) },
+                    placeholder = cz.promptlab.h3video.comfy.SbHudbaBuilder.STYL_VYCHOZI,
+                    onClear = { vm.setSbHudbaStyl("") },
+                    minHeight = 70.dp,
+                    rostouci = true,
+                )
+                LabeledSlider(
+                    label = t("Hlasitost hudby"),
+                    value = "${scene.hudbaHlasitost} dB",
+                    position = scene.hudbaHlasitost.toFloat(),
+                    range = cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN.toFloat()..
+                        cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX.toFloat(),
+                    onChange = { vm.setSbHudbaHlasitost(Math.round(it)) },
+                )
+                OutlineButton(
+                    t("Přidat hudbu k poslednímu filmu"),
+                    color = Amber,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { vm.pridatHudbu(film, scene.hudbaStyl, scene.hudbaHlasitost) }
+            }
+        }
+    }
+
     SectionCard(title = t("Plátno")) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             PillRow(
@@ -192,6 +254,7 @@ fun SbFilmSection(vm: MainViewModel) {
 
     if (scene.panely.isNotEmpty()) {
         val useky = scene.useky
+        val seScenarem = scene.zdroj == SbZdroj.SCENAR
         val scenarHotovy = scene.zadaniUseku.size == useky.size && useky.isNotEmpty()
         SectionCard(title = "2 · " + scene.nazev.ifBlank { t("Záběry") }) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -200,10 +263,19 @@ fun SbFilmSection(vm: MainViewModel) {
                         "%.1f s".format(scene.sekundy),
                         pocet(useky.size, "%d úsek", "%d úseky", "%d úseků"),
                         pocet(scene.panely.size, "%d panel", "%d panely", "%d panelů"),
-                        t("časy ze storyboardu").takeIf { scene.casyZeStoryboardu },
+                        t("časy ze storyboardu").takeIf { scene.casyZeStoryboardu && !seScenarem },
+                        t("časy ze scénáře").takeIf { scene.casyZeStoryboardu && seScenarem },
+                        t("okna rozdělena odhadem").takeIf { seScenarem && scene.scenarOdhadem },
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.labelLarge, color = TextHi,
                 )
+                // Jiný počet oken ve scénáři než panelů v obrázku: čísla by neseděla.
+                if (seScenarem && scene.panelyObrazku > 0 && scene.oknaScenare > 0 && scene.panelyObrazku != scene.oknaScenare) {
+                    Text(
+                        t("Scénář má %d oken, storyboard %d panelů.").format(scene.oknaScenare, scene.panelyObrazku),
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
+                    )
+                }
                 var index = 0
                 useky.forEachIndexed { u, usek ->
                     if (u > 0) HorizontalDivider(color = Amber.copy(alpha = .5f), modifier = Modifier.padding(vertical = 4.dp))
@@ -213,6 +285,10 @@ fun SbFilmSection(vm: MainViewModel) {
                             PanelRadek(
                                 cislo = p.cislo, popis = p.popis, sekundy = p.sekundy,
                                 repliky = p.repliky,
+                                podani = p.podani,
+                                zvuk = p.zvuk,
+                                onPodani = { vm.setSbPanelPodani(i, it) },
+                                onZvuk = { vm.setSbPanelZvuk(i, it) },
                                 onRepliky = { vm.setSbPanelRepliky(i, it) },
                                 onPopis = { vm.setSbPanelPopis(i, it) },
                                 onSekundy = { vm.setSbPanelSekundy(i, it) },
@@ -224,8 +300,8 @@ fun SbFilmSection(vm: MainViewModel) {
                 Spacer(Modifier.height(8.dp))
                 val pripravuje = bezi && akce == MainViewModel.SbAkce.NATOCENI
                 OutlineButton(
-                    if (pripravuje) t("Píšu scénář…")
-                    else if (!scenarHotovy) t("Napsat scénář") else t("Napsat znovu"),
+                    if (pripravuje) (if (seScenarem) t("Píšu prompty…") else t("Píšu scénář…"))
+                    else if (!scenarHotovy) (if (seScenarem) t("Napsat prompty") else t("Napsat scénář")) else t("Napsat znovu"),
                     color = if (scenarHotovy) TextMid else Amber,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.pripravitSbPrompty() }
@@ -236,10 +312,35 @@ fun SbFilmSection(vm: MainViewModel) {
             }
         }
 
+        // Texty na videu, výzva a poznámky ze scénáře — do H3 nejdou (5.14).
+        if (seScenarem && scene.strih.isNotEmpty()) {
+            SectionCard(title = t("Texty do střihu") + " (${scene.strih.size})") {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val casy = cz.promptlab.h3video.data.SbScenar.casyPanelu(scene.panely)
+                    scene.strih.forEach { r ->
+                        val cas = casy[r.cislo]?.let { (od, doS) -> "${casStrihu(od)}–${casStrihu(doS)}" } ?: "${r.cislo}"
+                        val poznamka = r.druh == cz.promptlab.h3video.data.SbTextStrihu.Druh.POZNAMKA
+                        Row {
+                            Text(cas, style = MaterialTheme.typography.labelMedium, color = Amber, modifier = Modifier.width(84.dp))
+                            TextVesel(
+                                r.text, style = MaterialTheme.typography.bodySmall,
+                                color = if (poznamka) TextLow else TextHi, modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                    if (scene.strih.any { it.druh != cz.promptlab.h3video.data.SbTextStrihu.Druh.POZNAMKA }) {
+                        OutlineButton(t("Uložit titulky (.srt)"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
+                            vm.ulozSbTitulky()
+                        }
+                    }
+                }
+            }
+        }
+
         // Scénář = prompty pro H3, přesně to, co dostane model; jde upravit
         // a Natočit film použije tuhle podobu.
         if (scenarHotovy) {
-            SectionCard(title = "3 · " + t("Scénář")) {
+            SectionCard(title = "3 · " + if (seScenarem) t("Prompty") else t("Scénář")) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     scene.zadaniUseku.forEachIndexed { k, text ->
                         Text(
@@ -322,6 +423,10 @@ private fun PanelRadek(
     popis: String,
     sekundy: Double,
     repliky: String,
+    podani: String = "",
+    zvuk: String = "",
+    onPodani: (String) -> Unit = {},
+    onZvuk: (String) -> Unit = {},
     onRepliky: (String) -> Unit,
     onPopis: (String) -> Unit,
     onSekundy: (Double) -> Unit,
@@ -366,6 +471,20 @@ private fun PanelRadek(
                 rostouci = true,
             )
         }
+        // Podání a zvuk ze scénáře (5.14) — jen když je scénář uvádí.
+        for ((hodnota, zmena) in listOf(podani to onPodani, zvuk to onZvuk)) {
+            if (hodnota.isNotBlank()) {
+                Spacer(Modifier.height(4.dp))
+                DarkTextField(
+                    value = hodnota,
+                    onValueChange = zmena,
+                    placeholder = "",
+                    minHeight = 48.dp,
+                    onClear = { zmena("") },
+                    rostouci = true,
+                )
+            }
+        }
         Spacer(Modifier.height(4.dp))
     }
 }
@@ -373,3 +492,10 @@ private fun PanelRadek(
 /** Český tvar podle počtu: 1 úsek, 2–4 úseky, 5+ úseků. */
 private fun pocet(n: Int, jeden: String, dva: String, pet: String): String =
     t(when { n == 1 -> jeden; n in 2..4 -> dva; else -> pet }).format(n)
+
+/** `0:02.5` — čas v seznamu Texty do střihu. */
+private fun casStrihu(s: Double): String {
+    val d = (s * 10).toInt()
+    val sek = d / 10
+    return "%d:%02d".format(sek / 60, sek % 60) + if (d % 10 != 0) ".${d % 10}" else ""
+}

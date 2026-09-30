@@ -101,6 +101,8 @@ fun ResultScreen(
     onEditVideo: (() -> Unit)? = null,
     /** Prodloužit hotové video — All in One → Prodloužit. */
     onExtendVideo: (() -> Unit)? = null,
+    /** Film ze storyboardu → Přidat hudbu (styl a hlasitost, 5.13). */
+    onAddMusic: ((styl: String, hlasitost: Int) -> Unit)? = null,
     /** Hotová hudba → LTX 2.5 Ze zvuku. */
     onMusicToVideo: (() -> Unit)? = null,
     /** Hotová hudba → Pohyb postavy → Podle hudby. */
@@ -424,6 +426,12 @@ fun ResultScreen(
                     onClick = onUpscale,
                 )
             }
+        }
+
+        // Film ze storyboardu: hudba až k filmu, který se povedl (5.13).
+        if (onAddMusic != null) {
+            Spacer(Modifier.height(16.dp))
+            PridatHudbu(item, onAddMusic)
         }
 
         Spacer(Modifier.height(16.dp))
@@ -767,6 +775,42 @@ private fun NaServeruKarta(
                 icon = { Icon(Icons.Default.Download, null, Modifier.size(18.dp), Cyan) },
                 onClick = onStahnout,
             )
+        }
+    }
+}
+
+/** Přidat hudbu k filmu ze storyboardu: styl z čtení (jde upravit) a hlasitost. */
+@Composable
+private fun PridatHudbu(item: VideoItem, onAddMusic: (String, Int) -> Unit) {
+    var otevreno by androidx.compose.runtime.saveable.rememberSaveable(item.id) { androidx.compose.runtime.mutableStateOf(false) }
+    var styl by androidx.compose.runtime.saveable.rememberSaveable(item.id) { androidx.compose.runtime.mutableStateOf(item.hudbaStyl) }
+    var hlasitost by androidx.compose.runtime.saveable.rememberSaveable(item.id) {
+        androidx.compose.runtime.mutableIntStateOf(cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_VYCHOZI)
+    }
+    if (!otevreno) {
+        OutlineButton(t("Přidat hudbu"), modifier = Modifier.fillMaxWidth(), color = Cyan) { otevreno = true }
+        return
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        DarkTextField(
+            value = styl,
+            onValueChange = { styl = it },
+            placeholder = cz.promptlab.h3video.comfy.SbHudbaBuilder.STYL_VYCHOZI,
+            onClear = { styl = "" },
+            minHeight = 70.dp,
+            rostouci = true,
+        )
+        LabeledSlider(
+            label = t("Hlasitost hudby"),
+            value = "$hlasitost dB",
+            position = hlasitost.toFloat(),
+            range = cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN.toFloat()..
+                cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX.toFloat(),
+            onChange = { hlasitost = Math.round(it) },
+        )
+        OutlineButton(t("Přidat hudbu"), modifier = Modifier.fillMaxWidth(), color = Cyan) {
+            onAddMusic(styl, hlasitost)
+            otevreno = false
         }
     }
 }

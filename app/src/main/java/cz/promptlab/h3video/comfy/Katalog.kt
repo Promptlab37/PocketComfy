@@ -268,6 +268,12 @@ object Katalog {
             "models/checkpoints", "Hudba — volba YuE2 (3,9 GB)",
             "$HF/Comfy-Org/YuE2/resolve/main/checkpoints/yue2_3b_int8_convrot.safetensors"
         ),
+        // Podkresová hudba k filmu ze storyboardu (5.13). Bez ní YuE2 zpívá.
+        // Licence CC BY-NC 4.0 (jen nekomerčně).
+        "ar_lora_inst_v3abc_comfyui.safetensors" to Soubor(
+            "models/loras/yue2", "Film ze storyboardu — podkresová hudba (213 MB, CC BY-NC)",
+            "$HF/Mothersuperior/YuE2-instrumental-cot-full-loras/resolve/main/ar_lora_inst_v3abc_comfyui.safetensors"
+        ),
         "ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors" to Soubor(
             "models/diffusion_models", "LTX 2.5 (21 GB)",
             "$HF/Lightricks/LTX-2.5/resolve/main/diffusion_models/ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors"

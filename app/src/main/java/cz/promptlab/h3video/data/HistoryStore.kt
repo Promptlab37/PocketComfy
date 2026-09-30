@@ -37,6 +37,15 @@ data class VideoItem(
     val serverType: String = "",
     /** Velikost na serveru v bajtech (0 = neznámá). */
     val serverBytes: Long = 0L,
+    /** Film ze storyboardu ve výstupech serveru — k němu jde přidat hudbu (5.13). */
+    val filmNaServeru: String = "",
+    val filmSlozka: String = "",
+    /** Změřená délka filmu (s), 0 = neznámá. */
+    val filmSekundy: Float = 0f,
+    /** Styl hudby z čtení storyboardu tohohle filmu. */
+    val hudbaStyl: String = "",
+    /** Verze filmu s podkresovou hudbou. */
+    val sHudbou: Boolean = false,
 ) {
     /** Výsledek je jen na serveru — v telefonu soubor není, ale stáhnout se dá. */
     fun naServeru(ctx: Context): Boolean = serverFile.isNotBlank() && !file(ctx).isFile

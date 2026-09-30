@@ -4885,16 +4885,22 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             // Nový storyboard = starý plán neplatí.
             updateSbFilm {
                 it.storyboard?.delete()
-                it.copy(storyboard = cil, storyboardNahled = thumb, panely = emptyList(),
-                    nazev = "", zadaniUseku = emptyList())
+                bezPlanuScenare(it.copy(storyboard = cil, storyboardNahled = thumb, panely = emptyList(),
+                    nazev = "", zadaniUseku = emptyList()))
             }
         }
     }
 
     fun clearSbStoryboard() = updateSbFilm {
         it.storyboard?.delete()
-        it.copy(storyboard = null, storyboardNahled = null, panely = emptyList(), nazev = "", zadaniUseku = emptyList())
+        bezPlanuScenare(it.copy(storyboard = null, storyboardNahled = null, panely = emptyList(), nazev = "", zadaniUseku = emptyList()))
     }
+
+    /** Storyboard + scénář: s novým obrázkem neplatí ani to, co se ze scénáře přečetlo (5.14). */
+    private fun bezPlanuScenare(s: cz.promptlab.h3video.data.SbFilmScene) =
+        if (s.zdroj != cz.promptlab.h3video.data.SbZdroj.SCENAR) s
+        else s.copy(hlasy = emptyMap(), vzhled = emptyMap(), kontinuita = "", strih = emptyList(),
+            scenarOdhadem = false, panelyObrazku = 0, oknaScenare = 0, scenarPlanu = 0)
 
     fun addSbPostava(uri: Uri?) {
         if (uri == null || _sbFilm.value.postavy.size >= cz.promptlab.h3video.data.SbFilmScene.MAX_POSTAV) return
@@ -4916,10 +4922,69 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSbDej(text: String) = updateSbFilm { it.copy(dej = text, zadaniUseku = emptyList()) }
 
+    /** Storyboard + scénář: text scénáře. Plán platí dál, dokud se nepřečte znovu. */
+    fun setSbScenar(text: String) = updateSbFilm { it.copy(scenar = text) }
+
     fun setSbPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateSbFilm { it.copy(pomer = v, zadaniUseku = emptyList()) }
 
     fun setSbRozliseni(v: cz.promptlab.h3video.data.SbRozliseni) = updateSbFilm { it.copy(rozliseni = v) }
     fun setSbModel(v: cz.promptlab.h3video.data.SbModel) = updateSbFilm { it.copy(model = v) }
+    /**
+     * Přidat hudbu k hotovému filmu ze storyboardu (5.13): uživatel si film
+     * nejdřív prohlédne a hudbu přidá, až když je dobrý. Vznikne nové video,
+     * původní zůstává. Zadání se zmrazí při zařazení do fronty.
+     */
+    fun pridatHudbu(item: VideoItem, styl: String, hlasitost: Int) {
+        if (!cz.promptlab.h3video.data.jdePridatHudbu(item, true)) return
+        val zadani = cz.promptlab.h3video.data.SbHudbaZadani(
+            zdrojId = item.id,
+            soubor = item.filmNaServeru,
+            slozka = item.filmSlozka,
+            styl = styl.trim(),
+            hlasitost = hlasitost.coerceIn(
+                cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN,
+                cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX,
+            ),
+            sekundy = cz.promptlab.h3video.data.delkaProHudbu(item),
+            seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+            prompt = item.prompt,
+        )
+        val p = _params.value.copy(mode = Mode.SBFILM, prompt = item.prompt)
+        RunQueue.add(QueuedRun(System.nanoTime(), t("Podkresová hudba"), item.displayTitle) {
+            GenerationEngine.start(p, emptyList(), sbHudba = zadani)
+        })
+    }
+
+    /** Poslední film ze storyboardu, ke kterému jde přidat hudbu (karta Storyboard). */
+    fun posledniFilmProHudbu(): VideoItem? =
+        _history.value.filter { cz.promptlab.h3video.data.jdePridatHudbu(it, true) }.maxByOrNull { it.createdAt }
+
+    /**
+     * Umí server podkresovou hudbu? YuE2 i instrumentální LoRA musí být na
+     * serveru — jinak se volba nenabízí (žádné mrtvé volby).
+     */
+    private val _sbHudbaDostupna = MutableStateFlow(false)
+    val sbHudbaDostupna: StateFlow<Boolean> = _sbHudbaDostupna.asStateFlow()
+
+    fun overSbHudbu() {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val c = ComfyClient(settings.serverUrl)
+                fun nabidka(trida: String, pole: String) = c.objectInfo(trida)?.optJSONObject("input")
+                    ?.optJSONObject("required")?.nabidka(pole).orEmpty()
+                _sbHudbaDostupna.value =
+                    cz.promptlab.h3video.comfy.SbHudbaBuilder.LORA in nabidka("LoraLoader", "lora_name") &&
+                        cz.promptlab.h3video.comfy.SbHudbaBuilder.CKPT in nabidka("CheckpointLoaderSimple", "ckpt_name")
+            }
+        }
+    }
+    fun setSbHudbaStyl(v: String) = updateSbFilm { it.copy(hudbaStyl = v) }
+    fun setSbHudbaHlasitost(v: Int) = updateSbFilm {
+        it.copy(hudbaHlasitost = v.coerceIn(
+            cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN,
+            cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX,
+        ))
+    }
     fun setSbKrokyKvalita(v: Int) = updateSbFilm {
         it.copy(krokyKvalita = v.coerceIn(
             cz.promptlab.h3video.data.SbFilmScene.KVALITA_MIN_KROKU,
@@ -4930,7 +4995,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Přepnutí zdroje plánu — plán z druhé cesty neplatí. */
     fun setSbZdroj(v: cz.promptlab.h3video.data.SbZdroj) = updateSbFilm {
         if (it.zdroj == v) it
-        else it.copy(zdroj = v, panely = emptyList(), nazev = "", casyZeStoryboardu = false, zadaniUseku = emptyList())
+        else it.copy(zdroj = v, panely = emptyList(), nazev = "", casyZeStoryboardu = false, zadaniUseku = emptyList()).let { n ->
+            // Hlasy, vzhled a kontinuita ze scénáře nepatří do jiné volby a naopak (5.14).
+            if (v != cz.promptlab.h3video.data.SbZdroj.SCENAR && it.zdroj != cz.promptlab.h3video.data.SbZdroj.SCENAR) n
+            else bezPlanuScenare(n.copy(zdroj = cz.promptlab.h3video.data.SbZdroj.SCENAR))
+                .copy(zdroj = v, hlasy = emptyMap(), vzhled = emptyMap(), kontinuita = "", strih = emptyList())
+        }
     }
 
     fun setSbCil(sekundy: Int) = updateSbFilm { it.copy(cilSekund = sekundy) }
@@ -4992,7 +5062,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     updateSbFilm {
                         it.copy(panely = plan.panely,
                             nazev = cz.promptlab.h3video.data.SbFilmPlan.precti(text).nazev.orEmpty(),
-                            casyZeStoryboardu = false, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled)
+                            casyZeStoryboardu = false, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
+                            hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl)
                     }
                     _rewriteState.value = RewriteState.Idle
                 }
@@ -5018,7 +5089,152 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setSbPanelRepliky(index: Int, text: String) = updateSbFilm { s ->
-        s.copy(panely = s.panely.mapIndexed { i, p -> if (i == index) p.copy(repliky = text) else p }, zadaniUseku = emptyList())
+        s.copy(panely = s.panely.mapIndexed { i, p ->
+            if (i != index) p
+            else {
+                // Jiný počet replik: podání by se posunulo na cizí repliku (5.14).
+                val stejne = cz.promptlab.h3video.data.SbFilmPrepis.repliky(text).size ==
+                    cz.promptlab.h3video.data.SbFilmPrepis.repliky(p.repliky).size
+                p.copy(repliky = text, podani = if (stejne) p.podani else "")
+            }
+        }, zadaniUseku = emptyList())
+    }
+
+    fun setSbPanelPodani(index: Int, text: String) = updateSbFilm { s ->
+        s.copy(panely = s.panely.mapIndexed { i, p -> if (i == index) p.copy(podani = text) else p }, zadaniUseku = emptyList())
+    }
+
+    fun setSbPanelZvuk(index: Int, text: String) = updateSbFilm { s ->
+        s.copy(panely = s.panely.mapIndexed { i, p -> if (i == index) p.copy(zvuk = text) else p }, zadaniUseku = emptyList())
+    }
+
+    /**
+     * Texty na videu a výzva jako titulky .srt do Stažených souborů — časy
+     * z hotových délek panelů. Pro střih nebo Subtitler; do H3 nejdou.
+     */
+    fun ulozSbTitulky() {
+        val s = _sbFilm.value
+        val srt = cz.promptlab.h3video.data.SbScenar.srt(s.panely, s.strih)
+        if (srt.isBlank()) return
+        viewModelScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching {
+                    val jmeno = s.nazev.ifBlank { "film" }.replace(Regex("""[^\p{L}\p{N}]+"""), "_").trim('_').take(40)
+                        .ifBlank { "film" } + "_texty_v1.srt"
+                    val f = java.io.File(getApplication<Application>().cacheDir, jmeno)
+                    f.writeText(srt)
+                    cz.promptlab.h3video.util.MediaSaver.save3dToDownloads(getApplication(), f, jmeno).also { f.delete() }
+                }.getOrDefault(false)
+            }
+            android.widget.Toast.makeText(
+                getApplication(),
+                if (ok) t("Titulky jsou ve Stažených souborech.") else t("Titulky se nepodařilo uložit."),
+                android.widget.Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
+
+    /**
+     * „Přečíst storyboard a scénář“ (5.14). Scénář se rozebere v telefonu
+     * ([cz.promptlab.h3video.data.SbScenar.rozeber]); obrázek přečte vidoucí
+     * model jednou celý — dává typ záběru a kameru, repliky v něm nejsou.
+     * Když scénář okna neoznačuje, rozdělí ho jazykový model a každá replika
+     * se ověří proti scénáři doslova.
+     */
+    fun precistSbScenar() {
+        if (_rewriteState.value is RewriteState.Busy) return
+        val s = _sbFilm.value
+        val obr = s.storyboard ?: return
+        _sbAkce.value = SbAkce.CTENI
+        if (s.scenar.isBlank()) {
+            _rewriteState.value = RewriteState.Fail(t("Vlož scénář."), PraceNaPromptu.VYLEPSENI)
+            return
+        }
+        val rozbor = cz.promptlab.h3video.data.SbScenar.rozeber(s.scenar)
+        _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
+        _planAkce.value = PlanAkce(
+            listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_CELE)) +
+                (if (rozbor == null) listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.NAVRH)) else emptyList()),
+        )
+        val nerozdeleno = t("Scénář se nepodařilo rozdělit na okna. Očísluj je (OKNO 1, OKNO 2…).")
+        viewModelScope.launch { try {
+            val vysledek = withContext(Dispatchers.IO) {
+                odolne {
+                    val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
+                    val spec = client.objectInfo(cz.promptlab.h3video.comfy.SbFilmBuilder.CTENI_CLASS)
+                        ?: throw ComfyException(
+                            "caption chybi",
+                            t("Server nemá uzel na čtení obrázku — aktualizuj balík " +
+                                "MiniMax-H3-Prompt-Rewriter-ComfyUI a restartuj ComfyUI."),
+                        )
+                    val nabidka = spec.getJSONObject("input").getJSONObject("required").nabidka("model")
+                    val model = H3RefWriteBuilder.vyberOdblokovany(nabidka, H3RefWriteBuilder.CAPTIONER_ODVAZANY)
+                        ?: throw ComfyException(
+                            "zadny captioner",
+                            t("Přepisovač nemá čím obrázek přečíst — chybí vidoucí GGUF s projektorem."),
+                        )
+                    val jmeno = client.uploadImage(obr.readBytes(), "sbfilm_storyboard.png")
+                    val prvni = spustPrepisAPockej(
+                        client,
+                        cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL)),
+                        cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP, krok = 0,
+                    )
+                    val scenar = rozbor ?: run {
+                        val llama = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)
+                            ?: throw ComfyException("llama uzel chybi", nerozdeleno)
+                        val a = llama.getJSONObject("input").getJSONObject("required").nabidkaArr("model")
+                        val jazykovy = ImagePromptBuilder.vyberModel((0 until a.length()).map { a.getString(it) })
+                            ?: throw ComfyException("zadny model", nerozdeleno)
+                        // Dva pokusy s jiným seedem; pak raději chyba než vymyšlená replika.
+                        var hotovo: cz.promptlab.h3video.data.SbScenarCteni? = null
+                        for (pokus in 0 until 2) {
+                            val odpoved = spustPrepisAPockej(
+                                client,
+                                ImagePromptBuilder.graf(
+                                    zadani = s.scenar, model = jazykovy,
+                                    seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                                    system = cz.promptlab.h3video.data.SbScenar.SYSTEM_ROZDELENI,
+                                    maxTokens = 2000, teplota = 0.2,
+                                ),
+                                ImagePromptBuilder.N_PREVIEW, krok = 1,
+                            )
+                            hotovo = cz.promptlab.h3video.data.SbScenar.zOdpovedi(odpoved, s.scenar)
+                            if (hotovo != null) break
+                        }
+                        hotovo ?: throw ComfyException("scenar nerozdelen", nerozdeleno)
+                    }
+                    prvni to scenar
+                }
+            }
+            vysledek.onSuccess { (text, scenar) ->
+                val obrazek = cz.promptlab.h3video.data.SbFilmPlan.precti(text)
+                val plan = cz.promptlab.h3video.data.SbFilmPlan.naplanuj(cz.promptlab.h3video.data.SbScenar.cteni(scenar, obrazek))
+                if (plan.panely.isEmpty()) {
+                    _rewriteState.value = RewriteState.Fail(nerozdeleno, PraceNaPromptu.VYLEPSENI)
+                } else {
+                    updateSbFilm {
+                        it.copy(
+                            panely = cz.promptlab.h3video.data.SbScenar.doplnPanely(plan.panely, scenar),
+                            nazev = scenar.nazev.ifBlank { obrazek.nazev.orEmpty() },
+                            casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(),
+                            hlasy = plan.hlasy, vzhled = plan.vzhled, hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
+                            kontinuita = scenar.kontinuita, strih = cz.promptlab.h3video.data.SbScenar.strih(scenar),
+                            scenarOdhadem = scenar.odhadem, panelyObrazku = obrazek.panely.size,
+                            oknaScenare = scenar.okna.size,
+                            scenarPlanu = cz.promptlab.h3video.data.otiskScenare(s.scenar),
+                            // Formát ze scénáře („9:16“) nastaví plátno.
+                            pomer = scenar.pomer ?: it.pomer,
+                        )
+                    }
+                    _rewriteState.value = RewriteState.Idle
+                }
+            }.onFailure { e ->
+                if (e is kotlinx.coroutines.CancellationException) return@launch
+                _rewriteState.value = RewriteState.Fail(
+                    (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
+                )
+            }
+        } finally { _planAkce.value = null } }
     }
 
     fun setSbPanelPopis(index: Int, text: String) = updateSbFilm { s ->
@@ -5127,7 +5343,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 } else {
                     updateSbFilm {
                         it.copy(panely = plan.panely, nazev = cteni.nazev.orEmpty(),
-                            casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled)
+                            casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
+                            hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl)
                     }
                     _rewriteState.value = RewriteState.Idle
                 }
@@ -5188,7 +5405,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
                             sp.idMluvcich(s.panely), sp.jazykFilmu(s.panely), s.hlasy,
                             predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
-                            vzhled = s.vzhled,
+                            vzhled = s.vzhled, kontinuita = s.kontinuita,
                         )
                         suspend fun prepis(h: String) = prepisSReferencemi(
                             client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),

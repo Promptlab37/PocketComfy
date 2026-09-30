@@ -280,6 +280,12 @@ object GenerationEngine {
     /** Běží Film ze storyboardu? Úseky navázané přes latent v jednom běhu. */
     @Volatile private var sbFilmRun: Boolean = false
 
+    /** Běží podkresová hudba k hotovému filmu (5.13)? */
+    @Volatile private var hudbaRun: Boolean = false
+
+    /** Styl hudby z čtení storyboardu — ukládá se k filmu (jen čerstvý běh). */
+    @Volatile private var hudbaStylBehu: String = ""
+
     /**
      * Mapa „číslo uzlu → třída" z odeslaného grafu. U karty All in One se podle
      * ní poznávají fáze: čísla uzlů se mezi šablonami liší (uzel 3 je u SeedVR2
@@ -301,6 +307,7 @@ object GenerationEngine {
         cnRun -> cz.promptlab.h3video.comfy.H3ControlNetBuilder.stageForClass(nodeClasses[node])
         berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.stageForClass(nodeClasses[node])
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.stageForClass(nodeClasses[node])
+        hudbaRun -> Yue2MusicBuilder.stageForClass(nodeClasses[node])
         sbFilmRun -> cz.promptlab.h3video.comfy.SbFilmBuilder.stageForClass(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.stageForClass(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.stageForClass(nodeClasses[node])
@@ -341,6 +348,7 @@ object GenerationEngine {
         berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.rangeForNode(node, nodeClasses[node])
         // Dva průchody mají vlastní dělení pásma, jinak by ukazatel skákal zpět.
         // Rozlišují se podle ID uzlu — oba jsou `SamplerCustomAdvanced`.
+        hudbaRun -> Yue2MusicBuilder.rangeForClass(nodeClasses[node])
         sbFilmRun -> cz.promptlab.h3video.comfy.SbFilmBuilder.rangeForNode(node, nodeClasses[node], nodeClasses)
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.rangeForNode(
             node, nodeClasses[node],
@@ -383,6 +391,7 @@ object GenerationEngine {
         cnRun -> cz.promptlab.h3video.comfy.H3ControlNetBuilder.reportsSteps(nodeClasses[node])
         berniniRun -> cz.promptlab.h3video.comfy.BerniniBuilder.reportsSteps(nodeClasses[node])
         longMmRun -> cz.promptlab.h3video.comfy.LongMmBuilder.reportsSteps(nodeClasses[node])
+        hudbaRun -> Yue2MusicBuilder.reportsSteps(nodeClasses[node])
         sbFilmRun -> cz.promptlab.h3video.comfy.SbFilmBuilder.reportsSteps(nodeClasses[node])
         ltxRun -> cz.promptlab.h3video.comfy.Ltx25Builder.reportsSteps(nodeClasses[node])
         musicRun -> if (musicYue2) Yue2MusicBuilder.reportsSteps(nodeClasses[node])
@@ -497,6 +506,8 @@ object GenerationEngine {
         longMmScene: cz.promptlab.h3video.data.LongMmScene? = null,
         /** Film ze storyboardu: úseky s hotovým zadáním, jeden běh. */
         sbFilmScene: cz.promptlab.h3video.data.SbFilmScene? = null,
+        /** Podkresová hudba k hotovému filmu ze storyboardu (5.13). */
+        sbHudba: cz.promptlab.h3video.data.SbHudbaZadani? = null,
         /** Wan Animate: fotka postavy + video s pohybem. */
         animateScene: cz.promptlab.h3video.data.AnimateScene? = null,
         /** Vylepšit video → Zplynulit: interpolace snímků FILM. */
@@ -537,11 +548,13 @@ object GenerationEngine {
         berniniRun = berniniScene != null
         longMmRun = longMmScene != null
         sbFilmRun = sbFilmScene != null
+        hudbaRun = sbHudba != null
+        hudbaStylBehu = sbFilmScene?.hudbaStyl.orEmpty()
         longMmRetez = longMmScene
             ?.let { cz.promptlab.h3video.comfy.LongMmBuilder.nazevLatentu(it) }.orEmpty()
         aioRun = !editRun && !upscaleRun && !t2iRun && !musicRun && !restoreRun && !angleRun && !swapRun &&
             !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun && !longMmRun && !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun &&
-            !sbFilmRun &&
+            !sbFilmRun && !hudbaRun &&
             (aioScene != null || params.mode == cz.promptlab.h3video.data.Mode.TALK)
         settings.activeAio = aioRun
         settings.activeEdit = editRun
@@ -566,6 +579,7 @@ object GenerationEngine {
             cnRun -> "controlnet"
             berniniRun -> "bernini"
             longMmRun -> "longmm"
+            hudbaRun -> "sbhudba"
             sbFilmRun -> "sbfilm"
             else -> ""
         }
@@ -593,6 +607,8 @@ object GenerationEngine {
             t("Zplynulit") + " · " + interpScene.nasobek + "×" + (if (interpScene.zpomalit) " · " + t("zpomaleně") else "")
         } else if (animateScene != null) {
             "Wan Animate · " + "%.1f s".format(animateScene.videoSekund)
+        } else if (sbHudba != null) {
+            t("Film ze storyboardu") + " · " + t("hudba")
         } else if (sbFilmScene != null) {
             t("Film ze storyboardu") + " · " + "%.1f s".format(sbFilmScene.sekundy) +
                 " · " + t("%d úseky").format(sbFilmScene.useky.size)
@@ -624,7 +640,7 @@ object GenerationEngine {
                     inpaintScene,
                     longScene, model3dScene, ltxScene, danceScene, longMmScene,
                     animateScene, interpScene, scailScene, cnScene, berniniScene,
-                    sbFilmScene,
+                    sbFilmScene, sbHudba,
                 )
             }
                 .onFailure { e ->
@@ -654,6 +670,8 @@ object GenerationEngine {
         berniniRun = druh == "bernini"
         longMmRun = druh == "longmm"
         sbFilmRun = druh == "sbfilm"
+        hudbaRun = druh == "sbhudba"
+        hudbaStylBehu = ""
     }
 
     /** Znovu se přilepí na rozdělanou úlohu po restartu aplikace. */
@@ -841,6 +859,7 @@ object GenerationEngine {
         cnScene: cz.promptlab.h3video.data.UpravaScene? = null,
         berniniScene: cz.promptlab.h3video.data.UpravaScene? = null,
         sbFilmScene: cz.promptlab.h3video.data.SbFilmScene? = null,
+        sbHudba: cz.promptlab.h3video.data.SbHudbaZadani? = null,
     ) {
         val client = ComfyClient(settings.serverUrl)
 
@@ -883,6 +902,7 @@ object GenerationEngine {
                 // Long MiniMax jede na stejných vahách jako dlouhé video.
                 longMmScene != null ||
                 sbFilmScene != null ||
+                sbHudba != null ||
                 musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.YUE2 ||
                 // MiniMax Music 3: enkodér 9,2 GB + model 4,9 GB.
                 musicScene?.motor == cz.promptlab.h3video.data.MusicMotor.MM3,
@@ -913,6 +933,7 @@ object GenerationEngine {
             longScene != null -> null      // dtto — graf staví appka
             longMmScene != null -> null    // dtto
             sbFilmScene != null -> null    // dtto
+            sbHudba != null -> null        // dtto
             model3dScene != null -> null   // dtto
             ltxScene != null -> null       // dtto
             animateScene != null -> null   // dtto
@@ -1047,6 +1068,18 @@ object GenerationEngine {
                     reference = names,
                     nastaveni = cz.promptlab.h3video.comfy.ThreeStepBuilder.Nastaveni.z(effective),
                 )
+
+            // Hudba k hotovému filmu: film se čte rovnou z výstupů serveru.
+            sbHudba != null -> {
+                val url = client.viewUrl(sbHudba.soubor, sbHudba.slozka, "output")
+                if (withContext(Dispatchers.IO) { client.existuje(url) } == false) throw ComfyException(
+                    "film chybi", t("Film už na serveru není."),
+                )
+                cz.promptlab.h3video.comfy.SbHudbaBuilder.build(
+                    cz.promptlab.h3video.comfy.SbHudbaBuilder.zVystupu(sbHudba.soubor, sbHudba.slozka),
+                    sbHudba.styl, sbHudba.sekundy, sbHudba.hlasitost, sbHudba.seed,
+                )
+            }
 
             // Film ze storyboardu: úseky s hotovým zadáním v jednom běhu.
             sbFilmScene != null ->
@@ -1212,6 +1245,7 @@ object GenerationEngine {
             // Film: kroky všech úseků dohromady (viz SbFilmBuilder.globalniKrok).
             sbFilmScene != null ->
                 sbFilmScene.kroky * sbFilmScene.useky.size
+            sbHudba != null -> cz.promptlab.h3video.comfy.SbHudbaBuilder.STEPS
             else -> effective.steps
         }
         // Podle tříd uzlů se u šablon balíku poznávají fáze běhu.
@@ -1239,7 +1273,7 @@ object GenerationEngine {
             cz.promptlab.h3video.comfy.DanceBuilder.nodeClasses(workflow)
         if (longMmScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.LongMmBuilder.nodeClasses(workflow)
-        if (sbFilmScene != null) nodeClasses =
+        if (sbFilmScene != null || sbHudba != null) nodeClasses =
             cz.promptlab.h3video.comfy.SbFilmBuilder.nodeClasses(workflow)
         if (animateScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.AnimateBuilder.nodeClasses(workflow)
@@ -1758,7 +1792,11 @@ object GenerationEngine {
         var mainAudio: OutFile? = null
         var mainModel: OutFile? = null
         val pictures = mutableListOf<OutFile>()
+        // Ozvěny načítacích uzlů nejsou výsledek. Hudba k filmu čte film přes
+        // LoadVideo „… [output]“ a ten ho hlásí zpátky i s type = output.
+        val grafBehu = record.optJSONArray("prompt")?.optJSONObject(2)
         for (key in outputs.keys()) {
+            if (grafBehu?.optJSONObject(key)?.optString("class_type")?.startsWith("Load") == true) continue
             val o = outputs.optJSONObject(key) ?: continue
             // Zvukové uzly (SaveAudioMP3…) hlásí soubory pod klíčem "audio",
             // `SaveGLB` pod klíčem "3d". Bez něj běh 3D modelu doběhl, soubor
@@ -1931,6 +1969,13 @@ object GenerationEngine {
             serverSubfolder = if (jenServer) subfolder else "",
             serverType = if (jenServer) type else "",
             serverBytes = naServeru.coerceAtLeast(0L),
+            // Film ze storyboardu: kde leží na serveru (k němu jde přidat hudbu),
+            // skutečná délka a styl hudby z čtení (5.13). Hudební verze nic z toho nemá.
+            filmNaServeru = if (sbFilmRun && !hudbaRun && !jenObrazek) filename else "",
+            filmSlozka = if (sbFilmRun && !hudbaRun && !jenObrazek) subfolder else "",
+            filmSekundy = if (sbFilmRun && !hudbaRun && !jenServer) delkaVidea(target) ?: 0f else 0f,
+            hudbaStyl = if (sbFilmRun && !hudbaRun) hudbaStylBehu else "",
+            sHudbou = hudbaRun,
         )
         history.add(item)
         settings.activePromptId = null

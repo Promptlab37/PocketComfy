@@ -426,8 +426,15 @@ private fun Root(vm: MainViewModel = viewModel()) {
                         .navigationBarsPadding()
                 ) {
                     val vysledek = history.firstOrNull { it.id == s.item.id } ?: s.item
+                    val hudbaUmi by vm.sbHudbaDostupna.collectAsStateWithLifecycle()
+                    androidx.compose.runtime.LaunchedEffect(vysledek.id) {
+                        if (vysledek.filmNaServeru.isNotBlank()) vm.overSbHudbu()
+                    }
                     ResultScreen(
                         item = vysledek,
+                        onAddMusic = if (cz.promptlab.h3video.data.jdePridatHudbu(vysledek, hudbaUmi)) {
+                            { styl, db -> vm.pridatHudbu(vysledek, styl, db) }
+                        } else null,
                         warnings = s.warnings,
                         naServeru = vysledek.naServeru(kontext),
                         stahovani = rucniStahovani[vysledek.id],
@@ -529,8 +536,15 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     .statusBarsPadding()
                     .navigationBarsPadding()
             ) {
+                val hudbaUmi by vm.sbHudbaDostupna.collectAsStateWithLifecycle()
+                androidx.compose.runtime.LaunchedEffect(open.id) {
+                    if (open.filmNaServeru.isNotBlank()) vm.overSbHudbu()
+                }
                 ResultScreen(
                     item = open,
+                    onAddMusic = if (cz.promptlab.h3video.data.jdePridatHudbu(open, hudbaUmi)) {
+                        { styl, db -> vm.pridatHudbu(open, styl, db); opened = null }
+                    } else null,
                     naServeru = open.naServeru(kontext),
                     stahovani = rucniStahovani[open.id],
                     onStahnout = { vm.stahnoutVysledek(open) },

@@ -185,6 +185,13 @@ if /i "!ODP!"=="a" (
   echo   Pozn.: k tomu je potreba i samotny YuE2 z nabidky vyse.
 )
 
+set /p ODP="Film ze storyboardu - podkresova hudba (instrumentalni LoRA pro YuE2), cca 213 MB. Stahnout? [a/n] "
+if /i "!ODP!"=="a" (
+  REM Bez ni YuE2 po chvili zacne zpivat. Licence CC BY-NC 4.0 - jen nekomercne.
+  call :stahni "https://huggingface.co/Mothersuperior/YuE2-instrumental-cot-full-loras/resolve/main/ar_lora_inst_v3abc_comfyui.safetensors" "models\loras\yue2\ar_lora_inst_v3abc_comfyui.safetensors"
+  echo   Pozn.: k tomu je potreba i samotny YuE2 z nabidky vyse.
+)
+
 set /p ODP="Karta LTX 2.5, cca 38 GB. Stahnout? [a/n] "
 if /i "!ODP!"=="a" (
   REM Vsechny tri rezimy karty: Z textu, Z obrazku a Ze zvuku. V rezimu

@@ -102,6 +102,11 @@ po kartách, ať nestahuješ, co nepoužiješ.
 - `ace_step_1.5_turbo_aio.safetensors` (karta Hudba — volba ACE-Step)
 - `yue2_3b_int8_convrot.safetensors` (karta Hudba — volba YuE2, 3,9 GB;
   ComfyUI 0.36.0+), z [Comfy-Org/YuE2](https://huggingface.co/Comfy-Org/YuE2)
+- `yue2/ar_lora_inst_v3abc_comfyui.safetensors` (karta Film ze storyboardu —
+  podkresová hudba, 213 MB) — do `models/loras/yue2`, z
+  [Mothersuperior/YuE2-instrumental-cot-full-loras](https://huggingface.co/Mothersuperior/YuE2-instrumental-cot-full-loras).
+  Instrumentální LoRA pro YuE2 (bez ní model po chvíli začne zpívat).
+  **Licence CC BY-NC 4.0 — jen nekomerční použití.** Bez ní karta volbu hudby nenabídne.
 - `sam3.1_multiplex_fp16.safetensors` (Upravit video → Přemalovat a Vyměnit
   postavu, 1,7 GB), z [Comfy-Org/sam3.1](https://huggingface.co/Comfy-Org/sam3.1)
 

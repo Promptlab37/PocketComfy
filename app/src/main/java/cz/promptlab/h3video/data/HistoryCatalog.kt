@@ -66,6 +66,11 @@ object HistoryCodec {
                     title = o.optString("title").trim().take(120), favorite = o.optBoolean("favorite"),
                     retez = o.optString("retez").trim().take(120),
                     serverFile = o.optString("srvFile"),
+                    filmNaServeru = o.optString("filmSrv"),
+                    filmSlozka = o.optString("filmSub"),
+                    filmSekundy = o.optDouble("filmSek", 0.0).toFloat(),
+                    hudbaStyl = o.optString("hudbaStyl"),
+                    sHudbou = o.optBoolean("sHudbou", false),
                     serverSubfolder = o.optString("srvSub"),
                     serverType = o.optString("srvType"),
                     serverBytes = o.optLong("srvBytes").coerceAtLeast(0L),
@@ -86,7 +91,10 @@ object HistoryCodec {
                 .put("title", item.title).put("favorite", item.favorite)
                 .put("retez", item.retez)
                 .put("srvFile", item.serverFile).put("srvSub", item.serverSubfolder)
-                .put("srvType", item.serverType).put("srvBytes", item.serverBytes))
+                .put("srvType", item.serverType).put("srvBytes", item.serverBytes)
+                .put("filmSrv", item.filmNaServeru).put("filmSub", item.filmSlozka)
+                .put("filmSek", item.filmSekundy.toDouble()).put("hudbaStyl", item.hudbaStyl)
+                .put("sHudbou", item.sHudbou))
         }
     }.toString()
 }

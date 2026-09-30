@@ -27,7 +27,9 @@ import kotlin.math.roundToInt
 /** Odkud se bere plán: přečtený storyboard, nebo návrh z děje a postav. */
 enum class SbZdroj(private val titleCs: String) {
     STORYBOARD("Mám storyboard"),
-    DEJ("Vytvořit z děje");
+    DEJ("Vytvořit z děje"),
+    /** Obrázek bez textu + scénář zvlášť (5.14, [SbScenar]). */
+    SCENAR("Storyboard + scénář");
 
     val title: String get() = t(titleCs)
 }
@@ -78,6 +80,12 @@ data class SbPanel(
      * větou“) — tester měl storyboard s českými dialogy a film by byl bez nich.
      */
     val repliky: String = "",
+    /** Podání každé repliky ze scénáře („překvapeně“), oddělené `;` ve stejném pořadí (5.14). */
+    val podani: String = "",
+    /** Zvuk záběru ze scénáře („šustění stránek“, 5.14). */
+    val zvuk: String = "",
+    /** Detail telefonu / displeje (5.14) — H3 tam jinak píše nesmyslná písmena. */
+    val obrazovka: Boolean = false,
 )
 
 /** Co model ze storyboardu přečetl, ještě bez naplánovaných délek. */
@@ -93,6 +101,8 @@ data class SbCteni(
     val hlasy: Map<String, String> = emptyMap(),
     /** Vzhled postav a zvířat (jméno → „long dark hair, beige knit cardigan“). */
     val vzhled: Map<String, String> = emptyMap(),
+    /** Styl podkresové hudby podle děje (anglicky, pro YuE2). */
+    val hudbaStyl: String? = null,
 )
 
 data class SbPrecteny(
@@ -111,6 +121,7 @@ data class SbPlan(
     val zeStoryboardu: Boolean,
     val hlasy: Map<String, String> = emptyMap(),
     val vzhled: Map<String, String> = emptyMap(),
+    val hudbaStyl: String? = null,
 )
 
 /** Úsek videa: souvislá řada panelů, kterou H3 vykreslí najednou. */
@@ -146,7 +157,9 @@ object SbFilmPlan {
             "animal who appears in more than one panel: Name = how they look in the panel where they first " +
             "appear (hair, clothing and its colours for people; breed and fur colour for animals), for " +
             "example Anna = long red hair, green raincoat; Dog = golden retriever with golden fur; separated " +
-            "by ;. Use the printed speaker names where there are any>\n" +
+            "by ;. Use the printed speaker names where there are any> | MUSIC: <a short style for " +
+            "instrumental background music that fits this story: genre, mood, instruments and tempo, for " +
+            "example cinematic, tense, low strings and piano, 80 BPM>\n" +
             "Then one line per numbered shot panel, in the panel order: PANEL <number> | <the time " +
             "range exactly as printed on that panel, for example 00-04s, or none> | <shot size: " +
             "wide, medium, close-up, extreme close-up, insert or detail> | <camera movement, or " +
@@ -172,6 +185,7 @@ object SbFilmPlan {
         var sloupcu: Int? = null
         val hlasy = linkedMapOf<String, String>()
         val vzhled = linkedMapOf<String, String>()
+        var hudbaStyl: String? = null
         val panely = mutableListOf<SbPrecteny>()
         // Přepisovač slučuje řádky do jednoho (`" ".join(caption.split())`) —
         // před každý PANEL/TITLE se proto zalomení vrátí.
@@ -200,6 +214,7 @@ object SbFilmPlan {
                                 if (kdo.isNotBlank() && jak.isNotBlank() && SbFilmPrepis.jeMluvci(kdo))
                                     hlasy[SbFilmPrepis.opravMluvciho(kdo)] = jak
                             }
+                            "MUSIC" -> hudbaStyl = v.trim().trimEnd('.')
                             "LOOKS" -> v.split(";").forEach { h ->
                                 val (kdo, jak) = h.split("=", limit = 2).let {
                                     it[0].trim() to it.getOrElse(1) { "" }.trim().trimEnd('.')
@@ -233,7 +248,7 @@ object SbFilmPlan {
                 }
             }
         }
-        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu, hlasy, vzhled)
+        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu, hlasy, vzhled, hudbaStyl)
     }
 
     /**
@@ -354,7 +369,7 @@ object SbFilmPlan {
                 repliky = p.repliky,
             )
         }
-        return SbPlan(panely, vepsane != null, cteni.hlasy, cteni.vzhled)
+        return SbPlan(panely, vepsane != null, cteni.hlasy, cteni.vzhled, cteni.hudbaStyl)
     }
 
     private fun vepsaneDelky(cteni: SbCteni, panely: List<SbPrecteny>): List<Double>? {
@@ -547,7 +562,8 @@ object SbFilmPlan {
         "You are a film director writing a shot list for a short AI video. Answer in plain lines " +
             "only, no other text. First line: TITLE: <a short title> | TOTAL: <total seconds> | " +
             "SHOTS: <number of shots> | VOICES: <for every speaker who has a line: Name = age, gender " +
-            "and voice in plain English words (pitch, timbre), separated by ;, or none>. Then one line " +
+            "and voice in plain English words (pitch, timbre), separated by ;, or none> | MUSIC: <a short style " +
+            "for instrumental background music that fits the story: genre, mood, instruments and tempo>. Then one line " +
             "per shot, in story order: PANEL <number> | " +
             "<start-end seconds, for example 00-04s> | <shot size: wide, medium, close-up, extreme " +
             "close-up, insert or detail> | <camera movement, or static> | <what happens in the shot, " +
@@ -579,7 +595,7 @@ object SbFilmPlan {
         val reci = plan.panely.map { delkaReci(it.repliky) }
         val delky = rozlozCas(plan.panely.map { it.sekundy }, reci, cilSekund.toDouble())
         val panely = plan.panely
-        return SbPlan(panely.mapIndexed { i, p -> p.copy(sekundy = delky[i]) }, false, plan.hlasy, plan.vzhled)
+        return SbPlan(panely.mapIndexed { i, p -> p.copy(sekundy = delky[i]) }, false, plan.hlasy, plan.vzhled, plan.hudbaStyl)
     }
 
     /** `MM:SS.mmm` jako v příručce H3. */
@@ -616,9 +632,27 @@ data class SbFilmScene(
     val hlasy: Map<String, String> = emptyMap(),
     /** Vzhled postav a zvířat — stejný popis jde do všech úseků filmu. */
     val vzhled: Map<String, String> = emptyMap(),
+    /** Styl hudby — z čtení storyboardu, jde upravit. */
+    val hudbaStyl: String = "",
+    /** Hlasitost hudby pod dialogy v dB. */
+    val hudbaHlasitost: Int = cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_VYCHOZI,
     val model: SbModel = SbModel.TURBO,
     /** Kroky plného modelu (Kvalita). Turbo má pevných [TURBO_KROKY]. */
     val krokyKvalita: Int = KVALITA_KROKY,
+    /** Storyboard + scénář: text scénáře, jak ho uživatel vložil. */
+    val scenar: String = "",
+    /** Storyboard + scénář: kontinuita celého filmu ze scénáře. */
+    val kontinuita: String = "",
+    /** Storyboard + scénář: texty na videu, výzva a poznámky — do H3 nejdou. */
+    val strih: List<SbTextStrihu> = emptyList(),
+    /** Storyboard + scénář: okna rozdělil jazykový model (scénář je neoznačoval). */
+    val scenarOdhadem: Boolean = false,
+    /** Storyboard + scénář: kolik panelů přečetl obrázek (0 = nevíme). */
+    val panelyObrazku: Int = 0,
+    /** Storyboard + scénář: kolik oken měl scénář při čtení. */
+    val oknaScenare: Int = 0,
+    /** Storyboard + scénář: otisk scénáře, ze kterého je plán (změna → přečíst znovu). */
+    val scenarPlanu: Int = 0,
 ) {
     /** Kroky, se kterými se opravdu vzorkuje. */
     val kroky: Int
@@ -632,7 +666,7 @@ data class SbFilmScene(
     val sekundy: Double get() = panely.sumOf { it.sekundy }
 
     /** Jde storyboard do H3 jako `<Picture 1>`? Jen když je z něj plán. */
-    val seStoryboardem: Boolean get() = zdroj == SbZdroj.STORYBOARD && storyboard != null
+    val seStoryboardem: Boolean get() = zdroj != SbZdroj.DEJ && storyboard != null
 
     /** Nahrávají se v tomhle pořadí: storyboard = `<Picture 1>`, postavy dál. */
     val uploadImages: List<File>
@@ -653,6 +687,35 @@ data class SbFilmScene(
     }
 }
 
+/**
+ * Podkresová hudba k hotovému filmu ze storyboardu (5.13): co se zmrazí při
+ * zařazení do fronty. Film se čte z výstupů serveru, původní zůstává.
+ */
+data class SbHudbaZadani(
+    val zdrojId: String,
+    val soubor: String,
+    val slozka: String,
+    val styl: String,
+    val hlasitost: Int,
+    val sekundy: Double,
+    val seed: Long,
+    val prompt: String = "",
+)
+
+/**
+ * Lze k položce galerie přidat hudbu? Jen film ze storyboardu, který leží
+ * na serveru a sám hudbu ještě nemá (jinak by hudba přibyla dvakrát).
+ */
+fun jdePridatHudbu(item: VideoItem, serverUmi: Boolean): Boolean =
+    serverUmi && item.mode == Mode.SBFILM.name && item.filmNaServeru.isNotBlank() && !item.sHudbou
+
+/** Délka filmu pro hudbu: změřená, jinak plánovaná. */
+fun delkaProHudbu(item: VideoItem): Double =
+    (if (item.filmSekundy > 0f) item.filmSekundy else item.seconds).toDouble()
+
+/** Otisk scénáře — bílé znaky na krajích nerozhodují. */
+fun otiskScenare(t: String): Int = t.trim().hashCode()
+
 /** Co kartě chybí, než se dá natočit. */
 fun sbFilmProblem(s: SbFilmScene): String? = when (s.zdroj) {
     SbZdroj.STORYBOARD -> when {
@@ -667,12 +730,23 @@ fun sbFilmProblem(s: SbFilmScene): String? = when (s.zdroj) {
         s.panely.isEmpty() -> t("Nejdřív nech navrhnout záběry.")
         else -> scenarProblem(s)
     }
+    SbZdroj.SCENAR -> when {
+        s.storyboard == null -> t("Vyber obrázek se storyboardem.")
+        s.scenar.isBlank() -> t("Vlož scénář.")
+        s.panely.isEmpty() -> t("Nejdřív přečti storyboard a scénář.")
+        otiskScenare(s.scenar) != s.scenarPlanu -> t("Scénář se změnil. Přečti ho znovu.")
+        else -> scenarProblem(s)
+    }
 }
 
-/** Natočit jde až s hotovým scénářem (krok 2) — žádné skryté psaní při natáčení. */
+/**
+ * Natočit jde až s hotovým scénářem (krok 2) — žádné skryté psaní při natáčení.
+ * Se vloženým scénářem (5.14) se prompty jmenují prompty — slovo scénář patří jemu.
+ */
 private fun scenarProblem(s: SbFilmScene): String? = when {
-    s.zadaniUseku.size != s.useky.size -> t("Nejdřív napiš scénář.")
-    s.zadaniUseku.any { it.isBlank() } -> t("Doplň scénář.")
+    s.zadaniUseku.size != s.useky.size ->
+        if (s.zdroj == SbZdroj.SCENAR) t("Nejdřív napiš prompty.") else t("Nejdřív napiš scénář.")
+    s.zadaniUseku.any { it.isBlank() } -> if (s.zdroj == SbZdroj.SCENAR) t("Doplň prompty.") else t("Doplň scénář.")
     else -> null
 }
 
@@ -697,11 +771,23 @@ class SbFilmStore(private val ctx: Context) {
             .put("casyZeStoryboardu", s.casyZeStoryboardu)
             .put("hlasy", org.json.JSONObject().also { j -> s.hlasy.forEach { (k, v) -> j.put(k, v) } })
             .put("vzhled", org.json.JSONObject().also { j -> s.vzhled.forEach { (k, v) -> j.put(k, v) } })
+            .put("hudbaStyl", s.hudbaStyl)
+            .put("hudbaHlasitost", s.hudbaHlasitost)
+            .put("scenar", s.scenar)
+            .put("kontinuita", s.kontinuita)
+            .put("scenarOdhadem", s.scenarOdhadem)
+            .put("panelyObrazku", s.panelyObrazku)
+            .put("oknaScenare", s.oknaScenare)
+            .put("scenarPlanu", s.scenarPlanu)
+            .put("strih", org.json.JSONArray().also { a ->
+                s.strih.forEach { a.put(org.json.JSONObject().put("cislo", it.cislo).put("text", it.text).put("druh", it.druh.name)) }
+            })
             .put("panely", org.json.JSONArray().also { a ->
                 s.panely.forEach {
                     a.put(org.json.JSONObject().put("cislo", it.cislo).put("popis", it.popis)
                         .put("typ", it.typ).put("kamera", it.kamera).put("sekundy", it.sekundy)
-                        .put("repliky", it.repliky))
+                        .put("repliky", it.repliky).put("podani", it.podani).put("zvuk", it.zvuk)
+                        .put("obrazovka", it.obrazovka))
                 }
             })
         sp.edit().putString(KEY, j.toString()).apply()
@@ -717,7 +803,8 @@ class SbFilmStore(private val ctx: Context) {
         val panely = (0 until (j.optJSONArray("panely")?.length() ?: 0)).map {
             val p = j.getJSONArray("panely").getJSONObject(it)
             SbPanel(p.optInt("cislo", it + 1), p.optString("popis"), p.optString("typ"),
-                p.optString("kamera"), p.optDouble("sekundy", 3.0), p.optString("repliky"))
+                p.optString("kamera"), p.optDouble("sekundy", 3.0), p.optString("repliky"),
+                podani = p.optString("podani"), zvuk = p.optString("zvuk"), obrazovka = p.optBoolean("obrazovka"))
         }
         SbFilmScene(
             storyboard = sb, postavy = postavy, dej = j.optString("dej"),
@@ -736,7 +823,21 @@ class SbFilmStore(private val ctx: Context) {
                 .orEmpty().filterValues { it.isNotBlank() },
             vzhled = j.optJSONObject("vzhled")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }
                 .orEmpty().filterValues { it.isNotBlank() },
+            hudbaStyl = j.optString("hudbaStyl"),
+            hudbaHlasitost = j.optInt("hudbaHlasitost", cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_VYCHOZI)
+                .coerceIn(cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN, cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX),
             panely = panely,
+            scenar = j.optString("scenar"),
+            kontinuita = j.optString("kontinuita"),
+            scenarOdhadem = j.optBoolean("scenarOdhadem"),
+            oknaScenare = j.optInt("oknaScenare"),
+            scenarPlanu = j.optInt("scenarPlanu"),
+            panelyObrazku = j.optInt("panelyObrazku"),
+            strih = (0 until (j.optJSONArray("strih")?.length() ?: 0)).mapNotNull {
+                val r = j.getJSONArray("strih").getJSONObject(it)
+                val druh = runCatching { SbTextStrihu.Druh.valueOf(r.optString("druh")) }.getOrNull() ?: return@mapNotNull null
+                SbTextStrihu(r.optInt("cislo"), r.optString("text"), druh)
+            },
         )
     }.getOrDefault(SbFilmScene())
 
@@ -953,6 +1054,7 @@ object SbFilmPrepis {
         val dej = scene.dej.trim()
         val cast = if (n > 1) "Part ${k + 1} of $n of one continuous film" else "A short film"
         return when {
+            scene.zdroj == SbZdroj.SCENAR -> "$cast, told by the storyboard in <Picture 1>."
             dej.isNotEmpty() -> "$cast. The whole story: $dej"
             scene.seStoryboardem -> "$cast, told by the storyboard in <Picture 1>."
             else -> "$cast."
@@ -974,6 +1076,8 @@ object SbFilmPrepis {
         predchozi: SbPanel? = null,
         /** Vzhled postav a zvířat z čtení storyboardu — stejný pro všechny úseky. */
         vzhled: Map<String, String> = emptyMap(),
+        /** Kontinuita celého filmu ze scénáře (5.14) — stejná věta v každém úseku. */
+        kontinuita: String = "",
     ): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
@@ -1005,9 +1109,20 @@ object SbFilmPrepis {
             if (p.kamera.isNotBlank()) sb.append(", camera ${p.kamera}")
             sb.append(": ${p.popis}")
             val repl = repliky(p.repliky)
-            repl.forEach { (kdo, text) ->
+            val podani = if (p.podani.isBlank()) emptyList() else p.podani.split(";").map { it.trim() }
+            repl.forEachIndexed { r, (kdo, text) ->
                 val tag = jazykFilmu ?: "Language"
-                sb.append("\n    spoken right as this shot begins: $kdo (${idMluvcich[kdo] ?: "S?"}) says <d>[$tag] $text</d>")
+                // Podání ze scénáře (5.14) jako příslovečné určení před <d>, jako v příručce H3.
+                val jak = podani.getOrNull(r)?.takeIf { it.isNotBlank() }?.let { ", $it," }.orEmpty()
+                sb.append("\n    spoken right as this shot begins: $kdo (${idMluvcich[kdo] ?: "S?"})$jak says <d>[$tag] $text</d>")
+            }
+            // Zvuk záběru ze scénáře jako fyzická událost (5.14).
+            if (p.zvuk.isNotBlank()) sb.append("\n    sound in this shot: ").append(p.zvuk.trim().trimEnd('.')).append(".")
+            // Displej telefonu: H3 na něm píše nesmyslná písmena — jen tvary a barvy (5.14, kritici).
+            // Osoba na displeji je fotka, ne postava filmu („mladá maminka mrkne“ vs. 72letá maminka).
+            if (p.obrazovka) {
+                sb.append("\n    the phone screen shows only pictures, soft colour blocks and simple shapes; ")
+                sb.append("any person seen on the screen is a picture on the display.")
             }
             // Záběr bez napsané repliky: „doktorka volá ke dveřím“ bez textu
             // přepisovač popsal jako volání a H3 si slova vymyslel (29. 9. 2026).
@@ -1025,6 +1140,9 @@ object SbFilmPrepis {
         // Vzhled je v celém filmu stejný: bez pevného popisu si přepisovač
         // v úseku 2 vymyslel modrý svetr a bílého psa z vzoru příručky
         // (film uživatele 29. 9. 2026, na storyboardu béžový svetr a zlatý retrívr).
+        if (kontinuita.isNotBlank()) {
+            sb.append("\nContinuity for the whole film, keep it in every shot: ").append(kontinuita.trim().trimEnd('.')).append(".")
+        }
         if (vzhled.isNotEmpty()) {
             sb.append("\nCharacters for the whole film: define each of them in subject_definitions as a ")
             sb.append("<Subject K> with exactly these looks, and keep the looks identical in every shot unless ")

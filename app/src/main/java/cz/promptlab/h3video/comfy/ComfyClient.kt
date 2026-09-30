@@ -503,6 +503,11 @@ class ComfyClient(baseUrl: String) {
         }
     }.getOrNull()
 
+    /** Existuje soubor na serveru? HEAD na `/view`; null = server neodpověděl. */
+    fun existuje(url: String): Boolean? = runCatching {
+        http.newCall(Request.Builder().url(url).head().build()).execute().use { it.isSuccessful }
+    }.getOrNull()
+
     /** Poslední hotová úloha serveru (`/history?max_items=1`); null = nejde přečíst. */
     fun posledniUloha(): JSONObject? = runCatching {
         get("/history?max_items=1").use { r ->

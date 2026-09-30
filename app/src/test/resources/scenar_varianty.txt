@@ -1,0 +1,191 @@
+V1 markdown bold
+# Reklama – Fotožije
+**Formát:** 9:16, 20 s
+**Postavy:** Dcera (35 let, mikádo) a maminka (72 let, šedé vlasy)
+
+**OKNO 1 (0–3 s)**
+**Obraz:** Dcera listuje albem.
+**Dialog:** DCERA: „To jsi ty?“
+**Text na videu:** „Našla jsem mámu.“
+
+**OKNO 2 (3–6 s)**
+**Obraz:** Maminka se usměje.
+**Dialog:** MAMINKA: „To jsem já.“
+=====
+V2 Zaber en-dash time
+Záběr 1 – 0:00–0:02
+Obraz: Dcera listuje albem.
+Dialog: Dcera: To jsi vážně ty?
+
+Záběr 2 – 0:02–0:05
+Obraz: Maminka se usměje.
+Dialog – maminka, tiše: To jsem já…
+=====
+V3 SCENA headers
+SCÉNA 1
+Kuchyň, den. Dcera listuje albem.
+DCERA: To jsi ty?
+
+SCÉNA 2
+Maminka se dívá na telefon.
+MAMINKA (dojatě): To jsem já…
+=====
+V4 English
+Scene 1 (0-3s)
+Visual: A woman flips through an album.
+Dialogue: WOMAN: "Is that you?"
+On-screen text: "I found mom."
+
+Scene 2 (3-6s)
+Visual: Old woman smiles.
+Voiceover: "Bring your photos back to life."
+=====
+V5 em-dash speaker
+[OKNO 1 | 0–3 s]
+Obraz: Dcera listuje albem.
+— Dcera: „To jsi ty?“
+[OKNO 2 | 3–6 s]
+Obraz: Maminka se usměje.
+— Maminka (tiše): „To jsem já.“
+=====
+V6 emoji headers
+🎬 OKNO 1 (0–3 s)
+📷 Obraz: Dcera listuje albem.
+🗣️ Dialog: Dcera: „To jsi ty?“
+🎬 OKNO 2 (3–6 s)
+📷 Obraz: Maminka se usměje.
+🔊 Zvuk: žádný
+=====
+V7 ### 1.
+### 1. Úvod (0–3 s)
+Dcera listuje albem. Dcera: „To jsi ty?“
+### 2. Pointa (3–6 s)
+Maminka se usměje. Maminka: „To jsem já.“
+=====
+V8 false positives
+[OKNO 1 | 0–3 s]
+Obraz: Dcera ukazuje telefon, na obrazovce je text: nápis v aplikaci. Obraz: fotka.
+Dialog – žádný
+Zvuk: tiché ticho, hudba jemně.
+[OKNO 2 | 3–6 s]
+Obraz: Dcera řekne mamince, že je to super: vypadá mladě.
+Akce: Maminka se směje. Poznámka pro střih: logo vpravo.
+=====
+V9 two lines same window, no quotes multi
+[OKNO 1 | 0–3 s]
+Obraz: Dcera a maminka u stolu.
+Dialog:
+Dcera: To jsi ty?
+Maminka: Ano, to jsem já.
+[OKNO 2 | 3–6 s]
+Obraz: Objetí.
+=====
+V10 Dialog label with bullet list quotes
+OKNO 1 (0–3 s)
+Obraz: U stolu.
+Dialog:
+- Dcera: "To jsi ty?"
+- Maminka: "Ano."
+OKNO 2 (3–6 s)
+Obraz: Objetí.
+Dialog: Dcera (V.O.): „Mami, děkuju.“
+=====
+V11 numbered only
+1) Dcera listuje albem. Dcera: „To jsi ty?“
+2) Maminka se usměje, na obrazovce telefonu fotka.
+3) Logo. Text: „fotozije.cz“
+=====
+V12 Okno with em-dash time and times in headings 00:00
+OKNO 1 — 00:00–00:03
+Obraz: Dcera listuje albem.
+OKNO 2 — 00:03–00:06
+Obraz: Maminka.
+Replika (maminka): „To jsem já.“
+=====
+V13 Scene with word 'scéna' in prose
+Postavy: Dcera – 35 let; Maminka – 72 let
+OKNO 1 (0–3 s): Dcera listuje albem, jako ve scéně 1 filmu.
+Dialog: Dcera: „To jsi ty?“
+OKNO 2 (3–6 s): Maminka se usměje.
+Dialog: Maminka: „To jsem já, jako v okně 1.“
+OKNO 3 (6–8 s): Závěr. Text na videu: Oživte vzpomínky
+
+=====
+W1 lowercase speaker outside label
+[OKNO 1 | 0–3 s]
+Dcera listuje albem. dcera: „To jsi ty?“
+[OKNO 2 | 3–6 s]
+Maminka se usměje.
+=====
+W2 title before time
+OKNO 1: Album (0–2 s)
+Obraz: Dcera listuje albem.
+OKNO 2: Pointa (2–5 s)
+Obraz: Maminka se usměje.
+=====
+W3 Zaber c.
+Záběr č. 1 (0–2 s)
+Obraz: Dcera.
+Záběr č. 2 (2–5 s)
+Obraz: Maminka.
+=====
+W4 VO variants
+[OKNO 1 | 0–3 s]
+Obraz: Album.
+VO: „Každá fotka má svůj příběh.“
+[OKNO 2 | 3–6 s]
+Obraz: Telefon.
+Hlas mimo obraz (dcera): „Mami, podívej.“
+[OKNO 3 | 6–9 s]
+Obraz: Logo.
+Voiceover (Dcera, klidně): „Oživte vzpomínky.“
+=====
+W5 says
+[OKNO 1 | 0–3 s]
+Obraz: Album.
+Dialog: Dcera říká: „To jsi ty?“
+[OKNO 2 | 3–6 s]
+Obraz: Maminka.
+Dialog: Maminka odpoví „To jsem já.“ a usměje se.
+=====
+W6 decimal times and s suffix
+[OKNO 1 | 0–2,5 s]
+Obraz: A.
+[OKNO 2 | 2,5–5 s]
+Obraz: B.
+=====
+W7 header OKNO 1/8 and total
+OKNO 1/8 (0–3 s)
+Obraz: A.
+OKNO 2/8 (3–6 s)
+Obraz: B.
+=====
+W8 apostrophe line and nested quotes
+[OKNO 1 | 0–3 s]
+Obraz: A.
+Dialog – dcera: „Mami, to je ta ‚tvoje‘ brož?“
+[OKNO 2 | 3–6 s]
+Obraz: B.
+Dialog: Maminka: "Říkali mi "Květa"."
+=====
+W9 text label Nápis and Logo
+[OKNO 1 | 0–3 s]
+Obraz: A.
+Nápis: „Našla jsem mámu“
+[OKNO 2 | 3–6 s]
+Obraz: Packshot.
+Logo: fotozije.cz
+Claim: „Vraťte fotkám život“
+=====
+W10 time in brackets at end of line with shot type
+**ZÁBĚR 1 – DETAIL – 0:00–0:02**
+Dcera listuje albem.
+**ZÁBĚR 2 – POLOCELEK – 0:02–0:05**
+Maminka se usměje.
+=====
+W11 Hudba in obraz and caption
+[OKNO 1 | 0–3 s]
+Obraz: A. Hudba: jemné piano.
+Titulek: Našla jsem mámu
+[OKNO 2 | 3–6 s]
+Obraz: B.

@@ -1,0 +1,69 @@
+PLAN
+SbPlan(panely=[SbPanel(cislo=1, popis=A guard walks down a dark corridor., typ=wide, kamera=slow push-in, sekundy=3.5, repliky=), SbPanel(cislo=2, popis=A hand turns a key in the lock., typ=close-up, kamera=static, sekundy=2.0, repliky=Guard: "Vstávej."), SbPanel(cislo=3, popis=The prisoner lifts his head., typ=medium, kamera=static, sekundy=2.8, repliky=King: „Konečně.“; Guard: „Ticho!“), SbPanel(cislo=4, popis=The guard pulls the prisoner up. DĚJ: Stráž spěchá., typ=medium, kamera=handheld, sekundy=3.5, repliky=), SbPanel(cislo=5, popis=The mask falls and reveals the king., typ=close-up, kamera=static, sekundy=2.0, repliky=King: „Jsem tvůj král.“)], zeStoryboardu=false, hlasy={Guard=a man in his 40s with a rough, low voice, King=a man in his 30s with a calm voice}, vzhled={Guard=steel helmet, red tunic, King=iron mask, grey rags}, hudbaStyl=cinematic, tense, low strings, 80 BPM)
+PLANOVACI
+<Picture 1> Part 1.
+---
+[Shot 1] At 00:11.800, <Picture 1> Part 2.
+---
+[Shot 1] At 00:22.600, <Picture 1> Part 3.
+UPLOAD [storyboard.png] SB true
+ZADANI 0
+Part 1 of 3 of one continuous film. The whole story: Osvobození krále.
+HLIDKA 0
+
+[There are exactly 1 reference images and nothing else: <Picture 1>. <Picture 1> is a storyboard reference: it defines the viewpoint, subject placement and look of these shots. It is not a frame of the video. Write exactly these 4 timed shots, in this order, one per line of the list, with these start times, and nothing after the last one:
+[Shot 1] storyboard panel 1, wide, camera slow push-in: A guard walks down a dark corridor.
+    SILENT SHOT — nobody speaks. If the action above mentions calling, shouting or saying something, show it only as a silent look or small gesture and quote no words.
+[Shot 2] At 00:03.500, storyboard panel 2, close-up, camera static: A hand turns a key in the lock.
+    spoken right as this shot begins: Guard (S1) says <d>[Czech] Vstávej.</d>
+[Shot 3] At 00:05.500, storyboard panel 3, medium, camera static: The prisoner lifts his head.
+    spoken right as this shot begins: King (S2) says <d>[Czech] Konečně.</d>
+    spoken right as this shot begins: Guard (S1) says <d>[Czech] Ticho!</d>
+[Shot 4] At 00:08.300, storyboard panel 4, medium, camera handheld: The guard pulls the prisoner up. DĚJ: Stráž spěchá.
+    SILENT SHOT — nobody speaks. If the action above mentions calling, shouting or saying something, show it only as a silent look or small gesture and quote no words.
+Characters for the whole film: define each of them in subject_definitions as a <Subject K> with exactly these looks, and keep the looks identical in every shot unless a shot's action says they change clothes: Guard — steel helmet, red tunic; King — iron mask, grey rags.
+Every spoken line listed above goes into its shot word for word, in its original language, inside <d>; never translate, shorten or drop a line. The speaker description and the speaker ID stay outside <d>. Speaker IDs for the whole film: Guard = (S1), King = (S2). Voices for the whole film, use these exact words: Guard (S1) — a man in his 40s with a rough, low voice, speaking at a lively, natural pace; King (S2) — a man in his 30s with a calm voice, speaking at a lively, natural pace.
+Acting (only in shots with a listed line): the first time a speaker talks, name their voice with the words given above; in their later lines, repeat it as "in the same ... voice" with those same words. Before each line, add a few words of delivery that fit this moment of the story (emotion, tone) and the facial expression while speaking. Every spoken line stays inside <d>[Language] ...</d> exactly as listed, and its words appear nowhere else. Each line starts right as its shot begins, at a lively, natural conversational pace, and the next speaker answers right on the cut, like a real quick exchange. After the line the speaker closes their lips with a brief natural reaction until the cut; add no new action, laughter or sound. The setting, characters and actions stay exactly as listed above.
+A SILENT SHOT has no voice at all: never write calling, shouting, talking or an off-screen voice in it, and never put quoted words outside <d> anywhere — the video speaks every quoted or described utterance, and without an exact <d> line it invents the words.
+Each shot shows only the action of its own panel. Never repeat an action from an earlier shot or an earlier part, and do not use storyboard panels that are not in this list — they are either in another part or cut from the film.
+Total 11.8 seconds. The task is [reference generation] only: the voices and sounds are generated together with the picture, so the only labels are <Picture 1> and the <Subject K> defined from it. This part has 4 shots, [Shot 1] to [Shot 4], and every field refers only to them.
+]
+ZADANI 1
+Part 2 of 3 of one continuous film. The whole story: Osvobození krále.
+HLIDKA 1
+
+[There are exactly 1 reference images and nothing else: <Picture 1>. <Picture 1> is a storyboard reference: it defines the viewpoint, subject placement and look of these shots. It is not a frame of the video. This part continues directly from the previous part: the first moment picks up the motion of the previous shot before the first cut. The previous part ended with: The guard pulls the prisoner up. DĚJ: Stráž spěchá. Write exactly these 4 timed shots, in this order, one per line of the list, with these start times, and nothing after the last one:
+[Shot 1] storyboard panel 5, close-up, camera static: The mask falls and reveals the king.
+    spoken right as this shot begins: King (S2) says <d>[Czech] Jsem tvůj král.</d>
+[Shot 2] At 00:02.000, storyboard panel 6, wide, camera slow push-in: A guard walks down a dark corridor.
+    SILENT SHOT — nobody speaks. If the action above mentions calling, shouting or saying something, show it only as a silent look or small gesture and quote no words.
+[Shot 3] At 00:05.500, storyboard panel 7, close-up, camera static: A hand turns a key in the lock.
+    spoken right as this shot begins: Guard (S1) says <d>[Czech] Vstávej.</d>
+[Shot 4] At 00:07.500, storyboard panel 8, medium, camera static: The prisoner lifts his head.
+    spoken right as this shot begins: King (S2) says <d>[Czech] Konečně.</d>
+    spoken right as this shot begins: Guard (S1) says <d>[Czech] Ticho!</d>
+Characters for the whole film: define each of them in subject_definitions as a <Subject K> with exactly these looks, and keep the looks identical in every shot unless a shot's action says they change clothes: Guard — steel helmet, red tunic; King — iron mask, grey rags.
+Every spoken line listed above goes into its shot word for word, in its original language, inside <d>; never translate, shorten or drop a line. The speaker description and the speaker ID stay outside <d>. Speaker IDs for the whole film: Guard = (S1), King = (S2). Voices for the whole film, use these exact words: Guard (S1) — a man in his 40s with a rough, low voice, speaking at a lively, natural pace; King (S2) — a man in his 30s with a calm voice, speaking at a lively, natural pace.
+Acting (only in shots with a listed line): the first time a speaker talks, name their voice with the words given above; in their later lines, repeat it as "in the same ... voice" with those same words. Before each line, add a few words of delivery that fit this moment of the story (emotion, tone) and the facial expression while speaking. Every spoken line stays inside <d>[Language] ...</d> exactly as listed, and its words appear nowhere else. Each line starts right as its shot begins, at a lively, natural conversational pace, and the next speaker answers right on the cut, like a real quick exchange. After the line the speaker closes their lips with a brief natural reaction until the cut; add no new action, laughter or sound. The setting, characters and actions stay exactly as listed above.
+A SILENT SHOT has no voice at all: never write calling, shouting, talking or an off-screen voice in it, and never put quoted words outside <d> anywhere — the video speaks every quoted or described utterance, and without an exact <d> line it invents the words.
+Each shot shows only the action of its own panel. Never repeat an action from an earlier shot or an earlier part, and do not use storyboard panels that are not in this list — they are either in another part or cut from the film.
+Total 10.8 seconds. The task is [reference generation] only: the voices and sounds are generated together with the picture, so the only labels are <Picture 1> and the <Subject K> defined from it. This part has 4 shots, [Shot 1] to [Shot 4], and every field refers only to them.
+]
+ZADANI 2
+Part 3 of 3 of one continuous film. The whole story: Osvobození krále.
+HLIDKA 2
+
+[There are exactly 1 reference images and nothing else: <Picture 1>. <Picture 1> is a storyboard reference: it defines the viewpoint, subject placement and look of these shots. It is not a frame of the video. This part continues directly from the previous part: the first moment picks up the motion of the previous shot before the first cut. The previous part ended with: The prisoner lifts his head. Write exactly these 3 timed shots, in this order, one per line of the list, with these start times, and nothing after the last one:
+[Shot 1] storyboard panel 9, medium, camera handheld: The guard pulls the prisoner up. DĚJ: Stráž spěchá.
+    SILENT SHOT — nobody speaks. If the action above mentions calling, shouting or saying something, show it only as a silent look or small gesture and quote no words.
+[Shot 2] At 00:03.500, storyboard panel 10, close-up, camera static: The mask falls and reveals the king.
+    spoken right as this shot begins: King (S2) says <d>[Czech] Jsem tvůj král.</d>
+[Shot 3] At 00:05.500, storyboard panel 11, wide, camera static: The king walks out into the light.
+    spoken right as this shot begins: King (S2) says <d>[Czech] Jdeme.</d>
+Characters for the whole film: define each of them in subject_definitions as a <Subject K> with exactly these looks, and keep the looks identical in every shot unless a shot's action says they change clothes: Guard — steel helmet, red tunic; King — iron mask, grey rags.
+Every spoken line listed above goes into its shot word for word, in its original language, inside <d>; never translate, shorten or drop a line. The speaker description and the speaker ID stay outside <d>. Speaker IDs for the whole film: Guard = (S1), King = (S2). Voices for the whole film, use these exact words: Guard (S1) — a man in his 40s with a rough, low voice, speaking at a lively, natural pace; King (S2) — a man in his 30s with a calm voice, speaking at a lively, natural pace.
+Acting (only in shots with a listed line): the first time a speaker talks, name their voice with the words given above; in their later lines, repeat it as "in the same ... voice" with those same words. Before each line, add a few words of delivery that fit this moment of the story (emotion, tone) and the facial expression while speaking. Every spoken line stays inside <d>[Language] ...</d> exactly as listed, and its words appear nowhere else. Each line starts right as its shot begins, at a lively, natural conversational pace, and the next speaker answers right on the cut, like a real quick exchange. After the line the speaker closes their lips with a brief natural reaction until the cut; add no new action, laughter or sound. The setting, characters and actions stay exactly as listed above.
+A SILENT SHOT has no voice at all: never write calling, shouting, talking or an off-screen voice in it, and never put quoted words outside <d> anywhere — the video speaks every quoted or described utterance, and without an exact <d> line it invents the words.
+Each shot shows only the action of its own panel. Never repeat an action from an earlier shot or an earlier part, and do not use storyboard panels that are not in this list — they are either in another part or cut from the film.
+Total 10.0 seconds. The task is [reference generation] only: the voices and sounds are generated together with the picture, so the only labels are <Picture 1> and the <Subject K> defined from it. This part has 3 shots, [Shot 1] to [Shot 3], and every field refers only to them.
+]

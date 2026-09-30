@@ -101,6 +101,10 @@ card by card, so you do not download what you will not use.
 - `ace_step_1.5_turbo_aio.safetensors` (Music card — ACE-Step option)
 - `yue2_3b_int8_convrot.safetensors` (Music card — YuE2 option, 3.9 GB;
   ComfyUI 0.36.0+), from [Comfy-Org/YuE2](https://huggingface.co/Comfy-Org/YuE2)
+- `yue2/ar_lora_inst_v3abc_comfyui.safetensors` in `models/loras/yue2` (Film from storyboard —
+  background music, 213 MB), from [Mothersuperior/YuE2-instrumental-cot-full-loras](https://huggingface.co/Mothersuperior/YuE2-instrumental-cot-full-loras).
+  Instrumental LoRA for YuE2 (without it the model starts singing after a while).
+  **Licence CC BY-NC 4.0 — non-commercial use only.** Without it the card doesn't offer music.
 - `sam3.1_multiplex_fp16.safetensors` (Edit video → Repaint and Replace
   character, 1.7 GB), from [Comfy-Org/sam3.1](https://huggingface.co/Comfy-Org/sam3.1)
 
