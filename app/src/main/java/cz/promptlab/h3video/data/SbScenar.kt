@@ -151,14 +151,15 @@ object SbScenar {
      * `DCERA (překvapeně): „…“`. Skupiny: jméno, podání slovy, podání v závorce, text.
      */
     private val MLUVCI_REPLIKA = Regex(
-        """(?<![\p{L}])([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]+\p{Ll}[\p{L}]{1,15}){0,3}?)[ \t]*""" +
+        // Podání slovy („Syn tiše:“) nebo za čárkou („Keramička, spokojeně:“ — hrnek 30. 9. 2026).
+        """(?<![\p{L}])([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{1,15}){0,3}?)[ \t]*""" +
             """(?:\(([^)\n]{1,40})\))?[ \t]*:[ \t]*[„“"«]([^„“"«»”\n]{1,300})[“”"»]""",
     )
 
     /** Řádek repliky bez uvozovek: `DCERA: To jsi ty?`, `MAMINKA (dojatě): To jsem já…`. */
     private val RADEK_MLUVCI = Regex(
         // Druhé slovo jména jen velkým písmenem — „Otec tiše:“ je jméno a podání.
-        """^[ \t]*([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]+\p{Ll}[\p{L}]{1,15}){0,3}?)[ \t]*""" +
+        """^[ \t]*([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{1,15}){0,3}?)[ \t]*""" +
             """(?:\(([^)\n]{1,40})\))?[ \t]*:[ \t]*(.+)$""",
     )
 
@@ -398,7 +399,9 @@ object SbScenar {
         val zavorka = radek.indexOf(']')
         if (zavorka >= 0) {
             val h = radek.substring(0, zavorka)
-            return Triple(cas(h), typZ(h), radek.substring(zavorka + 1))
+            // `[OKNO 1 | 0–3 s] NÁPAD` — název okna za závorkou do popisu nepatří.
+            val za = radek.substring(zavorka + 1)
+            return Triple(cas(h), typZ(h), if (jeNadpis(za)) "" else za)
         }
         val stitek = Regex(
             "(?iu)(?<![\\p{L}])(" + STITKY.joinToString("|") { Regex.escape(it.first) } + ")" + KVALIFIKATOR,
@@ -431,7 +434,8 @@ object SbScenar {
     private fun rozeberOkno(cislo: Int, telo: String, znamiMluvci: Set<String>, celyFilm: MutableList<String>): SbOkno {
         val prvniRadek = telo.substringBefore('\n')
         val (cas, typHlavicky, obsahRadku) = hlavickaOkna(prvniRadek)
-        val zbytek = (obsahRadku + "\n" + telo.substringAfter('\n', ""))
+        val zbytek = (obsahRadku + "\n" + telo.substringAfter('\n', "")
+            .replace(Regex("""^\s*[\p{Lu}\d][\p{Lu}\d \t–—-]{1,40}\n"""), ""))
             .replace(PRAZDNE_POLE, "")
             .replace(POKYN, "Kontinuita:")
 
@@ -554,7 +558,7 @@ object SbScenar {
             UVOZOVKY.findAll(s).toList().forEach { m -> poznamky += m.groupValues[1].trim(); s = s.replace(m.value, "") }
             s = WEB.replace(s, "web")
             // Osiřelý štítek („Text ve videu:.“) — text v uvozovkách šel do poznámek, štítek do H3 nepatří.
-            s = vety(s).filterNot { Regex("""^[\p{L} ]{2,40}:\s*[.!]?$""").matches(it.trim()) }.joinToString(" ")
+            s = vety(s).filterNot { Regex("""^[\p{L} ,]{2,50}:\s*[.!]?$""").matches(it.trim()) }.joinToString(" ")
             return s.replace(Regex("""\s+([,.])"""), "$1").replace(Regex("""\s{2,}"""), " ").trim()
         }
 
@@ -702,7 +706,7 @@ object SbScenar {
             nazev = s.nazev.ifBlank { obrazek?.nazev.orEmpty() }.ifBlank { null },
             celkemVepsano = null, zaberuVepsano = null, panely = panely,
             radku = obrazek?.radku, sloupcu = obrazek?.sloupcu,
-            hlasy = hlasy(s), vzhled = s.postavy.ifEmpty { obrazek?.vzhled.orEmpty() },
+            hlasy = hlasyScenareAObrazku(s, obrazek), vzhled = vzhledScenareAObrazku(s, obrazek),
             hudbaStyl = obrazek?.hudbaStyl,
         )
     }
@@ -729,12 +733,14 @@ object SbScenar {
     private val ZENSKE = setOf(
         "žena", "dcera", "máma", "mama", "maminka", "matka", "babička", "babicka", "sestra", "teta", "dívka",
         "divka", "holka", "holčička", "paní", "pani", "slečna", "vnučka", "manželka", "přítelkyně", "kamarádka",
-        "nevěsta", "její", "woman", "girl", "mother", "mom", "mum", "daughter", "grandma", "grandmother", "sister",
+        "nevěsta", "její", "keramička", "tvůrkyně", "fotografka", "zákaznice", "prodavačka", "kuchařka", "lékařka",
+        "učitelka", "majitelka", "maminka", "woman", "girl", "mother", "mom", "mum", "daughter", "grandma", "grandmother", "sister",
         "aunt", "lady", "wife", "bride", "she", "her",
     )
     private val MUZSKE = setOf(
         "muž", "muz", "otec", "táta", "tata", "tatínek", "děda", "deda", "dědeček", "syn", "bratr", "strýc", "kluk",
-        "chlapec", "pán", "pan", "vnuk", "manžel", "přítel", "kamarád", "ženich", "jeho",
+        "chlapec", "pán", "pan", "vnuk", "manžel", "přítel", "kamarád", "ženich", "jeho", "tvůrce", "fotograf",
+        "kameraman", "režisér", "zákazník", "prodavač", "kuchař", "lékař", "učitel", "majitel", "soudce", "správce",
         "man", "boy", "father", "dad", "son", "grandpa", "grandfather", "brother", "uncle", "husband", "groom", "he", "his",
     )
     /** Mužská jména na -a / -e (Honza, Kuba…). */
@@ -761,7 +767,9 @@ object SbScenar {
         return when {
             j in MUZSKA_NA_A -> if (j in setOf("andrea", "nikola", "saša", "sasha")) null else false
             j.endsWith("ová") -> true
-            Regex("""[ae]$""").containsMatchIn(j) -> true
+            // -a (Jana, keramička) žena; -e je nejisté (tvůrce, soudce × Marie) — hlas pak z obrázku.
+            Regex("""(a|ice|yně)$""").containsMatchIn(j) -> true
+            j.endsWith("e") -> null
             j.isNotEmpty() && j.last().isLetter() -> false
             else -> null
         }
@@ -834,13 +842,51 @@ object SbScenar {
                 (rod == null || zenaEn(t) == null || zenaEn(t) == rod) &&
                     (starsi == null || stary(t) == starsi)
             }
-            if (kandidati.size == 1 && (starsi != null || vzhled.size == 1)) {
+            if (kandidati.size == 1 && (starsi != null || rod != null || vzhled.size == 1)) {
                 out[m] = vzhled.getValue(kandidati.single())
                 pouzite += kandidati.single()
             }
         }
         vzhled.filterKeys { it !in pouzite }.forEach { (k, v) -> out[k] = v }
         return out
+    }
+
+    /**
+     * Vzhled: ze scénáře; mluvčím, které scénář nepopisuje, z obrázku (Young Man →
+     * Syn). Bez seznamu postav ve scénáři i zbylé postavy z obrázku.
+     */
+    fun vzhledScenareAObrazku(s: SbScenarCteni, obrazek: SbCteni?): Map<String, String> {
+        val zObrazku = vzhledProMluvci(obrazek?.vzhled.orEmpty(), s)
+        if (s.postavy.isEmpty()) return zObrazku
+        val mluvci = s.okna.flatMap { o -> o.repliky.map { it.kdo } }.toSet()
+        return s.postavy + zObrazku.filterKeys { k -> k in mluvci && s.postavy.keys.none { stejnyMluvci(it, k) } }
+    }
+
+    /** Hlasy: podle věku a rodu ze scénáře; komu chybí, z obrázku (hrnek: „tvůrce“ dostal ženský hlas). */
+    fun hlasyScenareAObrazku(s: SbScenarCteni, obrazek: SbCteni?): Map<String, String> {
+        val vse = hlasy(s)
+        // Hlas s věkem ze scénáře má přednost; bez věku („a woman with a warm… voice“) je jen
+        // odhad z rodu — obrázek věk odhadne líp; obecný hlas zůstane jen jako záloha.
+        val sVekem = vse.filterValues { Regex(""" in (her|his) | of about |teenage""").containsMatchIn(it) }
+        val zObrazku = vzhledProMluvci(obrazek?.hlasy.orEmpty(), s)
+        val mluvci = s.okna.flatMap { o -> o.repliky.map { it.kdo } }.toSet()
+        val out = LinkedHashMap(sVekem)
+        zObrazku.filterKeys { k -> k in mluvci && out.keys.none { stejnyMluvci(it, k) } }.forEach { (k, v) -> out[k] = v }
+        vse.filterKeys { k -> out.keys.none { stejnyMluvci(it, k) } }.forEach { (k, v) -> out[k] = v }
+        return out
+    }
+
+    /**
+     * Značky, které přepisovač vymyslel (`<Product>`), přepíše na další
+     * `<Subject K>` — příručka zná jen Picture/Subject/Audio/Video (hrnek 30. 9. 2026).
+     */
+    fun opravZnacky(text: String): String {
+        val povolene = Regex("""^(Picture|Subject|Audio|Video) \d+$|^/?d$""")
+        val cizi = Regex("""<(/?[A-Za-z][A-Za-z ]{0,20}?)>""").findAll(text).map { it.groupValues[1] }
+            .filterNot { povolene.matches(it) }.distinct().toList()
+        if (cizi.isEmpty()) return text
+        var dalsi = (Regex("""<Subject (\d+)>""").findAll(text).maxOfOrNull { it.groupValues[1].toInt() } ?: 0) + 1
+        return cizi.fold(text) { t, z -> t.replace("<$z>", "<Subject ${dalsi++}>") }
     }
 
     fun hlas(zena: Boolean, vek: Int): String {

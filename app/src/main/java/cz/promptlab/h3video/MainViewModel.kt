@@ -5255,9 +5255,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     updateSbFilm {
                         it.copy(
                             panely = cz.promptlab.h3video.data.SbScenar.doplnPanely(plan.panely, scenar),
-                            // Bez seznamu postav ve scénáři: vzhled z obrázku pod jmény ze scénáře (Young Man → Syn).
-                            vzhled = if (scenar.postavy.isNotEmpty()) plan.vzhled
-                            else cz.promptlab.h3video.data.SbScenar.vzhledProMluvci(obrazek.vzhled, scenar),
+                            // Vzhled ze scénáře, mluvčím bez popisu z obrázku (Young Man → Syn) — SbScenar.cteni.
+                            vzhled = plan.vzhled,
                             nazev = scenar.nazev.ifBlank { obrazek.nazev.orEmpty() },
                             casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(),
                             hlasy = plan.hlasy, hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
@@ -5531,7 +5530,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             )
             // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
             // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
-            sp.ocistiPrepis(text, u.panely.size)
+            val cisty = sp.ocistiPrepis(text, u.panely.size)
+            // Se scénářem i vymyšlené značky (<Product>) → <Subject K> (5.22).
+            if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty) else cisty
         }
     }
 
