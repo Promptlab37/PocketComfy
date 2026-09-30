@@ -797,8 +797,15 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // Za běhu tlačítko nezhasíná – další zadání se zařadí do fronty a
         // spustí se samo, jakmile aktuální běh skončí.
         val fronta by vm.queue.collectAsStateWithLifecycle()
-        val chybi = problem
-        val blocked = chybi != null
+        // Film ze storyboardu: dokud není připravený, hlavní tlačítko připravuje (5.21).
+        val sbScena by vm.sbFilm.collectAsStateWithLifecycle()
+        val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
+        val sbAkce by vm.sbAkce.collectAsStateWithLifecycle()
+        val sbPripravuje = stavPrepisu is MainViewModel.RewriteState.Busy &&
+            (sbAkce == MainViewModel.SbAkce.CTENI || sbAkce == MainViewModel.SbAkce.NAVRH)
+        val sbPripravit = mode == Mode.SBFILM && !busy && (sbPripravuje || cz.promptlab.h3video.data.sbTlacitkoPripravit(sbScena))
+        val chybi = if (sbPripravit) null else problem
+        val blocked = if (sbPripravit) sbPripravuje || stavPrepisu is MainViewModel.RewriteState.Busy else chybi != null
         // Co chybí, je krátký řádek NAD tlačítkem. V tlačítku samotném se
         // dlouhá hláška nevešla a přetékala přes okraje.
         if (chybi != null) {
@@ -813,6 +820,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         }
         GradientButton(
             text = when {
+                sbPripravit -> if (sbPripravuje) t("Připravuji film…") else t("Připravit film")
                 busy -> t("Přidat do fronty") +
                     (if (fronta.isNotEmpty()) t(" (čeká %d)").format(fronta.size) else "")
                 mode == Mode.EDIT -> t("Upravit obrázek")
@@ -852,7 +860,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 // obrazovku a schovaný pod klávesnicí by nebyl k ničemu.
                 focus.clearFocus(force = true)
                 keyboard?.hide()
-                vm.start()
+                if (sbPripravit) vm.pripravitFilm() else vm.start()
             }
         )
         if (busy) {

@@ -726,6 +726,26 @@ fun jdePridatHudbu(item: VideoItem, serverUmi: Boolean): Boolean =
 fun delkaProHudbu(item: VideoItem): Double =
     (if (item.filmSekundy > 0f) item.filmSekundy else item.seconds).toDouble()
 
+/** Jde spustit příprava (plán + prompty)? Podklady dané volby jsou vyplněné. */
+fun sbLzePripravit(s: SbFilmScene): Boolean = when (s.zdroj) {
+    SbZdroj.STORYBOARD -> s.storyboard != null
+    SbZdroj.SCENAR -> s.storyboard != null && s.scenar.isNotBlank()
+    SbZdroj.DEJ -> s.dej.isNotBlank() && s.postavy.isNotEmpty()
+}
+
+/** Je film připravený (prompty ke všem úsekům, u scénáře z jeho aktuální podoby)? */
+fun sbPripraveno(s: SbFilmScene): Boolean =
+    s.zadaniUseku.isNotEmpty() && s.zadaniUseku.size == s.useky.size &&
+        (s.zdroj != SbZdroj.SCENAR || otiskScenare(s.scenar) == s.scenarPlanu)
+
+/**
+ * Hlavní tlačítko dole má místo „Natočit film“ nabídnout „Připravit film“
+ * (5.21, uživatel: „aby to připravit film bylo vidět lépe“): podklady jsou,
+ * film připravený není a kontrola nic nenašla (nálezy se řeší v Kontrole).
+ */
+fun sbTlacitkoPripravit(s: SbFilmScene): Boolean =
+    sbLzePripravit(s) && !sbPripraveno(s) && s.nalezy.isEmpty()
+
 /** Otisk scénáře — bílé znaky na krajích nerozhodují. */
 fun otiskScenare(t: String): Int = t.trim().hashCode()
 

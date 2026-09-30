@@ -195,19 +195,18 @@ fun SbFilmSection(vm: MainViewModel) {
     }
 
     // 2 · Příprava: jedno tlačítko — plán i prompty, pak už jen Natočit (5.15–5.17).
-    val lzePripravit = when (scene.zdroj) {
-        SbZdroj.STORYBOARD -> scene.storyboard != null
-        SbZdroj.SCENAR -> scene.storyboard != null && scene.scenar.isNotBlank()
-        SbZdroj.DEJ -> scene.dej.isNotBlank() && scene.postavy.isNotEmpty()
-    }
-    val pripraveno = scene.zadaniUseku.isNotEmpty() && scene.zadaniUseku.size == scene.useky.size &&
-        (scene.zdroj != SbZdroj.SCENAR || cz.promptlab.h3video.data.otiskScenare(scene.scenar) == scene.scenarPlanu)
+    val lzePripravit = cz.promptlab.h3video.data.sbLzePripravit(scene)
+    val pripraveno = cz.promptlab.h3video.data.sbPripraveno(scene)
     val pripravuje = bezi && (akce == MainViewModel.SbAkce.CTENI || akce == MainViewModel.SbAkce.NAVRH)
-    SectionCard(title = "2 · " + t("Příprava")) {
+    // „Připravit film“ je na hlavním tlačítku dole (5.21); tady průběh, souhrn,
+    // nálezy a „Připravit znovu“ pro hotový film.
+    val ukazPripravu = pripravuje || scene.panely.isNotEmpty() || scene.nalezy.isNotEmpty() ||
+        (chyba != null && (akce == MainViewModel.SbAkce.CTENI || akce == MainViewModel.SbAkce.NAVRH))
+    if (ukazPripravu) SectionCard(title = "2 · " + t("Příprava")) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlineButton(
-                if (pripravuje) t("Připravuji film…") else if (!pripraveno) t("Připravit film") else t("Připravit znovu"),
-                color = if (pripraveno || !lzePripravit) TextMid else Amber,
+            if (!pripravuje && scene.panely.isNotEmpty()) OutlineButton(
+                t("Připravit znovu"),
+                color = TextMid,
                 enabled = lzePripravit,
                 modifier = Modifier.fillMaxWidth(),
             ) { if (!bezi) vm.pripravitFilm() }
