@@ -19,6 +19,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -26,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cz.promptlab.h3video.MainViewModel
 import cz.promptlab.h3video.data.GenParams
-import cz.promptlab.h3video.Tab
 import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.ui.theme.Cyan
 import cz.promptlab.h3video.ui.theme.Outline1
@@ -51,16 +51,22 @@ fun souhrnKvality(p: GenParams): String = listOfNotNull(
 fun KvalitaVideaNastaveni(vm: MainViewModel) {
     val params by vm.params.collectAsStateWithLifecycle()
     SectionCard(title = t("Kvalita a rychlost videa"), stav = souhrnKvality(params)) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Prepinac(t("Sage Attention"), params.sageAttention) { v -> vm.update { it.copy(sageAttention = v) } }
-            Prepinac("TeaCache", params.teaCache) { v -> vm.update { it.copy(teaCache = v) } }
-            LabeledSlider(
-                label = t("Sigma shift – zvuk"),
-                value = "%.1f".format(params.shiftAudio),
-                position = params.shiftAudio, range = 1f..10f,
-                onChange = { v -> vm.update { it.copy(shiftAudio = (v * 10).toInt() / 10f) } },
-            )
-        }
+        KvalitaVideaVolby(vm, params)
+    }
+}
+
+/** Přepínače a posuvník — v Nastavení i v okně z karty. */
+@Composable
+private fun KvalitaVideaVolby(vm: MainViewModel, params: GenParams) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Prepinac(t("Sage Attention"), params.sageAttention) { v -> vm.update { it.copy(sageAttention = v) } }
+        Prepinac("TeaCache", params.teaCache) { v -> vm.update { it.copy(teaCache = v) } }
+        LabeledSlider(
+            label = t("Sigma shift – zvuk"),
+            value = "%.1f".format(params.shiftAudio),
+            position = params.shiftAudio, range = 1f..10f,
+            onChange = { v -> vm.update { it.copy(shiftAudio = (v * 10).toInt() / 10f) } },
+        )
     }
 }
 
@@ -75,6 +81,19 @@ private fun Prepinac(nazev: String, zapnuto: Boolean, onZmena: (Boolean) -> Unit
 /** Řádek v kartě: stav jedním pohledem, ťuknutí otevře Nastavení. */
 @Composable
 fun KvalitaVideaRadek(vm: MainViewModel, params: GenParams) {
+    var otevreno by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    if (otevreno) {
+        val aktualni by vm.params.collectAsStateWithLifecycle()
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { otevreno = false },
+            title = { Text(t("Kvalita a rychlost videa")) },
+            text = { KvalitaVideaVolby(vm, aktualni) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = { otevreno = false }) { Text(t("Hotovo"), color = Cyan) }
+            },
+            containerColor = Surface1,
+        )
+    }
     Row(
         Modifier
             .fillMaxWidth()
@@ -82,7 +101,7 @@ fun KvalitaVideaRadek(vm: MainViewModel, params: GenParams) {
             .clip(RoundedCornerShape(12.dp))
             .background(Surface1)
             .border(1.dp, Outline1, RoundedCornerShape(12.dp))
-            .clickable { vm.selectTab(Tab.SETTINGS) }
+            .clickable { otevreno = true }
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
