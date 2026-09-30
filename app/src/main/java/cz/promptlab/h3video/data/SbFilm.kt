@@ -1263,11 +1263,19 @@ object SbFilmPrepis {
         }
         // Postava s fotkou má vzhled z fotky — textový popis by se s ní přel.
         @Suppress("NAME_SHADOWING")
-        val vzhled = vzhled.filterKeys { k -> jmenaFotek.none { it.equals(k, ignoreCase = true) } }
+        val vzhled0 = vzhled.filterKeys { k -> jmenaFotek.none { it.equals(k, ignoreCase = true) } }
+        // Změna vzhledu podle oken se rozhodne tady, ne v přepisovači: úsek dostane
+        // jen vzhled svých panelů (Dar mudrců 30. 9. 2026 — v oknech 9–10 napsal dlouhé vlasy).
+        val panelyUseku = usek.panely.map { it.cislo }
+        val vUseku = if (vzhledSeMeni) vzhled0.mapValues { (_, v) -> SbScenar.vzhledProPanely(v, panelyUseku) } else emptyMap()
+        val menene = vzhled0.filterValues { SbScenar.vzhledSeMeni(mapOf("" to it)) }.keys
+        val vyreseno = vzhledSeMeni && menene.isNotEmpty() && menene.all { vUseku[it] != null }
+        val vzhled = if (vyreseno) vzhled0.mapValues { (k, v) -> if (k in menene) vUseku.getValue(k)!! else v } else vzhled0
         if (vzhled.isNotEmpty()) {
             sb.append("\nCharacters for the whole film: define each of them in subject_definitions as a ")
             sb.append("<Subject K> with exactly these looks, and keep the looks identical in every shot unless ")
-            if (vzhledSeMeni) sb.append("a shot's action or the look itself says it changes from a certain window (window N = ")
+            if (vyreseno) sb.append("a look below names the shots it belongs to — then use it exactly in those shots and nowhere else: ")
+            else if (vzhledSeMeni) sb.append("a shot's action or the look itself says it changes from a certain window (window N = ")
                 .append("storyboard panel N) — then use the look that belongs to that panel: ")
             else sb.append("a shot's action says they change clothes: ")
             sb.append(vzhled.entries.joinToString("; ") { "${it.key} — ${it.value}" }).append(".")

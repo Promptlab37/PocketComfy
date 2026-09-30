@@ -46,8 +46,10 @@ class SbScenarDarMudrcuTest {
             panely = SbScenar.doplnPanely(plan.panely, s), hlasy = plan.hlasy, vzhled = plan.vzhled, kontinuita = s.kontinuita)
         val h = SbFilmPrepis.hlidka(1, sc.useky.last(), sc.useky.size - 1, sc.useky.size, true, SbFilmPrepis.idMluvcich(sc.panely),
             SbFilmPrepis.jazykFilmu(sc), sc.hlasy, vzhled = sc.vzhled, kontinuita = sc.kontinuita, vzhledSeMeni = true)
-        assertTrue(h.contains("says it changes from a certain window (window N = storyboard panel N)"))
-        assertTrue(h.contains("Della — mladá žena."))
+        // Poslední úsek (okna 9–10) dostane jen krátké vlasy — dlouhé v něm nesmí být vůbec.
+        assertTrue(h, h.contains("a look below names the shots it belongs to"))
+        assertTrue(h, h.contains("Della — mladá žena; má krátké hnědé kudrliny"))
+        assertFalse(h, h.contains("dlouhé hnědé vlasy"))
         assertFalse(h.contains("Anna"))
         // Plátno: nově vložený scénář předvyplní 9:16, příprava ho už nemění (VM) — tady jen formát.
         assertEquals(LongMmPomer.NAVYSKU, SbScenar.pomerZ("9:16"))

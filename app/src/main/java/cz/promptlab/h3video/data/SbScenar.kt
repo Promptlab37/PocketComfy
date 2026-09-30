@@ -946,6 +946,48 @@ object SbScenar {
     fun vzhledSeMeni(vzhled: Map<String, String>): Boolean =
         vzhled.values.any { Regex("""(?iu)(?<![\p{L}])(okn\p{L}*|panel\p{L}*|záběr\p{L}*|window\p{L}*|shot\p{L}*)\s*\d""").containsMatchIn(it) }
 
+    private val OKNA_ROZSAH = Regex(
+        """(?iu)(?<![\p{L}])(?:(od|from|do|until|to)\s+)?(?:okn\p{L}*|panel\p{L}*|záběr\p{L}*|window\p{L}*|shot\p{L}*)\s*(\d+)(?:\s*[–—-]\s*(\d+))?(?:\s*(dál|dále|onwards?|and later))?""",
+    )
+
+    /**
+     * Vzhled postavy jen pro dané panely úseku (Dar mudrců 30. 9. 2026: popis
+     * „V oknech 1–4 dlouhé vlasy; od okna 5 krátké kudrliny“ a přepisovač
+     * v úseku s okny 9–10 napsal dlouhé vlasy). Věty bez čísla okna platí
+     * vždy, věty s oknem jen ve svých panelech. Když se v úseku vzhled mění,
+     * dostane každá věta seznam záběrů `[Shot k]`. Nečitelný zápis → null
+     * (zůstane celý popis s obecným pravidlem).
+     */
+    fun vzhledProPanely(popis: String, panely: List<Int>): String? {
+        val vety = popis.split(Regex("""(?<=[.;])\s+""")).map { it.trim().trimEnd('.', ';') }.filter { it.isNotBlank() }
+        val out = mutableListOf<String>()
+        var menil = false
+        for (v in vety) {
+            val m = OKNA_ROZSAH.findAll(v).toList()
+            if (m.isEmpty()) { out += v; continue }
+            if (m.size > 1) return null
+            val g = m[0].groupValues
+            val a = g[2].toInt()
+            val b = g[3].toIntOrNull()
+            val rozsah = when (g[1].lowercase()) {
+                "od", "from" -> a..Int.MAX_VALUE
+                "do", "until", "to" -> 1..(b ?: a)
+                else -> if (g[4].isNotEmpty()) a..Int.MAX_VALUE else a..(b ?: a)
+            }
+            menil = true
+            val zbytek = v.removeRange(m[0].range).replace(Regex("""(?iu)^\s*(v|ve|in|at|on)\s+"""), "")
+                .replace(Regex("""\s+(v|ve|in)\s*$"""), "").replace(Regex("""\s{2,}"""), " ").trim().trimStart(',', ':').trim()
+            if (zbytek.isBlank()) return null
+            val kde = panely.withIndex().filter { it.value in rozsah }.map { it.index + 1 }
+            when {
+                kde.isEmpty() -> {}
+                kde.size == panely.size -> out += zbytek
+                else -> out += kde.joinToString(", ", "in ") { "[Shot $it]" } + ": " + zbytek
+            }
+        }
+        return if (menil) out.joinToString("; ") else null
+    }
+
     fun hlas(zena: Boolean, vek: Int): String {
         val kdo = if (zena) "a woman" else "a man"
         val jeji = if (zena) "her" else "his"
