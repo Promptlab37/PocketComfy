@@ -86,6 +86,9 @@ object SbScenar {
     private val STITKY: List<Pair<String, Pole>> = listOf(
         "akce a emoce" to Pole.AKCE_EMOCE, "action and emotion" to Pole.AKCE_EMOCE,
         "text na videu" to Pole.TEXT, "text na obrazovce" to Pole.TEXT, "text v obraze" to Pole.TEXT,
+        // „Text ve videu:“ — svatební scénář 30. 9. 2026 (bez štítku zůstal v popisu jako „Text ve videu:.“).
+        "text ve videu" to Pole.TEXT, "text do videa" to Pole.TEXT, "text do videu" to Pole.TEXT,
+        "text v záběru" to Pole.TEXT, "text na displeji" to Pole.TEXT, "texty" to Pole.TEXT,
         "on-screen text" to Pole.TEXT, "onscreen text" to Pole.TEXT, "on screen text" to Pole.TEXT,
         "text on screen" to Pole.TEXT, "titulek" to Pole.TEXT, "titulky" to Pole.TEXT, "caption" to Pole.TEXT,
         "overlay" to Pole.TEXT, "super" to Pole.TEXT, "text" to Pole.TEXT, "nápis" to Pole.TEXT, "napis" to Pole.TEXT,
@@ -536,6 +539,8 @@ object SbScenar {
             }
             UVOZOVKY.findAll(s).toList().forEach { m -> poznamky += m.groupValues[1].trim(); s = s.replace(m.value, "") }
             s = WEB.replace(s, "web")
+            // Osiřelý štítek („Text ve videu:.“) — text v uvozovkách šel do poznámek, štítek do H3 nepatří.
+            s = vety(s).filterNot { Regex("""^[\p{L} ]{2,40}:\s*[.!]?$""").matches(it.trim()) }.joinToString(" ")
             return s.replace(Regex("""\s+([,.])"""), "$1").replace(Regex("""\s{2,}"""), " ").trim()
         }
 

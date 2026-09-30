@@ -192,6 +192,22 @@ class SbScenarVariantyTest {
         }
     }
 
+    /** Druhý svatební scénář (30. 9. 2026): „Text ve videu:“ zůstal v popisu jako „Text ve videu:.“. */
+    @Test
+    fun `text ve videu je text do strihu`() {
+        val s = SbScenar.rozeber(
+            "[OKNO 1 | 0–4 s]\nObraz: Telefon leží vedle fotografie. Text ve videu: „Barvy zpátky.“\n" +
+                "[OKNO 2 | 4–7 s]\nObraz: Detail displeje.\nText ve videu: „A malý okamžik pohybu.“\n" +
+                "[OKNO 3 | 7–9 s]\nObraz: Nápis na zdi „Sláva“. Titulek na konci: „Ahoj“.",
+        )!!
+        assertEquals("Telefon leží vedle fotografie.", s.okna[0].obraz)
+        assertEquals(listOf("Barvy zpátky."), s.okna[0].texty)
+        assertEquals("Detail displeje.", s.okna[1].obraz)
+        assertEquals(listOf("A malý okamžik pohybu."), s.okna[1].texty)
+        assertFalse(s.okna.any { it.obraz.contains("Text ve videu") || it.obraz.endsWith(":.") })
+        assertFalse(s.okna[2].obraz.contains("Titulek na konci"))
+    }
+
     @Test
     fun `web, logo a text v uvozovkach z popisu pryc`() {
         val s = SbScenar.rozeber(
