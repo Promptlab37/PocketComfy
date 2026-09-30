@@ -9,6 +9,19 @@ import kotlin.math.sqrt
  * Zadání (co se má dít, jaké obrázky, jak dlouho) si drží [AioScene]; tady je
  * to, co platí napříč režimy karty: rozlišení, vzorkování, model a LoRA.
  */
+/**
+ * Attention u H3 (5.47, uživatel: „chci to jako kamarád“). `ModelAttentionBackend`
+ * přebije --use-sage-attention ze startu serveru; „comfy kitchen attention“ je
+ * kvantovaná INT8 attention z jádra ComfyUI (nodes_model_advanced.py).
+ */
+enum class Pozornost(val backend: String, private val titleCs: String) {
+    KITCHEN("comfy kitchen attention", "Comfy Kitchen"),
+    SAGE("", "Sage Attention"),
+    PLNA("pytorch attention", "PyTorch");
+
+    val title: String get() = t(titleCs)
+}
+
 data class GenParams(
     val mode: Mode = Mode.ALLINONE,
     val profile: Profile = Profile.TURBO,
@@ -29,7 +42,8 @@ data class GenParams(
     val randomSeed: Boolean = true,
     val shiftVideo: Float = 12.191111f,
     val shiftAudio: Float = 3f,
-    val sageAttention: Boolean = true,
+    /** Výpočet attention u H3 (5.47): Comfy Kitchen jako u kamaráda, Sage, nebo plná PyTorch. */
+    val pozornost: Pozornost = Pozornost.KITCHEN,
     /** Karta Obrázek, Qwen 2.1: generovat ve 2K místo ~1 Mpx. */
     val qwen21Dvak: Boolean = false,
     /** Detailer LoRA na kartě Obrázek s Qwen Image 2.1. */
@@ -136,6 +150,7 @@ data class GenParams(
     val resolution: Resolution get() = Resolution.of(aspect, megapixels)
     val frames: Int get() = framesForSeconds(seconds)
     val realSeconds: Float get() = frames / 24f
+    val sageAttention: Boolean get() = pozornost == Pozornost.SAGE
 
     /** Plátno, na kterém model vznikl – pro zvolený poměr stran. */
     val nativeResolution: Resolution get() = nativeCanvas(aspect)

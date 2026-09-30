@@ -140,6 +140,15 @@ class SbFilmBuilderTest {
 
     private fun g(s: SbFilmScene) = SbFilmBuilder.buildFilm(s, useky, zadani, listOf("sb.png", "p1.png"), "16:9", 7L)
 
+    /** 5.47: Film jede ve výchozím stavu na Comfy Kitchen attention (jako u kamaráda). */
+    @Test
+    fun `film ma vychozi comfy kitchen attention`() {
+        val t = g(scene.copy(model = SbModel.TURBO))
+        assertEquals("ModelAttentionBackend", t.getJSONObject(SbFilmBuilder.N_POZORNOST).getString("class_type"))
+        assertEquals("comfy kitchen attention", t.vstupy(SbFilmBuilder.N_POZORNOST).getString("attention"))
+        assertFalse(t.has(SbFilmBuilder.N_SAGE))
+    }
+
     /** 5.46: Turbo = ref2v 8step v1.0 (lightx2v) podle specifikace: 8 kroků, síla 1,0, shift 12/3. */
     @Test
     fun `turbo je ref2v 8step s osmi kroky a shiftem`() {

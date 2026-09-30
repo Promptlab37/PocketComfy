@@ -177,7 +177,7 @@ class AioBuilderTest {
         scheduler = "beta",
         seed = 4242L,
         turboLoraOn = turbo,
-        sageAttention = sage,
+        pozornost = if (sage) cz.promptlab.h3video.data.Pozornost.SAGE else cz.promptlab.h3video.data.Pozornost.PLNA,
         livePreview = preview,
     )
 
@@ -414,6 +414,19 @@ class AioBuilderTest {
         val uzel = wf.inputs("5").getJSONArray("model").getString(0)
         assertEquals("pytorch attention", wf.inputs(uzel).getString("attention"))
         assertEquals("2", wf.inputs(uzel).getJSONArray("model").getString(0))
+    }
+
+    /** 5.47: výchozí attention je Comfy Kitchen (jako u kamaráda). */
+    @Test
+    fun `vychozi attention je comfy kitchen`() {
+        val scene = AioScene(mode = AioMode.TEXT, prompt = "x")
+        val wf = AioBuilder.build(
+            videoTemplate(), params(turbo = false, preview = false).copy(pozornost = cz.promptlab.h3video.data.Pozornost.KITCHEN), scene
+        )
+        val uzel = wf.inputs("5").getJSONArray("model").getString(0)
+        assertEquals("ModelAttentionBackend", wf.classOf(uzel))
+        assertEquals("comfy kitchen attention", wf.inputs(uzel).getString("attention"))
+        assertEquals(cz.promptlab.h3video.data.Pozornost.KITCHEN, GenParams().pozornost)
     }
 
     @Test

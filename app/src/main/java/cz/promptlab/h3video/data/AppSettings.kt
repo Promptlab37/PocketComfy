@@ -305,7 +305,7 @@ class AppSettings(ctx: Context) {
             .putFloat("shiftAudio", d.shiftAudio)
             .putInt("crf", d.crf)
             .putBoolean("spectrum", d.spectrum)
-            .putBoolean("sage", d.sageAttention)
+            .putString("pozornost", d.pozornost.name)
             .putBoolean("qwen21_2k", d.qwen21Dvak)
             .putBoolean("qwen21_detailer", d.qwen21Detailer)
             .putBoolean("turbo", true)
@@ -368,7 +368,9 @@ class AppSettings(ctx: Context) {
             shiftAudio = sp.getFloat("shiftAudio", defaults.shiftAudio),
             spectrum = sp.getBoolean("spectrum", defaults.spectrum),
             // 5.39: jednou pro všechny vypnout Sage i TeaCache (plná kvalita), pak platí volba v Nastavení.
-            sageAttention = if (sp.contains("kvalita_539")) sp.getBoolean("sage", defaults.sageAttention) else false,
+            // 5.47: výchozí Comfy Kitchen pro všechny (jako u kamaráda), pak platí volba v Nastavení.
+            pozornost = sp.getString("pozornost", null)
+                ?.let { runCatching { Pozornost.valueOf(it) }.getOrNull() } ?: Pozornost.KITCHEN,
             qwen21Dvak = sp.getBoolean("qwen21_2k", defaults.qwen21Dvak),
             qwen21Detailer = sp.getBoolean("qwen21_detailer", defaults.qwen21Detailer),
             tkMpx = sp.getFloat("tk_mpx", defaults.tkMpx),
@@ -422,7 +424,7 @@ class AppSettings(ctx: Context) {
             putFloat("shiftVideo", p.shiftVideo)
             putFloat("shiftAudio", p.shiftAudio)
             putBoolean("spectrum", p.spectrum)
-            putBoolean("sage", p.sageAttention)
+            putString("pozornost", p.pozornost.name)
             putBoolean("kvalita_539", true)
             putBoolean("qwen21_2k", p.qwen21Dvak)
             putBoolean("qwen21_detailer", p.qwen21Detailer)

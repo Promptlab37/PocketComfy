@@ -36,7 +36,7 @@ class LongVideoBuilderTest {
         sampler = "res_multistep",
         scheduler = "beta",
         seed = 100L,
-        sageAttention = true,
+        pozornost = cz.promptlab.h3video.data.Pozornost.SAGE,
     )
 
     private fun scene(

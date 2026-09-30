@@ -1112,7 +1112,7 @@ object GenerationEngine {
                 cz.promptlab.h3video.comfy.ThreeStepBuilder.build(
                     app, effective.prompt, effective.seconds.toDouble(),
                     effective.aspect, seed,
-                    rychlaPozornost = effective.sageAttention,
+                    rychlaPozornost = effective.pozornost != cz.promptlab.h3video.data.Pozornost.PLNA,
                     lory = effective.extraLoras,
                     reference = names,
                     nastaveni = cz.promptlab.h3video.comfy.ThreeStepBuilder.Nastaveni.z(effective),
@@ -1135,7 +1135,7 @@ object GenerationEngine {
                 cz.promptlab.h3video.comfy.SbFilmBuilder.buildFilm(
                     sbFilmScene, sbFilmScene.useky, sbFilmScene.zadaniUseku, names,
                     sbFilmScene.pomer.kod, seed,
-                    sage = effective.sageAttention, shiftZvuk = effective.shiftAudio.toDouble(),
+                    pozornost = effective.pozornost, shiftZvuk = effective.shiftAudio.toDouble(),
                 )
 
             // Long MiniMax: jeden záběr na běh. První zakládá řetěz a uloží
@@ -1145,8 +1145,11 @@ object GenerationEngine {
                 // Pozornost a shift zvuku ze společného nastavení „Kvalita a rychlost videa“ (5.39).
                 @Suppress("NAME_SHADOWING")
                 val longMmScene = longMmScene.copy(
-                    pozornost = if (effective.sageAttention) cz.promptlab.h3video.data.LongMmPozornost.SAGE
-                    else cz.promptlab.h3video.data.LongMmPozornost.PLNA,
+                    pozornost = when (effective.pozornost) {
+                        cz.promptlab.h3video.data.Pozornost.SAGE -> cz.promptlab.h3video.data.LongMmPozornost.SAGE
+                        cz.promptlab.h3video.data.Pozornost.KITCHEN -> cz.promptlab.h3video.data.LongMmPozornost.KITCHEN
+                        cz.promptlab.h3video.data.Pozornost.PLNA -> cz.promptlab.h3video.data.LongMmPozornost.PLNA
+                    },
                     shiftZvuk = effective.shiftAudio.toDouble(),
                 )
                 if (longMmScene.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI)
@@ -1173,7 +1176,7 @@ object GenerationEngine {
 
             // Upravit video → Podle předlohy: MiniMax H3 + Fun ControlNet z APK.
             cnScene != null ->
-                cz.promptlab.h3video.comfy.H3ControlNetBuilder.build(app, cnScene, seed, cnVideo, sage = effective.sageAttention)
+                cz.promptlab.h3video.comfy.H3ControlNetBuilder.build(app, cnScene, seed, cnVideo, pozornost = effective.pozornost)
 
             // Upravit video → Vyměnit postavu: SCAIL-2 z APK.
             scailScene != null ->

@@ -409,8 +409,8 @@ object AioBuilder {
             val id = newId()
             wf.put(
                 id, node(
-                    "ModelAttentionBackend", "Plná pozornost",
-                    JSONObject().put("model", model).put("attention", "pytorch attention")
+                    "ModelAttentionBackend", "Attention",
+                    JSONObject().put("model", model).put("attention", p.pozornost.backend)
                 )
             )
             model = link(id)
@@ -589,8 +589,8 @@ object AioBuilder {
             val id = newId()
             wf.put(
                 id, node(
-                    "ModelAttentionBackend", "Plná pozornost",
-                    JSONObject().put("model", model).put("attention", "pytorch attention")
+                    "ModelAttentionBackend", "Attention",
+                    JSONObject().put("model", model).put("attention", p.pozornost.backend)
                 )
             )
             model = link(id)

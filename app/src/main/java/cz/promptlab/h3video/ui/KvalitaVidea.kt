@@ -41,7 +41,7 @@ import cz.promptlab.h3video.ui.theme.TextLow
  * storyboardu i Long MiniMax měly hodnoty natvrdo.
  */
 fun souhrnKvality(p: GenParams, sTeaCache: Boolean = true, sShiftem: Boolean = true): String = listOfNotNull(
-    if (p.sageAttention) t("Sage zapnutá") else t("Sage vypnutá"),
+    p.pozornost.title,
     if (p.teaCache && sTeaCache) t("TeaCache zapnutá") else null,
     if (sShiftem) t("shift zvuku %s").format("%.1f".format(p.shiftAudio)) else null,
 ).joinToString(" · ")
@@ -59,7 +59,13 @@ fun KvalitaVideaNastaveni(vm: MainViewModel) {
 @Composable
 private fun KvalitaVideaVolby(vm: MainViewModel, params: GenParams, sTeaCache: Boolean = true, sShiftem: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Prepinac(t("Sage Attention"), params.sageAttention) { v -> vm.update { it.copy(sageAttention = v) } }
+        Text("Attention", style = MaterialTheme.typography.bodyMedium, color = TextHi)
+        PillRow(
+            items = cz.promptlab.h3video.data.Pozornost.entries.toList(),
+            selected = params.pozornost,
+            label = { it.title },
+            onSelect = { v -> vm.update { it.copy(pozornost = v) } },
+        )
         // Jen volby, které karta opravdu použije (žádné mrtvé volby).
         if (sTeaCache) Prepinac("TeaCache", params.teaCache) { v -> vm.update { it.copy(teaCache = v) } }
         if (sShiftem) LabeledSlider(

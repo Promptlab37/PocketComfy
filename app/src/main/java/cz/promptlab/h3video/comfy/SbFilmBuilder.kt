@@ -124,7 +124,7 @@ object SbFilmBuilder {
         pomer: String,
         seed: Long,
         /** Společné nastavení „Kvalita a rychlost videa“ (5.39): Sage, nebo plná přesnost. */
-        sage: Boolean = false,
+        pozornost: cz.promptlab.h3video.data.Pozornost = cz.promptlab.h3video.data.Pozornost.KITCHEN,
         shiftZvuk: Double = SHIFT_AUDIO,
     ): JSONObject {
         require(useky.isNotEmpty() && useky.size == zadani.size) { t("úseky a zadání nesedí") }
@@ -137,14 +137,14 @@ object SbFilmBuilder {
         // Plná přesnost pozornosti (5.39, uživatel: „Sage attention vypnout, rychle ale bez
         // ztráty kvality“). Dřív Sage + „comfy kitchen attention“ = kvantovaná INT8 pozornost.
         // „pytorch attention“ přebíjí i --use-sage-attention ze startu serveru (ostatní karty ho mají dál).
-        if (sage) {
+        if (pozornost == cz.promptlab.h3video.data.Pozornost.SAGE) {
             // Rychlejší: Sage patch autora (kvantovaná pozornost, šetří i VRAM).
             wf.put(N_SAGE, uzel("MiniMaxH3MemoryEfficientSageAttentionPatch", "Sage", JSONObject().put("model", odkaz(N_UNET))))
             wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Pozornost", JSONObject()
                 .put("model", odkaz(N_SAGE)).put("attention", "pytorch attention")))
         } else {
-            wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Pozornost", JSONObject()
-                .put("model", odkaz(N_UNET)).put("attention", "pytorch attention")))
+            wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Attention", JSONObject()
+                .put("model", odkaz(N_UNET)).put("attention", pozornost.backend)))
         }
         // model = co vzorkuje úseky, rozvrh = z čeho BasicScheduler počítá sigmy.
         val (model, rozvrh) = when (scene.model) {
