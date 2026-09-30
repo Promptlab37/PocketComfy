@@ -103,6 +103,8 @@ fun ResultScreen(
     onExtendVideo: (() -> Unit)? = null,
     /** Film ze storyboardu → Přidat hudbu (styl a hlasitost, 5.13). */
     onAddMusic: ((styl: String, hlasitost: Int) -> Unit)? = null,
+    /** Naposledy použitá hlasitost hudby (5.18). */
+    hlasitostHudby: Int = cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_VYCHOZI,
     /** Hotová hudba → LTX 2.5 Ze zvuku. */
     onMusicToVideo: (() -> Unit)? = null,
     /** Hotová hudba → Pohyb postavy → Podle hudby. */
@@ -431,7 +433,7 @@ fun ResultScreen(
         // Film ze storyboardu: hudba až k filmu, který se povedl (5.13).
         if (onAddMusic != null) {
             Spacer(Modifier.height(16.dp))
-            PridatHudbu(item, onAddMusic)
+            PridatHudbu(item, hlasitostHudby, onAddMusic)
         }
 
         Spacer(Modifier.height(16.dp))
@@ -781,11 +783,11 @@ private fun NaServeruKarta(
 
 /** Přidat hudbu k filmu ze storyboardu: styl z čtení (jde upravit) a hlasitost. */
 @Composable
-private fun PridatHudbu(item: VideoItem, onAddMusic: (String, Int) -> Unit) {
+private fun PridatHudbu(item: VideoItem, vychoziHlasitost: Int, onAddMusic: (String, Int) -> Unit) {
     var otevreno by androidx.compose.runtime.saveable.rememberSaveable(item.id) { androidx.compose.runtime.mutableStateOf(false) }
     var styl by androidx.compose.runtime.saveable.rememberSaveable(item.id) { androidx.compose.runtime.mutableStateOf(item.hudbaStyl) }
     var hlasitost by androidx.compose.runtime.saveable.rememberSaveable(item.id) {
-        androidx.compose.runtime.mutableIntStateOf(cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_VYCHOZI)
+        androidx.compose.runtime.mutableIntStateOf(vychoziHlasitost)
     }
     if (!otevreno) {
         OutlineButton(t("Přidat hudbu"), modifier = Modifier.fillMaxWidth(), color = Cyan) { otevreno = true }

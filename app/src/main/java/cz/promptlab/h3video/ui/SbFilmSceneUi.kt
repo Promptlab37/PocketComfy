@@ -223,37 +223,7 @@ fun SbFilmSection(vm: MainViewModel) {
 
     if (scene.panely.isNotEmpty()) Kontrola(vm, scene, bezi, akce, chyba)
 
-    // Podkresová hudba (YuE2) — jen když ji server umí.
-    val hudbaDostupna by vm.sbHudbaDostupna.collectAsStateWithLifecycle()
-    androidx.compose.runtime.LaunchedEffect(Unit) { vm.overSbHudbu() }
-    // Hudba se přidává až k hotovému filmu, který se uživateli líbí (5.13).
-    val historie by vm.history.collectAsStateWithLifecycle()
-    val film = androidx.compose.runtime.remember(historie) { vm.posledniFilmProHudbu() }
-    if (hudbaDostupna && film != null) SectionCard(title = t("Podkresová hudba")) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            DarkTextField(
-                value = scene.hudbaStyl,
-                onValueChange = { vm.setSbHudbaStyl(it) },
-                placeholder = cz.promptlab.h3video.comfy.SbHudbaBuilder.STYL_VYCHOZI,
-                onClear = { vm.setSbHudbaStyl("") },
-                minHeight = 70.dp,
-                rostouci = true,
-            )
-            LabeledSlider(
-                label = t("Hlasitost hudby"),
-                value = "${scene.hudbaHlasitost} dB",
-                position = scene.hudbaHlasitost.toFloat(),
-                range = cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN.toFloat()..
-                    cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX.toFloat(),
-                onChange = { vm.setSbHudbaHlasitost(Math.round(it)) },
-            )
-            OutlineButton(
-                t("Přidat hudbu k poslednímu filmu"),
-                color = Amber,
-                modifier = Modifier.fillMaxWidth(),
-            ) { vm.pridatHudbu(film, scene.hudbaStyl, scene.hudbaHlasitost) }
-        }
-    }
+    // Hudba se přidává jen pod hotovým filmem (výsledek / galerie), ne v kartě (5.18).
 }
 
 /**

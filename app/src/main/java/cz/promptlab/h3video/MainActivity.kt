@@ -430,11 +430,14 @@ private fun Root(vm: MainViewModel = viewModel()) {
                     androidx.compose.runtime.LaunchedEffect(vysledek.id) {
                         if (vysledek.filmNaServeru.isNotBlank()) vm.overSbHudbu()
                     }
+                    val hudbaFronta by vm.hudbaVeFronte.collectAsStateWithLifecycle()
                     ResultScreen(
                         item = vysledek,
-                        onAddMusic = if (cz.promptlab.h3video.data.jdePridatHudbu(vysledek, hudbaUmi)) {
-                            { styl, db -> vm.pridatHudbu(vysledek, styl, db) }
+                        // Po zařazení hudby se výsledek zavře, stejně jako v galerii (5.18).
+                        onAddMusic = if (cz.promptlab.h3video.data.jdePridatHudbu(vysledek, hudbaUmi) && vysledek.id !in hudbaFronta) {
+                            { styl, db -> vm.pridatHudbu(vysledek, styl, db); GenerationEngine.dismissResult() }
                         } else null,
+                        hlasitostHudby = vm.hlasitostHudby(),
                         warnings = s.warnings,
                         naServeru = vysledek.naServeru(kontext),
                         stahovani = rucniStahovani[vysledek.id],
@@ -540,9 +543,11 @@ private fun Root(vm: MainViewModel = viewModel()) {
                 androidx.compose.runtime.LaunchedEffect(open.id) {
                     if (open.filmNaServeru.isNotBlank()) vm.overSbHudbu()
                 }
+                val hudbaFronta by vm.hudbaVeFronte.collectAsStateWithLifecycle()
                 ResultScreen(
                     item = open,
-                    onAddMusic = if (cz.promptlab.h3video.data.jdePridatHudbu(open, hudbaUmi)) {
+                    hlasitostHudby = vm.hlasitostHudby(),
+                    onAddMusic = if (cz.promptlab.h3video.data.jdePridatHudbu(open, hudbaUmi) && open.id !in hudbaFronta) {
                         { styl, db -> vm.pridatHudbu(open, styl, db); opened = null }
                     } else null,
                     naServeru = open.naServeru(kontext),

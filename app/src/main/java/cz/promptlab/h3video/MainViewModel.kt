@@ -4938,6 +4938,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun pridatHudbu(item: VideoItem, styl: String, hlasitost: Int) {
         if (!cz.promptlab.h3video.data.jdePridatHudbu(item, true)) return
+        // Dvakrát ke stejnému filmu, dokud první hudba nedoběhne, ne (kritici 30. 9. 2026).
+        if (item.id in _hudbaVeFronte.value) return
+        _hudbaVeFronte.value = _hudbaVeFronte.value + (item.id to (item.prompt to System.currentTimeMillis()))
+        // Hlasitost si appka pamatuje napříč filmy — mix bývá pořád podobný.
+        trvaniPrepisu.edit().putInt("hudba_hlasitost", hlasitost).apply()
+        android.widget.Toast.makeText(getApplication(), t("Hudba je ve frontě."), android.widget.Toast.LENGTH_SHORT).show()
         val zadani = cz.promptlab.h3video.data.SbHudbaZadani(
             zdrojId = item.id,
             soubor = item.filmNaServeru,
@@ -4957,9 +4963,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         })
     }
 
-    /** Poslední film ze storyboardu, ke kterému jde přidat hudbu (karta Storyboard). */
-    fun posledniFilmProHudbu(): VideoItem? =
-        _history.value.filter { cz.promptlab.h3video.data.jdePridatHudbu(it, true) }.maxByOrNull { it.createdAt }
+    /**
+     * Filmy, ke kterým se hudba právě dělá (id → prompt, kdy zařazeno). Zmizí,
+     * když v galerii přibude verze s hudbou, nejpozději po hodině (chyba běhu).
+     */
+    private val _hudbaVeFronte = MutableStateFlow<Map<String, Pair<String, Long>>>(emptyMap())
+    val hudbaVeFronte: StateFlow<Map<String, Pair<String, Long>>> = _hudbaVeFronte.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            _history.collect { h ->
+                val ted = System.currentTimeMillis()
+                val zbyle = _hudbaVeFronte.value.filter { (_, v) ->
+                    val (prompt, kdy) = v
+                    ted - kdy < 3_600_000L && h.none { it.sHudbou && it.prompt == prompt && it.createdAt >= kdy }
+                }
+                if (zbyle.size != _hudbaVeFronte.value.size) _hudbaVeFronte.value = zbyle
+            }
+        }
+    }
+
+    /** Naposledy použitá hlasitost hudby. */
+    fun hlasitostHudby(): Int = trvaniPrepisu.getInt("hudba_hlasitost", cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_VYCHOZI)
+        .coerceIn(cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN, cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX)
 
     /**
      * Umí server podkresovou hudbu? YuE2 i instrumentální LoRA musí být na
@@ -4979,13 +5005,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         cz.promptlab.h3video.comfy.SbHudbaBuilder.CKPT in nabidka("CheckpointLoaderSimple", "ckpt_name")
             }
         }
-    }
-    fun setSbHudbaStyl(v: String) = updateSbFilm { it.copy(hudbaStyl = v) }
-    fun setSbHudbaHlasitost(v: Int) = updateSbFilm {
-        it.copy(hudbaHlasitost = v.coerceIn(
-            cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN,
-            cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX,
-        ))
     }
     fun setSbKrokyKvalita(v: Int) = updateSbFilm {
         it.copy(krokyKvalita = v.coerceIn(
