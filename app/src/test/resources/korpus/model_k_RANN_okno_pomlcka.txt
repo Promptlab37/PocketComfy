@@ -1,0 +1,17 @@
+U1 | NOTE | - | -
+U2 | FORMAT | - | -
+U3 | CAST | - | -
+U4 | CAST | Petra | -
+U5 | WINDOW | - | -
+U6 | ACTION | - | -
+U7 | SOUND | - | -
+U8 | ONSCREEN | - | -
+U9 | WINDOW | - | -
+U10 | ACTION | - | -
+U11 | SOUND | - | -
+U12 | WINDOW | - | -
+U13 | ACTION | - | -
+U14 | DIALOGUE | Petra | zadýchaně
+U15 | WINDOW | - | -
+U16 | PICTURE | - | -
+U17 | ONSCREEN | - | -

@@ -61,7 +61,7 @@ class SbScenarHrnekTest {
         assertFalse(s.okna[4].obraz.contains("spokojeně"))
         // Rod: -e nejisté, keramička žena.
         assertEquals(false, SbScenar.zena("Tvůrce", ""))
-        assertNull(SbScenar.zena("Marie", ""))
+        assertEquals(true, SbScenar.zena("Marie", ""))
         assertEquals(true, SbScenar.zena("Keramička", ""))
         // Hlasy a vzhled mluvčích z obrázku podle rodu, produkt ze scénáře zůstává.
         val c = SbScenar.cteni(s, obrazek)

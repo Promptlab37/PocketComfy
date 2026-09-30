@@ -132,6 +132,15 @@ fun SbFilmSection(vm: MainViewModel) {
                 )
                 // Scénář ze souboru (5.20): ChatGPT ho často dá ke stažení jako PDF nebo Word.
                 val vyberSouboru = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { vm.nactiSbScenar(it) }
+                // Zadání pro ChatGPT do schránky — scénář pak přijde v tvaru, který appka čte jistě (5.27).
+                val kontext = androidx.compose.ui.platform.LocalContext.current
+                OutlineButton(t("Zadání pro ChatGPT"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
+                    copyResultText(
+                        kontext,
+                        if (cz.promptlab.h3video.data.Jazyk.anglicky) cz.promptlab.h3video.data.SbScenarModel.ZADANI_CHATGPT_EN
+                        else cz.promptlab.h3video.data.SbScenarModel.ZADANI_CHATGPT_CS,
+                    )
+                }
                 OutlineButton(t("Načíst ze souboru"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
                     vyberSouboru.launch(arrayOf(
                         "text/plain", "text/markdown", "text/x-markdown", "application/pdf",
@@ -224,6 +233,13 @@ fun SbFilmSection(vm: MainViewModel) {
                     if (n.cislo > 0) "${n.cislo} · ${n.text}" else n.text,
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
                 )
+            }
+            // Rozbor a čtení modelem se neshodly — jde přepnout na model (5.27).
+            val neshoda by vm.sbNeshoda.collectAsStateWithLifecycle()
+            if (!pripravuje && neshoda && scene.nalezy.isNotEmpty() && vm.sbLzeCteniModelem()) {
+                OutlineButton(t("Použít čtení modelem"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
+                    if (!bezi) vm.pouzijCteniModelem()
+                }
             }
         }
     }

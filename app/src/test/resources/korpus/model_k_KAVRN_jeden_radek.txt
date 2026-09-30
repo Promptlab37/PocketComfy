@@ -1,0 +1,16 @@
+U1 | TITLE | - | -
+U2 | CAST | - | -
+U3 | WINDOW | - | -
+U4 | PICTURE | - | -
+U5 | SOUND | - | -
+U6 | WINDOW | - | -
+U7 | PICTURE | - | -
+U8 | DIALOGUE | Tomáš | -
+U9 | WINDOW | - | -
+U10 | PICTURE | - | -
+U11 | SOUND | - | -
+U12 | DIALOGUE | Jana | -
+U13 | ONSCREEN | - | -
+U14 | WINDOW | - | -
+U15 | PICTURE | - | -
+U16 | ONSCREEN | - | -

@@ -27,7 +27,8 @@ class SbScenarDarMudrcuTest {
         assertEquals(listOf("Della", "Jim", "Jimovy hodinky", "Dellin dárek", "Jimův dárek"), s.postavy.keys.toList())
         assertTrue(s.postavy.getValue("Della").contains("od okna 5 má krátké hnědé kudrliny"))
         // Prostředí je kontinuita; postavy v ní nejsou.
-        assertTrue(s.kontinuita.startsWith("Prostředí: skromný newyorský byt"))
+        assertTrue(s.kontinuita.contains("Prostředí: skromný newyorský byt"))
+        assertTrue(s.kontinuita.startsWith("Adaptace povídky O. Henryho"))
         assertFalse(s.kontinuita.contains("POSTAVY"))
         assertTrue(SbScenar.vzhledSeMeni(s.postavy))
         // Repliky: 7 Della tiše, 9 Della, 10 Jim tiše.

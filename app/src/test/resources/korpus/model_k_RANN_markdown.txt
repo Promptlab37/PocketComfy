@@ -1,0 +1,16 @@
+U1 | TITLE | - | -
+U2 | FORMAT | - | -
+U3 | CAST | - | -
+U4 | WINDOW | - | -
+U5 | PICTURE | - | -
+U6 | SOUND | - | -
+U7 | ONSCREEN | - | -
+U8 | WINDOW | - | -
+U9 | PICTURE | - | -
+U10 | SOUND | - | -
+U11 | WINDOW | - | -
+U12 | PICTURE | - | -
+U13 | DIALOGUE | Petra | zadýchaně
+U14 | WINDOW | - | -
+U15 | PICTURE | - | -
+U16 | ONSCREEN | - | -

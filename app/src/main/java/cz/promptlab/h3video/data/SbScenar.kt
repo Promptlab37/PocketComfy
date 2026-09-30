@@ -70,20 +70,20 @@ object SbScenar {
     private const val SLOVA_OKNA = "okno|panel|záběr|zaber|scéna|scena|shot|scene|window|frame|snímek|snimek"
 
     /** Řádek se značkou okna: `[OKNO 1 | 0–2 s]`, `Záběr č. 3 (5–8 s):`, `OKNO 2/8`, `Okno 1 — Nález (0–4 s)`. */
-    private val ZNACKA = Regex(
+    internal val ZNACKA = Regex(
         """(?imu)^[ \t]*\[?[ \t]*(?:$SLOVA_OKNA)[ \t]*(?:č\.?[ \t]*)?(\d{1,2})(?![\d:.,]\d)(?:[ \t]*/[ \t]*\d{1,2})?""",
     )
     /** Záloha: řádky číslované `1.` nebo `1)`. */
-    private val ZNACKA_CISLO = Regex("""(?m)^[ \t]*(\d{1,2})[.)](?!\d)[ \t]*""")
+    internal val ZNACKA_CISLO = Regex("""(?m)^[ \t]*(\d{1,2})[.)](?!\d)[ \t]*""")
     /** Scénář slitý do jednoho řádku: značka velkým písmenem uprostřed textu. */
     private val ZNACKA_V_RADKU = Regex(
         """(?<![\p{L}\d])(?=\[?(?:OKNO|PANEL|ZÁBĚR|ZABER|SCÉNA|SCENA|SHOT|SCENE|WINDOW|Okno|Panel|Záběr|Scéna|Shot|Scene)\s+\d{1,2}(?![\d:.,]\d))""",
     )
 
-    private enum class Pole { OBRAZ, AKCE, AKCE_EMOCE, EMOCE, KAMERA, DIALOG, VO, ZVUK, HUDBA, TEXT, VYZVA, POZNAMKA, CELY_FILM }
+    internal enum class Pole { OBRAZ, AKCE, AKCE_EMOCE, EMOCE, KAMERA, DIALOG, VO, ZVUK, HUDBA, TEXT, VYZVA, POZNAMKA, CELY_FILM }
 
     /** Štítky polí okna — delší dřív, ať „Akce a emoce“ nevyhraje jako „Akce“. */
-    private val STITKY: List<Pair<String, Pole>> = listOf(
+    internal val STITKY: List<Pair<String, Pole>> = listOf(
         "akce a emoce" to Pole.AKCE_EMOCE, "action and emotion" to Pole.AKCE_EMOCE,
         "text na videu" to Pole.TEXT, "text na obrazovce" to Pole.TEXT, "text v obraze" to Pole.TEXT,
         // „Text ve videu:“ — svatební scénář 30. 9. 2026 (bez štítku zůstal v popisu jako „Text ve videu:.“).
@@ -132,13 +132,13 @@ object SbScenar {
     private val POKYN = Regex("""(?imu)^[ \t]*(?:pokyny?|instrukce|instructions?|directions?|pro převod|režijní poznámka)\b[^:\n]{0,70}:""")
 
     /** Prázdné pole bez dvojtečky: `Dialog – žádný`, `Zvuk: none`. */
-    private val PRAZDNE_POLE = Regex(
+    internal val PRAZDNE_POLE = Regex(
         """(?imu)^[ \t]*(?:dialog|dialogue|dialogy|replika|zvuk|sound|text na videu|text|titulek|hudba|music|vo)[ \t]*[–—:-]?[ \t]*""" +
             """(?:žádný|žádná|žádné|none|nic|bez dialogu|bez zvuku|—|–|-|n/a)[ \t]*\.?[ \t]*$""",
     )
 
     /** Štítky hlavičky scénáře (před prvním oknem). */
-    private val HLAVICKA = Regex(
+    internal val HLAVICKA = Regex(
         """(?imu)(?:^[ \t]*|(?<=[.!?…])[ \t]+)(důležitá kontinuita|kontinuita|continuity|formát|format|postavy a rekvizity|""" +
             """postavy|rekvizity|characters|cast|props|obsazení|prostředí|setting|místo děje|""" +
             """styl|style|tón|tone|cíl|goal|délka|length|duration)[ \t]*:""",
@@ -153,14 +153,15 @@ object SbScenar {
      */
     private val MLUVCI_REPLIKA = Regex(
         // Podání slovy („Syn tiše:“) nebo za čárkou („Keramička, spokojeně:“ — hrnek 30. 9. 2026).
-        """(?<![\p{L}])([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{1,15}){0,3}?)[ \t]*""" +
+        // Slovo podání smí mít i jedno písmeno („Jana s úsměvem:“ — korpus 30. 9. 2026).
+        """(?<![\p{L}])([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
             """(?:\(([^)\n]{1,40})\))?[ \t]*:[ \t]*[„“"«]([^„“"«»”\n]{1,300})[“”"»]""",
     )
 
     /** Řádek repliky bez uvozovek: `DCERA: To jsi ty?`, `MAMINKA (dojatě): To jsem já…`. */
-    private val RADEK_MLUVCI = Regex(
+    internal val RADEK_MLUVCI = Regex(
         // Druhé slovo jména jen velkým písmenem — „Otec tiše:“ je jméno a podání.
-        """^[ \t]*([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{1,15}){0,3}?)[ \t]*""" +
+        """^[ \t]*([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
             """(?:\(([^)\n]{1,40})\))?[ \t]*:[ \t]*(.+)$""",
     )
 
@@ -234,7 +235,7 @@ object SbScenar {
 
     // ------------------------------------------------------------------ časy
 
-    private val CAS = Regex(
+    internal val CAS = Regex(
         """(\d{1,2}(?::\d{2})?(?:[.,]\d+)?)[ \t]*(?:s|sek|sec)?[ \t]*[-–—][ \t]*(\d{1,2}(?::\d{2})?(?:[.,]\d+)?)[ \t]*(?:s(?![\p{L}])|sek(?![\p{L}])|sec(?![\p{L}])|sekund)?""",
     )
 
@@ -312,6 +313,11 @@ object SbScenar {
         val postavy = linkedMapOf<String, String>()
         val zeny = linkedMapOf<String, Boolean>()
         val kontinuita = mutableListOf<String>()
+        // Další řádky pod názvem („Adaptace povídky O. Henryho pro realistické krátké video.“)
+        // popisují celý film — dřív se tiše ztratily (kontrola pokrytí 30. 9. 2026).
+        pred.lines().map { it.trim() }.filter { it.isNotBlank() }.drop(1)
+            .filterNot { it.none { ch -> ch.isLowerCase() } }
+            .forEach { kontinuita += it }
         stitky.forEachIndexed { i, m ->
             val v = obsah(i)
             when (m.groupValues[1].lowercase()) {
@@ -330,6 +336,10 @@ object SbScenar {
                 }
                 "důležitá kontinuita", "kontinuita", "continuity" -> kontinuita += v.replace(Regex("""\s+"""), " ")
                 "prostředí", "setting", "místo děje" -> kontinuita += "Prostředí: " + v.replace(Regex("""\s+"""), " ")
+                // Styl, tón a cíl se dřív zahazovaly (kritik 30. 9. 2026) — platí pro celý film.
+                "styl", "style" -> kontinuita += "Styl: " + v.replace(Regex("""\s+"""), " ")
+                "tón", "tone" -> kontinuita += "Tón: " + v.replace(Regex("""\s+"""), " ")
+                "cíl", "goal" -> kontinuita += "Cíl: " + v.replace(Regex("""\s+"""), " ")
             }
         }
         return SbScenarCteni(
@@ -447,7 +457,7 @@ object SbScenar {
     }
 
     /** Krátký název okna („Nález“, „INT. KUCHYNĚ – DEN“), ne věta děje. */
-    private fun jeNadpis(t: String): Boolean {
+    internal fun jeNadpis(t: String): Boolean {
         val s = t.trim().trim(':', '–', '—', '-', ' ')
         if (s.isEmpty()) return true
         if (s.none { it.isLowerCase() }) return true
@@ -619,15 +629,15 @@ object SbScenar {
         )
     }
 
-    private val STITKY_JMENA = STITKY.map { it.first }.toSet() +
+    internal val STITKY_JMENA = STITKY.map { it.first }.toSet() +
         setOf("okno", "panel", "záběr", "shot", "scéna", "scene", "detail", "zvuk", "formát", "postavy", "poznámka")
 
-    private fun jeNic(t: String) = t.trim().trimEnd('.').lowercase() in setOf("", "none", "žádný", "žádná", "žádné", "nic", "-", "–", "n/a")
+    internal fun jeNic(t: String) = t.trim().trimEnd('.').lowercase() in setOf("", "none", "žádný", "žádná", "žádné", "nic", "-", "–", "n/a")
 
     /** Uvozovky pryč — text v uvozovkách H3 vykreslí jako nápis nebo řekne. */
     private fun bezUvozovek(t: String) = t.replace(Regex("""[„“”"«»]"""), "").replace(Regex("""\s{2,}"""), " ").trim()
 
-    private fun vety(t: String): List<String> =
+    internal fun vety(t: String): List<String> =
         t.split(Regex("""(?<=[.!?…])\s+(?=[\p{Lu}\d„“"])""")).map { it.trim() }.filter { it.isNotBlank() }
 
     /** Stejný mluvčí podle kmene: Dcera / dcery / DCERA, Maminka / maminky. */
@@ -810,6 +820,8 @@ object SbScenar {
             j.endsWith("ová") -> true
             // -a (Jana, keramička) žena; -e je nejisté (tvůrce, soudce × Marie) — hlas pak z obrázku.
             Regex("""(a|ice|yně)$""").containsMatchIn(j) -> true
+            // Marie, Lucie, Julie jsou ženy; jinak je -e nejisté (tvůrce, soudce).
+            j.endsWith("ie") -> true
             j.endsWith("e") -> null
             j.isNotEmpty() && j.last().isLetter() -> false
             else -> null

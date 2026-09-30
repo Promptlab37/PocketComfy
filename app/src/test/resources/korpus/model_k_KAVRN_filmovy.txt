@@ -1,0 +1,18 @@
+U1 | TITLE | - | -
+U2 | CAST | - | -
+U3 | CAST | Jana | -
+U4 | CAST | Tomáš | -
+U5 | WINDOW | - | -
+U6 | ACTION | - | -
+U7 | SOUND | - | -
+U8 | WINDOW | - | -
+U9 | ACTION | - | -
+U10 | DIALOGUE | TOMÁŠ | radostně
+U11 | WINDOW | - | -
+U12 | ACTION | - | -
+U13 | SOUND | - | -
+U14 | DIALOGUE | JANA | s úsměvem
+U15 | ONSCREEN | - | -
+U16 | WINDOW | - | -
+U17 | PICTURE | - | -
+U18 | ONSCREEN | - | -

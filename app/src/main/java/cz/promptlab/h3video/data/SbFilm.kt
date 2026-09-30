@@ -1114,6 +1114,23 @@ object SbFilmPrepis {
     /** Mluvčí „Al“ je v tištěném písmu „AI“ (malé L a velké I vypadají stejně). */
     fun opravMluvciho(jmeno: String): String = if (jmeno == "Al") "AI" else jmeno
 
+    /**
+     * Repliky úseku, které v hotovém promptu nejsou uvnitř `<d>…</d>` (5.27):
+     * přepisovač je vynechal nebo změnil — video by je neřeklo.
+     */
+    fun chybejiciRepliky(prompt: String, usek: SbUsek): List<String> {
+        fun n(t: String) = t.lowercase().replace(Regex("""[„“”"«».,!?…:;–—\-]"""), " ").replace(Regex("""\s+"""), " ").trim()
+        val d = Regex("""<d>(.*?)</d>""", RegexOption.DOT_MATCHES_ALL).findAll(prompt)
+            .map { n(it.groupValues[1].replace(Regex("""^\s*\[[^\]]*]\s*"""), "")) }.toList()
+        val spojene = d.indices.flatMap { i -> (i until minOf(d.size, i + 3)).map { j -> d.subList(i, j + 1).joinToString(" ") } }
+        fun je(r: String): Boolean {
+            val x = n(r)
+            if (x.isEmpty()) return true
+            return spojene.any { it == x || Regex("""(?<![\p{L}])""" + Regex.escape(x) + """(?![\p{L}])""").containsMatchIn(it) }
+        }
+        return usek.panely.flatMap { repliky(it.repliky) }.map { it.second }.filterNot { je(it) }
+    }
+
     /** Jazyk všech replik filmu dohromady (null = nepoznaný, model ho určí sám). */
     fun jazykFilmu(panely: List<SbPanel>): String? =
         DialogyH3.jazyk(panely.flatMap { repliky(it.repliky) }.map { DialogyH3.Replika(it.first, it.second) })

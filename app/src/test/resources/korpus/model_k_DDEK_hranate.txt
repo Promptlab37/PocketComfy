@@ -1,0 +1,13 @@
+U1 | TITLE | - | -
+U2 | FORMAT | - | -
+U3 | CAST | - | -
+U4 | WINDOW | - | -
+U5 | PICTURE | - | -
+U6 | SOUND | - | -
+U7 | WINDOW | - | -
+U8 | PICTURE | - | -
+U9 | DIALOGUE | vnuk, nadšeně | Dědo, to je pro mě?
+U10 | WINDOW | - | -
+U11 | PICTURE | - | -
+U12 | DIALOGUE | děda, tiše | Pro tebe, kamaráde.
+U13 | DIALOGUE | vnuk | Děkuju!

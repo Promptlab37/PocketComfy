@@ -1,0 +1,15 @@
+U1 | TITLE | - | -
+U2 | CAST | - | -
+U3 | WINDOW | - | -
+U4 | PICTURE | - | -
+U5 | SOUND | - | -
+U6 | ONSCREEN | - | -
+U7 | WINDOW | - | -
+U8 | PICTURE | - | -
+U9 | SOUND | - | -
+U10 | WINDOW | - | -
+U11 | PICTURE | - | -
+U12 | DIALOGUE | Petra | -
+U13 | WINDOW | - | -
+U14 | PICTURE | - | -
+U15 | ONSCREEN | - | -

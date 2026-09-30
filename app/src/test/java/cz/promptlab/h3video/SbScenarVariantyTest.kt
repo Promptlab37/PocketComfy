@@ -118,6 +118,19 @@ class SbScenarVariantyTest {
         assertTrue(cisty.contains("<d>[Language] Na ten den si pamatuju.</d>"))
     }
 
+    /** 5.27: kontrola po přepisovači — replika úseku musí být v promptu v <d>. */
+    @Test
+    fun `po prepisovaci - chybejici replika`() {
+        val text = File("src/test/resources/scenar_svatba.txt").readText()
+        val s = SbScenar.rozeber(text)!!
+        val plan = SbFilmPlan.naplanuj(SbScenar.cteni(s, null))
+        val useky = SbFilmPlan.rozdel(SbScenar.doplnPanely(plan.panely, s))
+        val prepis = File("src/test/resources/prepis_svatba_usek2.txt").readText()
+        assertEquals(emptyList<String>(), SbFilmPrepis.chybejiciRepliky(prepis, useky[1]))
+        val bez = prepis.replace("<d>[Language] Na ten den si pamatuju.</d>", "")
+        assertEquals(listOf("Na ten den si pamatuju."), SbFilmPrepis.chybejiciRepliky(bez, useky[1]))
+    }
+
     @Test
     fun `markdown, emoji, pomlcky a nadpisy`() {
         v("V1").let {

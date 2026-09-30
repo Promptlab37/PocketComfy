@@ -267,6 +267,8 @@ Rules:
         teplota: Double,
         mmproj: String = "None",
         obrazky: List<String> = emptyList(),
+        /** Delší kontext (čtení celého scénáře, 5.27); null = jako dřív. */
+        nCtx: Int? = null,
     ): JSONObject {
         val wf = JSONObject()
         wf.put(
@@ -282,7 +284,7 @@ Rules:
                     .put("chat_handler", if (mmproj == "None") "None" else obsluha(model))
                     // S obrázky je kontext delší — 4096 by na dvě předlohy
                     // plus systémový prompt nestačilo.
-                    .put("n_ctx", if (mmproj == "None") 4096 else 8192)
+                    .put("n_ctx", nCtx ?: if (mmproj == "None") 4096 else 8192)
                     .put("vram_limit", -1)
                     // Nula = bez obrázků. S projektorem se musí povolit, jinak
                     // model fotku dostane, ale nezakóduje si ji.

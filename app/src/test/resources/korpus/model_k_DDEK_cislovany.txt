@@ -1,0 +1,12 @@
+U1 | TITLE | - | -
+U2 | CAST | - | -
+U3 | WINDOW | - | -
+U4 | PICTURE | - | -
+U5 | SOUND | - | -
+U6 | WINDOW | - | -
+U7 | ACTION | - | -
+U8 | DIALOGUE | Vnuk | -
+U9 | WINDOW | - | -
+U10 | ACTION | - | -
+U11 | DIALOGUE | Děda | -
+U12 | DIALOGUE | Vnuk | -

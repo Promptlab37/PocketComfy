@@ -1,0 +1,19 @@
+U1 | FORMAT | - | -
+U2 | FORMAT | - | -
+U3 | CAST | - | -
+U4 | CAST | - | -
+U5 | CAST | - | -
+U6 | WINDOW | - | -
+U7 | ACTION | - | -
+U8 | SOUND | - | -
+U9 | WINDOW | - | -
+U10 | ACTION | - | -
+U11 | DIALOGUE | Tomáš | radostně
+U12 | WINDOW | - | -
+U13 | ACTION | - | -
+U14 | SOUND | - | -
+U15 | DIALOGUE | Jana | s úsměvem
+U16 | ONSCREEN | - | -
+U17 | WINDOW | - | -
+U18 | PICTURE | - | -
+U19 | ONSCREEN | - | -
