@@ -87,7 +87,7 @@ object SbScenarPokryti {
                 // Replika se jménem před uvozovkou musí být replikou nebo textem, ne jen poznámkou.
                 if (okno != null) {
                     val vyslovene = (okno.repliky.map { it.text } + okno.texty + okno.vyzva).map { norm(it) }
-                    Regex("""(?<![\p{L}])\p{Lu}[\p{L}]{1,20}[^„“"«\n:]{0,40}[:–—-]\s*[„“"«]([^„“"«»”\n]{2,300})[“”"»]""").findAll(v).forEach { m ->
+                    Regex("""(?<![\p{L}\d])\p{Lu}[\p{L}\d]{1,20}[^„“"«\n:]{0,40}[:–—-]\s*[„“"«]([^„“"«»”\n]{2,300})[“”"»]""").findAll(v).forEach { m ->
                         val q = norm(m.groupValues[1])
                         if (vyslovene.none { it == q || (q.length > 3 && it.contains(q)) }) out += v.trim()
                     }

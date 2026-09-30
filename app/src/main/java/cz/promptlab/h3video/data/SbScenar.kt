@@ -154,14 +154,14 @@ object SbScenar {
     private val MLUVCI_REPLIKA = Regex(
         // Podání slovy („Syn tiše:“) nebo za čárkou („Keramička, spokojeně:“ — hrnek 30. 9. 2026).
         // Slovo podání smí mít i jedno písmeno („Jana s úsměvem:“ — korpus 30. 9. 2026).
-        """(?<![\p{L}])([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20}|[ \t]\p{Ll}[\p{L}]{1,20}(?=[ \t]*,))?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
+        """(?<![\p{L}\d])([\p{L}][\p{L}\d]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20}|[ \t]\p{Ll}[\p{L}]{1,20}(?=[ \t]*,))?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
             """(?:\(([^)\n]{1,40})\))?[ \t]*:[ \t]*[„“"«]([^„“"«»”\n]{1,300})[“”"»]""",
     )
 
     /** Řádek repliky bez uvozovek: `DCERA: To jsi ty?`, `MAMINKA (dojatě): To jsem já…`. */
     internal val RADEK_MLUVCI = Regex(
         // Druhé slovo jména jen velkým písmenem — „Otec tiše:“ je jméno a podání.
-        """^[ \t]*([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20}|[ \t]\p{Ll}[\p{L}]{1,20}(?=[ \t]*,))?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
+        """^[ \t]*([\p{L}][\p{L}\d]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20}|[ \t]\p{Ll}[\p{L}]{1,20}(?=[ \t]*,))?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
             """(?:\(([^)\n]{1,40})\))?[ \t]*:[ \t]*(.+)$""",
     )
 
@@ -398,10 +398,13 @@ object SbScenar {
         val out = mutableListOf<Postava>()
         val polozky = uprav(t).lines().flatMap { r ->
             // „Della: mladá žena. V oknech 1–4 …; od okna 5 …“ — středník je uvnitř popisu.
-            if (Regex("""^\s*[\p{L}][\p{L} ]{1,40}:""").containsMatchIn(r)) listOf(r) else r.split(";")
+            // Ale „Tomáš: 30 let…; Jana: 28 let…“ (šablona appky) jsou dvě postavy — dělí se jen před „Jméno:“.
+            if (Regex("""^\s*[\p{L}][\p{L} ]{1,40}:""").containsMatchIn(r))
+                r.split(Regex(""";\s*(?=\p{Lu}[\p{L}\d]{1,29}(?:\s\p{Lu}[\p{L}]{1,30})?\s*[:(–—-])"""))
+            else r.split(";")
         }
         polozky.map { it.trim().trimEnd('.') }.filter { it.isNotBlank() }.forEach { polozka ->
-            val zavorky = Regex("""([\p{L}]{2,30})\s*\(([^)]{2,200})\)""").findAll(polozka)
+            val zavorky = Regex("""(?<![\p{L}\d])([\p{L}][\p{L}\d]{1,29})\s*\(([^)]{2,200})\)""").findAll(polozka)
                 .filter { it.groupValues[1].lowercase() !in NE_JMENA }.toList()
             if (zavorky.isNotEmpty()) {
                 zavorky.forEach { m ->
@@ -412,8 +415,8 @@ object SbScenar {
                 }
                 return@forEach
             }
-            val m = Regex("""^([\p{L}]{2,30}(?:\s[\p{L}]{2,30})?)\s*:\s*(.{2,300})$""").find(polozka)
-                ?: Regex("""^([\p{L}]{2,30}(?:\s\p{Lu}[\p{L}]{1,30})?)\s*[–—,-]\s*(.{2,300})$""").find(polozka)
+            val m = Regex("""^([\p{L}][\p{L}\d]{1,29}(?:\s[\p{L}]{2,30})?)\s*:\s*(.{2,300})$""").find(polozka)
+                ?: Regex("""^([\p{L}][\p{L}\d]{1,29}(?:\s\p{Lu}[\p{L}]{1,30})?)\s*[–—,-]\s*(.{2,300})$""").find(polozka)
             if (m == null) {
                 // Věta bez oddělovače: „Keramička s kudrnatými vlasy v rezavé halence a tvůrce
                 // videa v tmavé košili“ (hrnek 30. 9. 2026) — jméno je první slovo, popis celý kus.
@@ -814,6 +817,10 @@ object SbScenar {
         "herečka", "zpěvačka", "princezna", "královna", "čarodějnice", "víla", "kmotra", "macecha", "sestřička",
         "šéfová", "kolegyně", "studentka", "holčička", "stařenka", "babka", "vnučka", "teta", "tetička", "woman", "girl", "mother", "mom", "mum", "daughter", "grandma", "grandmother", "sister",
         "aunt", "lady", "wife", "bride", "she", "her",
+        // Časté role (Špatný stůl 30. 9. 2026) a anglické protějšky.
+        "číšnice", "servírka", "doktorka", "policistka", "řidička", "ředitelka", "novinářka", "barmanka", "prodavačka",
+        "zdravotnice", "uklízečka", "sekretářka", "manažerka", "podnikatelka", "tanečnice", "modelka", "influencerka",
+        "girlfriend", "niece", "waitress", "actress", "queen", "princess", "granddaughter", "stepmother", "widow",
     )
     private val MUZSKE = setOf(
         "muž", "muz", "otec", "táta", "tata", "tatínek", "děda", "deda", "dědeček", "syn", "bratr", "strýc", "kluk",
@@ -823,6 +830,9 @@ object SbScenar {
         "herec", "zpěvák", "princ", "král", "čaroděj", "kmotr", "otčím", "strejda", "strýček", "šéf", "kolega",
         "student", "stařec", "dědek",
         "man", "boy", "father", "dad", "son", "grandpa", "grandfather", "brother", "uncle", "husband", "groom", "he", "his",
+        "číšník", "doktor", "policista", "řidič", "ředitel", "novinář", "barman", "voják", "detektiv", "kněz", "farář",
+        "pilot", "taxikář", "pošťák", "zahradník", "šofér", "manažer", "podnikatel", "tanečník", "model", "influencer",
+        "boyfriend", "nephew", "waiter", "actor", "king", "prince", "grandson", "stepfather", "widower",
     )
     /** Mužská jména na -a / -e (Honza, Kuba…). */
     private val MUZSKA_NA_A = setOf(
@@ -835,12 +845,7 @@ object SbScenar {
      * mají přednost („jeho syn Kuba“ je chlapec).
      */
     fun zena(jmeno: String, popis: String, pred: String = ""): Boolean? {
-        fun rod(t: String): Boolean? {
-            val slova = t.lowercase().split(Regex("""[^\p{L}]+""")).toSet()
-            val z = slova.any { it in ZENSKE }
-            val m = slova.any { it in MUZSKE }
-            return if (z && !m) true else if (m && !z) false else null
-        }
+        fun rod(t: String): Boolean? = rodSlov(t)
         rod(jmeno)?.let { return it }
         rod(pred.split(Regex("""\s+""")).lastOrNull().orEmpty())?.let { return it }
         rod(popis)?.let { return it }
@@ -859,14 +864,23 @@ object SbScenar {
     }
 
     /** Jen podle slov (role, zájmena) — bez odhadu podle koncovky jména. */
-    private fun zenaZeSlov(jmeno: String, popis: String): Boolean? {
-        fun rod(t: String): Boolean? {
-            val slova = t.lowercase().split(Regex("""[^\p{L}]+""")).toSet()
-            val z = slova.any { it in ZENSKE }
-            val m = slova.any { it in MUZSKE }
+    private fun zenaZeSlov(jmeno: String, popis: String): Boolean? = rodSlov(jmeno) ?: rodSlov(popis)
+
+    /** Zájmena, která říkají, ČÍ postava je, ne jakého je rodu. */
+    private val PRIVLASTNOVACI = setOf("jeho", "její", "jejich", "his", "her", "their")
+
+    /**
+     * Rod podle slov. Nejdřív bez přivlastňovacích zájmen — „jeho přítelkyně“ je žena,
+     * „její manžel“ muž (Špatný stůl 30. 9. 2026: dřív se to vyrušilo a hlas chyběl).
+     */
+    private fun rodSlov(t: String): Boolean? {
+        val slova = t.lowercase().split(Regex("""[^\p{L}]+""")).toSet()
+        fun rod(s: Set<String>): Boolean? {
+            val z = s.any { it in ZENSKE }
+            val m = s.any { it in MUZSKE }
             return if (z && !m) true else if (m && !z) false else null
         }
-        return rod(jmeno) ?: rod(popis)
+        return rod(slova - PRIVLASTNOVACI) ?: rod(slova)
     }
 
     /**
@@ -927,7 +941,9 @@ object SbScenar {
      * chybí, podle role (otec vedle syna je starší).
      */
     fun hlasy(s: SbScenarCteni): Map<String, String> {
-        val mluvci = (s.postavy.keys + s.okna.flatMap { o -> o.repliky.map { it.kdo } }).distinct()
+        val mluvi = s.okna.flatMap { o -> o.repliky.map { it.kdo } }
+        // Jen kdo mluví (nebo scénář repliky nemá) — rekvizita ze seznamu postav hlas nedostane (Špatný stůl 30. 9. 2026).
+        val mluvci = (s.postavy.keys.filter { k -> mluvi.isEmpty() || mluvi.any { stejnyMluvci(it, k) } } + mluvi).distinct()
         val role = mluvci.map { it.lowercase() }.toSet()
         return mluvci.mapNotNull { jm ->
             val popis = s.postavy[jm].orEmpty()
@@ -967,15 +983,20 @@ object SbScenar {
         }
         val out = linkedMapOf<String, String>()
         val pouzite = mutableSetOf<String>()
-        mluvci.forEach { m ->
+        // Víc kol: kdo je jednoznačný (starší žena), vezme si svůj hlas, a tím se
+        // vyjasní ostatní (přítelkyně pak dostane mladší ženu) — Špatný stůl 30. 9. 2026.
+        repeat(mluvci.size) { mluvci.filter { it !in out }.forEach { m ->
             val l = m.lowercase()
+            val popis = s.postavy[m].orEmpty()
             val starsi: Boolean? = when {
                 l in PRARODICE -> true
                 l in RODICE && maDite -> true
                 l in DETI && maRodice -> false
+                Regex("""(?iu)(?<![\p{L}])(starš\p{L}*|star[ýáé]|důchod\p{L}*|senior\p{L}*|elderly|older)(?![\p{L}])""").containsMatchIn(popis) -> true
+                Regex("""(?iu)(?<![\p{L}])(mlad\p{L}*|young)(?![\p{L}])""").containsMatchIn(popis) -> false
                 else -> null
             }
-            val rod = s.zeny[m] ?: zena(m, "")
+            val rod = s.zeny[m] ?: zena(m, popis)
             val kandidati = vzhled.keys.filter { it !in pouzite }.filter { k ->
                 val t = "$k ${vzhled[k]} ${napovedy[k].orEmpty()}"
                 (rod == null || zenaEn(t) == null || zenaEn(t) == rod) &&
@@ -985,9 +1006,11 @@ object SbScenar {
                 out[m] = vzhled.getValue(kandidati.single())
                 pouzite += kandidati.single()
             }
-        }
-        vzhled.filterKeys { it !in pouzite }.forEach { (k, v) -> out[k] = v }
-        return out
+        } }
+        val serazene = linkedMapOf<String, String>()
+        mluvci.filter { it in out }.forEach { serazene[it] = out.getValue(it) }
+        vzhled.filterKeys { it !in pouzite }.forEach { (k, v) -> serazene[k] = v }
+        return serazene
     }
 
     /**

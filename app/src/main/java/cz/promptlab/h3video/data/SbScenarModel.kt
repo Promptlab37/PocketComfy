@@ -219,6 +219,10 @@ object SbScenarModel {
 
     private val STITEK_NA_ZACATKU = Regex("""^[\p{L}][\p{L} ]{1,40}?(?:\s*[–—-][^:]{1,40})?\s*:\s*""")
     private fun bezStitku(t: String) = t.replace(STITEK_NA_ZACATKU, "").trim()
+
+    /** „Rekvizita: Malá modrá krabička“ zůstane pod jménem Rekvizita (dřív z ní byla postava „Jediná“). */
+    private fun castBezStitku(t: String) =
+        if (Regex("""(?iu)^\s*(rekvizit\p{L}*|props?|předmět\p{L}*)\s*:""").containsMatchIn(t)) t.trim() else bezStitku(t)
     private fun bezUvozovek(t: String) = t.replace(Regex("""[„“”"«»]"""), "").trim()
 
     /** Štítky → rozbor ve stejném tvaru jako [SbScenar.rozeber]. */
@@ -244,7 +248,7 @@ object SbScenarModel {
             if (s.okno == 0) when (s.druh) {
                 Druh.TITLE -> if (nazev.isNotEmpty()) kontinuita += t else nazev = t.replace(Regex("""(?iu)^(storyboard|scénář|script)\s*[–—:-]\s*"""), "").trim()
                 Druh.FORMAT -> { pomer = pomer ?: SbScenar.pomerZ(t); celkem = celkem ?: Regex("""(\d{1,3})\s*(?:s|sek)""").find(t)?.groupValues?.get(1)?.toDoubleOrNull() }
-                Druh.CAST -> SbScenar.postavyZ(bezStitku(t)).forEach { p -> postavy[p.jmeno] = p.popis; p.zena?.let { zeny[p.jmeno] = it } }
+                Druh.CAST -> SbScenar.postavyZ(castBezStitku(t)).forEach { p -> postavy[p.jmeno] = p.popis; p.zena?.let { zeny[p.jmeno] = it } }
                 Druh.SETTING, Druh.CONTINUITY, Druh.PICTURE, Druh.ACTION -> kontinuita += t
                 // Replika před prvním oknem (vypravěč na začátku) se řekne v okně 1.
                 Druh.DIALOGUE -> uvodRepliky += u to s
@@ -264,7 +268,7 @@ object SbScenarModel {
                     Druh.MUSIC, Druh.NOTE -> o.poznamky += t
                     Druh.ONSCREEN -> o.texty += bezUvozovek(bezStitku(t))
                     Druh.CTA -> o.vyzva += bezUvozovek(bezStitku(t))
-                    Druh.CAST -> SbScenar.postavyZ(bezStitku(t)).forEach { p -> postavy[p.jmeno] = p.popis }
+                    Druh.CAST -> SbScenar.postavyZ(castBezStitku(t)).forEach { p -> postavy[p.jmeno] = p.popis }
                     Druh.SETTING, Druh.CONTINUITY -> kontinuita += t
                     Druh.DIALOGUE -> {
                         // Text repliky ze scénáře, ne od modelu: v uvozovkách, jinak za poslední dvojtečkou.

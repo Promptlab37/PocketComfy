@@ -1186,9 +1186,14 @@ object SbFilmPrepis {
         else null
 
     /** Stálá ID mluvčích přes celý film (S1, S2… podle prvního výskytu). */
-    fun idMluvcich(panely: List<SbPanel>): Map<String, String> =
-        panely.flatMap { repliky(it.repliky).map { r -> r.first } }.distinct()
-            .withIndex().associate { (i, m) -> m to "S${i + 1}" }
+    fun idMluvcich(panely: List<SbPanel>): Map<String, String> {
+        val mluvci = panely.flatMap { repliky(it.repliky).map { r -> r.first } }.distinct()
+        // Scénář s mluvčími S1, S2… (Špatný stůl 30. 9. 2026): každý si nechá své číslo,
+        // jinak S2, která mluví první, dostala značku (S1) a S1 značku (S2).
+        val vlastni = mluvci.filter { Regex("""S\d{1,2}""").matches(it) }.associateWith { it }
+        val volna = generateSequence(1) { it + 1 }.map { "S$it" }.filter { it !in vlastni.values }.iterator()
+        return mluvci.associateWith { vlastni[it] ?: volna.next() }
+    }
 
     /**
      * Zadání úseku: děj celého filmu (když ho uživatel napsal) a kde v něm
