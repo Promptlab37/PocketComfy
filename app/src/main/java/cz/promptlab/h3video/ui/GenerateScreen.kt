@@ -463,7 +463,19 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         // Hlavni obrazovka tak zustava: vstupy, zadani, Generovat.
         // Kvalita a rychlost videa: stav jedním pohledem, nastavuje se na jednom místě (5.39).
         if (mode in setOf(Mode.ALLINONE, Mode.TALK, Mode.LONG, Mode.TIMELINE, Mode.THREESTEP, Mode.LONGMM, Mode.SBFILM)) {
-            KvalitaVideaRadek(vm, params)
+            val sb by vm.sbFilm.collectAsStateWithLifecycle()
+            val lm by vm.longMm.collectAsStateWithLifecycle()
+            KvalitaVideaRadek(
+                vm, params,
+                // TeaCache dosazují jen All in One a Dialogy (audit 30. 9. 2026).
+                sTeaCache = mode == Mode.ALLINONE || mode == Mode.TALK,
+                // Shift zvuku: Film jen mimo Turbo, Long MM jen u dvou průchodů.
+                sShiftem = when (mode) {
+                    Mode.SBFILM -> sb.model != cz.promptlab.h3video.data.SbModel.TURBO
+                    Mode.LONGMM -> lm.dvaPruchody
+                    else -> true
+                },
+            )
         }
         if (mode.isVideo && ovlada.neco) SkladaciSekce(
             title = t("Nastavení"),
@@ -614,7 +626,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
             // U 3 kroků se z pokročilého do grafu dostane jen Sage — zbytek
             // sdíleného nastavení tam nevede, porovnávat ho by lhalo.
             val onWorkflowDefaults = remember(params) {
-                if (mode == Mode.THREESTEP) params.sageAttention == cz.promptlab.h3video.data.GenParams().sageAttention
+                if (mode == Mode.THREESTEP) true
                 else vm.matchesWorkflow(params)
             }
             SectionCard(
@@ -698,7 +710,7 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                 )
                             }
                             // 3 kroky ukládá přes SaveVideo bez CRF — posuvník by lhal.
-                            if (mode != Mode.THREESTEP) LabeledSlider(
+                            if (mode == Mode.TIMELINE) LabeledSlider(
                                 label = t("Komprese videa (CRF)"), value = "${params.crf}",
                                 position = params.crf.toFloat(), range = 10f..30f,
                                 onChange = { v -> vm.update { it.copy(crf = v.toInt()) } },

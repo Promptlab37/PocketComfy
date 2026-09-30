@@ -529,8 +529,6 @@ private fun UpscaleSekce(vm: MainViewModel, scene: AioScene) {
                 label = { it.nazev },
                 onSelect = { vm.setAioUpscaler(it) },
             )
-            Spacer(Modifier.height(8.dp))
-            Text(scene.upscaler.popis, style = MaterialTheme.typography.bodySmall, color = TextLow)
             Spacer(Modifier.height(14.dp))
             when (scene.upscaler) {
                 Upscaler.SEEDVR2 -> LabeledSlider(

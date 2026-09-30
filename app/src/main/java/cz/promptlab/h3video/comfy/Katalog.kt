@@ -575,6 +575,13 @@ object Katalog {
         "minimax_h3_video_vae_fp16.safetensors" to Soubor("models/vae", "video karty"),
         "minimax_h3_audio_vae_fp32.safetensors" to Soubor("models/vae", "video karty"),
         "taeh3.safetensors" to Soubor("models/vae_approx", "živý náhled u videa"),
+        // Audit 30. 9. 2026: grafy je používají, v katalogu chyběly.
+        "minimax_h3_video_vae_int8_convrot.safetensors" to Soubor(
+            "models/vae", "Upravit video — Podle předlohy",
+            "$HF/Comfy-Org/MiniMax-H3/resolve/main/vae/minimax_h3_video_vae_int8_convrot.safetensors"
+        ),
+        "ema_vae_fp16.safetensors" to Soubor("models/SEEDVR2", "Zvětšit video (SeedVR2)"),
+        "seedvr2_ema_7b-Q4_K_M.gguf" to Soubor("models/SEEDVR2", "Zvětšit video (SeedVR2)"),
         // Ostrý náhled Qwen 2.1 (5.34), volitelný — appka ho zapojí, jen když na serveru je.
         "TAEQwenImage21_AcademiaSD.safetensors" to Soubor(
             "models/vae_approx", "živý náhled Qwen Image 2.1",

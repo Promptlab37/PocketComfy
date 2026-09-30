@@ -190,6 +190,16 @@ object LongVideoBuilder {
                 )
             )
             model = link(N_SAGE, 0)
+        } else {
+            // Plná přesnost přebije --use-sage-attention ze startu serveru (audit 30. 9. 2026).
+            wf.put(
+                N_SAGE, node(
+                    "ModelAttentionBackend", "Plná pozornost", JSONObject()
+                        .put("model", model)
+                        .put("attention", "pytorch attention")
+                )
+            )
+            model = link(N_SAGE, 0)
         }
         wf.put(
             N_SPECTRUM, node(

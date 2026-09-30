@@ -89,7 +89,15 @@ object WorkflowBuilder {
         }
 
         // ---- vylepšení z workflow, jen zapnout/vypnout
-        wf.inputs(N_SAGE).put("sage_attention", if (p.sageAttention) "auto" else "disabled")
+        if (p.sageAttention) wf.inputs(N_SAGE).put("sage_attention", "auto")
+        else {
+            // „disabled“ jen vrátí model beze změny a server jede dál se Sage (--use-sage-attention).
+            // Plná přesnost: uzel nahradit ModelAttentionBackend (audit 30. 9. 2026).
+            val vstup = wf.inputs(N_SAGE).get("model")
+            wf.put(N_SAGE, JSONObject().put("class_type", "ModelAttentionBackend")
+                .put("inputs", JSONObject().put("model", vstup).put("attention", "pytorch attention"))
+                .put("_meta", JSONObject().put("title", "Plná pozornost")))
+        }
         wf.inputs(N_SHIFT).apply {
             put("shift_video", p.shiftVideo.toDouble())
             put("shift_audio", p.shiftAudio.toDouble())

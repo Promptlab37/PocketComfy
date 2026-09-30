@@ -33,7 +33,7 @@ fun GenParams.tkJakoPredloha(): Boolean {
     val d = GenParams()
     return tkMpx == d.tkMpx && tkZvetseni == d.tkZvetseni && tkKroky == d.tkKroky &&
         tkSampler == d.tkSampler && tkScheduler == d.tkScheduler &&
-        tkShiftObraz == d.tkShiftObraz && tkShiftZvuk == d.tkShiftZvuk &&
+        tkShiftObraz == d.tkShiftObraz &&
         tkUnet == d.tkUnet && tkVernost == d.tkVernost
 }
 

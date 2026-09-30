@@ -822,6 +822,8 @@ object GenerationEngine {
                 val client = ComfyClient(settings.serverUrl)
                 finishFromHistory(client, pid, null)
             }.onFailure {
+                // Zrušení uživatelem není selhání (dřív „StandaloneCoroutine was cancelled“).
+                if (it is kotlinx.coroutines.CancellationException) throw it
                 fail(
                     (it as? ComfyException)?.userMessage ?: it.message ?: t("Stažení se nepovedlo"),
                     canRetryDownload = true,
@@ -1997,6 +1999,8 @@ object GenerationEngine {
             hudbaStyl = if (sbFilmRun && !hudbaRun) hudbaStylBehu else "",
             sHudbou = hudbaRun,
         )
+        // Zrušeno během stahování (blokující přenos zrušení nezastaví) → do galerie nepatří.
+        if (kotlinx.coroutines.currentCoroutineContext()[kotlinx.coroutines.Job]?.isActive == false) throw kotlinx.coroutines.CancellationException("zrušeno")
         history.add(item)
         settings.activePromptId = null
         closeSocket()

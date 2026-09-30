@@ -113,13 +113,23 @@ object ImageUtils {
      * Díky tomu přežije restart i zabití procesu a při odesílání se už jen čte
      * hotový soubor — nezáleží na tom, jestli mezitím vypršelo oprávnění k URI.
      */
-    fun importToApp(ctx: Context, uri: Uri, target: File): Bitmap? {
-        val bmp = loadUpright(ctx, uri) ?: return null
-        target.parentFile?.mkdirs()
-        target.writeBytes(if (target.extension.equals("png", true)) toPng(bmp) else toJpeg(bmp))
-        val thumb = scaleTo(bmp, THUMB_EDGE)
-        if (thumb != bmp) bmp.recycle()
-        return thumb
+    fun importToApp(ctx: Context, uri: Uri, target: File): Bitmap? = try {
+        val bmp = loadUpright(ctx, uri)
+        if (bmp == null) null else {
+            target.parentFile?.mkdirs()
+            // Do dočasného souboru a pak přejmenovat: běh ve frontě nikdy nečte napůl zapsaný soubor.
+            val docasny = File(target.parentFile, target.name + ".part")
+            docasny.writeBytes(if (target.extension.equals("png", true)) toPng(bmp) else toJpeg(bmp))
+            if (!docasny.renameTo(target)) { docasny.copyTo(target, overwrite = true); docasny.delete() }
+            val thumb = scaleTo(bmp, THUMB_EDGE)
+            if (thumb != bmp) bmp.recycle()
+            thumb
+        }
+    } catch (e: Throwable) {
+        // Nestažená fotka z cloudu, odvolané oprávnění, plný disk, málo paměti — appka nespadne,
+        // volající dostane null („nepodařilo se načíst“). Audit 30. 9. 2026.
+        if (e is kotlinx.coroutines.CancellationException) throw e
+        null
     }
 
     /**

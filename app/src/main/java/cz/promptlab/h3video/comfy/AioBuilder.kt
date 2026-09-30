@@ -403,6 +403,17 @@ object AioBuilder {
                 )
             )
             model = link(id)
+        } else {
+            // Sage vypnutá = plná přesnost. Samotné nevložení patche nestačí: server běží
+            // s --use-sage-attention a ten platí dál (audit 30. 9. 2026). Uzel pozornosti ho přebije.
+            val id = newId()
+            wf.put(
+                id, node(
+                    "ModelAttentionBackend", "Plná pozornost",
+                    JSONObject().put("model", model).put("attention", "pytorch attention")
+                )
+            )
+            model = link(id)
         }
 
         // TeaCache (H3 port od Icyoung) — volitelné zrychlení; hodnoty jsou
@@ -569,6 +580,17 @@ object AioBuilder {
                 id, node(
                     "MiniMaxH3MemoryEfficientSageAttentionPatch", "Sage Attention",
                     JSONObject().put("model", model)
+                )
+            )
+            model = link(id)
+        } else {
+            // Sage vypnutá = plná přesnost. Samotné nevložení patche nestačí: server běží
+            // s --use-sage-attention a ten platí dál (audit 30. 9. 2026). Uzel pozornosti ho přebije.
+            val id = newId()
+            wf.put(
+                id, node(
+                    "ModelAttentionBackend", "Plná pozornost",
+                    JSONObject().put("model", model).put("attention", "pytorch attention")
                 )
             )
             model = link(id)

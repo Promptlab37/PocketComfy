@@ -543,40 +543,8 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
             }
         }
 
-        SkladaciSekce(
-            title = t("Připojení z mobilu"),
-            souhrn = t("Když se appka nemůže spojit"),
-            klic = "nastaveni-pripojeni",
-        ) {
-            SectionCard(
-                title = t("Aby to fungovalo z mobilu"),
-                subtitle = t("Krátký seznam, když se appka nemůže spojit")
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Step(
-                        "1",
-                        t("Počítač musí být zapnutý a přihlášený. ComfyUI se pak spouští samo " +
-                            "(úloha „H3 ComfyUI autostart\") – náběh po zapnutí trvá asi 3 minuty.")
-                    )
-                    Step(
-                        "2",
-                        t("Telefon musí mít zapnutý Tailscale na stejném účtu, nebo být " +
-                            "ve stejné Wi-Fi jako počítač.")
-                    )
-                    Step(
-                        "3",
-                        t("Přes Tailscale se používá port 8189, po domácí síti 8188 – " +
-                            "rychlá volba níž nastaví obojí správně.")
-                    )
-                    Step(
-                        "4",
-                        t("Modely MiniMax H3 (ref2va, qwen3vl enkodér a oba VAE) musí být " +
-                            "v ComfyUI stažené – appka je nedoinstaluje.")
-                    )
-                }
-            }
-        }
-
+        // „Připojení z mobilu“ pryč (audit 30. 9. 2026): vysvětlivka a popis soukromého nastavení
+        // (autostart, port Tailscale) ve veřejné appce.
         PodpisPromptLab()
         Spacer(Modifier.height(12.dp))
     }

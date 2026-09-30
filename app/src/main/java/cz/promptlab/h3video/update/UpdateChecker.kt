@@ -291,12 +291,24 @@ object UpdateChecker {
             id = dm.enqueue(req)
             prefs.edit().putLong(klic, id).apply()
         }
+        // Když se stahování 3 minuty nepohne (čeká na síť / Wi-Fi), vzdát to — appka pak
+        // stáhne sama. Dřív „Stahuji“ viselo navždy (audit 30. 9. 2026).
+        var posledni = -1f
+        var odZmeny = System.currentTimeMillis()
         while (true) {
             val s = stav(id) ?: run {
                 prefs.edit().remove(klic).apply()
                 throw IllegalStateException(t("Stahování bylo zrušeno."))
             }
             onProgress(s.second)
+            if (s.second != posledni) { posledni = s.second; odZmeny = System.currentTimeMillis() }
+            else if (System.currentTimeMillis() - odZmeny > 180_000 &&
+                s.first != android.app.DownloadManager.STATUS_SUCCESSFUL
+            ) {
+                runCatching { dm.remove(id) }
+                prefs.edit().remove(klic).apply()
+                throw IllegalStateException(t("Stahování se zaseklo, zkouším jinak."))
+            }
             when (s.first) {
                 android.app.DownloadManager.STATUS_SUCCESSFUL -> break
                 android.app.DownloadManager.STATUS_FAILED -> {

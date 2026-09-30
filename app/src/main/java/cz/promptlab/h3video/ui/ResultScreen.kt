@@ -228,10 +228,19 @@ fun ResultScreen(
                             .apply { inJustDecodeBounds = true }
                         android.graphics.BitmapFactory.decodeFile(cesta, hranice)
                         var vzorek = 1
-                        while (maxOf(hranice.outWidth, hranice.outHeight) / (vzorek * 2) >= 4096) vzorek *= 2
+                        // Nejvýš 4096 px na delší straně: Zvětšit 2×2 má ~6400 px (~123 MB) a Android
+                        // bitmapu nad 100 MB odmítne vykreslit — appka spadla (audit 30. 9. 2026).
+                        while (maxOf(hranice.outWidth, hranice.outHeight) / vzorek > 4096) vzorek *= 2
                         val opts = android.graphics.BitmapFactory.Options()
                             .apply { inSampleSize = vzorek }
-                        android.graphics.BitmapFactory.decodeFile(cesta, opts)
+                        android.graphics.BitmapFactory.decodeFile(cesta, opts)?.let { b ->
+                            if (b.byteCount < 90_000_000) b
+                            else {
+                                val k = kotlin.math.sqrt(90_000_000.0 / b.byteCount)
+                                android.graphics.Bitmap.createScaledBitmap(b, (b.width * k).toInt(), (b.height * k).toInt(), true)
+                                    .also { if (it != b) b.recycle() }
+                            }
+                        }
                     }.getOrNull()
                 }
             }

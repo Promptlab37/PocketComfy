@@ -253,6 +253,10 @@ private fun Root(vm: MainViewModel = viewModel()) {
             else -> vm.selectTab(Tab.CREATE)
         }
     }
+    // Na hlavní obrazovce Zpět appku jen schová, neukončí: na Androidu 8–11 by konec
+    // aktivity zrušil rozdělanou přípravu, namlouvání i stahování (audit 30. 9. 2026).
+    val aktivita = androidx.compose.ui.platform.LocalContext.current as? android.app.Activity
+    BackHandler(enabled = !backUsable) { aktivita?.moveTaskToBack(true) }
 
     // Nabídka aktualizace vyskočí sama po spuštění, jakmile kontrola najde novější
     // vydání. „Později" zavře jen okno – proužek nad obsahem zůstane, aby se dalo

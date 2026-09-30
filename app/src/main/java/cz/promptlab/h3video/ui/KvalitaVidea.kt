@@ -40,10 +40,10 @@ import cz.promptlab.h3video.ui.theme.TextLow
  * a shift zvuku ve dvakrát sbaleném „Pokročilém“, u 3 kroků dvakrát, a Film ze
  * storyboardu i Long MiniMax měly hodnoty natvrdo.
  */
-fun souhrnKvality(p: GenParams): String = listOfNotNull(
+fun souhrnKvality(p: GenParams, sTeaCache: Boolean = true, sShiftem: Boolean = true): String = listOfNotNull(
     if (p.sageAttention) t("Sage") else t("Plná kvalita"),
-    if (p.teaCache) "TeaCache" else null,
-    t("zvuk %s").format("%.1f".format(p.shiftAudio)),
+    if (p.teaCache && sTeaCache) "TeaCache" else null,
+    if (sShiftem) t("zvuk %s").format("%.1f".format(p.shiftAudio)) else null,
 ).joinToString(" · ")
 
 /** Sekce v Nastavení. */
@@ -57,11 +57,12 @@ fun KvalitaVideaNastaveni(vm: MainViewModel) {
 
 /** Přepínače a posuvník — v Nastavení i v okně z karty. */
 @Composable
-private fun KvalitaVideaVolby(vm: MainViewModel, params: GenParams) {
+private fun KvalitaVideaVolby(vm: MainViewModel, params: GenParams, sTeaCache: Boolean = true, sShiftem: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Prepinac(t("Sage Attention"), params.sageAttention) { v -> vm.update { it.copy(sageAttention = v) } }
-        Prepinac("TeaCache", params.teaCache) { v -> vm.update { it.copy(teaCache = v) } }
-        LabeledSlider(
+        // Jen volby, které karta opravdu použije (žádné mrtvé volby).
+        if (sTeaCache) Prepinac("TeaCache", params.teaCache) { v -> vm.update { it.copy(teaCache = v) } }
+        if (sShiftem) LabeledSlider(
             label = t("Sigma shift – zvuk"),
             value = "%.1f".format(params.shiftAudio),
             position = params.shiftAudio, range = 1f..10f,
@@ -80,14 +81,14 @@ private fun Prepinac(nazev: String, zapnuto: Boolean, onZmena: (Boolean) -> Unit
 
 /** Řádek v kartě: stav jedním pohledem, ťuknutí otevře Nastavení. */
 @Composable
-fun KvalitaVideaRadek(vm: MainViewModel, params: GenParams) {
+fun KvalitaVideaRadek(vm: MainViewModel, params: GenParams, sTeaCache: Boolean = true, sShiftem: Boolean = true) {
     var otevreno by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
     if (otevreno) {
         val aktualni by vm.params.collectAsStateWithLifecycle()
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { otevreno = false },
             title = { Text(t("Kvalita a rychlost videa")) },
-            text = { KvalitaVideaVolby(vm, aktualni) },
+            text = { KvalitaVideaVolby(vm, aktualni, sTeaCache, sShiftem) },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = { otevreno = false }) { Text(t("Hotovo"), color = Cyan) }
             },
@@ -109,7 +110,7 @@ fun KvalitaVideaRadek(vm: MainViewModel, params: GenParams) {
         Text(t("Kvalita videa"), style = MaterialTheme.typography.bodyMedium, color = TextHi)
         // Na úzkém telefonu se souhrn zmenší, neuřízne (TextVesel).
         androidx.compose.foundation.layout.Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-            TextVesel(souhrnKvality(params), style = MaterialTheme.typography.bodySmall, color = Cyan)
+            TextVesel(souhrnKvality(params, sTeaCache, sShiftem), style = MaterialTheme.typography.bodySmall, color = Cyan)
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(20.dp), tint = TextLow)
     }

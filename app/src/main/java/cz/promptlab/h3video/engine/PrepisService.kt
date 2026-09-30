@@ -90,18 +90,21 @@ class PrepisService : Service() {
          * Dlouhá akce [klic] začala / skončila (5.37, uživatel: „appka musí
          * fungovat, i když z ní odejdu, vždy“). Služba běží, dokud drží aspoň jedna.
          */
-        fun drz(ctx: Context, klic: String, zapnuto: Boolean) {
+        fun drz(ctx: Context, klic: String, zapnuto: Boolean) = synchronized(drzi) {
+            // Volá se z hlavního vlákna i z IO — kontrola a změna stavu musí být naráz (audit 30. 9. 2026).
             if (zapnuto) drzi.add(klic) else drzi.remove(klic)
             val prave = drzi.isNotEmpty()
-            if (prave == bezi) return
+            if (prave == bezi) return@synchronized
             bezi = prave
             val i = Intent(ctx, PrepisService::class.java)
-            runCatching {
+            val ok = runCatching {
                 if (prave) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ctx.startForegroundService(i) else ctx.startService(i)
                 } else if (naPopredi) ctx.stopService(i)
                 // Jinak se služba teprve spouští: v onStartCommand uvidí bezi = false a skončí sama.
-            }
+            }.isSuccess
+            // Start odmítnut (appka na pozadí) → příště to zkusit znovu.
+            if (!ok && prave) bezi = false
         }
     }
 }

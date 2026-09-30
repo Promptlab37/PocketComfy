@@ -409,8 +409,11 @@ class AioBuilderTest {
         val wf = AioBuilder.build(
             videoTemplate(), params(turbo = false, sage = false, preview = false), scene
         )
-        assertEquals(emptyList<String>(), modelChain(wf))
-        assertEquals("2", wf.inputs("5").getJSONArray("model").getString(0))
+        // Sage vypnutá = plná pozornost (přebije --use-sage-attention serveru), audit 30. 9. 2026.
+        assertEquals(listOf("ModelAttentionBackend"), modelChain(wf))
+        val uzel = wf.inputs("5").getJSONArray("model").getString(0)
+        assertEquals("pytorch attention", wf.inputs(uzel).getString("attention"))
+        assertEquals("2", wf.inputs(uzel).getJSONArray("model").getString(0))
     }
 
     @Test

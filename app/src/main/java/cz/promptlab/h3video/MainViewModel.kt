@@ -845,12 +845,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun resetToWorkflowDefaults() {
         val d = GenParams()
         update {
-            it.profile.applyTo(it).copy(
-                shiftAudio = d.shiftAudio,
-                sageAttention = d.sageAttention,
-                crf = d.crf,
-                teaCache = d.teaCache,
-            )
+            // Sage, TeaCache a shift zvuku jsou v „Kvalita a rychlost videa“ — reset je nepřepisuje (audit 30. 9. 2026).
+            it.profile.applyTo(it).copy(crf = d.crf)
         }
     }
 
@@ -861,8 +857,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         return p.steps == prof.steps && p.sampler == prof.sampler &&
             p.scheduler == prof.scheduler && p.shiftVideo == prof.shiftVideo &&
             p.spectrum == prof.spectrum && p.turboLoraOn == prof.useLora &&
-            p.shiftAudio == d.shiftAudio && p.sageAttention == d.sageAttention &&
-            p.crf == d.crf && p.teaCache == d.teaCache
+            p.crf == d.crf
     }
 
     // ------------------------------------------------------------------ profil
