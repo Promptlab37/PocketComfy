@@ -1,0 +1,63 @@
+U1 | TITLE | - | -
+U2 | FORMAT | - | -
+U3 | CAST | - | -
+U4 | CAST | - | -
+U5 | EMOTION | - | -
+U6 | CAST | - | -
+U7 | EMOTION | - | -
+U8 | CAST | - | -
+U9 | CAST | - | -
+U10 | CAST | - | -
+U11 | ACTION | - | -
+U12 | SETTING | - | -
+U13 | PICTURE | - | -
+U14 | PICTURE | - | -
+U15 | CONTINUITY | - | -
+U16 | CONTINUITY | - | -
+U17 | WINDOW | - | -
+U18 | ACTION | - | -
+U19 | ACTION | - | -
+U20 | PICTURE | - | -
+U21 | DIALOGUE | Neteř | zdvořile
+U22 | DIALOGUE | Návštěvník | rozpačitě
+U23 | WINDOW | - | -
+U24 | ACTION | - | -
+U25 | ACTION | - | -
+U26 | DIALOGUE | Neteř | věcně
+U27 | DIALOGUE | Návštěvník | -
+U28 | WINDOW | - | -
+U29 | ACTION | - | -
+U30 | ACTION | - | -
+U31 | DIALOGUE | Neteř | smutně a přesvědčivě
+U32 | DIALOGUE | Návštěvník | zaskočeně
+U33 | ACTION | - | -
+U34 | WINDOW | - | -
+U35 | ACTION | - | -
+U36 | ACTION | - | -
+U37 | DIALOGUE | Teta | vesele
+U38 | DIALOGUE | Návštěvník | opatrně
+U39 | WINDOW | - | -
+U40 | ACTION | - | -
+U41 | ACTION | - | -
+U42 | DIALOGUE | Teta | -
+U43 | DIALOGUE | Návštěvník | téměř šeptem
+U44 | DIALOGUE | Teta | bezstarostně
+U45 | WINDOW | - | -
+U46 | PICTURE | - | -
+U47 | ACTION | - | -
+U48 | PICTURE | - | -
+U49 | ACTION | - | -
+U50 | DIALOGUE | Manžel tety | -
+U51 | DIALOGUE | Návštěvník | pro sebe
+U52 | WINDOW | - | -
+U53 | ACTION | - | -
+U54 | ACTION | - | -
+U55 | ACTION | - | -
+U56 | DIALOGUE | Teta | překvapeně
+U57 | WINDOW | - | -
+U58 | ACTION | - | -
+U59 | ACTION | - | -
+U60 | DIALOGUE | Neteř | naprosto klidně
+U61 | ACTION | - | -
+U62 | ACTION | - | -
+U63 | NOTE | - | -

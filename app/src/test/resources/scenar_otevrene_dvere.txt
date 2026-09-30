@@ -1,0 +1,52 @@
+STORYBOARD – OTEVŘENÉ DVEŘE
+Realistická komediální scénka, 9:16, přibližně 50 sekund.
+
+POSTAVY
+S1 – Návštěvník: 35 let, brýle, béžový kabát. Zdvořilý, ale snadno znervózní.
+S2 – Neteř: 24 let, tmavé vlasy v culíku, zelený svetr. Mluví klidně a věrohodně; svůj vtip nikdy nepřehrává.
+S3 – Teta: 60 let, krátké šedé vlasy, rezavá halenka. Srdečná a bezstarostná.
+S4 – Manžel tety: 62 let, tmavá bunda, přes ruku přehozená bílá pláštěnka. Vrací se ze zahrady s malým hnědým psem.
+
+PROSTOR
+Vchodové dveře do domu jsou vlevo. Otevřené prosklené dveře na zahradu jsou vpravo. Tuto orientaci držet ve všech osmi oknech. Manžel přichází ze zahrady vpravo; návštěvník utíká z domu vlevo.
+
+[OKNO 1 | 0–6 s]
+Návštěvník vejde hlavním vchodem. Neteř ho uvede do obývacího pokoje a nabídne mu místo. V pozadí jsou otevřené dveře na zahradu.
+S2, zdvořile: <d>Teta za chvíli přijde. Zatím vás zabavím já.</d>
+S1, rozpačitě: <d>To jste hodná. Vlastně se ani neznáme.</d>
+
+[OKNO 2 | 6–12 s]
+Sedí proti sobě. Neteř nenápadně ukáže k otevřeným dveřím na zahradu.
+S2, věcně: <d>Všiml jste si, že máme pořád otevřeno?</d>
+S1: <d>V říjnu? Trochu mě to překvapilo.</d>
+
+[OKNO 3 | 12–20 s]
+Neteř se podívá do zahrady a ztiší hlas. Návštěvník ji napjatě poslouchá.
+S2, smutně a přesvědčivě: <d>Před třemi lety tudy odešel tetin manžel se psem. Prý se ztratil v mokřadech. Teta pořád čeká, že se vrátí stejnou cestou.</d>
+S1, zaskočeně: <d>To je mi líto. Opravdu jsem to nevěděl.</d>
+Neteř mlčky přikývne.
+
+[OKNO 4 | 20–26 s]
+Do pokoje vejde teta z chodby vlevo. Neteř se okamžitě tváří zcela normálně.
+S3, vesele: <d>Promiňte, že jsem vás nechala čekat!</d>
+S1, opatrně: <d>To vůbec nevadí.</d>
+
+[OKNO 5 | 26–33 s]
+Teta se usměje směrem k zahradě. Návštěvník ztuhne; neteř zůstane klidně sedět.
+S3: <d>Manžel už se každou chvíli vrátí. Se psem chodí vždycky právě tudy.</d>
+S1, téměř šeptem: <d>On... se vrátí?</d>
+S3, bezstarostně: <d>Jistě. Vždyť je venku jen od rána.</d>
+
+[OKNO 6 | 33–39 s]
+Pohled z pokoje otevřenými dveřmi do zahrady. Po trávníku přichází zcela živý manžel s malým hnědým psem. Přes ruku má bílou pláštěnku. Návštěvník ho uvidí a vyděšeně se zvedne.
+S4, z dálky na tetu: <d>Jsem doma!</d>
+S1, pro sebe: <d>To snad není možné...</d>
+
+[OKNO 7 | 39–44 s]
+Návštěvník popadne tašku a rychle uteče hlavním vchodem vlevo. Teta nechápavě sleduje jeho odchod. Manžel mezitím dojde k proskleným dveřím vpravo.
+S3, překvapeně: <d>Co se mu stalo?</d>
+
+[OKNO 8 | 44–51 s]
+Manžel vejde ze zahrady do pokoje, pes sedí u jeho nohou. Neteř se na psa podívá a s dokonale vážnou tváří odpoví tetě.
+S2, naprosto klidně: <d>Asi ten pes. Říkal, že se jich strašně bojí.</d>
+Krátká pauza. Teta se podívá na maličkého klidného psa; neteři sotva znatelně cukne koutek úst. Střih.

@@ -154,14 +154,14 @@ object SbScenar {
     private val MLUVCI_REPLIKA = Regex(
         // Podání slovy („Syn tiše:“) nebo za čárkou („Keramička, spokojeně:“ — hrnek 30. 9. 2026).
         // Slovo podání smí mít i jedno písmeno („Jana s úsměvem:“ — korpus 30. 9. 2026).
-        """(?<![\p{L}])([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
+        """(?<![\p{L}])([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20}|[ \t]\p{Ll}[\p{L}]{1,20}(?=[ \t]*,))?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
             """(?:\(([^)\n]{1,40})\))?[ \t]*:[ \t]*[„“"«]([^„“"«»”\n]{1,300})[“”"»]""",
     )
 
     /** Řádek repliky bez uvozovek: `DCERA: To jsi ty?`, `MAMINKA (dojatě): To jsem já…`. */
     internal val RADEK_MLUVCI = Regex(
         // Druhé slovo jména jen velkým písmenem — „Otec tiše:“ je jméno a podání.
-        """^[ \t]*([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20})?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
+        """^[ \t]*([\p{L}][\p{L}]{1,20}(?:[ \t]\p{Lu}[\p{L}]{1,20}|[ \t]\p{Ll}[\p{L}]{1,20}(?=[ \t]*,))?)((?:[ \t]*,[ \t]*\p{Ll}[\p{L} ]{1,30}?)|(?:[ \t]+\p{Ll}[\p{L}]{0,15}){0,3}?)[ \t]*""" +
             """(?:\(([^)\n]{1,40})\))?[ \t]*:[ \t]*(.+)$""",
     )
 
@@ -211,13 +211,33 @@ object SbScenar {
      * Sjednocení zápisu: tučné písmo a nadpisy z markdownu, odrážky, emoji,
      * pomlčka před mluvčím pryč. Obsah se nemění.
      */
-    fun uprav(vstup: String): String = spojReplikyPresRadek(vstup.replace('\u00A0', ' ').replace("\r", ""))
+    fun uprav(vstup: String): String = spojReplikyPresRadek(zapisH3(vstup.replace('\u00A0', ' ').replace("\r", "")))
         .replace(Regex("""[\u200B-\u200D\uFE0E\uFE0F]"""), "")
         .replace(Regex("""\p{So}"""), "")
         .replace("**", "").replace("__", "")
         .lines().joinToString("\n") { r ->
             r.replace(Regex("""^[ \t]*(?:#{1,6}[ \t]*|>[ \t]*)+"""), "").replace(Regex("""^[ \t]*[-•*–—][ \t]+"""), "")
         }
+
+    private val ID_V_POSTAVACH = Regex("""(?m)^([ \t]*(?:[-•*–—][ \t]+)?)\(?S(\d{1,2})\)?[ \t]*[–—:-][ \t]*(\p{Lu}[\p{L}]*(?:[ \t]\p{L}+){0,2}?)[ \t]*(?=[:,(–—-])""")
+
+    /**
+     * Scénář zapsaný ve tvaru H3 (Otevřené dveře 30. 9. 2026): repliky v `<d>…</d>`
+     * místo uvozovek a mluvčí jako S1–S4 s obsazením „S1 – Návštěvník: …“.
+     * Rozbor našel 0 replik. Převede se na běžný zápis: `<d>` → „…“, S1 → jméno
+     * z obsazení (u řádku obsazení i u mluvčího na začátku řádku).
+     */
+    internal fun zapisH3(t: String): String {
+        var s = t
+        val jmena = ID_V_POSTAVACH.findAll(s).associate { it.groupValues[2] to it.groupValues[3].trim() }
+        if (jmena.isNotEmpty()) {
+            s = ID_V_POSTAVACH.replace(s) { m -> m.groupValues[1] + m.groupValues[3].trim() }
+            s = Regex("""(?m)^([ \t]*)\(?S(\d{1,2})\)?(?=[ \t]*[,:(–—])""").replace(s) { m ->
+                m.groupValues[1] + (jmena[m.groupValues[2]] ?: m.value.trim())
+            }
+        }
+        return s.replace(Regex("""<d>\s*(?:\[[^\]\n]{1,20}]\s*)?(.*?)\s*</d>""", RegexOption.DOT_MATCHES_ALL), "„$1“")
+    }
 
     /**
      * Replika „…“ zalomená přes řádek (PDF, úzké okno) se spojí — jinak by ji
