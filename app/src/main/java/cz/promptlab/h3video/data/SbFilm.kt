@@ -1010,6 +1010,15 @@ object SbFilmPrepis {
         if (celek.isNotEmpty() && celek.all { it in uSouseda }) p.copy(repliky = "") else p
     }
 
+    /**
+     * `<Picture N>` za posledním obrázkem (Dar mudrců 30. 9. 2026: „the young man
+     * from <Picture 7>“ — číslo panelu místo obrázku) → `<Picture 1>`, storyboard.
+     */
+    fun opravObrazky(text: String, pocetObrazku: Int): String =
+        Regex("""<Picture (\d+)>""").replace(text) { m ->
+            if ((m.groupValues[1].toIntOrNull() ?: 0) in 1..maxOf(1, pocetObrazku)) m.value else "<Picture 1>"
+        }
+
     private val CIZI_STOPA = Regex("""<(Audio|Video)\s*\d+>""")
     private val ODKAZ_ZABERU = Regex("""\[Shot (\d+)]""")
     private val REPLIKA_D = Regex("""<d>.*?</d>""", RegexOption.DOT_MATCHES_ALL)

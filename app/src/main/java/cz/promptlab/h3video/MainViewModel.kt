@@ -5615,7 +5615,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 )
                 // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
                 // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
-                val cisty = sp.ocistiPrepis(text, u.panely.size)
+                val cisty = sp.opravObrazky(sp.ocistiPrepis(text, u.panely.size), s.uploadImages.size)
                 // Se scénářem i vymyšlené značky (<Product>) → <Subject K> (5.22).
                 return if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty) else cisty
             }

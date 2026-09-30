@@ -32,3 +32,12 @@ class SbVzhledPanelyTest {
         assertNull(SbScenar.vzhledProPanely("v oknech 1 a okně 3 bez klobouku", listOf(1)))
     }
 }
+
+class SbOpravObrazkyTest {
+    @Test
+    fun `picture za poslednim obrazkem`() {
+        val t = "<Subject 2> is the young man from <Picture 7>; <Picture 1> and <Picture 2> stay."
+        assertEquals("<Subject 2> is the young man from <Picture 1>; <Picture 1> and <Picture 2> stay.",
+            cz.promptlab.h3video.data.SbFilmPrepis.opravObrazky(t, 2))
+    }
+}
