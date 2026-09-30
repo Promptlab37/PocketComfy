@@ -661,11 +661,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             } ?: info
             _update.value = UpdateState.Downloading(nejnovejsi, 0f)
             val result = withContext(Dispatchers.IO) {
-                runCatching {
-                    UpdateChecker.download(getApplication(), nejnovejsi, settings.githubToken) { p ->
-                        _update.value = UpdateState.Downloading(nejnovejsi, p)
+                val postup: (Float) -> Unit = { p -> _update.value = UpdateState.Downloading(nejnovejsi, p) }
+                // Systémový správce stahování — doběhne i po odchodu z appky (5.39);
+                // když na telefonu nejde, stáhne appka sama jako dřív.
+                runCatching { UpdateChecker.downloadSystemem(getApplication(), nejnovejsi, settings.githubToken, postup) }
+                    .recoverCatching { e ->
+                        if (e is IllegalStateException && e.message?.contains("kontrolnímu součtu") == true) throw e
+                        UpdateChecker.download(getApplication(), nejnovejsi, settings.githubToken, postup)
                     }
-                }
             }
             _update.value = result.fold(
                 onSuccess = { UpdateState.Ready(nejnovejsi, it) },

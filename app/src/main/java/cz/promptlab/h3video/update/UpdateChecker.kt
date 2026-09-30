@@ -225,6 +225,112 @@ object UpdateChecker {
         }
     }
 
+    /**
+     * Konečná adresa souboru: přesměrování GitHubu obslouží ručně (token jen
+     * do API, cíl musí být HTTPS). Neotevírá tělo souboru.
+     */
+    private fun konecnaAdresa(info: UpdateInfo, token: String): String {
+        var req = assetDownloadRequest(info.assetUrl, token)
+        repeat(5) {
+            val r = http.newCall(req).execute()
+            val kod = r.code
+            val location = r.header("Location")
+            r.close()
+            if (kod !in 300..399) return req.url.toString()
+            if (location.isNullOrBlank()) throw IllegalStateException(t("GitHub nevrátil adresu souboru"))
+            if (!location.startsWith("https://")) throw IllegalStateException(
+                t("Přesměrování nevede na zabezpečenou adresu – stažení zrušeno.")
+            )
+            req = Request.Builder().url(location).header("User-Agent", "PocketComfy").build()
+        }
+        return req.url.toString()
+    }
+
+    /**
+     * Stažení přes systémového správce stahování (5.39, uživatel: „když z appky
+     * odejdu, musí to fungovat dál“). Stahuje Android sám, mimo appku — doběhne
+     * i po odchodu, zamčení nebo ukončení appky; rozdělané stažení stejné verze
+     * se při dalším ťuknutí převezme. Kontrolní součet se ověří stejně jako dřív.
+     */
+    fun downloadSystemem(ctx: Context, info: UpdateInfo, token: String, onProgress: (Float) -> Unit): File {
+        val dm = ctx.getSystemService(android.app.DownloadManager::class.java)
+            ?: throw IllegalStateException("DownloadManager")
+        val prefs = ctx.getSharedPreferences("aktualizace_stahovani", Context.MODE_PRIVATE)
+        val nazev = "update-" + info.znacka.filter { it.isLetterOrDigit() || it == '.' } + ".apk"
+        val slozka = ctx.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+            ?: throw IllegalStateException("úložiště")
+        val stazeny = File(slozka, nazev)
+        val klic = "id_" + info.znacka
+        fun stav(id: Long): Pair<Int, Float>? {
+            dm.query(android.app.DownloadManager.Query().setFilterById(id))?.use { c ->
+                if (!c.moveToFirst()) return null
+                val st = c.getInt(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_STATUS))
+                val hotovo = c.getLong(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_BYTES_DOWNLOADED_SO_FAR))
+                val celkem = c.getLong(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_TOTAL_SIZE_BYTES))
+                    .takeIf { it > 0 } ?: info.sizeBytes
+                return st to (if (celkem > 0) (hotovo.toFloat() / celkem).coerceIn(0f, 1f) else 0f)
+            }
+            return null
+        }
+        var id = prefs.getLong(klic, -1L)
+        // Rozdělané nebo hotové stažení téže verze převzít; spadlé zahodit.
+        if (id >= 0) {
+            val s = stav(id)
+            if (s == null || s.first == android.app.DownloadManager.STATUS_FAILED) {
+                runCatching { dm.remove(id) }
+                id = -1L
+            }
+        }
+        if (id < 0) {
+            slozka.listFiles()?.filter { it.name.startsWith(nazev.removeSuffix(".apk")) }?.forEach { it.delete() }
+            val req = android.app.DownloadManager.Request(android.net.Uri.parse(konecnaAdresa(info, token)))
+                .setTitle("PocketComfy " + info.versionName)
+                .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE)
+                .setDestinationInExternalFilesDir(ctx, android.os.Environment.DIRECTORY_DOWNLOADS, nazev)
+                .addRequestHeader("User-Agent", "PocketComfy")
+            id = dm.enqueue(req)
+            prefs.edit().putLong(klic, id).apply()
+        }
+        while (true) {
+            val s = stav(id) ?: run {
+                prefs.edit().remove(klic).apply()
+                throw IllegalStateException(t("Stahování bylo zrušeno."))
+            }
+            onProgress(s.second)
+            when (s.first) {
+                android.app.DownloadManager.STATUS_SUCCESSFUL -> break
+                android.app.DownloadManager.STATUS_FAILED -> {
+                    runCatching { dm.remove(id) }
+                    prefs.edit().remove(klic).apply()
+                    throw IllegalStateException(t("Stažení selhalo, zkus to znovu."))
+                }
+            }
+            Thread.sleep(700)
+        }
+        prefs.edit().remove(klic).apply()
+        // Skutečné umístění od správce stahování — při shodě jmen ukládá jako „…-1.apk“.
+        val soubor = dm.query(android.app.DownloadManager.Query().setFilterById(id))?.use { c ->
+            if (!c.moveToFirst()) null
+            else c.getString(c.getColumnIndexOrThrow(android.app.DownloadManager.COLUMN_LOCAL_URI))
+                ?.let { android.net.Uri.parse(it).path }?.let { File(it) }
+        }?.takeIf { it.exists() } ?: stazeny
+        info.sha256?.let { ocekavany ->
+            if (!sha256Souboru(soubor).equals(ocekavany, ignoreCase = true)) {
+                runCatching { dm.remove(id) }
+                throw IllegalStateException(
+                    t("Stažený soubor neodpovídá kontrolnímu součtu z vydání – instalace zrušena.")
+                )
+            }
+        }
+        // Instalátor čte z cache (FileProvider) — přesunout tam.
+        val target = File(ctx.cacheDir, nazev)
+        if (target.exists()) target.delete()
+        soubor.copyTo(target, overwrite = true)
+        runCatching { dm.remove(id) }
+        soubor.delete()
+        return target
+    }
+
     /** SHA-256 z poznámek vydání: `SHA-256: <64 hex>`, `sha256=…` i v backticku. */
     internal fun sha256ZPoznamek(notes: String): String? =
         Regex("""(?i)sha-?256[^0-9a-f]{0,8}([0-9a-f]{64})""")
