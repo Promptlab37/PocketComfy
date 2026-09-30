@@ -40,9 +40,9 @@ class UkazkaPrubehuActivity : ComponentActivity() {
         val stav = when (intent.getStringExtra("stav")) {
             "fronta" -> GenState.Running(null, Stage.QUEUED, 0.06f, queuePosition = 1, startedAt = od - 12_000, label = "Film ze storyboardu")
             "model" -> GenState.Running(null, Stage.MODELS, 0.14f, startedAt = od - 48_000, preparing = true, label = "Film ze storyboardu")
-            "prenos" -> GenState.Running(null, Stage.DOWNLOADING, 0.96f, startedAt = od - 402_000, transferDone = 18_400_000, transferTotal = 31_000_000, etaSeconds = 6, preview = Preview.Frames(listOf(nahled), 1), label = "Film ze storyboardu")
+            "prenos" -> GenState.Running(null, Stage.DOWNLOADING, 0.96f, startedAt = od - 402_000, transferDone = 18_400_000, transferTotal = 31_000_000, etaSeconds = 6, preview = Preview.Frames(listOf(nahled), 1), label = "Film ze storyboardu", rozliseni = "960×544")
             "obrazek" -> GenState.Running(null, Stage.SAMPLING, 0.52f, step = 13, totalSteps = 25, startedAt = od - 41_000, etaSeconds = 38, secondsPerStep = 3.0, isImage = true, isT2i = true, preview = Preview.Frames(listOf(nahled), 1), label = "Obrázek")
-            else -> GenState.Running(null, Stage.SAMPLING, 0.58f, step = 7, totalSteps = 12, startedAt = od - 215_000, etaSeconds = 164, secondsPerStep = 23.0, preview = Preview.Frames(listOf(nahled), 1), label = "Film ze storyboardu")
+            else -> GenState.Running(null, Stage.SAMPLING, 0.58f, step = 7, totalSteps = 12, startedAt = od - 215_000, etaSeconds = 164, secondsPerStep = 23.0, preview = Preview.Frames(listOf(nahled), 1), label = "Film ze storyboardu", rozliseni = "960×544")
         }
         setContent {
             H3Theme {

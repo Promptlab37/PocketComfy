@@ -166,13 +166,16 @@ fun ProgressScreen(
                 color = TextLow,
                 letterSpacing = 4.sp
             )
-            Spacer(Modifier.weight(1f))
-            if (state.label.isNotEmpty()) {
-                Text(
-                    state.label,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextLow,
-                    maxLines = 1
+            // Karta a pod ní rozlišení, na které se opravdu generuje (z grafu, 5.45).
+            Column(Modifier.weight(1f).padding(start = 12.dp), horizontalAlignment = Alignment.End) {
+                if (state.label.isNotEmpty()) Text(
+                    state.label, style = MaterialTheme.typography.bodySmall, color = TextLow, maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
+                if (state.rozliseni.isNotEmpty()) Text(
+                    state.rozliseni,
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+                    color = Cyan, maxLines = 1,
                 )
             }
         }

@@ -83,6 +83,8 @@ sealed interface GenState {
         val note: String? = null,
         val offline: Boolean = false,
         val label: String = "",
+        /** Rozlišení, na které běh generuje (z grafu), např. „960×544“. */
+        val rozliseni: String = "",
         /** Beh vyrabi obrazek, ne video - texty prubehu se podle toho meni. */
         val isImage: Boolean = false,
         /** Beh je zvetsovani (SeedVR2) - jeste jine texty nez uprava. */
@@ -194,6 +196,7 @@ object GenerationEngine {
     @Volatile private var interrupted: Boolean = false
     @Volatile private var lastContactAt: Long = 0L
     @Volatile private var label: String = ""
+    @Volatile private var rozliseni: String = ""
     @Volatile private var transferDone: Long = 0L
     @Volatile private var transferTotal: Long = 0L
     @Volatile private var transferStartedAt: Long = 0L
@@ -742,6 +745,7 @@ object GenerationEngine {
             } else emptyMap()
             startedAt = System.currentTimeMillis()
             label = settings.activeLabel
+            rozliseni = ""
             // Po restartu aplikace ještě nevíme, jak daleko úloha je – nezačínat na
             // vymyšlené třetině, skutečný postup dorazí ze serveru za okamžik.
             publish(Stage.QUEUED, 0.05f, note = t("Navazuji na rozdělané generování"))
@@ -811,6 +815,7 @@ object GenerationEngine {
             !swapRun && !inpaintRun && !longRun && !model3dRun && !ltxRun && !danceRun &&
             !animateRun && !interpRun && !scailRun && !cnRun && !berniniRun && !longMmRun && !sbFilmRun && settings.activeAio
         label = settings.activeLabel
+        rozliseni = ""
         startedAt = System.currentTimeMillis()
         // Službu na popředí nesmí appka odnést pádem, když ji systém odmítne
         // (kvóta dataSync na Androidu 15, start mimo popředí). Bez ní se jen
@@ -1312,6 +1317,7 @@ object GenerationEngine {
         // Značka do logu: od téhle chvíle patří hlášky uzlů našemu běhu.
         logSince = runCatching { client.nodeWarnings().lastOrNull()?.first }.getOrNull()
         publish(Stage.QUEUED, 0.06f)
+        rozliseni = runCatching { cz.promptlab.h3video.comfy.RozliseniGrafu.text(workflow) }.getOrDefault("")
         submitWithRetry(client, workflow, promptId)
 
         // Zrušení mohlo přijít uprostřed blokujícího submitu — pak se úloha
@@ -2335,6 +2341,7 @@ object GenerationEngine {
             note = note,
             offline = offline,
             label = label,
+            rozliseni = rozliseni,
             isImage = editRun || upscaleRun || t2iRun || restoreRun || angleRun || swapRun,
             isUpscale = upscaleRun,
             // Pozná se z tříd odeslaného grafu, takže to přežije i znovupřipojení
