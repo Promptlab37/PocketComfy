@@ -145,17 +145,24 @@ fun SbFilmSection(vm: MainViewModel) {
                 onClear = { vm.setSbScenar("") },
                 rostouci = true,
             )
+            // Jedno tlačítko: přečíst a rovnou napsat prompty, pak už jen Natočit (5.15).
+            val pripraveno = scene.zadaniUseku.isNotEmpty() && scene.zadaniUseku.size == scene.useky.size &&
+                cz.promptlab.h3video.data.otiskScenare(scene.scenar) == scene.scenarPlanu
             if (scene.storyboard != null && scene.scenar.isNotBlank()) {
                 OutlineButton(
-                    if (cte) t("Čtu storyboard a scénář…")
-                    else if (scene.panely.isEmpty()) t("Přečíst storyboard a scénář") else t("Přečíst znovu"),
-                    color = if (scene.panely.isEmpty()) Amber else TextMid,
+                    if (cte) t("Připravuji film…")
+                    else if (!pripraveno) t("Připravit film") else t("Připravit znovu"),
+                    color = if (pripraveno) TextMid else Amber,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.precistSbScenar() }
             }
             if (akce == MainViewModel.SbAkce.CTENI) SjedKPrubehu(cte) {
                 PrubehPrepisu(vm, barva = Amber)
                 chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            }
+            // Souhrn připraveného filmu — na první pohled je vidět, jestli sedí (kritici 30. 9. 2026).
+            if (pripraveno && !cte) {
+                Text(souhrnFilmu(scene), style = MaterialTheme.typography.labelLarge, color = TextHi)
             }
         }
     }
@@ -252,7 +259,9 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
-    if (scene.panely.isNotEmpty()) {
+    // Se scénářem: kontrola je nepovinná a sbalená, po přípravě se jen natočí (5.15, kritici).
+    if (scene.panely.isNotEmpty() && scene.zdroj == SbZdroj.SCENAR) ScenarKontrola(vm, scene, bezi, akce, chyba)
+    else if (scene.panely.isNotEmpty()) {
         val useky = scene.useky
         val seScenarem = scene.zdroj == SbZdroj.SCENAR
         val scenarHotovy = scene.zadaniUseku.size == useky.size && useky.isNotEmpty()
@@ -498,4 +507,132 @@ private fun casStrihu(s: Double): String {
     val d = (s * 10).toInt()
     val sek = d / 10
     return "%d:%02d".format(sek / 60, sek % 60) + if (d % 10 != 0) ".${d % 10}" else ""
+}
+
+/** `FOTOŽIJE · 15 s · 2 úseky · 2 repliky · Syn, Otec` */
+private fun souhrnFilmu(scene: SbFilmScene): String {
+    val repliky = scene.panely.flatMap { cz.promptlab.h3video.data.SbFilmPrepis.repliky(it.repliky) }
+    val mluvci = repliky.map { it.first }.distinct()
+    return listOfNotNull(
+        scene.nazev.takeIf { it.isNotBlank() },
+        "%.0f s".format(scene.sekundy),
+        pocet(scene.useky.size, "%d úsek", "%d úseky", "%d úseků"),
+        pocet(repliky.size, "%d replika", "%d repliky", "%d replik"),
+        mluvci.joinToString(", ").takeIf { it.isNotBlank() },
+    ).joinToString(" · ")
+}
+
+/**
+ * Storyboard + scénář: krok 2 · Kontrola. Záběry, texty do střihu a prompty
+ * jsou sbalené — po „Připravit film“ se jen natočí. Co vyžaduje zásah
+ * (nesoulad počtu, chybějící prompty), je vidět i ve sbaleném stavu.
+ */
+@Composable
+private fun ScenarKontrola(
+    vm: MainViewModel,
+    scene: SbFilmScene,
+    bezi: Boolean,
+    akce: MainViewModel.SbAkce?,
+    chyba: String?,
+) {
+    val useky = scene.useky
+    val promptyHotove = scene.zadaniUseku.size == useky.size && useky.isNotEmpty()
+    SectionCard(title = "2 · " + t("Kontrola")) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (scene.panelyObrazku > 0 && scene.oknaScenare > 0 && scene.panelyObrazku != scene.oknaScenare) {
+                Text(
+                    t("Scénář má %d oken, storyboard %d panelů.").format(scene.oknaScenare, scene.panelyObrazku),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
+                )
+            }
+            SkladaciSekce(
+                title = t("Záběry"),
+                souhrn = listOfNotNull(
+                    "%.1f s".format(scene.sekundy),
+                    pocet(useky.size, "%d úsek", "%d úseky", "%d úseků"),
+                    pocet(scene.panely.size, "%d panel", "%d panely", "%d panelů"),
+                    t("časy ze scénáře").takeIf { scene.casyZeStoryboardu },
+                    t("okna rozdělena odhadem").takeIf { scene.scenarOdhadem },
+                ).joinToString(" · "),
+                klic = "sbscenar_zabery",
+            ) {
+                var index = 0
+                useky.forEachIndexed { u, usek ->
+                    if (u > 0) HorizontalDivider(color = Amber.copy(alpha = .5f), modifier = Modifier.padding(vertical = 4.dp))
+                    usek.panely.forEach { _ ->
+                        val i = index++
+                        scene.panely.getOrNull(i)?.let { p ->
+                            PanelRadek(
+                                cislo = p.cislo, popis = p.popis, sekundy = p.sekundy,
+                                repliky = p.repliky, podani = p.podani, zvuk = p.zvuk,
+                                onPodani = { vm.setSbPanelPodani(i, it) },
+                                onZvuk = { vm.setSbPanelZvuk(i, it) },
+                                onRepliky = { vm.setSbPanelRepliky(i, it) },
+                                onPopis = { vm.setSbPanelPopis(i, it) },
+                                onSekundy = { vm.setSbPanelSekundy(i, it) },
+                                onSmazat = { vm.smazSbPanel(i) },
+                            )
+                        }
+                    }
+                }
+            }
+            if (scene.strih.isNotEmpty()) SkladaciSekce(
+                title = t("Texty do střihu"),
+                souhrn = "${scene.strih.size}",
+                klic = "sbscenar_strih",
+            ) {
+                val casy = cz.promptlab.h3video.data.SbScenar.casyPanelu(scene.panely)
+                scene.strih.forEach { r ->
+                    val cas = cz.promptlab.h3video.data.SbScenar.casPro(casy, r.cislo)
+                        ?.let { (od, doS) -> "${casStrihu(od)}–${casStrihu(doS)}" } ?: "${r.cislo}"
+                    val poznamka = r.druh == cz.promptlab.h3video.data.SbTextStrihu.Druh.POZNAMKA
+                    Row {
+                        Text(cas, style = MaterialTheme.typography.labelMedium, color = Amber, modifier = Modifier.width(84.dp))
+                        TextVesel(
+                            r.text, style = MaterialTheme.typography.bodySmall,
+                            color = if (poznamka) TextLow else TextHi, modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+                if (scene.strih.any { it.druh != cz.promptlab.h3video.data.SbTextStrihu.Druh.POZNAMKA }) {
+                    OutlineButton(t("Uložit titulky (.srt)"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
+                        vm.ulozSbTitulky()
+                    }
+                }
+            }
+            if (promptyHotove) SkladaciSekce(
+                title = t("Prompty"),
+                souhrn = pocet(useky.size, "%d úsek", "%d úseky", "%d úseků"),
+                klic = "sbscenar_prompty",
+            ) {
+                scene.zadaniUseku.forEachIndexed { k, text ->
+                    Text(
+                        t("Úsek %d · %s").format(k + 1, "%.1f s".format(useky[k].sekundy)),
+                        style = MaterialTheme.typography.labelLarge, color = Amber,
+                    )
+                    DarkTextField(
+                        value = text,
+                        onValueChange = { vm.setSbZadaniUseku(k, it) },
+                        placeholder = "",
+                        onClear = { vm.setSbZadaniUseku(k, "") },
+                        minHeight = 120.dp,
+                        rostouci = true,
+                    )
+                }
+            }
+            // Po úpravě záběrů prompty neplatí — tlačítko je vidět i se sbalenými záběry.
+            val pise = bezi && akce == MainViewModel.SbAkce.NATOCENI
+            if (!promptyHotove || pise) {
+                OutlineButton(
+                    if (pise) t("Píšu prompty…") else t("Napsat prompty"),
+                    color = Amber,
+                    modifier = Modifier.fillMaxWidth(),
+                ) { if (!bezi) vm.pripravitSbPrompty() }
+            }
+            if (akce == MainViewModel.SbAkce.NATOCENI) SjedKPrubehu(pise) {
+                PrubehPrepisu(vm, barva = Amber)
+                chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            }
+        }
+    }
 }

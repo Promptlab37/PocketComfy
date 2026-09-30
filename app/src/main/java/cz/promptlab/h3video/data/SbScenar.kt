@@ -783,6 +783,47 @@ object SbScenar {
         }.toMap()
     }
 
+    /**
+     * Scénář bez seznamu postav: vzhled přečtený z obrázku („Young Man“,
+     * „Elderly Man“) pod jmény mluvčích ze scénáře (Syn, Otec) — jinak by
+     * přepisovač dostal čtyři postavy místo dvou. Přiřazuje se jen jednoznačně
+     * (pohlaví + mladší/starší podle role); co nesedí, zůstane pod svým jménem.
+     */
+    fun vzhledProMluvci(vzhled: Map<String, String>, s: SbScenarCteni): Map<String, String> {
+        val mluvci = s.okna.flatMap { o -> o.repliky.map { it.kdo } }.distinct().filter { it != "Vypravěč" }
+        if (vzhled.isEmpty() || mluvci.isEmpty()) return vzhled
+        val role = mluvci.map { it.lowercase() }.toSet()
+        val maDite = role.any { it in DETI }
+        val maRodice = role.any { it in RODICE || it in PRARODICE }
+        fun stary(t: String) = Regex("""(?iu)elderly|old|older|grand|senior|aged|white hair|grey hair|gray hair""").containsMatchIn(t)
+        fun zenaEn(t: String): Boolean? = zena("", t)?.takeIf {
+            Regex("""(?iu)(?<![\p{L}])(woman|girl|lady|female|mother|daughter|grandma|bride|man|boy|male|father|son|grandpa|groom)(?![\p{L}])""").containsMatchIn(t)
+        }
+        val out = linkedMapOf<String, String>()
+        val pouzite = mutableSetOf<String>()
+        mluvci.forEach { m ->
+            val l = m.lowercase()
+            val starsi: Boolean? = when {
+                l in PRARODICE -> true
+                l in RODICE && maDite -> true
+                l in DETI && maRodice -> false
+                else -> null
+            }
+            val rod = s.zeny[m] ?: zena(m, "")
+            val kandidati = vzhled.keys.filter { it !in pouzite }.filter { k ->
+                val t = "$k ${vzhled[k]}"
+                (rod == null || zenaEn(t) == null || zenaEn(t) == rod) &&
+                    (starsi == null || stary(t) == starsi)
+            }
+            if (kandidati.size == 1 && (starsi != null || vzhled.size == 1)) {
+                out[m] = vzhled.getValue(kandidati.single())
+                pouzite += kandidati.single()
+            }
+        }
+        vzhled.filterKeys { it !in pouzite }.forEach { (k, v) -> out[k] = v }
+        return out
+    }
+
     fun hlas(zena: Boolean, vek: Int): String {
         val kdo = if (zena) "a woman" else "a man"
         val jeji = if (zena) "her" else "his"

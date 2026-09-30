@@ -5152,9 +5152,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
         val rozbor = cz.promptlab.h3video.data.SbScenar.rozeber(s.scenar)
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
+        // Kolik úseků bude, se ví už z rozboru scénáře (délky jsou v něm); bez oken odhad 2.
+        val odhadUseku = rozbor?.let {
+            cz.promptlab.h3video.data.SbFilmPlan.rozdel(
+                cz.promptlab.h3video.data.SbFilmPlan.naplanuj(cz.promptlab.h3video.data.SbScenar.cteni(it, null)).panely,
+            ).size
+        }?.takeIf { it > 0 } ?: 2
+        val krokCteni = listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_CELE)) +
+            (if (rozbor == null) listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.NAVRH)) else emptyList())
         _planAkce.value = PlanAkce(
-            listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_CELE)) +
-                (if (rozbor == null) listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.NAVRH)) else emptyList()),
+            krokCteni + List(odhadUseku) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU) },
         )
         val nerozdeleno = t("Scénář se nepodařilo rozdělit na okna. Očísluj je (OKNO 1, OKNO 2…).")
         viewModelScope.launch { try {
@@ -5215,9 +5222,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     updateSbFilm {
                         it.copy(
                             panely = cz.promptlab.h3video.data.SbScenar.doplnPanely(plan.panely, scenar),
+                            // Bez seznamu postav ve scénáři: vzhled z obrázku pod jmény ze scénáře (Young Man → Syn).
+                            vzhled = if (scenar.postavy.isNotEmpty()) plan.vzhled
+                            else cz.promptlab.h3video.data.SbScenar.vzhledProMluvci(obrazek.vzhled, scenar),
                             nazev = scenar.nazev.ifBlank { obrazek.nazev.orEmpty() },
                             casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(),
-                            hlasy = plan.hlasy, vzhled = plan.vzhled, hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
+                            hlasy = plan.hlasy, hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
                             kontinuita = scenar.kontinuita, strih = cz.promptlab.h3video.data.SbScenar.strih(scenar),
                             scenarOdhadem = scenar.odhadem, panelyObrazku = obrazek.panely.size,
                             oknaScenare = scenar.okna.size,
@@ -5226,7 +5236,38 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             pomer = scenar.pomer ?: it.pomer,
                         )
                     }
-                    _rewriteState.value = RewriteState.Idle
+                    // Jiný počet panelů v obrázku než oken ve scénáři: prompty by
+                    // odkazovaly na špatné panely — zastavit a ukázat to (kritici 30. 9. 2026).
+                    if (obrazek.panely.isNotEmpty() && obrazek.panely.size != scenar.okna.size) {
+                        _rewriteState.value = RewriteState.Fail(
+                            t("Scénář má %d oken, storyboard %d panelů.").format(scenar.okna.size, obrazek.panely.size),
+                            PraceNaPromptu.VYLEPSENI,
+                        )
+                        return@onSuccess
+                    }
+                    // Hned prompty (uživatel 30. 9. 2026: „myslel jsem, že se to rovnou
+                    // kompletně napíše a už jen zmáčknu generovat“).
+                    val useky = _sbFilm.value.useky.size
+                    upravPlan { p -> p.copy(kroky = p.kroky.take(krokCteni.size) + List(useky) {
+                        cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU)
+                    }) }
+                    val scena = _sbFilm.value
+                    val prompty = withContext(Dispatchers.IO) {
+                        odolne {
+                            val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
+                            napisPromptySb(client, scena, krokOd = krokCteni.size)
+                        }
+                    }
+                    prompty.onSuccess { zadani ->
+                        // Mezitím upravený plán: prompty ze staré podoby nepatří.
+                        updateSbFilm { if (it.panely == scena.panely) it.copy(zadaniUseku = zadani) else it }
+                        _rewriteState.value = RewriteState.Idle
+                    }.onFailure { e ->
+                        if (e is kotlinx.coroutines.CancellationException) return@launch
+                        _rewriteState.value = RewriteState.Fail(
+                            (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
+                        )
+                    }
                 }
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
@@ -5385,6 +5426,31 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * a ukáže se v náhledu (uživatel 28. 9. 2026: „přidej náhled promptu“).
      * Jakákoli změna plánu prompty zahodí (zadaniUseku = emptyList()).
      */
+    /**
+     * Prompt pro H3 ke každému úseku: přesný seznam záběrů ([cz.promptlab.h3video.data.SbFilmPrepis.hlidka])
+     * + přepisovač. [krokOd] = pořadí prvního kroku v plánu akce (Připravit film má před psaním čtení).
+     */
+    private suspend fun napisPromptySb(client: ComfyClient, s: cz.promptlab.h3video.data.SbFilmScene, krokOd: Int): List<String> {
+        val useky = s.useky
+        val sp = cz.promptlab.h3video.data.SbFilmPrepis
+        return useky.mapIndexed { k, u ->
+            val hlidka = sp.hlidka(
+                s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
+                sp.idMluvcich(s.panely), sp.jazykFilmu(s.panely), s.hlasy,
+                predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
+                vzhled = s.vzhled, kontinuita = s.kontinuita,
+            )
+            val text = prepisSReferencemi(
+                client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),
+                storyboard = s.seStoryboardem, hlidka = hlidka,
+                hlidatDialogy = false, pomer = s.pomer.kod, krok = krokOd + k,
+            )
+            // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
+            // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
+            sp.ocistiPrepis(text, u.panely.size)
+        }
+    }
+
     fun pripravitSbPrompty() {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _sbFilm.value
@@ -5399,23 +5465,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
-                    useky.mapIndexed { k, u ->
-                        val sp = cz.promptlab.h3video.data.SbFilmPrepis
-                        val hlidka = sp.hlidka(
-                            s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
-                            sp.idMluvcich(s.panely), sp.jazykFilmu(s.panely), s.hlasy,
-                            predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
-                            vzhled = s.vzhled, kontinuita = s.kontinuita,
-                        )
-                        suspend fun prepis(h: String) = prepisSReferencemi(
-                            client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),
-                            storyboard = s.seStoryboardem, hlidka = h,
-                            hlidatDialogy = false, pomer = s.pomer.kod, krok = k,
-                        )
-                        // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
-                        // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
-                        sp.ocistiPrepis(prepis(hlidka), u.panely.size)
-                    }
+                    napisPromptySb(client, s, krokOd = 0)
                 }
             }
             vysledek.onSuccess { zadani ->

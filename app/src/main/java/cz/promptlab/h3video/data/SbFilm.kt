@@ -733,8 +733,8 @@ fun sbFilmProblem(s: SbFilmScene): String? = when (s.zdroj) {
     SbZdroj.SCENAR -> when {
         s.storyboard == null -> t("Vyber obrázek se storyboardem.")
         s.scenar.isBlank() -> t("Vlož scénář.")
-        s.panely.isEmpty() -> t("Nejdřív přečti storyboard a scénář.")
-        otiskScenare(s.scenar) != s.scenarPlanu -> t("Scénář se změnil. Přečti ho znovu.")
+        s.panely.isEmpty() -> t("Nejdřív připrav film.")
+        otiskScenare(s.scenar) != s.scenarPlanu -> t("Scénář se změnil. Připrav film znovu.")
         else -> scenarProblem(s)
     }
 }

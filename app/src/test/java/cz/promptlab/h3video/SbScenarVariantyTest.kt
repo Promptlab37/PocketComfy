@@ -75,6 +75,30 @@ class SbScenarVariantyTest {
         }
     }
 
+    /** Skutečné čtení obrázku ke svatebnímu scénáři (server 30. 9. 2026). */
+    @Test
+    fun `svatba - vzhled z obrazku pod jmeny ze scenare`() {
+        val s = SbScenar.rozeber(File("src/test/resources/scenar_svatba.txt").readText())!!
+        val obrazek = SbFilmPlan.precti(
+            "TITLE: none | TOTAL: none | SHOTS: 4 | GRID: 2x2 | VOICES: Young Man = a man in his 30s with a warm, neutral voice; " +
+                "Elderly Man = an elderly man with a gentle, soft voice | LOOKS: Young Man = brown hair, green shirt; Elderly Man = " +
+                "white hair, red sweater | MUSIC: nostalgic, sentimental, piano and strings, 60 BPM PANEL 1 | none | medium | static | " +
+                "A young man shows an elderly man a cracked wedding photo from a box. | none PANEL 2 | none | close-up | static | " +
+                "The young man takes a photo of the cracked wedding photo with his phone. | none PANEL 3 | none | close-up | static | " +
+                "The young man displays a restored version of the wedding photo on his phone. | none PANEL 4 | none | medium | static | " +
+                "The young man shows the restored wedding photo to the elderly man on his phone. | none",
+        )
+        assertEquals(
+            mapOf("Syn" to "brown hair, green shirt", "Otec" to "white hair, red sweater"),
+            SbScenar.vzhledProMluvci(obrazek.vzhled, s),
+        )
+        // Počet panelů sedí → prompty se píšou hned.
+        assertEquals(s.okna.size, obrazek.panely.size)
+        // Typ ze scénáře (Detail rukou) přebije obrázek, jinak obrázek.
+        val plan = SbFilmPlan.naplanuj(SbScenar.cteni(s, obrazek))
+        assertEquals(listOf("medium", "close-up", "close-up", "medium"), plan.panely.map { it.typ })
+    }
+
     @Test
     fun `markdown, emoji, pomlcky a nadpisy`() {
         v("V1").let {

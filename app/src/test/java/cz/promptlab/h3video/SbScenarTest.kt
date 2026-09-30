@@ -157,10 +157,10 @@ class SbScenarTest {
         val sc = scena()
         assertEquals("Vlož scénář.", sbFilmProblem(sc.copy(scenar = "")))
         assertEquals("Vyber obrázek se storyboardem.", sbFilmProblem(sc.copy(storyboard = null)))
-        assertEquals("Nejdřív přečti storyboard a scénář.", sbFilmProblem(sc.copy(panely = emptyList())))
+        assertEquals("Nejdřív připrav film.", sbFilmProblem(sc.copy(panely = emptyList())))
         assertEquals("Nejdřív napiš prompty.", sbFilmProblem(sc))
         // Scénář upravený po přečtení: plán je ze starého.
-        assertEquals("Scénář se změnil. Přečti ho znovu.", sbFilmProblem(sc.copy(scenar = fotozije.replace("To jsi vážně ty?", "Jsi to ty?"))))
+        assertEquals("Scénář se změnil. Připrav film znovu.", sbFilmProblem(sc.copy(scenar = fotozije.replace("To jsi vážně ty?", "Jsi to ty?"))))
         assertEquals("Nejdřív napiš prompty.", sbFilmProblem(sc.copy(scenar = fotozije + "\n\n")))
     }
 
