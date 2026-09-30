@@ -396,7 +396,7 @@ object LongMmBuilder {
      * co v tu chvili krmi prvni uzel ze seznamu - na poradi zaplat pred nim
      * tedy nezalezi.
      */
-    private fun vlozShift(wf: JSONObject, spotrebitele: List<String>) {
+    private fun vlozShift(wf: JSONObject, spotrebitele: List<String>, shiftZvuk: Double = SHIFT_AUDIO) {
         val zdroj = wf.optJSONObject(spotrebitele.first())
             ?.optJSONObject("inputs")?.optJSONArray("model") ?: return
         wf.put(
@@ -406,7 +406,7 @@ object LongMmBuilder {
                 JSONObject()
                     .put("model", zdroj)
                     .put("shift_video", SHIFT_VIDEO)
-                    .put("shift_audio", SHIFT_AUDIO),
+                    .put("shift_audio", shiftZvuk),
             ),
         )
         spotrebitele.forEach { id ->
@@ -430,7 +430,7 @@ object LongMmBuilder {
         if (!scene.dvaPruchody) return
 
         // Bez posunu sigm je obraz mekky - viz ThreeStepBuilder.
-        vlozShift(wf, listOf("4", N_KROKY))
+        vlozShift(wf, listOf("4", N_KROKY), scene.shiftZvuk)
         // Rozvrh si bere neposunuty model, stejne jako predloha karty "3 kroky".
         wf.inputs(N_KROKY).put("model", odkaz(N_UNET))
 
@@ -521,7 +521,7 @@ object LongMmBuilder {
      */
     private fun zapojShiftNavazani(wf: JSONObject, scene: LongMmScene) {
         if (!scene.dvaPruchody) return
-        vlozShift(wf, listOf(N_SEED_DALSI, N_KROKY_DALSI))
+        vlozShift(wf, listOf(N_SEED_DALSI, N_KROKY_DALSI), scene.shiftZvuk)
         wf.inputs(N_KROKY_DALSI).put("model", odkaz(N_UNET))
     }
 
@@ -587,6 +587,11 @@ object LongMmBuilder {
             LongMmPozornost.SERVER -> {
                 premostiUzel(wf, N_POZORNOST, "model")
                 premostiUzel(wf, N_SAGE, "model")
+            }
+            // Plná přesnost: bez Sage, uzel pozornosti na „pytorch attention“.
+            LongMmPozornost.PLNA -> {
+                premostiUzel(wf, N_SAGE, "model")
+                wf.optJSONObject(N_POZORNOST)?.optJSONObject("inputs")?.put("attention", "pytorch attention")
             }
         }
     }

@@ -179,6 +179,18 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
 
         VolbaVzhledu(vm)
 
+        // Kvalita a rychlost videa pro všechny H3 karty (5.39) — sbalené, ať nepřekáží.
+        run {
+            val parametry by vm.params.collectAsStateWithLifecycle()
+            SkladaciSekce(
+                title = t("Rozšířené nastavení"),
+                souhrn = souhrnKvality(parametry),
+                klic = "nastaveni-rozsirene",
+            ) {
+                KvalitaVideaNastaveni(vm)
+            }
+        }
+
 
         SkladaciSekce(
             title = t("Server a modely"),

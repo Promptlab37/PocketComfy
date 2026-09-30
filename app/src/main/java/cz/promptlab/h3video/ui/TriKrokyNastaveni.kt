@@ -120,14 +120,6 @@ fun TriKrokyNastaveni(vm: MainViewModel, params: GenParams, sReferencemi: Boolea
                 onChange = { v -> vm.update { it.copy(tkShiftObraz = (v * 2).roundToInt() / 2f) } },
                 note = t("Předloha má 12."),
             )
-            LabeledSlider(
-                label = t("Sigma shift – zvuk"),
-                value = "%.1f".format(params.tkShiftZvuk),
-                position = params.tkShiftZvuk,
-                range = 1f..10f,
-                onChange = { v -> vm.update { it.copy(tkShiftZvuk = (v * 2).roundToInt() / 2f) } },
-                note = t("Předloha má 3."),
-            )
         }
     }
 

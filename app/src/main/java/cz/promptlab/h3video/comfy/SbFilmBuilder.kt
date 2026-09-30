@@ -120,6 +120,9 @@ object SbFilmBuilder {
         obrazky: List<String>,
         pomer: String,
         seed: Long,
+        /** Společné nastavení „Kvalita a rychlost videa“ (5.39): Sage, nebo plná přesnost. */
+        sage: Boolean = false,
+        shiftZvuk: Double = SHIFT_AUDIO,
     ): JSONObject {
         require(useky.isNotEmpty() && useky.size == zadani.size) { t("úseky a zadání nesedí") }
         val wf = JSONObject()
@@ -128,9 +131,18 @@ object SbFilmBuilder {
             .put("clip_name", CLIP).put("type", "minimax").put("device", "default")))
         wf.put(N_VAE, uzel("VAELoader", "VAE obrazu", JSONObject().put("vae_name", VAE)))
         wf.put(N_VAE_ZVUK, uzel("VAELoader", "VAE zvuku", JSONObject().put("vae_name", VAE_ZVUK)))
-        wf.put(N_SAGE, uzel("MiniMaxH3MemoryEfficientSageAttentionPatch", "Sage", JSONObject().put("model", odkaz(N_UNET))))
-        wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Pozornost", JSONObject()
-            .put("model", odkaz(N_SAGE)).put("attention", "comfy kitchen attention")))
+        // Plná přesnost pozornosti (5.39, uživatel: „Sage attention vypnout, rychle ale bez
+        // ztráty kvality“). Dřív Sage + „comfy kitchen attention“ = kvantovaná INT8 pozornost.
+        // „pytorch attention“ přebíjí i --use-sage-attention ze startu serveru (ostatní karty ho mají dál).
+        if (sage) {
+            // Rychlejší: Sage patch autora (kvantovaná pozornost, šetří i VRAM).
+            wf.put(N_SAGE, uzel("MiniMaxH3MemoryEfficientSageAttentionPatch", "Sage", JSONObject().put("model", odkaz(N_UNET))))
+            wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Pozornost", JSONObject()
+                .put("model", odkaz(N_SAGE)).put("attention", "pytorch attention")))
+        } else {
+            wf.put(N_POZORNOST, uzel("ModelAttentionBackend", "Pozornost", JSONObject()
+                .put("model", odkaz(N_UNET)).put("attention", "pytorch attention")))
+        }
         // model = co vzorkuje úseky, rozvrh = z čeho BasicScheduler počítá sigmy.
         val (model, rozvrh) = when (scene.model) {
             SbModel.TURBO -> {
@@ -142,7 +154,7 @@ object SbFilmBuilder {
             SbModel.KVALITA -> {
                 wf.put(N_SHIFT, uzel("MiniMaxH3SigmaShift", "Shift", JSONObject()
                     .put("model", odkaz(N_POZORNOST))
-                    .put("shift_video", SHIFT_VIDEO).put("shift_audio", SHIFT_AUDIO)))
+                    .put("shift_video", SHIFT_VIDEO).put("shift_audio", shiftZvuk)))
                 N_SHIFT to N_SHIFT
             }
             SbModel.TRIPLUSDVA -> {
@@ -151,7 +163,7 @@ object SbFilmBuilder {
                     .put("strength", 1.0).put("low_vram", false)))
                 wf.put(N_SHIFT, uzel("MiniMaxH3SigmaShift", "Shift", JSONObject()
                     .put("model", odkaz(N_LORA))
-                    .put("shift_video", SHIFT_VIDEO_32).put("shift_audio", SHIFT_AUDIO)))
+                    .put("shift_video", SHIFT_VIDEO_32).put("shift_audio", shiftZvuk)))
                 // Rozvrh z holého modelu, stejně jako navázání v Long MM.
                 N_SHIFT to N_UNET
             }

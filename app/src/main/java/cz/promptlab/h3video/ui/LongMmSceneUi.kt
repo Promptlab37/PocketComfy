@@ -176,16 +176,6 @@ fun LongMmSection(vm: MainViewModel) {
         }
     }
 
-    SectionCard(
-        title = t("Zrychlovací pozornost"),
-    ) {
-        PillRow(
-            items = LongMmPozornost.entries.toList(),
-            selected = scene.pozornost,
-            label = { it.title },
-            onSelect = { vm.setLongMmPozornost(it) },
-        )
-    }
 
 
     if (scene.rezim == LongMmRezim.NAVAZANI) {

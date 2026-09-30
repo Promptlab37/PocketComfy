@@ -140,7 +140,7 @@ object SbScenar {
     /** Štítky hlavičky scénáře (před prvním oknem). */
     internal val HLAVICKA = Regex(
         """(?imu)(?:^[ \t]*|(?<=[.!?…])[ \t]+)(důležitá kontinuita|kontinuita|continuity|formát|format|postavy a rekvizity|""" +
-            """postavy|rekvizity|characters|cast|props|obsazení|prostředí|setting|místo děje|""" +
+            """postavy|rekvizity|characters|cast|props|obsazení|prostředí|prostor|lokace|setting|location|místo děje|""" +
             """styl|style|tón|tone|cíl|goal|délka|length|duration)[ \t]*:""",
     )
 
@@ -315,7 +315,9 @@ object SbScenar {
     private fun rozeberHlavicku(text0: String): SbScenarCteni {
         // Nadpis bez dvojtečky na vlastním řádku („POSTAVY A REKVIZITY“ — Dar mudrců 30. 9. 2026).
         val text = text0.replace(
-            Regex("""(?imu)^[ \t]*(postavy a rekvizity|postavy|rekvizity|characters|cast|props|obsazení)[ \t]*$"""), "$1:",
+            // PROSTOR / PROSTŘEDÍ jako nadpis ukončí seznam postav (Otevřené dveře 30. 9. 2026:
+            // „Vchodové dveře do domu jsou vlevo“ se četlo jako postava „Vchodové“).
+            Regex("""(?imu)^[ \t]*(postavy a rekvizity|postavy|rekvizity|characters|cast|props|obsazení|prostor|prostředí|lokace|místo děje|setting|location)[ \t]*$"""), "$1:",
         )
         val stitky = HLAVICKA.findAll(text).toList()
         fun obsah(i: Int): String {
@@ -356,6 +358,7 @@ object SbScenar {
                 }
                 "důležitá kontinuita", "kontinuita", "continuity" -> kontinuita += v.replace(Regex("""\s+"""), " ")
                 "prostředí", "setting", "místo děje" -> kontinuita += "Prostředí: " + v.replace(Regex("""\s+"""), " ")
+                "prostor", "lokace", "location" -> kontinuita += "Prostor: " + v.replace(Regex("""\s+"""), " ")
                 // Styl, tón a cíl se dřív zahazovaly (kritik 30. 9. 2026) — platí pro celý film.
                 "styl", "style" -> kontinuita += "Styl: " + v.replace(Regex("""\s+"""), " ")
                 "tón", "tone" -> kontinuita += "Tón: " + v.replace(Regex("""\s+"""), " ")
@@ -805,13 +808,20 @@ object SbScenar {
         "žena", "dcera", "máma", "mama", "maminka", "matka", "babička", "babicka", "sestra", "teta", "dívka",
         "divka", "holka", "holčička", "paní", "pani", "slečna", "vnučka", "manželka", "přítelkyně", "kamarádka",
         "nevěsta", "její", "keramička", "tvůrkyně", "fotografka", "zákaznice", "prodavačka", "kuchařka", "lékařka",
-        "učitelka", "majitelka", "maminka", "woman", "girl", "mother", "mom", "mum", "daughter", "grandma", "grandmother", "sister",
+        "učitelka", "majitelka", "maminka",
+        // Role bez -a na konci (Otevřené dveře 30. 9. 2026: „Neteř“ dostala mužský hlas).
+        "neteř", "sestřenice", "tchyně", "snacha", "švagrová", "vdova", "sousedka", "návštěvnice", "hostitelka",
+        "herečka", "zpěvačka", "princezna", "královna", "čarodějnice", "víla", "kmotra", "macecha", "sestřička",
+        "šéfová", "kolegyně", "studentka", "holčička", "stařenka", "babka", "vnučka", "teta", "tetička", "woman", "girl", "mother", "mom", "mum", "daughter", "grandma", "grandmother", "sister",
         "aunt", "lady", "wife", "bride", "she", "her",
     )
     private val MUZSKE = setOf(
         "muž", "muz", "otec", "táta", "tata", "tatínek", "děda", "deda", "dědeček", "syn", "bratr", "strýc", "kluk",
         "chlapec", "pán", "pan", "vnuk", "manžel", "přítel", "kamarád", "ženich", "jeho", "tvůrce", "fotograf",
         "kameraman", "režisér", "zákazník", "prodavač", "kuchař", "lékař", "učitel", "majitel", "soudce", "správce",
+        "synovec", "bratranec", "tchán", "zeť", "švagr", "vdovec", "soused", "návštěvník", "host", "hostitel",
+        "herec", "zpěvák", "princ", "král", "čaroděj", "kmotr", "otčím", "strejda", "strýček", "šéf", "kolega",
+        "student", "stařec", "dědek",
         "man", "boy", "father", "dad", "son", "grandpa", "grandfather", "brother", "uncle", "husband", "groom", "he", "his",
     )
     /** Mužská jména na -a / -e (Honza, Kuba…). */
@@ -848,6 +858,60 @@ object SbScenar {
         }
     }
 
+    /** Jen podle slov (role, zájmena) — bez odhadu podle koncovky jména. */
+    private fun zenaZeSlov(jmeno: String, popis: String): Boolean? {
+        fun rod(t: String): Boolean? {
+            val slova = t.lowercase().split(Regex("""[^\p{L}]+""")).toSet()
+            val z = slova.any { it in ZENSKE }
+            val m = slova.any { it in MUZSKE }
+            return if (z && !m) true else if (m && !z) false else null
+        }
+        return rod(jmeno) ?: rod(popis)
+    }
+
+    /**
+     * Rod podle toho, jak postava mluví o sobě: „nechala jsem“ / „byla jsem“
+     * = žena, „nevěděl jsem“ = muž (5.39). Platí pro každý český scénář.
+     */
+    fun rodZReplik(repliky: List<String>): Boolean? {
+        var z = 0; var m = 0
+        val zensky = Regex("""(?iu)(?<![\p{L}])(\p{L}{2,}la\s+jsem|jsem\s+(?:se\s+|si\s+|to\s+|ho\s+|ji\s+|vás\s+|tě\s+)?\p{L}{2,}la|byla\s+jsem|jsem\s+byla)(?![\p{L}])""")
+        val muzsky = Regex("""(?iu)(?<![\p{L}])(\p{L}{2,}[^a\s]l\s+jsem|jsem\s+(?:se\s+|si\s+|to\s+|ho\s+|ji\s+|vás\s+|tě\s+)?\p{L}{2,}[^a\s]l|byl\s+jsem|jsem\s+byl)(?![\p{L}])""")
+        repliky.forEach { r -> z += zensky.findAll(r).count(); m += muzsky.findAll(r).count() }
+        return if (z > m) true else if (m > z) false else null
+    }
+
+    private val BARVY_M = listOf(
+        "warm, natural, medium-pitched", "deep, resonant", "bright, clear tenor", "slightly husky, gravelly",
+        "smooth, calm baritone", "light, slightly nasal", "rough, low",
+    )
+    private val BARVY_Z = listOf(
+        "warm, natural, medium-pitched", "soft, gentle", "bright, clear", "low, smoky", "crisp, energetic",
+        "light, airy", "slightly husky",
+    )
+
+    /**
+     * Každá postava svůj hlas (5.39, uživatel: „u dvou lidí se opakuje stejný
+     * hlas“). Dva mluvčí stejného rodu se stejnou barvou („warm, natural,
+     * medium-pitched“ lišící se jen věkem) H3 namluví stejně — druhý dostane
+     * jinou barvu z palety. Odlišné hlasy se nemění.
+     */
+    fun rozlisHlasy(hlasy: Map<String, String>): Map<String, String> {
+        val barvaRe = Regex("""with an? (.+?) voice""")
+        fun zena(h: String) = Regex("""(?i)\b(woman|girl|lady|female|her)\b""").containsMatchIn(h)
+        val pouzite = mutableMapOf<Boolean, MutableSet<String>>(true to mutableSetOf(), false to mutableSetOf())
+        return hlasy.mapValues { (_, h) ->
+            val m = barvaRe.find(h) ?: return@mapValues h
+            val barva = m.groupValues[1].lowercase().trim()
+            val z = zena(h)
+            val set = pouzite.getValue(z)
+            if (barva !in set) { set += barva; return@mapValues h }
+            val nova = (if (z) BARVY_Z else BARVY_M).firstOrNull { it !in set } ?: return@mapValues h
+            set += nova
+            h.replaceRange(m.groups[1]!!.range, nova)
+        }
+    }
+
     /** Věk z popisu („35 let“, „72 years“). */
     fun vek(popis: String): Int? =
         Regex("""(?iu)(\d{1,3})\s*(?:let|roků|roky|rok|years|year|y\.?\s?o\.?|-year)""").find(popis)
@@ -867,7 +931,9 @@ object SbScenar {
         val role = mluvci.map { it.lowercase() }.toSet()
         return mluvci.mapNotNull { jm ->
             val popis = s.postavy[jm].orEmpty()
-            val zena = s.zeny[jm] ?: zena(jm, popis) ?: return@mapNotNull null
+            // Role a zájmena mají přednost, pak to, jak postava mluví o sobě, pak koncovka jména.
+            val repliky = s.okna.flatMap { o -> o.repliky.filter { stejnyMluvci(it.kdo, jm) }.map { it.text } }
+            val zena = zenaZeSlov(jm, popis) ?: rodZReplik(repliky) ?: s.zeny[jm] ?: zena(jm, popis) ?: return@mapNotNull null
             val l = jm.lowercase()
             val vek = vek(popis) ?: when {
                 l in PRARODICE -> 75
@@ -946,7 +1012,7 @@ object SbScenar {
         val out = LinkedHashMap(sVekem)
         zObrazku.filterKeys { k -> k in mluvci && out.keys.none { stejnyMluvci(it, k) } }.forEach { (k, v) -> out[k] = v }
         vse.filterKeys { k -> out.keys.none { stejnyMluvci(it, k) } }.forEach { (k, v) -> out[k] = v }
-        return out
+        return rozlisHlasy(out)
     }
 
     /**

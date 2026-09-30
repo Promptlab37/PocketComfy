@@ -1086,12 +1086,20 @@ object GenerationEngine {
                 cz.promptlab.h3video.comfy.SbFilmBuilder.buildFilm(
                     sbFilmScene, sbFilmScene.useky, sbFilmScene.zadaniUseku, names,
                     sbFilmScene.pomer.kod, seed,
+                    sage = effective.sageAttention, shiftZvuk = effective.shiftAudio.toDouble(),
                 )
 
             // Long MiniMax: jeden záběr na běh. První zakládá řetěz a uloží
             // latent, každý další z toho latentu pokračuje a výsledek se
             // rovnou slepí se zdrojovým videem do jednoho celku.
-            longMmScene != null ->
+            longMmScene != null -> {
+                // Pozornost a shift zvuku ze společného nastavení „Kvalita a rychlost videa“ (5.39).
+                @Suppress("NAME_SHADOWING")
+                val longMmScene = longMmScene.copy(
+                    pozornost = if (effective.sageAttention) cz.promptlab.h3video.data.LongMmPozornost.SAGE
+                    else cz.promptlab.h3video.data.LongMmPozornost.PLNA,
+                    shiftZvuk = effective.shiftAudio.toDouble(),
+                )
                 if (longMmScene.rezim == cz.promptlab.h3video.data.LongMmRezim.PRVNI)
                     cz.promptlab.h3video.comfy.LongMmBuilder.buildPrvni(
                         app, longMmScene, seed, names,
@@ -1099,6 +1107,7 @@ object GenerationEngine {
                 else cz.promptlab.h3video.comfy.LongMmBuilder.buildDalsi(
                     app, longMmScene, seed, videoName.orEmpty(), names,
                 )
+            }
 
             // Dance: Wan-Dancer z APK. Fotka + hudba, choreografii si model
             // vymyslí sám podle rytmu.

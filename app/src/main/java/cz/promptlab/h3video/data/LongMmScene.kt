@@ -119,7 +119,14 @@ enum class LongMmPozornost(private val titleCs: String, private val popisCs: Str
     KITCHEN("Comfy Kitchen INT8", ""),
 
     /** Do grafu se nepřidá žádný uzel pozornosti. */
-    SERVER("Nechat na serveru", "");
+    SERVER("Nechat na serveru", ""),
+
+    /**
+     * Plná přesnost: `ModelAttentionBackend` s „pytorch attention“ (5.39) —
+     * přebije i Sage zapnutou při startu serveru. Řídí ji společné nastavení
+     * „Kvalita a rychlost videa“.
+     */
+    PLNA("Plná kvalita", "");
 
     val title: String get() = t(titleCs)
     val popis: String get() = t(popisCs)
@@ -369,6 +376,8 @@ data class LongMmScene(
      * Výchozí je autorovo (Sage) — v obou jeho předlohách je aktivní.
      */
     val pozornost: LongMmPozornost = LongMmPozornost.SAGE,
+    /** Sigma shift zvuku u dvou průchodů — ze společného nastavení (5.39). */
+    val shiftZvuk: Double = cz.promptlab.h3video.comfy.LongMmBuilder.SHIFT_AUDIO,
     /**
      * Ostrost detailů — `detail_strength` autorova uzlu (Detail Daemon).
      *

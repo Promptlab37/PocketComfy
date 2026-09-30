@@ -461,6 +461,10 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
 
         // Vsechno, co se nemeni pri kazdem behu, je sbalene do jedne sekce.
         // Hlavni obrazovka tak zustava: vstupy, zadani, Generovat.
+        // Kvalita a rychlost videa: stav jedním pohledem, nastavuje se na jednom místě (5.39).
+        if (mode in setOf(Mode.ALLINONE, Mode.TALK, Mode.LONG, Mode.TIMELINE, Mode.THREESTEP, Mode.LONGMM, Mode.SBFILM)) {
+            KvalitaVideaRadek(vm, params)
+        }
         if (mode.isVideo && ovlada.neco) SkladaciSekce(
             title = t("Nastavení"),
             souhrn = if (mode == Mode.THREESTEP) params.tkSouhrn()
@@ -692,13 +696,6 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                     onChange = { v -> vm.update { it.copy(shiftVideo = v) } },
                                     note = t("Hodnota z workflow je 12,19.")
                                 )
-                                LabeledSlider(
-                                    label = t("Sigma shift – zvuk"),
-                                    value = "%.1f".format(params.shiftAudio),
-                                    position = params.shiftAudio, range = 1f..10f,
-                                    onChange = { v -> vm.update { it.copy(shiftAudio = v) } },
-                                    note = t("Hodnota z workflow je 3.")
-                                )
                             }
                             // 3 kroky ukládá přes SaveVideo bez CRF — posuvník by lhal.
                             if (mode != Mode.THREESTEP) LabeledSlider(
@@ -715,23 +712,8 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                                 "Spectrum", t("Totéž co vypínač nahoře – přibližné zrychlení"),
                                 params.spectrum
                             ) { v -> vm.update { it.copy(spectrum = v) } }
-                            // Karta 3 kroky nemá uzel od KJ, ale nativní
-                            // ModelAttentionBackend — vypnutí u ní znamená
-                            // čistou PyTorch pozornost, a přebije i sage
-                            // zapnuté na příkazové řádce serveru.
-                            ToggleRow(
-                                "Sage Attention",
-                                if (mode == Mode.THREESTEP)
-                                    t("Rychlejší pozornost; vypnuto = čistá PyTorch pozornost")
-                                else t("Rychlejší pozornost, ve workflow zapnutá"),
-                                params.sageAttention
-                            ) { v -> vm.update { it.copy(sageAttention = v) } }
-                            // Při třech krocích TeaCache nemá co přeskočit a předloha ho nemá.
-                            if (mode != Mode.THREESTEP) ToggleRow(
-                                "TeaCache",
-                                t("Přeskočí podobné kroky — až 3× rychlejší, drobně méně věrné"),
-                                params.teaCache
-                            ) { v -> vm.update { it.copy(teaCache = v) } }
+                            // Sage, TeaCache a shift zvuku jsou od 5.39 na jednom místě:
+                            // Nastavení → Kvalita a rychlost videa (řádek nad sekcí).
                             ToggleRow(
                                 t("Živý náhled"),
                                 t("Rozpracované snímky během generování; vypnutí šetří grafiku"),
@@ -1004,18 +986,11 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
         souhrn = listOf(
             if (aktivniLory == 0) t("Jen zrychlovací z workflow")
             else t("Zrychlovací z workflow + %d další").format(aktivniLory),
-            if (params.sageAttention) "Sage" else "PyTorch",
+            souhrnKvality(params),
         ).joinToString(" · "),
         klic = "3kroky-modely",
     ) {
         LoraCard(vm, params)
-        SectionCard(title = t("Pozornost")) {
-            ToggleRow(
-                "Sage Attention",
-                t("Rychlejší pozornost; vypnuto = čistá PyTorch pozornost"),
-                params.sageAttention
-            ) { v -> vm.update { it.copy(sageAttention = v) } }
-        }
     }
 }
 

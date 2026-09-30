@@ -369,7 +369,7 @@ object SbFilmPlan {
                 repliky = p.repliky,
             )
         }
-        return SbPlan(panely, vepsane != null, cteni.hlasy, cteni.vzhled, cteni.hudbaStyl)
+        return SbPlan(panely, vepsane != null, SbScenar.rozlisHlasy(cteni.hlasy), cteni.vzhled, cteni.hudbaStyl)
     }
 
     private fun vepsaneDelky(cteni: SbCteni, panely: List<SbPrecteny>): List<Double>? {

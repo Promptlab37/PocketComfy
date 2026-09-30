@@ -123,7 +123,8 @@ object ThreeStepBuilder {
         companion object {
             fun z(p: cz.promptlab.h3video.data.GenParams) = Nastaveni(
                 p.tkMpx, p.tkZvetseni, p.tkKroky, p.tkSampler, p.tkScheduler,
-                p.tkShiftObraz, p.tkShiftZvuk, p.tkUnet, p.tkVernost, p.livePreview,
+                // Shift zvuku je společný pro všechny karty (5.39, „Kvalita a rychlost videa“).
+                p.tkShiftObraz, p.shiftAudio, p.tkUnet, p.tkVernost, p.livePreview,
             )
         }
     }

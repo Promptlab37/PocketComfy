@@ -351,7 +351,8 @@ class AppSettings(ctx: Context) {
             shiftVideo = sp.getFloat("shiftVideo", defaults.shiftVideo),
             shiftAudio = sp.getFloat("shiftAudio", defaults.shiftAudio),
             spectrum = sp.getBoolean("spectrum", defaults.spectrum),
-            sageAttention = sp.getBoolean("sage", defaults.sageAttention),
+            // 5.39: jednou pro všechny vypnout Sage i TeaCache (plná kvalita), pak platí volba v Nastavení.
+            sageAttention = if (sp.contains("kvalita_539")) sp.getBoolean("sage", defaults.sageAttention) else false,
             qwen21Dvak = sp.getBoolean("qwen21_2k", defaults.qwen21Dvak),
             qwen21Detailer = sp.getBoolean("qwen21_detailer", defaults.qwen21Detailer),
             tkMpx = sp.getFloat("tk_mpx", defaults.tkMpx),
@@ -365,7 +366,7 @@ class AppSettings(ctx: Context) {
             tkVernost = sp.getString("tk_vernost", defaults.tkVernost)!!,
             crf = sp.getInt("crf", defaults.crf),
             livePreview = sp.getBoolean("livePreview", defaults.livePreview),
-            teaCache = sp.getBoolean("teaCache", defaults.teaCache),
+            teaCache = if (sp.contains("kvalita_539")) sp.getBoolean("teaCache", defaults.teaCache) else false,
             zimageNsfw = sp.getBoolean("zimageNsfw", defaults.zimageNsfw),
             zimageNsfwSila = sp.getFloat("zimageNsfwSila", defaults.zimageNsfwSila),
             zimageModel = sp.getString("zimageModel", defaults.zimageModel)!!,
@@ -406,6 +407,7 @@ class AppSettings(ctx: Context) {
             putFloat("shiftAudio", p.shiftAudio)
             putBoolean("spectrum", p.spectrum)
             putBoolean("sage", p.sageAttention)
+            putBoolean("kvalita_539", true)
             putBoolean("qwen21_2k", p.qwen21Dvak)
             putBoolean("qwen21_detailer", p.qwen21Detailer)
             putFloat("tk_mpx", p.tkMpx)

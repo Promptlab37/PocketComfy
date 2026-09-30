@@ -410,9 +410,19 @@ object TURBO {
             TURBO8_LORA,
             "lightx2v 8step v1.0 (768p) — nejlepší zvuk", steps = 8, shiftVideo = 6f
         ),
+        // 5.39: novější verze od lightx2v (HF 30. 9. 2026). 768p řada je trénovaná na shift 6.
+        LoraProfile(
+            "minimax_h3_fl2v_turbo_4step_v1.2_768p_comfyui_bf16.safetensors",
+            "lightx2v 4step v1.2 (768p)", steps = 4, shiftVideo = 6f
+        ),
         LoraProfile(
             "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
             "lightx2v ref2v 4step (pro reference)", steps = 4, shiftVideo = 12f
+        ),
+        // Ref2V 8 kroků v1.0 768p: na HF, ale autor ji zatím nemá ve specifikacích (shift 6 podle 768p řady — neověřeno).
+        LoraProfile(
+            "minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors",
+            "lightx2v ref2v 8step v1.0 (768p, pro reference)", steps = 8, shiftVideo = 6f
         ),
         LoraProfile(FASTH3_LORA, "FastH3 4step (bez referencí)", steps = 4, shiftVideo = 12f),
     )
