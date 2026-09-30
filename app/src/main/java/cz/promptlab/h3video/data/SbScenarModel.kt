@@ -328,4 +328,17 @@ object SbScenarModel {
         }
         return out
     }
+
+    /**
+     * Které čtení použít (5.35). Rozbor appky má přednost, ALE když model našel
+     * víc replik, platí model — Otevřené dveře 30. 9. 2026: rozbor 0 replik,
+     * model 15, uživatel pokračoval a úseky 2–4 šly do videa bez replik, H3 si
+     * slova vymyslel. Film s chybějícími replikami se nesmí dát natočit.
+     */
+    fun vyber(rozbor: SbScenarCteni?, model: SbScenarCteni?): SbScenarCteni? {
+        if (rozbor == null) return model
+        if (model == null) return rozbor
+        fun repliky(c: SbScenarCteni) = c.okna.sumOf { it.repliky.size }
+        return if (repliky(model) > repliky(rozbor)) model else rozbor
+    }
 }

@@ -5277,12 +5277,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 if (modelemB != null) sbCteniModelem = cz.promptlab.h3video.data.otiskScenare(s.scenar) to modelemB
                 // Rozbor appky má přednost (je úplnější); model je nezávislá kontrola.
                 // Bez oken v rozboru jede čtení modelem; bez obou chyba.
-                val scenar = rozborA ?: modelemB
+                // Když model našel víc replik, platí model (5.35) — jinak by film šel bez dialogů.
+                val scenar = cz.promptlab.h3video.data.SbScenarModel.vyber(rozborA, modelemB)
                 if (scenar == null) {
                     _rewriteState.value = RewriteState.Fail(nerozdeleno, PraceNaPromptu.VYLEPSENI)
                     return@onSuccess
                 }
-                val rozdily = if (rozborA != null && modelemB != null)
+                // Rozdíly se ukazují, jen když jede rozbor; s čtením modelem se píše rovnou.
+                val rozdily = if (rozborA != null && modelemB != null && scenar === rozborA)
                     cz.promptlab.h3video.data.SbScenarModel.rozdily(rozborA, modelemB) else emptyList()
                 sbObrazekCteni = text
                 _sbNeshoda.value = rozdily.isNotEmpty() && scenar === rozborA
