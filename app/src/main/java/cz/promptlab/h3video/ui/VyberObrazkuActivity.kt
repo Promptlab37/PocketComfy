@@ -263,6 +263,8 @@ private fun VyberObrazkuActivity.BingObrazovka(max: Int, onHotovo: (List<Uri>) -
         chyba = null
         prace = scope.launch {
             od = System.currentTimeMillis()
+            // I po odchodu z appky musí hledání doběhnout (5.37).
+            cz.promptlab.h3video.engine.PrepisService.drz(applicationContext, "bing_hledani", true)
             try {
                 val client = ComfyClient(base)
                 if (!withContext(Dispatchers.IO) { client.isAlive() }) {
@@ -285,6 +287,7 @@ private fun VyberObrazkuActivity.BingObrazovka(max: Int, onHotovo: (List<Uri>) -
                 chyba = t("Server neodpovídá. Zkontroluj, že je počítač zapnutý a v telefonu běží Tailscale.")
             } finally {
                 faze = null
+                cz.promptlab.h3video.engine.PrepisService.drz(applicationContext, "bing_hledani", false)
             }
         }
     }
@@ -296,6 +299,7 @@ private fun VyberObrazkuActivity.BingObrazovka(max: Int, onHotovo: (List<Uri>) -
         prace = scope.launch {
             od = System.currentTimeMillis()
             faze = Faze.PRENOS
+            cz.promptlab.h3video.engine.PrepisService.drz(applicationContext, "bing_prenos", true)
             try {
                 val uris = withContext(Dispatchers.IO) { stahni(base, session, sel) { kus = it } }
                 onHotovo(uris)
@@ -305,6 +309,7 @@ private fun VyberObrazkuActivity.BingObrazovka(max: Int, onHotovo: (List<Uri>) -
                 chyba = t("Obrázek se nepodařilo přenést. Zkus hledat znovu.")
             } finally {
                 faze = null
+                cz.promptlab.h3video.engine.PrepisService.drz(applicationContext, "bing_prenos", false)
             }
         }
     }

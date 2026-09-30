@@ -30,10 +30,8 @@ class PrepisService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (!bezi) {
-            stopSelf()
-            return START_NOT_STICKY
-        }
+        // Po startForegroundService MUSÍ přijít startForeground, i když akce mezitím
+        // skončila — jinak Android appku shodí. Proto nejdřív popředí, pak případně konec.
         kanal(this)
         val n = NotificationCompat.Builder(this, KANAL)
             .setSmallIcon(R.drawable.ic_stat_h3)
@@ -53,8 +51,14 @@ class PrepisService : Service() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) startForeground(NOTIF, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
             else startForeground(NOTIF, n)
         }.isSuccess
-        if (!ok) stopSelf()
+        naPopredi = ok
+        if (!ok || !bezi) stopSelf()
         return START_NOT_STICKY
+    }
+
+    override fun onDestroy() {
+        naPopredi = false
+        super.onDestroy()
     }
 
     // Denní kvóta dataSync (Android 15): jen zavřít, proces nezabít.
@@ -66,7 +70,11 @@ class PrepisService : Service() {
         private const val KANAL = "priprava"
         private const val NOTIF = 1003
 
+        /** Běžící dlouhé akce (klíče). Služba běží, dokud tu něco je. */
+        private val drzi = java.util.Collections.synchronizedSet(mutableSetOf<String>())
         @Volatile private var bezi = false
+        /** Služba už je na popředí — teprve pak ji smí zastavit stopService (jinak by Android appku shodil). */
+        @Volatile private var naPopredi = false
 
         private fun kanal(ctx: Context) {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
@@ -76,14 +84,23 @@ class PrepisService : Service() {
         }
 
         /** Příprava začala / skončila. Volá se ze změn stavu přepisu. */
-        fun nastav(ctx: Context, prave: Boolean) {
+        fun nastav(ctx: Context, prave: Boolean) = drz(ctx, "prepis", prave)
+
+        /**
+         * Dlouhá akce [klic] začala / skončila (5.37, uživatel: „appka musí
+         * fungovat, i když z ní odejdu, vždy“). Služba běží, dokud drží aspoň jedna.
+         */
+        fun drz(ctx: Context, klic: String, zapnuto: Boolean) {
+            if (zapnuto) drzi.add(klic) else drzi.remove(klic)
+            val prave = drzi.isNotEmpty()
             if (prave == bezi) return
             bezi = prave
             val i = Intent(ctx, PrepisService::class.java)
             runCatching {
                 if (prave) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) ctx.startForegroundService(i) else ctx.startService(i)
-                } else ctx.stopService(i)
+                } else if (naPopredi) ctx.stopService(i)
+                // Jinak se služba teprve spouští: v onStartCommand uvidí bezi = false a skončí sama.
             }
         }
     }

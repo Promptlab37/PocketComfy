@@ -318,7 +318,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (_kontrolaVoleb.value) return
         _kontrolaVoleb.value = true
         _kontrolaVolebChyba.value = null
-        viewModelScope.launch {
+        viewModelScope.launch { drzNazivu("volby") {
             val vysledek = withContext(Dispatchers.IO) {
                 runCatching {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
@@ -329,6 +329,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 .onFailure { _kontrolaVolebChyba.value = t("Server neodpovídá — zkus to znovu, až poběží.") }
             _kontrolaVoleb.value = false
         }
+}
     }
 
     private fun spocitejStavVoleb(client: ComfyClient): Map<String, StavVolby> {
@@ -650,7 +651,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun downloadUpdate(info: UpdateInfo) {
         updateCheckJob?.cancel()
         _update.value = UpdateState.Downloading(info, 0f)
-        viewModelScope.launch {
+        viewModelScope.launch { drzNazivu("aktualizace") {
             // Vždy stáhnout NEJNOVĚJŠÍ vydání, ne to, které appka našla při
             // poslední kontrole — mezitím mohlo vyjít několik dalších. Když se
             // na GitHub zrovna nedá dostat, jede se s tím, co už známe.
@@ -671,6 +672,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 onFailure = { UpdateState.Failed(t("Stažení se nepovedlo: %s").format(it.message)) }
             )
         }
+}
     }
 
     fun dismissUpdate() { _update.value = UpdateState.Idle }
@@ -1797,7 +1799,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * ze složky, na modelu nezávisí, a čekat kvůli němu 45 s by bylo zbytečné.
      */
     fun loadVoices(startIfNeeded: Boolean = true) {
-        viewModelScope.launch {
+        viewModelScope.launch { drzNazivu("hlasy") {
             val ok = if (startIfNeeded) ensureHiggs(needModel = false) else higgsClient().isAlive()
             if (!ok) return@launch
             val list = withContext(Dispatchers.IO) {
@@ -1805,6 +1807,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             }
             if (list.isNotEmpty()) _voices.value = list
         }
+}
     }
 
     /**
@@ -1920,7 +1923,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         // Hlas zachycený na startu — kdyby se během namlouvání změnil,
         // hotová nahrávka se správně označí jako neaktuální.
         val klicHlasu = voice.klic
-        viewModelScope.launch {
+        viewModelScope.launch { drzNazivu("namlouvani") {
             updateLine(key) { it.copy(status = VoiceStatus.RUNNING, progress = 0f, error = "") }
             if (!ensureHiggs()) {
                 updateLine(key) {
@@ -1979,6 +1982,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             )
         }
+}
     }
 
     /** Skutečná délka namluveného souboru v sekundách (0 = nepodařilo se změřit). */
@@ -2276,7 +2280,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Doplní do galerie telefonu videa, která tam z nějakého důvodu chybí. */
     fun saveAllToGallery(onDone: (Int) -> Unit = {}) {
-        viewModelScope.launch {
+        viewModelScope.launch { drzNazivu("galerie") {
             val missing = _history.value.filterNot { it.inGallery || it.naServeru(getApplication()) }
             var ok = 0
             withContext(Dispatchers.IO) {
@@ -2290,6 +2294,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             refreshHistory()
             onDone(ok)
         }
+}
     }
 
     fun markSaved(item: VideoItem) {
@@ -2323,7 +2328,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val rs = cz.promptlab.h3video.engine.RucniStahovani
         if (!rs.zaber(item.id)) return
         val app = getApplication<Application>()
-        rs.scope.launch {
+        rs.scope.launch { drzNazivu("stahovani") {
             val client = ComfyClient(settings.serverUrl)
             val vysledek = runCatching {
                 // Vypnuté ComfyUI (hraní, restart) nahodit jako u generování.
@@ -2370,6 +2375,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 rs.nastav(item.id, cz.promptlab.h3video.engine.RucniStahovani.Stav(chyba = zprava, chybi = chybi))
             }
         }
+}
     }
 
     /** Výběr fotek ze Souborů (nejnovější nahoře) místo systémového výběru. */
@@ -2638,6 +2644,23 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     private val _rewriteState = MutableStateFlow<RewriteState>(RewriteState.Idle)
     val rewriteState: StateFlow<RewriteState> = _rewriteState.asStateFlow()
+
+    private val drzeniCitac = java.util.concurrent.atomic.AtomicInteger()
+
+    /**
+     * Dlouhá akce, která musí doběhnout i po odchodu z appky nebo při zamčeném
+     * telefonu (5.37). Po dobu [blok] drží proces naživu služba na popředí.
+     */
+    // inline: uvnitř akcí fungují return@launch i suspend volání.
+    private inline fun <T> drzNazivu(nazev: String, blok: () -> T): T {
+        val klic = nazev + "#" + drzeniCitac.incrementAndGet()
+        cz.promptlab.h3video.engine.PrepisService.drz(getApplication(), klic, true)
+        try {
+            return blok()
+        } finally {
+            cz.promptlab.h3video.engine.PrepisService.drz(getApplication(), klic, false)
+        }
+    }
 
     // Po dobu přípravy (čtení, přepis) drží appku naživu služba na popředí —
     // jinak ji Android po odchodu z appky zmrazí a příprava stojí (5.36).
@@ -3999,7 +4022,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun runServerAudit() {
         if (_audit.value is AuditState.Running) return
         _audit.value = AuditState.Running
-        viewModelScope.launch {
+        viewModelScope.launch { drzNazivu("audit") {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     val res = getApplication<android.app.Application>().resources
@@ -4050,6 +4073,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             )
         }
+}
     }
 
     // ------------------------------------------------------- úprava obrázku
@@ -4116,7 +4140,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         if (current.server == server && !force && (current.loading || (current.files.isNotEmpty() && !current.error))) return
         editLorasJob?.cancel()
         _editLoras.value = EditLoraCatalog(loading = true, server = server)
-        editLorasJob = viewModelScope.launch {
+        editLorasJob = viewModelScope.launch { drzNazivu("lora") {
             try {
                 val client = ComfyClient(server)
                 val files = withContext(Dispatchers.IO) { client.loraNames().distinct().sorted().map { EditLoraFile(it) } }
@@ -4135,6 +4159,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 _editLoras.value = _editLoras.value.copy(loading = false, error = true)
             }
         }
+}
     }
 
     fun setEditUserLora(name: String, confirmedUnknown: Boolean = false) {
@@ -4681,7 +4706,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Video do karty Upravit / Vylepšit — kopie u sebe, vlastní jméno pro každou kartu. */
     private suspend fun videoDoKarty(uri: Uri, jmeno: String): File? {
-        val f = importMedia(uri, jmeno)
+        // Velké video se kopíruje desítky sekund — i po odchodu z appky (5.37).
+        val f = drzNazivu("video") { importMedia(uri, jmeno) }
         val cte = f != null && withContext(Dispatchers.IO) { ImageUtils.rozmeryVidea(f) } != null
         if (!cte) {
             f?.delete()
@@ -7153,7 +7179,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun zjistiVram(uvolnit: Boolean = false) {
         if (_vramPracuje.value) return
         _vramPracuje.value = true
-        viewModelScope.launch {
+        viewModelScope.launch { drzNazivu("vram") {
             val text = withContext(Dispatchers.IO) {
                 runCatching {
                     val client = ComfyClient(settings.serverUrl)
@@ -7178,6 +7204,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             _vramStav.value = text
             _vramPracuje.value = false
         }
+}
     }
 
     fun refreshInpaintLoras() {
