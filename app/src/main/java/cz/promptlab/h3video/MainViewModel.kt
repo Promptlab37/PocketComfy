@@ -873,6 +873,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun setProfile(profile: Profile) {
         if (profile == _params.value.profile) return
+        // Rozlišení volí uživatel sám (30. 9. 2026: „nech mi tam volbu“) — profil ho nemění.
         update { profile.applyTo(it) }
     }
 

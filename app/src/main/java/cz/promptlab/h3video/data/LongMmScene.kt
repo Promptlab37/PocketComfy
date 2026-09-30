@@ -334,7 +334,7 @@ data class LongMmScene(
     val prompt: String = "",
     /** Délka záběru v sekundách. */
     val sekundy: Int = 5,
-    val rozliseni: LongMmRozliseni = LongMmRozliseni.R480,
+    val rozliseni: LongMmRozliseni = LongMmRozliseni.R540,
     val pomer: LongMmPomer = LongMmPomer.NASIRKU,
     /**
      * Poslat referenční fotky i do navázání.

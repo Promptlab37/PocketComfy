@@ -196,6 +196,7 @@ object LongMmBuilder {
         zadani.put("prompt", zadaniUseku(scene))
         zadani.put("resolution", scene.rozliseni.kod)
         zadani.put("aspect_ratio", scene.pomer.kod)
+        platno(zadani, scene)
         zadani.put("seconds", scene.sekundy.toDouble())
         wf.inputs(N_SEED).put("noise_seed", seed)
         wf.inputs(N_LATENT_ULOZ).put("filename_prefix", nazevLatentu(scene))
@@ -280,6 +281,7 @@ object LongMmBuilder {
         usek.put("prompt", prompt)
         usek.put("resolution", scene.rozliseni.kod)
         usek.put("aspect_ratio", scene.pomer.kod)
+        platno(usek, scene)
         usek.put("seconds", scene.sekundy.toDouble())
         // Délka se zadává na KAŽDÝ úsek zvlášť a počet položek musí přesně
         // sednout na počet částí zadání. Uzel jinak celý běh odmítne.
@@ -396,6 +398,22 @@ object LongMmBuilder {
      * co v tu chvili krmi prvni uzel ze seznamu - na poradi zaplat pred nim
      * tedy nezalezi.
      */
+    /**
+     * „768P“ = přesné nativní plátno H3 (5.41, expert na ComfyUI): štítek 768P
+     * v balíku SatoDive dává 1376×768 (u čtverce 1024×1024), víc než strop
+     * `MAX_PIXELS 768*1344`. Přes `aspect_ratio: "Custom"` bere uzel rozměry
+     * doslova (nodes.py ř. 3016).
+     */
+    private fun platno(uzel: JSONObject, scene: LongMmScene) {
+        if (scene.rozliseni != LongMmRozliseni.R768) return
+        val (w, h) = when (scene.pomer.kod) {
+            "9:16" -> 768 to 1344
+            "1:1" -> 768 to 768
+            else -> 1344 to 768
+        }
+        uzel.put("aspect_ratio", "Custom").put("width", w).put("height", h)
+    }
+
     private fun vlozShift(wf: JSONObject, spotrebitele: List<String>, shiftZvuk: Double = SHIFT_AUDIO) {
         val zdroj = wf.optJSONObject(spotrebitele.first())
             ?.optJSONObject("inputs")?.optJSONArray("model") ?: return
@@ -437,6 +455,8 @@ object LongMmBuilder {
         // Druhy kontext na nizkem rozliseni: kopie zadani i s referencemi.
         val nizke = JSONObject(wf.getJSONObject(N_ZADANI).toString())
         nizke.getJSONObject("inputs").put("resolution", scene.rozliseni.nizkeProDvaPruchody)
+        // Nízký průchod vždy podle štítku, ne podle vlastních rozměrů nativu.
+        nizke.getJSONObject("inputs").put("aspect_ratio", scene.pomer.kod)
         wf.put(N_NIZKE_ZADANI, nizke)
         wf.put(
             N_NIZKY_VYSTUP,

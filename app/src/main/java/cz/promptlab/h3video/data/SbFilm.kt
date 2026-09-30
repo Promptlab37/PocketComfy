@@ -57,7 +57,15 @@ enum class SbModel(private val titleCs: String) {
 
 enum class SbRozliseni(val kod: String, private val titleCs: String) {
     R480("480P", "480p"),
-    R720("720P", "720p");
+    /**
+     * 960×544 — trénovací rozlišení ref2v Turbo LoRA (lightx2v: 544p) a plátno,
+     * které pro 16 GB doporučuje dokumentace diffusers. Výchozí od 5.41
+     * (expert na ComfyUI 30. 9. 2026).
+     */
+    R540("540P", "540p"),
+    R720("720P", "720p"),
+    /** Přesně nativní plátno H3 1344×768 (štítek 768P balíku by dal 1376×768 — nad stropem). */
+    R768("768P", "768p");
 
     val title: String get() = t(titleCs)
 }
@@ -616,7 +624,7 @@ data class SbFilmScene(
     val dej: String = "",
     /** Plátno filmu. */
     val pomer: LongMmPomer = LongMmPomer.NASIRKU,
-    val rozliseni: SbRozliseni = SbRozliseni.R480,
+    val rozliseni: SbRozliseni = SbRozliseni.R540,
     /** Odkud je plán. */
     val zdroj: SbZdroj = SbZdroj.STORYBOARD,
     /** Vytvořit z děje: cílová délka filmu v sekundách. */
@@ -689,8 +697,11 @@ data class SbFilmScene(
         const val MAX_POSTAV = 3
         val DELKY = listOf(15, 30, 45)
 
-        /** Turbo: sestava autora balíku, kroky se nemění (5.06 je nabízel — chyba). */
-        const val TURBO_KROKY = 8
+        /**
+         * Turbo: sestava autora balíku, kroky se nemění (5.06 je nabízel — chyba).
+         * 7 kroků jako v předlohách SatoDive (složka Workflows); dřív tu bylo 8.
+         */
+        const val TURBO_KROKY = 7
         /** 3 + 2: TaoMate je tříkroková destilace, kroky jsou součást receptu. */
         const val TRIPLUSDVA_KROKY = 3
         /** Plný model: 10 kroků uživatel ověřil (lepší než Turbo), strop jen prodlužuje čas. */
@@ -826,7 +837,7 @@ class SbFilmStore(private val ctx: Context) {
             .put("postavy", org.json.JSONArray().also { a -> s.postavy.forEach { a.put(it.soubor.absolutePath) } })
             .put("dej", s.dej)
             .put("pomer", s.pomer.name)
-            .put("rozliseni", s.rozliseni.name)
+            .put("rozliseni", s.rozliseni.name).put("rozliseni_541", true)
             .put("zdroj", s.zdroj.name)
             .put("cilSekund", s.cilSekund)
             .put("model", s.model.name)
@@ -878,7 +889,9 @@ class SbFilmStore(private val ctx: Context) {
         SbFilmScene(
             storyboard = sb, postavy = postavy, dej = j.optString("dej"),
             pomer = runCatching { LongMmPomer.valueOf(j.optString("pomer")) }.getOrDefault(LongMmPomer.NASIRKU),
-            rozliseni = runCatching { SbRozliseni.valueOf(j.optString("rozliseni")) }.getOrDefault(SbRozliseni.R480),
+            // 5.41: jednou 480p → 540p (trénovací rozlišení Turbo LoRA); pak platí volba uživatele.
+            rozliseni = runCatching { SbRozliseni.valueOf(j.optString("rozliseni")) }.getOrDefault(SbRozliseni.R540)
+                .let { if (!j.has("rozliseni_541") && it == SbRozliseni.R480) SbRozliseni.R540 else it },
             zdroj = runCatching { SbZdroj.valueOf(j.optString("zdroj")) }.getOrDefault(SbZdroj.STORYBOARD),
             cilSekund = j.optInt("cilSekund", 30),
             // „kroky“ z 5.06 se nečtou — patřily k Turbo, kde se měnit nemají.

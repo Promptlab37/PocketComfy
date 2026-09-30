@@ -140,12 +140,12 @@ class SbFilmBuilderTest {
 
     private fun g(s: SbFilmScene) = SbFilmBuilder.buildFilm(s, useky, zadani, listOf("sb.png", "p1.png"), "16:9", 7L)
 
-    /** 5.07: Turbo = autorova sestava beze změny, 8 kroků, žádná volba kroků. */
+    /** 5.07: Turbo = autorova sestava beze změny, 7 kroků jako předlohy SatoDive (5.41), žádná volba kroků. */
     @Test
-    fun `turbo je sestava autora s 8 kroky`() {
+    fun `turbo je sestava autora se 7 kroky`() {
         val t = g(scene.copy(model = SbModel.TURBO, krokyKvalita = 25))
         odkazyPlati(t)
-        assertEquals(8, t.vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
+        assertEquals(7, t.vstupy(SbFilmBuilder.N_KROKY).getInt("steps"))
         assertEquals("simple", t.vstupy(SbFilmBuilder.N_KROKY).getString("scheduler"))
         assertTrue(t.has(SbFilmBuilder.N_LORA))
         assertFalse(t.has(SbFilmBuilder.N_SHIFT))
@@ -178,7 +178,7 @@ class SbFilmBuilderTest {
         // Mimo rozsah 10–30 se hodnota srovná.
         assertEquals(30, scene.copy(model = SbModel.KVALITA, krokyKvalita = 99).kroky)
         assertEquals(10, scene.copy(model = SbModel.KVALITA, krokyKvalita = 4).kroky)
-        assertEquals(8, scene.copy(model = SbModel.TURBO, krokyKvalita = 20).kroky)
+        assertEquals(7, scene.copy(model = SbModel.TURBO, krokyKvalita = 20).kroky)
         assertEquals(SbModel.TURBO, SbFilmScene().model)
         assertEquals(10, SbFilmScene().krokyKvalita)
         assertEquals(Stage.MODELS, SbFilmBuilder.stageForClass("MiniMaxH3SigmaShift"))
@@ -216,5 +216,16 @@ class SbFilmBuilderTest {
         // Stored names: nové hodnoty jen na konec.
         assertEquals(listOf("TURBO", "KVALITA", "TRIPLUSDVA"), SbModel.entries.map { it.name })
         File(File("build/sbfilm-modely").also { it.mkdirs() }, "film_32.json").writeText(g.toString(2))
+    }
+
+    /** 5.41: rozlišení volí uživatel; 768p = přesný nativ přes Custom, 540p štítkem. */
+    @Test
+    fun `rozliseni 540p a 768p nativ`() {
+        val k540 = g(scene.copy(rozliseni = cz.promptlab.h3video.data.SbRozliseni.R540)).vstupy(SbFilmBuilder.N_KONTEXT)
+        assertEquals("540P", k540.getString("resolution"))
+        assertEquals(false, k540.getString("aspect_ratio") == "Custom")
+        val k768 = g(scene.copy(rozliseni = cz.promptlab.h3video.data.SbRozliseni.R768)).vstupy(SbFilmBuilder.N_KONTEXT)
+        assertEquals("Custom", k768.getString("aspect_ratio"))
+        assertEquals(1344 to 768, k768.getInt("width") to k768.getInt("height"))
     }
 }

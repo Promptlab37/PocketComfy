@@ -4,6 +4,7 @@ import cz.promptlab.h3video.data.t
 import cz.promptlab.h3video.data.SbFilmPlan
 import cz.promptlab.h3video.data.SbFilmScene
 import cz.promptlab.h3video.data.SbModel
+import cz.promptlab.h3video.data.SbRozliseni
 import cz.promptlab.h3video.data.SbUsek
 import org.json.JSONArray
 import org.json.JSONObject
@@ -194,6 +195,14 @@ object SbFilmBuilder {
             .put("prompt", SbFilmPlan.planovaciText(useky, znacky))
             .put("resolution", scene.rozliseni.kod).put("aspect_ratio", pomer).put("custom_ratio", pomer)
             .put("width", 1344).put("height", 768)
+            .also { u ->
+                // 768p = přesný nativ přes „Custom“ (balík bere width/height doslova, nodes.py ř. 3016);
+                // u ostatních štítků width/height balík nečte.
+                if (scene.rozliseni == SbRozliseni.R768) {
+                    val (w, h) = when (pomer) { "9:16" -> 768 to 1344; "1:1" -> 768 to 768; else -> 1344 to 768 }
+                    u.put("aspect_ratio", "Custom").put("width", w).put("height", h)
+                }
+            }
             .put("seconds", celkem)
             .put("segment_seconds", useky.joinToString(",") { "%.3f".format(java.util.Locale.ROOT, it.sekundy) })
             // latent_guide, NE native_guide: v native_guide jde chvost předchozího

@@ -822,4 +822,20 @@ class LongMmBuilderTest {
             }
         }
     }
+
+    // 5.41 (expert na ComfyUI): „768P“ balíku dává 1376×768 — nad nativním stropem H3.
+    @Test fun `768p je presne nativni platno pres Custom`() {
+        val wf = LongMmBuilder.buildPrvni(prvni, scena().copy(rozliseni = LongMmRozliseni.R768), 1L, emptyList())
+        val z = wf.inputs(LongMmBuilder.N_ZADANI)
+        assertEquals("Custom", z.getString("aspect_ratio"))
+        assertEquals(1344, z.getInt("width"))
+        assertEquals(768, z.getInt("height"))
+        val v = LongMmBuilder.buildPrvni(prvni, scena().copy(rozliseni = LongMmRozliseni.R768, pomer = LongMmPomer.NAVYSKU), 1L, emptyList())
+        assertEquals(768, v.inputs(LongMmBuilder.N_ZADANI).getInt("width"))
+        assertEquals(1344, v.inputs(LongMmBuilder.N_ZADANI).getInt("height"))
+        // Ostatní rozlišení beze změny (štítek + poměr).
+        val b = LongMmBuilder.buildPrvni(prvni, scena().copy(rozliseni = LongMmRozliseni.R540), 1L, emptyList())
+        assertEquals("16:9", b.inputs(LongMmBuilder.N_ZADANI).getString("aspect_ratio"))
+        assertEquals("540P", b.inputs(LongMmBuilder.N_ZADANI).getString("resolution"))
+    }
 }

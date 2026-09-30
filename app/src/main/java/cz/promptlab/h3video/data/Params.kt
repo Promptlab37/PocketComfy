@@ -419,10 +419,10 @@ object TURBO {
             "minimax_h3_ref2v_turbo_4step_v0.1_comfyui_bf16.safetensors",
             "lightx2v ref2v 4step (pro reference)", steps = 4, shiftVideo = 12f
         ),
-        // Ref2V 8 kroků v1.0 768p: na HF, ale autor ji zatím nemá ve specifikacích (shift 6 podle 768p řady — neověřeno).
+        // Ref2V 8 kroků v1.0 768p: autor (lightx2v, HF disc. 51) uvádí shift 12/3, 8 kroků, euler.
         LoraProfile(
             "minimax_h3_ref2v_turbo_8step_v1.0_768p_comfyui_bf16.safetensors",
-            "lightx2v ref2v 8step v1.0 (768p, pro reference)", steps = 8, shiftVideo = 6f
+            "lightx2v ref2v 8step v1.0 (768p, pro reference)", steps = 8, shiftVideo = 12f
         ),
         LoraProfile(FASTH3_LORA, "FastH3 4step (bez referencí)", steps = 4, shiftVideo = 12f),
     )
