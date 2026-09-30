@@ -2557,10 +2557,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     private suspend fun zaradPrepis(
         client: ComfyClient, wf: org.json.JSONObject, clientId: String, promptId: String,
+        extra: org.json.JSONObject? = null,
     ) {
         val od = android.os.SystemClock.elapsedRealtime()
         while (true) {
-            val chyba = runCatching { client.queuePrompt(wf, clientId, promptId) }.exceptionOrNull()
+            val chyba = runCatching { client.queuePrompt(wf, clientId, promptId, extra) }.exceptionOrNull()
             if (chyba == null || client.promptKnown(promptId) == true) {
                 prepisZarazen = true
                 return
@@ -2737,6 +2738,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         uzelNahledu: String,
         /** Index kroku v [planAkce] — vícekroková akce karty Film ze storyboardu. */
         krok: Int? = null,
+        /** Uloží se s úlohou do historie serveru (text scénáře, 5.23). */
+        extra: org.json.JSONObject? = null,
     ): String {
         // Zastaveno ještě před odesláním (při zapínání ComfyUI, nahrávání fotek).
         if (_rewriteState.value !is RewriteState.Busy) {
@@ -2831,7 +2834,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         try {
             prepisNaServeru = client to promptId
             val odeslano = System.currentTimeMillis()
-            zaradPrepis(client, wf, clientId, promptId)
+            zaradPrepis(client, wf, clientId, promptId, extra)
             // Rozhoduje server, ne hodiny. Do 4.50 tu byla mez „pět minut bez
             // zprávy": zamčený telefon uspí appku, po odemčení ta mez hned
             // vypršela a přepis skončil chybou, ačkoli výsledek na serveru
@@ -5218,6 +5221,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         client,
                         cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL)),
                         cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP, krok = 0,
+                        // Přesné znění scénáře do historie serveru — kontrola přípravy ho potřebuje (5.23).
+                        extra = org.json.JSONObject().put("pocketcomfy_scenar", s.scenar),
                     )
                     val scenar = rozbor ?: run {
                         val llama = client.objectInfo(ImagePromptBuilder.LOADER_CLASS)

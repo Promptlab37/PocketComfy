@@ -393,11 +393,13 @@ class ComfyClient(baseUrl: String) {
      * (musí to být UUID v malých písmenech), takže se dá po výpadku sítě bezpečně
      * ověřit, jestli se úloha nezaložila, a neposlat ji podruhé.
      */
-    fun queuePrompt(workflow: JSONObject, clientId: String, promptId: String): String {
+    fun queuePrompt(workflow: JSONObject, clientId: String, promptId: String, extraData: JSONObject? = null): String {
         val payload = JSONObject()
             .put("prompt", workflow)
             .put("client_id", clientId)
             .put("prompt_id", promptId)
+        // Doplňující data do historie serveru (5.23: text scénáře ke kontrole přípravy).
+        if (extraData != null) payload.put("extra_data", extraData)
         val req = Request.Builder()
             .url("$base/prompt")
             .post(payload.toString().toRequestBody(JSON))

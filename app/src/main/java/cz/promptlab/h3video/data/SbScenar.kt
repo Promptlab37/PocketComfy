@@ -369,7 +369,19 @@ object SbScenar {
                 }
                 return@forEach
             }
-            val m = Regex("""^([\p{L}]{2,30}(?:\s\p{Lu}[\p{L}]{1,30})?)\s*[–—:,-]\s*(.{2,200})$""").find(polozka) ?: return@forEach
+            val m = Regex("""^([\p{L}]{2,30}(?:\s\p{Lu}[\p{L}]{1,30})?)\s*[–—:,-]\s*(.{2,200})$""").find(polozka)
+            if (m == null) {
+                // Věta bez oddělovače: „Keramička s kudrnatými vlasy v rezavé halence a tvůrce
+                // videa v tmavé košili“ (hrnek 30. 9. 2026) — jméno je první slovo, popis celý kus.
+                polozka.split(Regex("""\s*,\s*|\s+a\s+|\s+and\s+""")).map { it.trim() }.forEach { kus ->
+                    val slova = kus.split(Regex("""\s+"""))
+                    val prvni = slova.first().trim(',', '.')
+                    if (slova.size < 2 || prvni.length < 2 || !prvni.all { it.isLetter() } || prvni.lowercase() in NE_JMENA) return@forEach
+                    val jm = jmeno(prvni)
+                    out += Postava(jm, kus, zena(jm, kus))
+                }
+                return@forEach
+            }
             if (m.groupValues[1].lowercase() in NE_JMENA) return@forEach
             val jm = jmeno(m.groupValues[1])
             val popis = m.groupValues[2].trim().replace(Regex("""\s*\(([^)]*)\)"""), ", $1").trim(',', ' ')
@@ -543,7 +555,25 @@ object SbScenar {
          * Popis pro H3: bez vět o střihu, bez adres webů a log, bez textu v
          * uvozovkách (ten by H3 vykreslil nebo řekl) — vše do poznámek.
          */
-        fun cistyPopis(t: String): String {
+        fun cistyPopis(t0: String): String {
+            // Text v uvozovkách za „Závěrečný text…“ / „Text…“ jde do střihu jako výzva
+            // nebo text na videu, ne jen do poznámek (hrnek 30. 9. 2026: „Závěrečný text
+            // doplnit až ve střihu: „Od nápadu…““).
+            var t = t0
+            UVOZOVKY.findAll(t0).toList().forEach { m ->
+                val pred = t0.substring(maxOf(0, m.range.first - 60), m.range.first)
+                val obsah = m.groupValues[1].trim()
+                when {
+                    Regex("""(?iu)(závěrečn\p{L}*|výzv\p{L}*|claim|slogan|cta)[^.!?]*$""").containsMatchIn(pred) -> {
+                        vyzva = listOf(vyzva, obsah).filter { it.isNotBlank() }.joinToString(" ")
+                        t = t.replace(m.value, "")
+                    }
+                    Regex("""(?iu)(?<![\p{L}])(text\p{L}*|titul\p{L}*)[^.!?]*$""").containsMatchIn(pred) -> {
+                        texty += obsah
+                        t = t.replace(m.value, "")
+                    }
+                }
+            }
             val vety = vety(t).mapNotNull { v ->
                 when {
                     STRIHOVA_VETA.containsMatchIn(v) || JEN_LOGO.matches(v.trim()) -> { poznamky += v; null }
