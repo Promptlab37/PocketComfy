@@ -50,6 +50,12 @@ class SbScenarDarMudrcuTest {
         assertTrue(h, h.contains("a look below names the shots it belongs to"))
         assertTrue(h, h.contains("Della — mladá žena; má krátké hnědé kudrliny"))
         assertFalse(h, h.contains("dlouhé hnědé vlasy"))
+        // Úsek s oknem 6: Jim je jen zmíněný (5.31).
+        val u6 = sc.useky.indexOfFirst { u -> u.panely.any { it.cislo == 6 } }
+        val h6 = SbFilmPrepis.hlidka(1, sc.useky[u6], u6, sc.useky.size, true, SbFilmPrepis.idMluvcich(sc.panely),
+            SbFilmPrepis.jazykFilmu(sc), sc.hlasy, vzhled = sc.vzhled, kontinuita = sc.kontinuita, vzhledSeMeni = true, zeScenare = true)
+        assertTrue(h6, h6.contains("Jim is only mentioned here and not in this shot"))
+        assertFalse(h, h.contains("only mentioned"))
         assertFalse(h.contains("Anna"))
         // Formát ve scénáři se přečte, ale plátno řídí jen uživatel (5.29).
         assertEquals(LongMmPomer.NAVYSKU, SbScenar.pomerZ("9:16"))

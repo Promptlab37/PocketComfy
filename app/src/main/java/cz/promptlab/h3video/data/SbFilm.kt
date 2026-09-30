@@ -1199,6 +1199,8 @@ object SbFilmPrepis {
         jmenaFotek: List<String> = emptyList(),
         /** Popis vzhledu uvádí změnu podle oken (5.26, Dar mudrců: vlasy do okna 4 dlouhé, pak krátké). */
         vzhledSeMeni: Boolean = false,
+        /** Scénář (5.31): v záběru jen ti, kdo v něm jednají; předměty doslovně (Dar mudrců 30. 9. 2026). */
+        zeScenare: Boolean = false,
     ): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
@@ -1240,6 +1242,15 @@ object SbFilmPrepis {
                 // Podání ze scénáře (5.14) jako příslovečné určení před <d>, jako v příručce H3.
                 val jak = podani.getOrNull(r)?.takeIf { it.isNotBlank() }?.let { ", $it," }.orEmpty()
                 sb.append("\n    spoken right as this shot begins: $kdo (${idMluvcich[kdo] ?: "S?"})$jak says <d>[$tag] $text</d>")
+            }
+            // Postava jen zmíněná („na Jimových hodinkách“) v záběru není (5.31).
+            if (zeScenare) {
+                val lide = (vzhled.keys + idMluvcich.keys).distinct()
+                SbScenar.jenZminene(p.popis, lide).takeIf { it.isNotEmpty() }?.let { z ->
+                    val kdo = z.joinToString(" and ")
+                    sb.append("\n    $kdo ${if (z.size > 1) "are" else "is"} only mentioned here and not in this shot; ")
+                    sb.append("any other person in this panel is someone else (for example a shopkeeper or a passer-by), not $kdo.")
+                }
             }
             // Zvuk záběru ze scénáře jako fyzická událost (5.14).
             if (p.zvuk.isNotBlank()) sb.append("\n    sound in this shot: ").append(p.zvuk.trim().trimEnd('.')).append(".")

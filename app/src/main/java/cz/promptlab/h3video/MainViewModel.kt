@@ -5603,6 +5603,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
                 vzhled = s.vzhled, kontinuita = s.kontinuita,
                 vzhledSeMeni = s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR && cz.promptlab.h3video.data.SbScenar.vzhledSeMeni(s.vzhled),
+                zeScenare = s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR,
                 // Fotky se jmény postav (5.17); bez fotek prázdné → prompt beze změny.
                 jmenaFotek = if (s.seStoryboardem && s.postavy.isNotEmpty() && s.postavy.all { s.jmenoFotky(it.soubor) != null })
                     s.postavy.map { s.jmenoFotky(it.soubor)!! } else emptyList(),

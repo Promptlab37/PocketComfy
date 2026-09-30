@@ -41,3 +41,18 @@ class SbOpravObrazkyTest {
             cz.promptlab.h3video.data.SbFilmPrepis.opravObrazky(t, 2))
     }
 }
+
+class SbJenZmineneTest {
+    private val lide = listOf("Della", "Jim", "Jimovy hodinky")
+    private fun z(t: String) = cz.promptlab.h3video.data.SbScenar.jenZminene(t, lide)
+
+    @Test
+    fun `dar mudrcu`() {
+        assertEquals(listOf("Jim"), z("U pultu vybere jednoduchý kovový řetízek ke kapesním hodinkám. Podrží ho na otevřené dlani a představí si jej na Jimových hodinkách."))
+        assertEquals(listOf("Jim"), z("Della sedí u stolu. Sklopí oči k místu, kde chtěla mít Jimův vánoční dárek."))
+        assertEquals(emptyList<String>(), z("Della se pousměje a podá Jimovi řetízek na otevřené dlani. Jim se podívá na řetízek."))
+        assertEquals(emptyList<String>(), z("Jim vstoupí do bytu. Uvidí Delleny krátké vlasy a zarazí se."))
+        assertEquals(listOf("Della"), z("Jim drží Dellin dárek."))
+        assertEquals(listOf("Jim"), z("She looks at Jim's watch."))
+    }
+}

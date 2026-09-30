@@ -988,6 +988,24 @@ object SbScenar {
         return if (menil) out.joinToString("; ") else null
     }
 
+    /**
+     * Postavy, které popis záběru jen zmiňuje přivlastňovacím tvarem („představí
+     * si jej na Jimových hodinkách“, „Jim's watch“) a jinak v něm nejsou.
+     * Dar mudrců 30. 9. 2026: přepisovač postavil Jima k pultu místo prodavače.
+     */
+    fun jenZminene(popis: String, jmena: Collection<String>): List<String> {
+        val slova = Regex("""[\p{L}'’]+""").findAll(popis.lowercase()).map { it.value }.toList()
+        return jmena.filter { j -> j.isNotBlank() && !j.contains(' ') }.filter { j ->
+            val jm = j.lowercase()
+            val kmen = if (jm.length > 3 && jm.last() in "ae") jm.dropLast(1) else jm
+            val privl = Regex("""^(ův|ov(a|o|y|ých|ým|ými|ou|ě|u)|in(a|o|y|ých|ým|ými|ou|ě|u)?)$""")
+            fun jePrivl(w: String) = w == "$jm's" || w == "$jm’s" ||
+                (w.startsWith(kmen) && privl.matches(w.removePrefix(kmen)))
+            val zminky = slova.filter { it.startsWith(kmen) }
+            zminky.isNotEmpty() && zminky.all { jePrivl(it) }
+        }
+    }
+
     fun hlas(zena: Boolean, vek: Int): String {
         val kdo = if (zena) "a woman" else "a man"
         val jeji = if (zena) "her" else "his"
