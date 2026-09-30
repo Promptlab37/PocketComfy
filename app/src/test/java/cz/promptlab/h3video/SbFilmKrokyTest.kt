@@ -68,10 +68,10 @@ class SbFilmKrokyTest {
         val sb = File.createTempFile("sbfilm", ".png")
         val panely = listOf(SbPanel(1, "a", sekundy = 3.0), SbPanel(2, "b", sekundy = 3.0))
         val s = SbFilmScene(storyboard = sb, panely = panely)
-        assertEquals("Nejdřív napiš scénář.", sbFilmProblem(s))
-        assertEquals("Doplň scénář.", sbFilmProblem(s.copy(zadaniUseku = listOf(" "))))
+        assertEquals("Nejdřív napiš prompty.", sbFilmProblem(s))
+        assertEquals("Doplň prompty.", sbFilmProblem(s.copy(zadaniUseku = listOf(" "))))
         assertNull(sbFilmProblem(s.copy(zadaniUseku = listOf("[Shot 1] x"))))
-        assertEquals("Nejdřív storyboard přečti.", sbFilmProblem(s.copy(panely = emptyList())))
+        assertEquals("Nejdřív připrav film.", sbFilmProblem(s.copy(panely = emptyList())))
         sb.delete()
     }
 

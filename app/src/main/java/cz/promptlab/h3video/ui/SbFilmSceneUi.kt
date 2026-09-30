@@ -115,130 +115,57 @@ fun SbFilmSection(vm: MainViewModel) {
         )
     }
 
-    if (scene.zdroj == SbZdroj.STORYBOARD) SectionCard(title = "1 · " + t("Storyboard")) {
+    // 1 · Podklady: obrázek, scénář nebo děj — podle volby (5.17, stejné kroky u všech).
+    SectionCard(title = "1 · " + t("Podklady")) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            StoryboardPole(scene, onPick = { vm.pickSbStoryboard(it) }, onClear = { vm.clearSbStoryboard() })
-            if (scene.storyboard != null) {
-                OutlineButton(
-                    if (cte) t("Čtu storyboard…")
-                    else if (scene.panely.isEmpty()) t("Přečíst storyboard") else t("Přečíst znovu"),
-                    color = if (scene.panely.isEmpty()) Amber else TextMid,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { if (!bezi) vm.precistSbStoryboard() }
+            if (scene.zdroj != SbZdroj.DEJ) {
+                StoryboardPole(scene, onPick = { vm.pickSbStoryboard(it) }, onClear = { vm.clearSbStoryboard() })
             }
-            if (akce == MainViewModel.SbAkce.CTENI) SjedKPrubehu(cte) {
-                PrubehPrepisu(vm, barva = Amber)
-                chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            if (scene.zdroj == SbZdroj.SCENAR) {
+                DarkTextField(
+                    value = scene.scenar,
+                    onValueChange = { vm.setSbScenar(it) },
+                    placeholder = t("Vlož scénář"),
+                    minHeight = 160.dp,
+                    onClear = { vm.setSbScenar("") },
+                    rostouci = true,
+                )
             }
-        }
-    }
-
-    // Storyboard bez textu + scénář zvlášť (5.14): obrázek i scénář, jedno tlačítko.
-    if (scene.zdroj == SbZdroj.SCENAR) SectionCard(title = "1 · " + t("Storyboard a scénář")) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            StoryboardPole(scene, onPick = { vm.pickSbStoryboard(it) }, onClear = { vm.clearSbStoryboard() })
-            DarkTextField(
-                value = scene.scenar,
-                onValueChange = { vm.setSbScenar(it) },
-                placeholder = t("Vlož scénář"),
-                minHeight = 160.dp,
-                onClear = { vm.setSbScenar("") },
-                rostouci = true,
-            )
-            // Jedno tlačítko: přečíst a rovnou napsat prompty, pak už jen Natočit (5.15).
-            val pripraveno = scene.zadaniUseku.isNotEmpty() && scene.zadaniUseku.size == scene.useky.size &&
-                cz.promptlab.h3video.data.otiskScenare(scene.scenar) == scene.scenarPlanu
-            if (scene.storyboard != null && scene.scenar.isNotBlank()) {
-                OutlineButton(
-                    if (cte) t("Připravuji film…")
-                    else if (!pripraveno) t("Připravit film") else t("Připravit znovu"),
-                    color = if (pripraveno) TextMid else Amber,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { if (!bezi) vm.precistSbScenar() }
-            }
-            if (akce == MainViewModel.SbAkce.CTENI) SjedKPrubehu(cte) {
-                PrubehPrepisu(vm, barva = Amber)
-                chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-            }
-            // Souhrn připraveného filmu — na první pohled je vidět, jestli sedí (kritici 30. 9. 2026).
-            if (pripraveno && !cte) {
-                Text(souhrnFilmu(scene), style = MaterialTheme.typography.labelLarge, color = TextHi)
-            }
-        }
-    }
-
-    SectionCard(title = t("Postavy")) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            scene.postavy.forEachIndexed { i, p ->
-                RefDlazdicka(thumb = p.nahled, onPick = { }, onRemove = { vm.removeSbPostava(i) })
-            }
-            val zbyva = SbFilmScene.MAX_POSTAV - scene.postavy.size
-            if (zbyva > 0) RefPridat(zbyva) { uris -> uris.forEach { vm.addSbPostava(it) } }
-        }
-    }
-
-    // Se scénářem Děj nemá smysl — scénář ho nahrazuje (5.14).
-    if (scene.zdroj != SbZdroj.SCENAR) SectionCard(title = if (scene.zdroj == SbZdroj.DEJ) "1 · " + t("Děj") else t("Děj")) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            DarkTextField(
-                value = scene.dej,
-                onValueChange = { vm.setSbDej(it) },
-                placeholder = t("Vězeň v železné masce je osvobozen a ukáže se, že je to král"),
-                minHeight = 90.dp,
-                onClear = { vm.setSbDej("") },
-            )
             if (scene.zdroj == SbZdroj.DEJ) {
+                DarkTextField(
+                    value = scene.dej,
+                    onValueChange = { vm.setSbDej(it) },
+                    placeholder = t("Vězeň v železné masce je osvobozen a ukáže se, že je to král"),
+                    minHeight = 90.dp,
+                    onClear = { vm.setSbDej("") },
+                )
                 PillRow(
                     items = SbFilmScene.DELKY,
                     selected = scene.cilSekund,
                     label = { "$it s" },
                     onSelect = { vm.setSbCil(it) },
                 )
-                OutlineButton(
-                    if (navrhuje) t("Navrhuji záběry…")
-                    else if (scene.panely.isEmpty()) t("Navrhnout záběry") else t("Navrhnout znovu"),
-                    color = if (scene.panely.isEmpty()) Amber else TextMid,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { if (!bezi) vm.navrhnoutSbZabery() }
-                if (akce == MainViewModel.SbAkce.NAVRH) SjedKPrubehu(navrhuje) {
-                    PrubehPrepisu(vm, barva = Amber)
-                    chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-                }
             }
         }
     }
 
-    // Podkresová hudba (YuE2) — jen když ji server umí.
-    val hudbaDostupna by vm.sbHudbaDostupna.collectAsStateWithLifecycle()
-    androidx.compose.runtime.LaunchedEffect(Unit) { vm.overSbHudbu() }
-    // Hudba se přidává až k hotovému filmu, který se uživateli líbí (5.13).
-    val historie by vm.history.collectAsStateWithLifecycle()
-    val film = androidx.compose.runtime.remember(historie) { vm.posledniFilmProHudbu() }
-    if (hudbaDostupna && film != null) SectionCard(title = t("Podkresová hudba")) {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            run {
-                DarkTextField(
-                    value = scene.hudbaStyl,
-                    onValueChange = { vm.setSbHudbaStyl(it) },
-                    placeholder = cz.promptlab.h3video.comfy.SbHudbaBuilder.STYL_VYCHOZI,
-                    onClear = { vm.setSbHudbaStyl("") },
-                    minHeight = 70.dp,
-                    rostouci = true,
-                )
-                LabeledSlider(
-                    label = t("Hlasitost hudby"),
-                    value = "${scene.hudbaHlasitost} dB",
-                    position = scene.hudbaHlasitost.toFloat(),
-                    range = cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN.toFloat()..
-                        cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX.toFloat(),
-                    onChange = { vm.setSbHudbaHlasitost(Math.round(it)) },
-                )
-                OutlineButton(
-                    t("Přidat hudbu k poslednímu filmu"),
-                    color = Amber,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { vm.pridatHudbu(film, scene.hudbaStyl, scene.hudbaHlasitost) }
+    // Postavy: u „z děje“ povinné; se storyboardem nepovinné a každá fotka
+    // musí mít jméno postavy z plánu — jinak přepisovač hádá, kdo je kdo (5.17, kritici).
+    SectionCard(title = t("Postavy")) {
+        if (scene.zdroj == SbZdroj.DEJ) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                scene.postavy.forEachIndexed { i, p ->
+                    RefDlazdicka(thumb = p.nahled, onPick = { }, onRemove = { vm.removeSbPostava(i) })
+                }
+                val zbyva = SbFilmScene.MAX_POSTAV - scene.postavy.size
+                if (zbyva > 0) RefPridat(zbyva) { uris -> uris.forEach { vm.addSbPostava(it) } }
             }
+        } else if (scene.postavy.isEmpty()) {
+            SkladaciSekce(title = t("Skutečné tváře"), souhrn = t("volitelné"), klic = "sbfilm_tvare") {
+                RefPridat(SbFilmScene.MAX_POSTAV) { uris -> uris.forEach { vm.addSbPostava(it) } }
+            }
+        } else {
+            FotkyPostav(vm, scene)
         }
     }
 
@@ -259,118 +186,106 @@ fun SbFilmSection(vm: MainViewModel) {
         }
     }
 
-    // Se scénářem: kontrola je nepovinná a sbalená, po přípravě se jen natočí (5.15, kritici).
-    if (scene.panely.isNotEmpty() && scene.zdroj == SbZdroj.SCENAR) ScenarKontrola(vm, scene, bezi, akce, chyba)
-    else if (scene.panely.isNotEmpty()) {
-        val useky = scene.useky
-        val seScenarem = scene.zdroj == SbZdroj.SCENAR
-        val scenarHotovy = scene.zadaniUseku.size == useky.size && useky.isNotEmpty()
-        SectionCard(title = "2 · " + scene.nazev.ifBlank { t("Záběry") }) {
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    // 2 · Příprava: jedno tlačítko — plán i prompty, pak už jen Natočit (5.15–5.17).
+    val lzePripravit = when (scene.zdroj) {
+        SbZdroj.STORYBOARD -> scene.storyboard != null
+        SbZdroj.SCENAR -> scene.storyboard != null && scene.scenar.isNotBlank()
+        SbZdroj.DEJ -> scene.dej.isNotBlank() && scene.postavy.isNotEmpty()
+    }
+    val pripraveno = scene.zadaniUseku.isNotEmpty() && scene.zadaniUseku.size == scene.useky.size &&
+        (scene.zdroj != SbZdroj.SCENAR || cz.promptlab.h3video.data.otiskScenare(scene.scenar) == scene.scenarPlanu)
+    val pripravuje = bezi && (akce == MainViewModel.SbAkce.CTENI || akce == MainViewModel.SbAkce.NAVRH)
+    SectionCard(title = "2 · " + t("Příprava")) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlineButton(
+                if (pripravuje) t("Připravuji film…") else if (!pripraveno) t("Připravit film") else t("Připravit znovu"),
+                color = if (pripraveno || !lzePripravit) TextMid else Amber,
+                enabled = lzePripravit,
+                modifier = Modifier.fillMaxWidth(),
+            ) { if (!bezi) vm.pripravitFilm() }
+            if (akce == MainViewModel.SbAkce.CTENI || akce == MainViewModel.SbAkce.NAVRH) SjedKPrubehu(pripravuje) {
+                PrubehPrepisu(vm, barva = Amber)
+                chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
+            }
+            // Souhrn — na první pohled je vidět, jestli příprava sedí (kritici 30. 9. 2026).
+            if (scene.panely.isNotEmpty() && !pripravuje) {
+                Text(souhrnFilmu(scene), style = MaterialTheme.typography.labelLarge, color = TextHi)
+            }
+            // Co kontrola čtení našla — proč se prompty nenapsaly.
+            if (!pripravuje) scene.nalezy.forEach { n ->
                 Text(
-                    listOfNotNull(
-                        "%.1f s".format(scene.sekundy),
-                        pocet(useky.size, "%d úsek", "%d úseky", "%d úseků"),
-                        pocet(scene.panely.size, "%d panel", "%d panely", "%d panelů"),
-                        t("časy ze storyboardu").takeIf { scene.casyZeStoryboardu && !seScenarem },
-                        t("časy ze scénáře").takeIf { scene.casyZeStoryboardu && seScenarem },
-                        t("okna rozdělena odhadem").takeIf { seScenarem && scene.scenarOdhadem },
-                    ).joinToString(" · "),
-                    style = MaterialTheme.typography.labelLarge, color = TextHi,
+                    if (n.cislo > 0) "${n.cislo} · ${n.text}" else n.text,
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
                 )
-                // Jiný počet oken ve scénáři než panelů v obrázku: čísla by neseděla.
-                if (seScenarem && scene.panelyObrazku > 0 && scene.oknaScenare > 0 && scene.panelyObrazku != scene.oknaScenare) {
-                    Text(
-                        t("Scénář má %d oken, storyboard %d panelů.").format(scene.oknaScenare, scene.panelyObrazku),
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
-                    )
-                }
-                var index = 0
-                useky.forEachIndexed { u, usek ->
-                    if (u > 0) HorizontalDivider(color = Amber.copy(alpha = .5f), modifier = Modifier.padding(vertical = 4.dp))
-                    usek.panely.forEach { _ ->
-                        val i = index++
-                        scene.panely.getOrNull(i)?.let { p ->
-                            PanelRadek(
-                                cislo = p.cislo, popis = p.popis, sekundy = p.sekundy,
-                                repliky = p.repliky,
-                                podani = p.podani,
-                                zvuk = p.zvuk,
-                                onPodani = { vm.setSbPanelPodani(i, it) },
-                                onZvuk = { vm.setSbPanelZvuk(i, it) },
-                                onRepliky = { vm.setSbPanelRepliky(i, it) },
-                                onPopis = { vm.setSbPanelPopis(i, it) },
-                                onSekundy = { vm.setSbPanelSekundy(i, it) },
-                                onSmazat = { vm.smazSbPanel(i) },
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                val pripravuje = bezi && akce == MainViewModel.SbAkce.NATOCENI
-                OutlineButton(
-                    if (pripravuje) (if (seScenarem) t("Píšu prompty…") else t("Píšu scénář…"))
-                    else if (!scenarHotovy) (if (seScenarem) t("Napsat prompty") else t("Napsat scénář")) else t("Napsat znovu"),
-                    color = if (scenarHotovy) TextMid else Amber,
-                    modifier = Modifier.fillMaxWidth(),
-                ) { if (!bezi) vm.pripravitSbPrompty() }
-                if (akce == MainViewModel.SbAkce.NATOCENI) SjedKPrubehu(pripravuje) {
-                    PrubehPrepisu(vm, barva = Amber)
-                    chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
-                }
-            }
-        }
-
-        // Texty na videu, výzva a poznámky ze scénáře — do H3 nejdou (5.14).
-        if (seScenarem && scene.strih.isNotEmpty()) {
-            SectionCard(title = t("Texty do střihu") + " (${scene.strih.size})") {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    val casy = cz.promptlab.h3video.data.SbScenar.casyPanelu(scene.panely)
-                    scene.strih.forEach { r ->
-                        val cas = casy[r.cislo]?.let { (od, doS) -> "${casStrihu(od)}–${casStrihu(doS)}" } ?: "${r.cislo}"
-                        val poznamka = r.druh == cz.promptlab.h3video.data.SbTextStrihu.Druh.POZNAMKA
-                        Row {
-                            Text(cas, style = MaterialTheme.typography.labelMedium, color = Amber, modifier = Modifier.width(84.dp))
-                            TextVesel(
-                                r.text, style = MaterialTheme.typography.bodySmall,
-                                color = if (poznamka) TextLow else TextHi, modifier = Modifier.weight(1f),
-                            )
-                        }
-                    }
-                    if (scene.strih.any { it.druh != cz.promptlab.h3video.data.SbTextStrihu.Druh.POZNAMKA }) {
-                        OutlineButton(t("Uložit titulky (.srt)"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
-                            vm.ulozSbTitulky()
-                        }
-                    }
-                }
-            }
-        }
-
-        // Scénář = prompty pro H3, přesně to, co dostane model; jde upravit
-        // a Natočit film použije tuhle podobu.
-        if (scenarHotovy) {
-            SectionCard(title = "3 · " + if (seScenarem) t("Prompty") else t("Scénář")) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    scene.zadaniUseku.forEachIndexed { k, text ->
-                        Text(
-                            t("Úsek %d · %s").format(k + 1, "%.1f s".format(useky[k].sekundy)),
-                            style = MaterialTheme.typography.labelLarge, color = Amber,
-                        )
-                        DarkTextField(
-                            value = text,
-                            onValueChange = { vm.setSbZadaniUseku(k, it) },
-                            placeholder = "",
-                            onClear = { vm.setSbZadaniUseku(k, "") },
-                            minHeight = 120.dp,
-                            rostouci = true,
-                        )
-                    }
-                }
             }
         }
     }
 
+    if (scene.panely.isNotEmpty()) Kontrola(vm, scene, bezi, akce, chyba)
 
+    // Podkresová hudba (YuE2) — jen když ji server umí.
+    val hudbaDostupna by vm.sbHudbaDostupna.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(Unit) { vm.overSbHudbu() }
+    // Hudba se přidává až k hotovému filmu, který se uživateli líbí (5.13).
+    val historie by vm.history.collectAsStateWithLifecycle()
+    val film = androidx.compose.runtime.remember(historie) { vm.posledniFilmProHudbu() }
+    if (hudbaDostupna && film != null) SectionCard(title = t("Podkresová hudba")) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            DarkTextField(
+                value = scene.hudbaStyl,
+                onValueChange = { vm.setSbHudbaStyl(it) },
+                placeholder = cz.promptlab.h3video.comfy.SbHudbaBuilder.STYL_VYCHOZI,
+                onClear = { vm.setSbHudbaStyl("") },
+                minHeight = 70.dp,
+                rostouci = true,
+            )
+            LabeledSlider(
+                label = t("Hlasitost hudby"),
+                value = "${scene.hudbaHlasitost} dB",
+                position = scene.hudbaHlasitost.toFloat(),
+                range = cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MIN.toFloat()..
+                    cz.promptlab.h3video.comfy.SbHudbaBuilder.HLASITOST_MAX.toFloat(),
+                onChange = { vm.setSbHudbaHlasitost(Math.round(it)) },
+            )
+            OutlineButton(
+                t("Přidat hudbu k poslednímu filmu"),
+                color = Amber,
+                modifier = Modifier.fillMaxWidth(),
+            ) { vm.pridatHudbu(film, scene.hudbaStyl, scene.hudbaHlasitost) }
+        }
+    }
+}
+
+/**
+ * Fotky postav se storyboardem: pod každou jména postav z plánu, klepnutím
+ * se určí, kdo na ní je (jedna fotka na postavu). Jména u „Mám storyboard“
+ * přibudou po přípravě, u scénáře hned po vložení.
+ */
+@Composable
+@OptIn(ExperimentalLayoutApi::class)
+private fun FotkyPostav(vm: MainViewModel, scene: SbFilmScene) {
+    val jmena = androidx.compose.runtime.remember(scene.panely, scene.vzhled, scene.scenar, scene.zdroj) {
+        cz.promptlab.h3video.data.jmenaPostav(scene)
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        scene.postavy.forEachIndexed { i, p ->
+            val jmeno = scene.jmenoFotky(p.soubor)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RefDlazdicka(thumb = p.nahled, onPick = { }, onRemove = { vm.removeSbPostava(i) })
+                Spacer(Modifier.width(12.dp))
+                Box(Modifier.weight(1f)) {
+                    if (jmena.isNotEmpty()) PillRow(
+                        items = jmena,
+                        selected = jmeno.orEmpty(),
+                        label = { it },
+                        onSelect = { vm.setSbFotkaJmeno(i, if (it.equals(jmeno, ignoreCase = true)) "" else it) },
+                    )
+                }
+            }
+        }
+        val zbyva = SbFilmScene.MAX_POSTAV - scene.postavy.size
+        if (zbyva > 0) RefPridat(zbyva) { uris -> uris.forEach { vm.addSbPostava(it) } }
+    }
 }
 
 /**
@@ -528,7 +443,7 @@ private fun souhrnFilmu(scene: SbFilmScene): String {
  * (nesoulad počtu, chybějící prompty), je vidět i ve sbaleném stavu.
  */
 @Composable
-private fun ScenarKontrola(
+private fun Kontrola(
     vm: MainViewModel,
     scene: SbFilmScene,
     bezi: Boolean,
@@ -537,21 +452,16 @@ private fun ScenarKontrola(
 ) {
     val useky = scene.useky
     val promptyHotove = scene.zadaniUseku.size == useky.size && useky.isNotEmpty()
-    SectionCard(title = "2 · " + t("Kontrola")) {
+    SectionCard(title = "3 · " + t("Kontrola")) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (scene.panelyObrazku > 0 && scene.oknaScenare > 0 && scene.panelyObrazku != scene.oknaScenare) {
-                Text(
-                    t("Scénář má %d oken, storyboard %d panelů.").format(scene.oknaScenare, scene.panelyObrazku),
-                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
-                )
-            }
             SkladaciSekce(
                 title = t("Záběry"),
                 souhrn = listOfNotNull(
                     "%.1f s".format(scene.sekundy),
                     pocet(useky.size, "%d úsek", "%d úseky", "%d úseků"),
                     pocet(scene.panely.size, "%d panel", "%d panely", "%d panelů"),
-                    t("časy ze scénáře").takeIf { scene.casyZeStoryboardu },
+                    (if (scene.zdroj == SbZdroj.SCENAR) t("časy ze scénáře") else t("časy ze storyboardu"))
+                        .takeIf { scene.casyZeStoryboardu },
                     t("okna rozdělena odhadem").takeIf { scene.scenarOdhadem },
                 ).joinToString(" · "),
                 klic = "sbscenar_zabery",
@@ -562,6 +472,14 @@ private fun ScenarKontrola(
                     usek.panely.forEach { _ ->
                         val i = index++
                         scene.panely.getOrNull(i)?.let { p ->
+                            // Výřez panelu nad replikou: přečtené jde porovnat s obrázkem (kritici 30. 9. 2026).
+                            val sb = scene.storyboard
+                            if (sb != null && scene.seStoryboardem && scene.radku > 0 && scene.sloupcu > 0) {
+                                VyrezPanelu(sb, scene.radku, scene.sloupcu, p.cislo - 1)
+                            }
+                            scene.nalezy.filter { it.cislo == p.cislo }.forEach { n ->
+                                Text(n.text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                            }
                             PanelRadek(
                                 cislo = p.cislo, popis = p.popis, sekundy = p.sekundy,
                                 repliky = p.repliky, podani = p.podani, zvuk = p.zvuk,
@@ -624,7 +542,8 @@ private fun ScenarKontrola(
             val pise = bezi && akce == MainViewModel.SbAkce.NATOCENI
             if (!promptyHotove || pise) {
                 OutlineButton(
-                    if (pise) t("Píšu prompty…") else t("Napsat prompty"),
+                    if (pise) t("Píšu prompty…")
+                    else if (scene.nalezy.isNotEmpty()) t("Pokračovat – napsat prompty") else t("Napsat prompty"),
                     color = Amber,
                     modifier = Modifier.fillMaxWidth(),
                 ) { if (!bezi) vm.pripravitSbPrompty() }
@@ -634,5 +553,35 @@ private fun ScenarKontrola(
                 chyba?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error) }
             }
         }
+    }
+}
+
+/** Výřez jednoho panelu z plného obrázku storyboardu (čitelné repliky, ne náhled). */
+@Composable
+private fun VyrezPanelu(soubor: java.io.File, radku: Int, sloupcu: Int, poradi: Int) {
+    val bmp by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, soubor, radku, sloupcu, poradi) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching {
+                val r = poradi / sloupcu
+                val c = poradi % sloupcu
+                if (poradi < 0 || r >= radku) return@runCatching null
+                val meze = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                android.graphics.BitmapFactory.decodeFile(soubor.absolutePath, meze)
+                val w = meze.outWidth / sloupcu
+                val h = meze.outHeight / radku
+                @Suppress("DEPRECATION")
+                val dek = if (android.os.Build.VERSION.SDK_INT >= 31) android.graphics.BitmapRegionDecoder.newInstance(soubor.absolutePath)
+                else android.graphics.BitmapRegionDecoder.newInstance(soubor.absolutePath, false)
+                val opt = android.graphics.BitmapFactory.Options().apply { inSampleSize = maxOf(1, w / 720) }
+                dek?.decodeRegion(android.graphics.Rect(c * w, r * h, (c + 1) * w, (r + 1) * h), opt).also { dek?.recycle() }
+            }.getOrNull()
+        }
+    }
+    bmp?.let {
+        Image(
+            it.asImageBitmap(), null,
+            Modifier.fillMaxWidth().padding(bottom = 4.dp).clip(RoundedCornerShape(10.dp)),
+            contentScale = ContentScale.FillWidth,
+        )
     }
 }

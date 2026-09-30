@@ -4916,8 +4916,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun removeSbPostava(index: Int) = updateSbFilm {
-        it.postavy.getOrNull(index)?.soubor?.delete()
-        it.copy(postavy = it.postavy.filterIndexed { i, _ -> i != index }, zadaniUseku = emptyList())
+        val f = it.postavy.getOrNull(index)?.soubor
+        f?.delete()
+        it.copy(postavy = it.postavy.filterIndexed { i, _ -> i != index }, zadaniUseku = emptyList(),
+            jmenaFotek = it.jmenaFotek - (f?.absolutePath ?: ""))
     }
 
     fun setSbDej(text: String) = updateSbFilm { it.copy(dej = text, zadaniUseku = emptyList()) }
@@ -5011,7 +5013,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * zvolenou délku ([cz.promptlab.h3video.data.SbFilmPlan.naplanujNavrh]).
      * Fotky postav model vidí, když je na serveru projektor.
      */
-    fun navrhnoutSbZabery() {
+    fun navrhnoutSbZabery(pokracovat: Boolean = false) {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _sbFilm.value
         _sbAkce.value = SbAkce.NAVRH
@@ -5020,7 +5022,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             return
         }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
-        _planAkce.value = PlanAkce(listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.NAVRH)))
+        _planAkce.value = PlanAkce(listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.NAVRH)) +
+            (if (pokracovat) List(odhadUseku()) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU) } else emptyList()))
         viewModelScope.launch { try {
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
@@ -5063,9 +5066,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         it.copy(panely = plan.panely,
                             nazev = cz.promptlab.h3video.data.SbFilmPlan.precti(text).nazev.orEmpty(),
                             casyZeStoryboardu = false, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
-                            hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl)
+                            hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl, nalezy = emptyList())
                     }
-                    _rewriteState.value = RewriteState.Idle
+                    if (pokracovat) dopisPromptySb(1) else _rewriteState.value = RewriteState.Idle
                 }
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
@@ -5097,7 +5100,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     cz.promptlab.h3video.data.SbFilmPrepis.repliky(p.repliky).size
                 p.copy(repliky = text, podani = if (stejne) p.podani else "")
             }
-        }, zadaniUseku = emptyList())
+        }, zadaniUseku = emptyList()).let { n -> bezNalezu(n, index) }
     }
 
     fun setSbPanelPodani(index: Int, text: String) = updateSbFilm { s ->
@@ -5230,6 +5233,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             hlasy = plan.hlasy, hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
                             kontinuita = scenar.kontinuita, strih = cz.promptlab.h3video.data.SbScenar.strih(scenar),
                             scenarOdhadem = scenar.odhadem, panelyObrazku = obrazek.panely.size,
+                            radku = obrazek.radku ?: 0, sloupcu = obrazek.sloupcu ?: 0,
                             oknaScenare = scenar.okna.size,
                             scenarPlanu = cz.promptlab.h3video.data.otiskScenare(s.scenar),
                             // Formát ze scénáře („9:16“) nastaví plátno.
@@ -5238,36 +5242,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     }
                     // Jiný počet panelů v obrázku než oken ve scénáři: prompty by
                     // odkazovaly na špatné panely — zastavit a ukázat to (kritici 30. 9. 2026).
-                    if (obrazek.panely.isNotEmpty() && obrazek.panely.size != scenar.okna.size) {
-                        _rewriteState.value = RewriteState.Fail(
-                            t("Scénář má %d oken, storyboard %d panelů.").format(scenar.okna.size, obrazek.panely.size),
-                            PraceNaPromptu.VYLEPSENI,
-                        )
-                        return@onSuccess
-                    }
+                    updateSbFilm { it.copy(nalezy = cz.promptlab.h3video.data.SbFilmKontrola.scenar(obrazek.panely.size, scenar.okna.size)) }
                     // Hned prompty (uživatel 30. 9. 2026: „myslel jsem, že se to rovnou
                     // kompletně napíše a už jen zmáčknu generovat“).
-                    val useky = _sbFilm.value.useky.size
-                    upravPlan { p -> p.copy(kroky = p.kroky.take(krokCteni.size) + List(useky) {
-                        cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU)
-                    }) }
-                    val scena = _sbFilm.value
-                    val prompty = withContext(Dispatchers.IO) {
-                        odolne {
-                            val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
-                            napisPromptySb(client, scena, krokOd = krokCteni.size)
-                        }
-                    }
-                    prompty.onSuccess { zadani ->
-                        // Mezitím upravený plán: prompty ze staré podoby nepatří.
-                        updateSbFilm { if (it.panely == scena.panely) it.copy(zadaniUseku = zadani) else it }
-                        _rewriteState.value = RewriteState.Idle
-                    }.onFailure { e ->
-                        if (e is kotlinx.coroutines.CancellationException) return@launch
-                        _rewriteState.value = RewriteState.Fail(
-                            (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
-                        )
-                    }
+                    dopisPromptySb(krokCteni.size)
                 }
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
@@ -5282,7 +5260,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         s.copy(panely = s.panely.mapIndexed { i, p -> if (i == index) p.copy(popis = text) else p }, zadaniUseku = emptyList())
     }
 
-    fun smazSbPanel(index: Int) = updateSbFilm { s ->
+    /** Uživatel panel zkontroloval (upravil nebo smazal) — jeho nález zmizí. */
+    private fun bezNalezu(s: cz.promptlab.h3video.data.SbFilmScene, index: Int) =
+        s.panely.getOrNull(index)?.cislo?.let { c -> s.copy(nalezy = s.nalezy.filterNot { it.cislo == c }) } ?: s
+
+    fun smazSbPanel(index: Int) = updateSbFilm { s0 ->
+        val s = bezNalezu(s0, index)
         s.copy(
             // Bez přečíslování: číslo odkazuje na panel v obrázku storyboardu.
             panely = s.panely.filterIndexed { i, _ -> i != index },
@@ -5294,7 +5277,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * „Přečíst“: vidoucí model vypíše panely storyboardu, appka z nich
      * naplánuje délky ([cz.promptlab.h3video.data.SbFilmPlan.naplanuj]).
      */
-    fun precistSbStoryboard() {
+    fun precistSbStoryboard(pokracovat: Boolean = false) {
         if (_rewriteState.value is RewriteState.Busy) return
         val s = _sbFilm.value
         val obr = s.storyboard ?: return
@@ -5302,8 +5285,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         // Celé čtení + řádky mřížky; kolik řádků, se ví až po prvním čtení.
         val minuleRadku = trvaniPrepisu.getInt("odhad_posledni_radky", 2)
+        // Připravit film: po čtení i prompty (5.17).
+        val prompty = if (pokracovat) List(odhadUseku()) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU) } else emptyList()
         _planAkce.value = PlanAkce(
-            listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_CELE)) + List(minuleRadku) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) },
+            listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_CELE)) + List(minuleRadku) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) } + prompty,
         )
         viewModelScope.launch { try {
             val vysledek = withContext(Dispatchers.IO) {
@@ -5338,7 +5323,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     // Teď už je známý skutečný počet řádků.
                     val skutecne = if (poRadcich) radku else 0
                     trvaniPrepisu.edit().putInt("odhad_posledni_radky", skutecne).apply()
-                    upravPlan { it.copy(kroky = it.kroky.take(1) + List(skutecne) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) }) }
+                    upravPlan { it.copy(kroky = it.kroky.take(1) + List(skutecne) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) } + prompty) }
                     if (poRadcich) {
                         val bmp = android.graphics.BitmapFactory.decodeFile(obr.absolutePath)
                         if (bmp != null) for (r in 0 until radku) {
@@ -5365,10 +5350,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             nalady += cz.promptlab.h3video.data.SbFilmPlan.prectiNalady(odpoved)
                         }
                     }
-                    Triple(prvni, opravene, nalady)
+                    Triple(prvni, opravene, nalady) to poRadcich
                 }
             }
-            vysledek.onSuccess { (text, repliky, nalady) ->
+            vysledek.onSuccess { (trojice, poRadcich) ->
+                val (text, repliky, nalady) = trojice
                 val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(text).let { c ->
                     // Repliky z ostřejšího čtení po řádcích mají přednost.
                     c.copy(panely = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(c.panely, repliky).map { p ->
@@ -5382,12 +5368,18 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         t("Storyboard se nepodařilo přečíst. Zkus to znovu."), PraceNaPromptu.VYLEPSENI,
                     )
                 } else {
+                    // Kontrola čtení v telefonu (5.17): při podezření se před prompty zastaví.
+                    val nalezy = cz.promptlab.h3video.data.SbFilmKontrola.storyboard(
+                        cz.promptlab.h3video.data.SbFilmPlan.precti(text).panely, repliky, cteni.radku, cteni.sloupcu, poRadcich, plan.panely,
+                    )
                     updateSbFilm {
                         it.copy(panely = plan.panely, nazev = cteni.nazev.orEmpty(),
                             casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
-                            hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl)
+                            hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
+                            nalezy = nalezy, radku = cteni.radku ?: 0, sloupcu = cteni.sloupcu ?: 0)
                     }
-                    _rewriteState.value = RewriteState.Idle
+                    if (pokracovat) dopisPromptySb(1 + (if (poRadcich) (cteni.radku ?: 0) else 0))
+                    else _rewriteState.value = RewriteState.Idle
                 }
             }.onFailure { e ->
                 if (e is kotlinx.coroutines.CancellationException) return@launch
@@ -5427,6 +5419,65 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * Jakákoli změna plánu prompty zahodí (zadaniUseku = emptyList()).
      */
     /**
+     * „Připravit film“ (5.17): u všech tří voleb jedním tlačítkem plán i prompty,
+     * pak už jen Natočit. Kontrola čtení ([cz.promptlab.h3video.data.SbFilmKontrola])
+     * zastaví před prompty, jen když něco nesedí.
+     */
+    fun pripravitFilm() = when (_sbFilm.value.zdroj) {
+        cz.promptlab.h3video.data.SbZdroj.STORYBOARD -> precistSbStoryboard(pokracovat = true)
+        cz.promptlab.h3video.data.SbZdroj.DEJ -> navrhnoutSbZabery(pokracovat = true)
+        cz.promptlab.h3video.data.SbZdroj.SCENAR -> precistSbScenar()
+    }
+
+    /**
+     * Po plánu rovnou prompty — jen když kontrola nic nenašla a každá fotka má
+     * jméno postavy. [krokOd] = kolik kroků plánu akce už proběhlo.
+     */
+    private suspend fun dopisPromptySb(krokOd: Int) {
+        val scena = _sbFilm.value
+        if (scena.seStoryboardem && scena.postavy.any { scena.jmenoFotky(it.soubor) == null }) {
+            updateSbFilm { it.copy(nalezy = it.nalezy + cz.promptlab.h3video.data.SbNalez(0, t("Urči, kdo je na fotce."))) }
+        }
+        if (_sbFilm.value.nalezy.isNotEmpty() || scena.useky.isEmpty()) {
+            _rewriteState.value = RewriteState.Idle
+            return
+        }
+        trvaniPrepisu.edit().putInt("odhad_posledni_useky", scena.useky.size).apply()
+        upravPlan { p -> p.copy(kroky = p.kroky.take(krokOd) + List(scena.useky.size) {
+            cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU)
+        }) }
+        val prompty = withContext(Dispatchers.IO) {
+            odolne {
+                val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
+                napisPromptySb(client, scena, krokOd = krokOd)
+            }
+        }
+        prompty.onSuccess { zadani ->
+            // Mezitím upravený plán: prompty ze staré podoby nepatří.
+            updateSbFilm { if (it.panely == scena.panely) it.copy(zadaniUseku = zadani) else it }
+            _rewriteState.value = RewriteState.Idle
+        }.onFailure { e ->
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            _rewriteState.value = RewriteState.Fail(
+                (e as? ComfyException)?.userMessage ?: (e.message ?: t("Chyba")), PraceNaPromptu.VYLEPSENI,
+            )
+        }
+    }
+
+    /** Odhad počtu úseků pro plán akce, než je plán známý (minule, jinak 2). */
+    private fun odhadUseku() = trvaniPrepisu.getInt("odhad_posledni_useky", 2).coerceIn(1, 4)
+
+    /** Kdo je na fotce (5.17). Prázdné jméno = nepřiřazená. */
+    fun setSbFotkaJmeno(index: Int, jmeno: String) = updateSbFilm { s ->
+        val f = s.postavy.getOrNull(index)?.soubor ?: return@updateSbFilm s
+        val jmena = s.jmenaFotek.toMutableMap()
+        // Jedna fotka na postavu: jméno z jiné fotky se uvolní.
+        if (jmeno.isNotBlank()) jmena.entries.removeAll { it.value.equals(jmeno, ignoreCase = true) }
+        if (jmeno.isBlank()) jmena.remove(f.absolutePath) else jmena[f.absolutePath] = jmeno
+        s.copy(jmenaFotek = jmena, zadaniUseku = emptyList(), nalezy = s.nalezy.filterNot { it.text == t("Urči, kdo je na fotce.") })
+    }
+
+    /**
      * Prompt pro H3 ke každému úseku: přesný seznam záběrů ([cz.promptlab.h3video.data.SbFilmPrepis.hlidka])
      * + přepisovač. [krokOd] = pořadí prvního kroku v plánu akce (Připravit film má před psaním čtení).
      */
@@ -5439,6 +5490,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 sp.idMluvcich(s.panely), sp.jazykFilmu(s), s.hlasy,
                 predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
                 vzhled = s.vzhled, kontinuita = s.kontinuita,
+                // Fotky se jmény postav (5.17); bez fotek prázdné → prompt beze změny.
+                jmenaFotek = if (s.seStoryboardem && s.postavy.isNotEmpty() && s.postavy.all { s.jmenoFotky(it.soubor) != null })
+                    s.postavy.map { s.jmenoFotky(it.soubor)!! } else emptyList(),
             )
             val text = prepisSReferencemi(
                 client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),
@@ -5457,6 +5511,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val useky = s.useky
         if (useky.isEmpty()) return
         _sbAkce.value = SbAkce.NATOCENI
+        // Ručně „Napsat prompty“ = uživatel nálezy kontroly viděl a pokračuje.
+        updateSbFilm { it.copy(nalezy = emptyList()) }
         _rewriteState.value = RewriteState.Busy(PraceNaPromptu.VYLEPSENI)
         _planAkce.value = PlanAkce(List(useky.size) {
             cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU)

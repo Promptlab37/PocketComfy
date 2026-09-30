@@ -166,7 +166,8 @@ object SbFilmBuilder {
             val popisek = when {
                 !scene.seStoryboardem -> "Postava ${i + 1}"
                 i == 0 -> "Storyboard"
-                else -> "Postava $i"
+                // Jméno postavy z plánu (5.17), jinak pořadí.
+                else -> scene.postavy.getOrNull(i - 1)?.let { scene.jmenoFotky(it.soubor) } ?: "Postava $i"
             }
             wf.put(id, uzel("LoadImage", popisek, JSONObject().put("image", jmeno)))
             media.put("image_${i + 1}", odkaz(id))

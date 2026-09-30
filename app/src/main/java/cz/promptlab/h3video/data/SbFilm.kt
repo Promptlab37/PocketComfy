@@ -653,6 +653,16 @@ data class SbFilmScene(
     val oknaScenare: Int = 0,
     /** Storyboard + scénář: otisk scénáře, ze kterého je plán (změna → přečíst znovu). */
     val scenarPlanu: Int = 0,
+    /** Co kontrola čtení našla (5.17) — příprava se před prompty zastavila. */
+    val nalezy: List<SbNalez> = emptyList(),
+    /** Mřížka storyboardu z čtení (výřezy panelů v kontrole). */
+    val radku: Int = 0,
+    val sloupcu: Int = 0,
+    /**
+     * Kdo je na které fotce (cesta fotky → jméno postavy z plánu). Ve volbách se
+     * storyboardem musí mít každá fotka jméno — jinak přepisovač hádá (5.17, kritici).
+     */
+    val jmenaFotek: Map<String, String> = emptyMap(),
 ) {
     /** Kroky, se kterými se opravdu vzorkuje. */
     val kroky: Int
@@ -667,6 +677,9 @@ data class SbFilmScene(
 
     /** Jde storyboard do H3 jako `<Picture 1>`? Jen když je z něj plán. */
     val seStoryboardem: Boolean get() = zdroj != SbZdroj.DEJ && storyboard != null
+
+    /** Jméno postavy na fotce (null = nepřiřazená). */
+    fun jmenoFotky(f: File): String? = jmenaFotek[f.absolutePath]?.takeIf { it.isNotBlank() }
 
     /** Nahrávají se v tomhle pořadí: storyboard = `<Picture 1>`, postavy dál. */
     val uploadImages: List<File>
@@ -720,14 +733,14 @@ fun otiskScenare(t: String): Int = t.trim().hashCode()
 fun sbFilmProblem(s: SbFilmScene): String? = when (s.zdroj) {
     SbZdroj.STORYBOARD -> when {
         s.storyboard == null -> t("Vyber obrázek se storyboardem.")
-        s.panely.isEmpty() -> t("Nejdřív storyboard přečti.")
-        else -> scenarProblem(s)
+        s.panely.isEmpty() -> t("Nejdřív připrav film.")
+        else -> fotkyProblem(s) ?: scenarProblem(s)
     }
     // Bez obrázku storyboardu musí mít H3 aspoň jednu referenci — Ref2VA
     // bez předloh přepisovač odmítne.
     SbZdroj.DEJ -> when {
         s.postavy.isEmpty() -> t("Přidej aspoň jednu fotku postavy.")
-        s.panely.isEmpty() -> t("Nejdřív nech navrhnout záběry.")
+        s.panely.isEmpty() -> t("Nejdřív připrav film.")
         else -> scenarProblem(s)
     }
     SbZdroj.SCENAR -> when {
@@ -735,8 +748,25 @@ fun sbFilmProblem(s: SbFilmScene): String? = when (s.zdroj) {
         s.scenar.isBlank() -> t("Vlož scénář.")
         s.panely.isEmpty() -> t("Nejdřív připrav film.")
         otiskScenare(s.scenar) != s.scenarPlanu -> t("Scénář se změnil. Připrav film znovu.")
-        else -> scenarProblem(s)
+        else -> fotkyProblem(s) ?: scenarProblem(s)
     }
+}
+
+/** Ve volbách se storyboardem musí mít každá fotka postavy jméno (5.17). */
+private fun fotkyProblem(s: SbFilmScene): String? =
+    if (s.postavy.any { s.jmenoFotky(it.soubor) == null }) t("Urči, kdo je na fotce.") else null
+
+/**
+ * Jména postav, ke kterým jde přiřadit fotku: mluvčí z plánu a postavy se
+ * vzhledem; u scénáře i ze samotného textu scénáře (jména jsou hned po vložení).
+ */
+fun jmenaPostav(s: SbFilmScene): List<String> {
+    val zPlanu = s.panely.flatMap { SbFilmPrepis.repliky(it.repliky).map { r -> r.first } } + s.vzhled.keys
+    val zeScenare = if (s.zdroj == SbZdroj.SCENAR) SbScenar.rozeber(s.scenar)?.let { c ->
+        c.postavy.keys + c.okna.flatMap { o -> o.repliky.map { it.kdo } }
+    }.orEmpty() else emptyList()
+    return (zeScenare + zPlanu).map { it.trim() }.filter { it.isNotBlank() && it != "Vypravěč" }
+        .distinctBy { it.lowercase() }
 }
 
 /**
@@ -744,9 +774,8 @@ fun sbFilmProblem(s: SbFilmScene): String? = when (s.zdroj) {
  * Se vloženým scénářem (5.14) se prompty jmenují prompty — slovo scénář patří jemu.
  */
 private fun scenarProblem(s: SbFilmScene): String? = when {
-    s.zadaniUseku.size != s.useky.size ->
-        if (s.zdroj == SbZdroj.SCENAR) t("Nejdřív napiš prompty.") else t("Nejdřív napiš scénář.")
-    s.zadaniUseku.any { it.isBlank() } -> if (s.zdroj == SbZdroj.SCENAR) t("Doplň prompty.") else t("Doplň scénář.")
+    s.zadaniUseku.size != s.useky.size -> if (s.nalezy.isNotEmpty()) t("Zkontroluj záběry.") else t("Nejdřív napiš prompty.")
+    s.zadaniUseku.any { it.isBlank() } -> t("Doplň prompty.")
     else -> null
 }
 
@@ -779,6 +808,10 @@ class SbFilmStore(private val ctx: Context) {
             .put("panelyObrazku", s.panelyObrazku)
             .put("oknaScenare", s.oknaScenare)
             .put("scenarPlanu", s.scenarPlanu)
+            .put("radku", s.radku)
+            .put("sloupcu", s.sloupcu)
+            .put("nalezy", org.json.JSONArray().also { a -> s.nalezy.forEach { a.put(org.json.JSONObject().put("cislo", it.cislo).put("text", it.text)) } })
+            .put("jmenaFotek", org.json.JSONObject().also { j -> s.jmenaFotek.forEach { (k, v) -> j.put(k, v) } })
             .put("strih", org.json.JSONArray().also { a ->
                 s.strih.forEach { a.put(org.json.JSONObject().put("cislo", it.cislo).put("text", it.text).put("druh", it.druh.name)) }
             })
@@ -832,6 +865,14 @@ class SbFilmStore(private val ctx: Context) {
             scenarOdhadem = j.optBoolean("scenarOdhadem"),
             oknaScenare = j.optInt("oknaScenare"),
             scenarPlanu = j.optInt("scenarPlanu"),
+            radku = j.optInt("radku"),
+            sloupcu = j.optInt("sloupcu"),
+            nalezy = (0 until (j.optJSONArray("nalezy")?.length() ?: 0)).map {
+                val n = j.getJSONArray("nalezy").getJSONObject(it)
+                SbNalez(n.optInt("cislo"), n.optString("text"))
+            },
+            jmenaFotek = j.optJSONObject("jmenaFotek")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }
+                .orEmpty().filterValues { it.isNotBlank() },
             panelyObrazku = j.optInt("panelyObrazku"),
             strih = (0 until (j.optJSONArray("strih")?.length() ?: 0)).mapNotNull {
                 val r = j.getJSONArray("strih").getJSONObject(it)
@@ -1088,6 +1129,12 @@ object SbFilmPrepis {
         vzhled: Map<String, String> = emptyMap(),
         /** Kontinuita celého filmu ze scénáře (5.14) — stejná věta v každém úseku. */
         kontinuita: String = "",
+        /**
+         * Jména postav na fotkách v pořadí nahrání (5.17). Prázdné = staré
+         * obecné „show the characters“. S jmény: `<Picture 2> is Syn` a jejich
+         * textový vzhled se vynechá — vzhled dává fotka.
+         */
+        jmenaFotek: List<String> = emptyList(),
     ): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
@@ -1096,7 +1143,11 @@ object SbFilmPrepis {
             sb.append("<Picture 1> is a storyboard reference: it defines the viewpoint, subject placement ")
             sb.append("and look of these shots. It is not a frame of the video.")
         }
-        if (pocetObrazku >= prvniPostava) {
+        if (pocetObrazku >= prvniPostava && jmenaFotek.size == pocetObrazku - prvniPostava + 1) {
+            sb.append(" ").append(jmenaFotek.mapIndexed { i, j -> "<Picture ${prvniPostava + i}> is $j" }.joinToString(", "))
+            sb.append(": define each of them in subject_definitions as a <Subject K> with the face, hair, body and ")
+            sb.append("clothing from their picture, and keep them identical in every shot.")
+        } else if (pocetObrazku >= prvniPostava) {
             sb.append(" ").append((prvniPostava..pocetObrazku).joinToString(", ") { "<Picture $it>" })
             sb.append(" show the characters: define each one in subject_definitions as a <Subject K> ")
             sb.append("taken from its picture and keep them identical in every shot.")
@@ -1153,6 +1204,9 @@ object SbFilmPrepis {
         if (kontinuita.isNotBlank()) {
             sb.append("\nContinuity for the whole film, keep it in every shot: ").append(kontinuita.trim().trimEnd('.')).append(".")
         }
+        // Postava s fotkou má vzhled z fotky — textový popis by se s ní přel.
+        @Suppress("NAME_SHADOWING")
+        val vzhled = vzhled.filterKeys { k -> jmenaFotek.none { it.equals(k, ignoreCase = true) } }
         if (vzhled.isNotEmpty()) {
             sb.append("\nCharacters for the whole film: define each of them in subject_definitions as a ")
             sb.append("<Subject K> with exactly these looks, and keep the looks identical in every shot unless ")

@@ -75,10 +75,10 @@ class SbFilmDejTest {
         val bez = SbFilmScene(zdroj = SbZdroj.DEJ, dej = "x")
         assertEquals("Přidej aspoň jednu fotku postavy.", sbFilmProblem(bez))
         val sPostavou = bez.copy(postavy = listOf(LongMmRef(File("a.png"))))
-        assertEquals("Nejdřív nech navrhnout záběry.", sbFilmProblem(sPostavou))
+        assertEquals("Nejdřív připrav film.", sbFilmProblem(sPostavou))
         val sZabery = sPostavou.copy(panely = listOf(SbPanel(1, "a", sekundy = 4.0)))
         // Od 5.10 jde natočit až s napsaným scénářem.
-        assertEquals("Nejdřív napiš scénář.", sbFilmProblem(sZabery))
+        assertEquals("Nejdřív napiš prompty.", sbFilmProblem(sZabery))
         assertNull(sbFilmProblem(sZabery.copy(zadaniUseku = listOf("[Shot 1] x"))))
     }
 }
