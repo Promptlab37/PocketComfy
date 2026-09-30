@@ -74,6 +74,26 @@ class SbFilmPripravaTest {
         )
     }
 
+    /** 5.25: po úpravě záběrů hlavní tlačítko nabídne jen prompty, ne novou přípravu. */
+    @Test
+    fun `hlavni tlacitko - dalsi krok`() {
+        val k = cz.promptlab.h3video.data.SbKrok.entries
+        fun krok(s: SbFilmScene) = cz.promptlab.h3video.data.sbHlavniKrok(s)
+        val bezPlanu = scena().copy(panely = emptyList())
+        assertEquals(k[0], krok(bezPlanu))
+        // Záběry jsou, prompty ne (upravený záběr) → Napsat prompty.
+        assertEquals(k[1], krok(scena()))
+        // Nálezy kontroly → Pokračovat.
+        assertEquals(k[2], krok(scena().copy(nalezy = listOf(cz.promptlab.h3video.data.SbNalez(2, "x")))))
+        // Scénář se změnil → znovu připravit.
+        assertEquals(k[0], krok(scena().copy(scenar = svatba + " x")))
+        // Nepřiřazená fotka → nic (stavový řádek).
+        assertEquals(null, krok(scena(null)))
+        // Hotovo → Natočit.
+        val sc = scena()
+        assertEquals(null, krok(sc.copy(zadaniUseku = sc.useky.map { "p" })))
+    }
+
     @Test
     fun `fotky - jmena z planu a bez jmena se nenatoci`() {
         assertEquals(listOf("Syn", "Otec"), jmenaPostav(scena()))

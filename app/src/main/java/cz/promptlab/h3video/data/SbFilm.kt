@@ -743,8 +743,24 @@ fun sbPripraveno(s: SbFilmScene): Boolean =
  * (5.21, uživatel: „aby to připravit film bylo vidět lépe“): podklady jsou,
  * film připravený není a kontrola nic nenašla (nálezy se řeší v Kontrole).
  */
-fun sbTlacitkoPripravit(s: SbFilmScene): Boolean =
-    sbLzePripravit(s) && !sbPripraveno(s) && s.nalezy.isEmpty()
+fun sbTlacitkoPripravit(s: SbFilmScene): Boolean = sbHlavniKrok(s) != null
+
+/** Co nabídne hlavní tlačítko dole místo „Natočit film“ (oranžově). */
+enum class SbKrok { PRIPRAVIT, NAPSAT, POKRACOVAT }
+
+/**
+ * Další krok na hlavním tlačítku (5.25). Po úpravě záběrů jen dopsat prompty —
+ * „Připravit film“ by plán přečetl znovu a úpravy přepsal (kritik 30. 9. 2026).
+ * Nálezy kontroly: „Pokračovat – napsat prompty“. Nepřiřazená fotka: nic, stavový
+ * řádek řekne „Urči, kdo je na fotce.“
+ */
+fun sbHlavniKrok(s: SbFilmScene): SbKrok? = when {
+    !sbLzePripravit(s) || sbPripraveno(s) -> null
+    s.panely.isEmpty() || (s.zdroj == SbZdroj.SCENAR && otiskScenare(s.scenar) != s.scenarPlanu) -> SbKrok.PRIPRAVIT
+    s.zdroj != SbZdroj.DEJ && s.postavy.any { s.jmenoFotky(it.soubor) == null } -> null
+    s.nalezy.isNotEmpty() -> SbKrok.POKRACOVAT
+    else -> SbKrok.NAPSAT
+}
 
 /** Otisk scénáře — bílé znaky na krajích nerozhodují. */
 fun otiskScenare(t: String): Int = t.trim().hashCode()

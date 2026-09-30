@@ -801,9 +801,9 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         val sbScena by vm.sbFilm.collectAsStateWithLifecycle()
         val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
         val sbAkce by vm.sbAkce.collectAsStateWithLifecycle()
-        val sbPripravuje = stavPrepisu is MainViewModel.RewriteState.Busy &&
-            (sbAkce == MainViewModel.SbAkce.CTENI || sbAkce == MainViewModel.SbAkce.NAVRH)
-        val sbPripravit = mode == Mode.SBFILM && !busy && (sbPripravuje || cz.promptlab.h3video.data.sbTlacitkoPripravit(sbScena))
+        val sbPripravuje = stavPrepisu is MainViewModel.RewriteState.Busy && mode == Mode.SBFILM
+        val sbKrok = cz.promptlab.h3video.data.sbHlavniKrok(sbScena)
+        val sbPripravit = mode == Mode.SBFILM && !busy && (sbPripravuje || sbKrok != null)
         val chybi = if (sbPripravit) null else problem
         val blocked = if (sbPripravit) sbPripravuje || stavPrepisu is MainViewModel.RewriteState.Busy else chybi != null
         // Co chybí, je krátký řádek NAD tlačítkem. V tlačítku samotném se
@@ -820,7 +820,13 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
         }
         GradientButton(
             text = when {
-                sbPripravit -> if (sbPripravuje) t("Připravuji film…") else t("Připravit film")
+                sbPripravit -> when {
+                    sbPripravuje && sbAkce == MainViewModel.SbAkce.NATOCENI -> t("Píšu prompty…")
+                    sbPripravuje -> t("Připravuji film…")
+                    sbKrok == cz.promptlab.h3video.data.SbKrok.NAPSAT -> t("Napsat prompty")
+                    sbKrok == cz.promptlab.h3video.data.SbKrok.POKRACOVAT -> t("Pokračovat – napsat prompty")
+                    else -> t("Připravit film")
+                }
                 busy -> t("Přidat do fronty") +
                     (if (fronta.isNotEmpty()) t(" (čeká %d)").format(fronta.size) else "")
                 mode == Mode.EDIT -> t("Upravit obrázek")
@@ -863,7 +869,12 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 // obrazovku a schovaný pod klávesnicí by nebyl k ničemu.
                 focus.clearFocus(force = true)
                 keyboard?.hide()
-                if (sbPripravit) vm.pripravitFilm() else vm.start()
+                when {
+                    !sbPripravit -> vm.start()
+                    sbKrok == cz.promptlab.h3video.data.SbKrok.PRIPRAVIT -> vm.pripravitFilm()
+                    // Po úpravě záběrů / nálezech jen prompty — plán zůstane (5.25).
+                    else -> vm.pripravitSbPrompty()
+                }
             }
         )
         if (busy) {
