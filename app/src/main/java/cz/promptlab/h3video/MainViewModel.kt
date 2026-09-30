@@ -5469,18 +5469,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val nalady = mutableMapOf<Int, String>()
                     // Po řádcích i bez replik: čte se tam i nálada (EMOCE), kterou
                     // celé čtení vynechává (29. 9. 2026).
-                    val poRadcich = radku >= 2 && sloupcu >= 1 && radku * sloupcu >= cteni.panely.size
+                    // Skutečné řádky panelů z obrázku (5.38): různě velké panely, prázdné
+                    // políčko. Použijí se, jen když počet panelů souhlasí se čtením modelu.
+                    val radkyObrazu = cz.promptlab.h3video.util.PanelyStoryboardu.podlePoctu(obr, cteni.panely.size)
+                        ?.let { cz.promptlab.h3video.data.SbPanelyObrazu.radky(it) }
+                        ?.takeIf { it.size >= 2 }
+                    val poRadcich = radkyObrazu != null || (radku >= 2 && sloupcu >= 1 && radku * sloupcu >= cteni.panely.size)
                     // Teď už je známý skutečný počet řádků.
-                    val skutecne = if (poRadcich) radku else 0
+                    val skutecne = radkyObrazu?.size ?: if (poRadcich) radku else 0
                     trvaniPrepisu.edit().putInt("odhad_posledni_radky", skutecne).apply()
                     upravPlan { it.copy(kroky = it.kroky.take(1) + List(skutecne) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) } + prompty) }
                     if (poRadcich) {
                         val bmp = android.graphics.BitmapFactory.decodeFile(obr.absolutePath)
-                        if (bmp != null) for (r in 0 until radku) {
-                            val v = bmp.height / radku
+                        // Souřadnice panelů jsou v rozměrech souboru — bitmapa může být zmenšená.
+                        val vyskaSouboru = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                            .also { android.graphics.BitmapFactory.decodeFile(obr.absolutePath, it) }.outHeight
+                        var prvniVRadku = 1
+                        if (bmp != null) for (r in 0 until skutecne) {
+                            val v = bmp.height / skutecne
                             val presah = v / 20
-                            val y0 = (r * v - presah).coerceAtLeast(0)
-                            val y1 = ((r + 1) * v + presah).coerceAtMost(bmp.height)
+                            // Pruh podle skutečného řádku panelů (s popisky), jinak rovnoměrně.
+                            val radekObr = radkyObrazu?.get(r)
+                            val sy = if (vyskaSouboru > 0) bmp.height.toDouble() / vyskaSouboru else 1.0
+                            val y0 = if (radekObr != null) ((radekObr.minOf { it.y0 } * sy).toInt() - presah / 2).coerceAtLeast(0)
+                                else (r * v - presah).coerceAtLeast(0)
+                            val y1 = if (radekObr != null) ((radekObr.maxOf { it.y1 } * sy).toInt() + presah / 2).coerceAtMost(bmp.height)
+                                else ((r + 1) * v + presah).coerceAtMost(bmp.height)
+                            val odPanelu = if (radekObr != null) prvniVRadku else r * sloupcu + 1
+                            val doPanelu = if (radekObr != null) prvniVRadku + radekObr.size - 1 else (r + 1) * sloupcu
+                            prvniVRadku += radekObr?.size ?: 0
                             val pruh = android.graphics.Bitmap.createBitmap(bmp, 0, y0, bmp.width, y1 - y0)
                             val out = java.io.ByteArrayOutputStream()
                             pruh.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
@@ -5489,9 +5506,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                 client,
                                 cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
                                     jm, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
-                                    otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaRadku(
-                                        r * sloupcu + 1, (r + 1) * sloupcu,
-                                    ),
+                                    otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaRadku(odPanelu, doPanelu),
                                 ),
                                 cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
                                 krok = 1 + r,

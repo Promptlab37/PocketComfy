@@ -102,7 +102,7 @@ private fun phases() = listOf(
 )
 
 /** Prstenec je jen ukazatel u textu, ne hlavní hrdina obrazovky. */
-private val RING_COMPACT = 92.dp
+private val RING_COMPACT = 108.dp
 
 /**
  * Obrazovka průběhu.
@@ -392,8 +392,10 @@ private fun ProgressRing(progress: Float, indeterminate: Boolean, size: Dp) {
     val tep by anim.animateFloat(
         0f, 1f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "tep"
     )
-    val obeh by anim.animateFloat(
-        0f, 360f, infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart), label = "obeh"
+    // Točící se světelný prstenec kolem kroužku — běží pořád (uživatel 30. 9. 2026:
+    // „jak se točilo to kolečko, bylo to dobrý“). Oblouk průběhu se přitom netočí.
+    val toceni by anim.animateFloat(
+        0f, 360f, infiniteRepeatable(tween(2600, easing = LinearEasing), RepeatMode.Restart), label = "toceni"
     )
     val barvy = barvyPrubehu()
     val p = progress.coerceIn(0f, 1f)
@@ -401,10 +403,34 @@ private fun ProgressRing(progress: Float, indeterminate: Boolean, size: Dp) {
         androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
             val tloustka = 5.dp.toPx()
             val tecka = 3.5.dp.toPx()
-            val okraj = tecka * 1.4f + 2.dp.toPx()
+            // Místo pro vnější točící se prstenec — kroužek průběhu má pořád ~76 dp jako dřív.
+            val okraj = tecka * 1.4f + 10.dp.toPx()
             val prumer = this.size.minDimension - okraj * 2
             val tl = Offset(okraj, okraj)
             val rozmer = Size(prumer, prumer)
+            // Vnější točící se prstenec: kometa z barev motivu, dokola.
+            run {
+                val stredR = Offset(this.size.width / 2, this.size.height / 2)
+                // Dost daleko od průběhu, ať nevypadá jako druhý ukazatel (odborníci 30. 9.).
+                val vnejsi = prumer / 2 + 8.dp.toPx()
+                val tlV = Offset(stredR.x - vnejsi, stredR.y - vnejsi)
+                val kometa = Brush.sweepGradient(
+                    0f to Color.Transparent, 0.55f to barvy[0].copy(alpha = .15f),
+                    // Když procenta stojí (fronta, načítání), je kometa jasnější — je vidět, že se pracuje.
+                    0.92f to barvy[1].copy(alpha = if (indeterminate) .85f else .6f), 1f to Color.Transparent, center = stredR,
+                )
+                rotate(toceni, stredR) {
+                    // Záře pod kometou, pak ostrá kometa a zářivá hlava na jejím konci.
+                    drawArc(kometa, 0f, 360f, false, tlV, Size(vnejsi * 2, vnejsi * 2), alpha = .3f,
+                        style = Stroke(5.dp.toPx(), cap = StrokeCap.Round))
+                    drawArc(kometa, 0f, 360f, false, tlV, Size(vnejsi * 2, vnejsi * 2),
+                        style = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round))
+                    val hlava = Offset(stredR.x + vnejsi * kotlin.math.cos(Math.toRadians(-8.0)).toFloat(),
+                        stredR.y + vnejsi * kotlin.math.sin(Math.toRadians(-8.0)).toFloat())
+                    drawCircle(barvy[1].copy(alpha = .25f), 4.dp.toPx(), hlava)
+                    drawCircle(barvy[1].copy(alpha = .8f), 1.8.dp.toPx(), hlava)
+                }
+            }
             // Dráha — celý kruh, ať je vidět, kolik zbývá.
             drawArc(Outline1, 0f, 360f, false, tl, rozmer, style = Stroke(tloustka))
             // Přechod po obvodu otočený tak, aby začínal nahoře (šev pod začátkem oblouku).
@@ -416,10 +442,6 @@ private fun ProgressRing(progress: Float, indeterminate: Boolean, size: Dp) {
                     drawArc(prechod, 0f, 360f * p, false, tl, rozmer, alpha = .12f,
                         style = Stroke(tloustka * 1.8f, cap = StrokeCap.Round))
                     drawArc(prechod, 0f, 360f * p, false, tl, rozmer,
-                        style = Stroke(tloustka, cap = StrokeCap.Round))
-                }
-                if (indeterminate) {
-                    drawArc(barvy[1].copy(alpha = .55f), obeh, 38f, false, tl, rozmer,
                         style = Stroke(tloustka, cap = StrokeCap.Round))
                 }
             }

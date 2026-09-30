@@ -467,8 +467,10 @@ private fun Kontrola(
                         scene.panely.getOrNull(i)?.let { p ->
                             // Výřez panelu nad replikou: přečtené jde porovnat s obrázkem (kritici 30. 9. 2026).
                             val sb = scene.storyboard
-                            if (sb != null && scene.seStoryboardem && scene.radku > 0 && scene.sloupcu > 0) {
-                                VyrezPanelu(sb, scene.radku, scene.sloupcu, p.cislo - 1)
+                            if (sb != null && scene.seStoryboardem) {
+                                // Počet panelů podle čtení obrázku — skutečné hranice se použijí, jen když souhlasí (5.38).
+                                VyrezPanelu(sb, scene.radku, scene.sloupcu, p.cislo - 1,
+                                    scene.panelyObrazku.takeIf { it > 0 } ?: scene.panely.size)
                             }
                             scene.nalezy.filter { it.cislo == p.cislo }.forEach { n ->
                                 Text(n.text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
@@ -551,22 +553,30 @@ private fun Kontrola(
 
 /** Výřez jednoho panelu z plného obrázku storyboardu (čitelné repliky, ne náhled). */
 @Composable
-private fun VyrezPanelu(soubor: java.io.File, radku: Int, sloupcu: Int, poradi: Int) {
-    val bmp by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, soubor, radku, sloupcu, poradi) {
+private fun VyrezPanelu(soubor: java.io.File, radku: Int, sloupcu: Int, poradi: Int, pocet: Int) {
+    val bmp by androidx.compose.runtime.produceState<android.graphics.Bitmap?>(null, soubor, radku, sloupcu, poradi, pocet) {
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
             runCatching {
-                val r = poradi / sloupcu
-                val c = poradi % sloupcu
-                if (poradi < 0 || r >= radku) return@runCatching null
-                val meze = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                android.graphics.BitmapFactory.decodeFile(soubor.absolutePath, meze)
-                val w = meze.outWidth / sloupcu
-                val h = meze.outHeight / radku
+                if (poradi < 0) return@runCatching null
+                // Skutečné hranice panelů (různě velké, prázdné políčko) — když sedí počet.
+                val nalezene = cz.promptlab.h3video.util.PanelyStoryboardu.podlePoctu(soubor, pocet)
+                val rect = nalezene?.getOrNull(poradi)?.let { android.graphics.Rect(it.x0, it.y0, it.x1, it.y1) } ?: run {
+                    // Jinak rovnoměrná mřížka jako dřív.
+                    if (radku <= 0 || sloupcu <= 0) return@runCatching null
+                    val r = poradi / sloupcu
+                    val c = poradi % sloupcu
+                    if (r >= radku) return@runCatching null
+                    val meze = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                    android.graphics.BitmapFactory.decodeFile(soubor.absolutePath, meze)
+                    val w = meze.outWidth / sloupcu
+                    val h = meze.outHeight / radku
+                    android.graphics.Rect(c * w, r * h, (c + 1) * w, (r + 1) * h)
+                }
                 @Suppress("DEPRECATION")
                 val dek = if (android.os.Build.VERSION.SDK_INT >= 31) android.graphics.BitmapRegionDecoder.newInstance(soubor.absolutePath)
                 else android.graphics.BitmapRegionDecoder.newInstance(soubor.absolutePath, false)
-                val opt = android.graphics.BitmapFactory.Options().apply { inSampleSize = maxOf(1, w / 720) }
-                dek?.decodeRegion(android.graphics.Rect(c * w, r * h, (c + 1) * w, (r + 1) * h), opt).also { dek?.recycle() }
+                val opt = android.graphics.BitmapFactory.Options().apply { inSampleSize = maxOf(1, rect.width() / 720) }
+                dek?.decodeRegion(rect, opt).also { dek?.recycle() }
             }.getOrNull()
         }
     }
