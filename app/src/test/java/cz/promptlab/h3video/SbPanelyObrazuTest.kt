@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import java.io.File
 import kotlin.math.abs
@@ -14,6 +15,11 @@ import kotlin.math.abs
 class SbPanelyObrazuTest {
 
     private val dir = File("src/test/resources/panely")
+
+    // Obrázky (i skutečné storyboardy uživatele) do repa nejdou — .gitignore *.jpg.
+    // Bez nich se tyhle testy přeskočí (GitHub); lokálně běží. Vyrobené listy
+    // v kódu (zátěž) běží všude.
+    private fun obrazky() = assumeTrue(File(dir, "real_iron.jpg").exists())
 
     // javax.imageio je v JDK, ale ne v android.jar, proti kterému se testy překládají — přes reflexi.
     private fun najdi(jmeno: String): Pair<List<SbPanelyObrazu.Obdelnik>?, Pair<Int, Int>> {
@@ -30,6 +36,7 @@ class SbPanelyObrazuTest {
 
     @Test
     fun `vyrobene listy - presne hranice a poradi`() {
+        obrazky()
         val ocek = JSONObject(File(dir, "ocekavane.json").readText())
         val out = StringBuilder()
         for (jm in ocek.keys()) {
@@ -50,6 +57,7 @@ class SbPanelyObrazuTest {
 
     @Test
     fun `skutecne storyboardy`() {
+        obrazky()
         // Otevřené dveře: 2 sloupce × 4 řádky, panely až k okraji.
         assertEquals(8, najdi("real_storyboard.jpg").first?.size)
         // Iron: 3 × 4 s popisky pod obrázky — popisek patří k panelu.
@@ -65,6 +73,7 @@ class SbPanelyObrazuTest {
 
     @Test
     fun `radky - vysoky panel drzi radek`() {
+        obrazky()
         val (p, _) = najdi("vnorene_ramy.jpg")
         val r = SbPanelyObrazu.radky(p!!)
         assertEquals(listOf(3, 3), r.map { it.size })
@@ -119,6 +128,7 @@ class SbPanelyObrazuTest {
 
     @Test
     fun `prazdne policko se vraci zvlast - model ho muze zapocitat`() {
+        obrazky()
         val io = Class.forName("javax.imageio.ImageIO")
         val im = io.getMethod("read", File::class.java).invoke(null, File(dir, "lichy_prazdny_ram.jpg"))
         val w = im.javaClass.getMethod("getWidth").invoke(im) as Int
