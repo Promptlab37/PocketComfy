@@ -2639,6 +2639,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private val _rewriteState = MutableStateFlow<RewriteState>(RewriteState.Idle)
     val rewriteState: StateFlow<RewriteState> = _rewriteState.asStateFlow()
 
+    // Po dobu přípravy (čtení, přepis) drží appku naživu služba na popředí —
+    // jinak ji Android po odchodu z appky zmrazí a příprava stojí (5.36).
+    // Init hned za deklarací stavu: pořadí inicializace, viz kotlin-poradi-inicializace.
+    init {
+        viewModelScope.launch {
+            _rewriteState.collect { st ->
+                cz.promptlab.h3video.engine.PrepisService.nastav(getApplication(), st is RewriteState.Busy)
+            }
+        }
+    }
+
     /** Původní zadání před přepsáním — na jedno ťuknutí se dá vrátit. */
     private val _rewriteOriginal = MutableStateFlow<String?>(null)
     val rewriteOriginal: StateFlow<String?> = _rewriteOriginal.asStateFlow()
