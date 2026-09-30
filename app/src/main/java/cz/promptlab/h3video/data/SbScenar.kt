@@ -139,7 +139,8 @@ object SbScenar {
 
     /** Štítky hlavičky scénáře (před prvním oknem). */
     private val HLAVICKA = Regex(
-        """(?imu)(?:^[ \t]*|(?<=[.!?…])[ \t]+)(důležitá kontinuita|kontinuita|continuity|formát|format|postavy|characters|cast|obsazení|""" +
+        """(?imu)(?:^[ \t]*|(?<=[.!?…])[ \t]+)(důležitá kontinuita|kontinuita|continuity|formát|format|postavy a rekvizity|""" +
+            """postavy|rekvizity|characters|cast|props|obsazení|prostředí|setting|místo děje|""" +
             """styl|style|tón|tone|cíl|goal|délka|length|duration)[ \t]*:""",
     )
 
@@ -290,7 +291,11 @@ object SbScenar {
     }
 
     /** Hlavička: název, formát, celková délka, postavy, kontinuita. */
-    private fun rozeberHlavicku(text: String): SbScenarCteni {
+    private fun rozeberHlavicku(text0: String): SbScenarCteni {
+        // Nadpis bez dvojtečky na vlastním řádku („POSTAVY A REKVIZITY“ — Dar mudrců 30. 9. 2026).
+        val text = text0.replace(
+            Regex("""(?imu)^[ \t]*(postavy a rekvizity|postavy|rekvizity|characters|cast|props|obsazení)[ \t]*$"""), "$1:",
+        )
         val stitky = HLAVICKA.findAll(text).toList()
         fun obsah(i: Int): String {
             val od = stitky[i].range.last + 1
@@ -319,11 +324,12 @@ object SbScenar {
                             !Regex("""(?iu)reklam|reels|spot|formát|format""").containsMatchIn(it)
                     }
                 }
-                "postavy", "characters", "cast", "obsazení" -> postavyZ(v).forEach { p ->
+                "postavy", "characters", "cast", "obsazení", "postavy a rekvizity", "rekvizity", "props" -> postavyZ(v).forEach { p ->
                     postavy[p.jmeno] = p.popis
                     p.zena?.let { zeny[p.jmeno] = it }
                 }
                 "důležitá kontinuita", "kontinuita", "continuity" -> kontinuita += v.replace(Regex("""\s+"""), " ")
+                "prostředí", "setting", "místo děje" -> kontinuita += "Prostředí: " + v.replace(Regex("""\s+"""), " ")
             }
         }
         return SbScenarCteni(
@@ -357,7 +363,11 @@ object SbScenar {
      */
     fun postavyZ(t: String): List<Postava> {
         val out = mutableListOf<Postava>()
-        uprav(t).split(Regex("""[;\n]""")).map { it.trim().trimEnd('.') }.filter { it.isNotBlank() }.forEach { polozka ->
+        val polozky = uprav(t).lines().flatMap { r ->
+            // „Della: mladá žena. V oknech 1–4 …; od okna 5 …“ — středník je uvnitř popisu.
+            if (Regex("""^\s*[\p{L}][\p{L} ]{1,40}:""").containsMatchIn(r)) listOf(r) else r.split(";")
+        }
+        polozky.map { it.trim().trimEnd('.') }.filter { it.isNotBlank() }.forEach { polozka ->
             val zavorky = Regex("""([\p{L}]{2,30})\s*\(([^)]{2,200})\)""").findAll(polozka)
                 .filter { it.groupValues[1].lowercase() !in NE_JMENA }.toList()
             if (zavorky.isNotEmpty()) {
@@ -369,7 +379,8 @@ object SbScenar {
                 }
                 return@forEach
             }
-            val m = Regex("""^([\p{L}]{2,30}(?:\s\p{Lu}[\p{L}]{1,30})?)\s*[–—:,-]\s*(.{2,200})$""").find(polozka)
+            val m = Regex("""^([\p{L}]{2,30}(?:\s[\p{L}]{2,30})?)\s*:\s*(.{2,300})$""").find(polozka)
+                ?: Regex("""^([\p{L}]{2,30}(?:\s\p{Lu}[\p{L}]{1,30})?)\s*[–—,-]\s*(.{2,300})$""").find(polozka)
             if (m == null) {
                 // Věta bez oddělovače: „Keramička s kudrnatými vlasy v rezavé halence a tvůrce
                 // videa v tmavé košili“ (hrnek 30. 9. 2026) — jméno je první slovo, popis celý kus.
@@ -846,7 +857,7 @@ object SbScenar {
      * přepisovač dostal čtyři postavy místo dvou. Přiřazuje se jen jednoznačně
      * (pohlaví + mladší/starší podle role); co nesedí, zůstane pod svým jménem.
      */
-    fun vzhledProMluvci(vzhled: Map<String, String>, s: SbScenarCteni): Map<String, String> {
+    fun vzhledProMluvci(vzhled: Map<String, String>, s: SbScenarCteni, napovedy: Map<String, String> = emptyMap()): Map<String, String> {
         val mluvci = s.okna.flatMap { o -> o.repliky.map { it.kdo } }.distinct().filter { it != "Vypravěč" }
         if (vzhled.isEmpty() || mluvci.isEmpty()) return vzhled
         val role = mluvci.map { it.lowercase() }.toSet()
@@ -868,7 +879,7 @@ object SbScenar {
             }
             val rod = s.zeny[m] ?: zena(m, "")
             val kandidati = vzhled.keys.filter { it !in pouzite }.filter { k ->
-                val t = "$k ${vzhled[k]}"
+                val t = "$k ${vzhled[k]} ${napovedy[k].orEmpty()}"
                 (rod == null || zenaEn(t) == null || zenaEn(t) == rod) &&
                     (starsi == null || stary(t) == starsi)
             }
@@ -886,7 +897,7 @@ object SbScenar {
      * Syn). Bez seznamu postav ve scénáři i zbylé postavy z obrázku.
      */
     fun vzhledScenareAObrazku(s: SbScenarCteni, obrazek: SbCteni?): Map<String, String> {
-        val zObrazku = vzhledProMluvci(obrazek?.vzhled.orEmpty(), s)
+        val zObrazku = vzhledProMluvci(obrazek?.vzhled.orEmpty(), s, obrazek?.hlasy.orEmpty())
         if (s.postavy.isEmpty()) return zObrazku
         val mluvci = s.okna.flatMap { o -> o.repliky.map { it.kdo } }.toSet()
         return s.postavy + zObrazku.filterKeys { k -> k in mluvci && s.postavy.keys.none { stejnyMluvci(it, k) } }
@@ -918,6 +929,10 @@ object SbScenar {
         var dalsi = (Regex("""<Subject (\d+)>""").findAll(text).maxOfOrNull { it.groupValues[1].toInt() } ?: 0) + 1
         return cizi.fold(text) { t, z -> t.replace("<$z>", "<Subject ${dalsi++}>") }
     }
+
+    /** Popis vzhledu mění postavu podle oken („V oknech 1–4 … od okna 5 …“). */
+    fun vzhledSeMeni(vzhled: Map<String, String>): Boolean =
+        vzhled.values.any { Regex("""(?iu)(?<![\p{L}])(okn\p{L}*|panel\p{L}*|záběr\p{L}*|window\p{L}*|shot\p{L}*)\s*\d""").containsMatchIn(it) }
 
     fun hlas(zena: Boolean, vek: Int): String {
         val kdo = if (zena) "a woman" else "a man"

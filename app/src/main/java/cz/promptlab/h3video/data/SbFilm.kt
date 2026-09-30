@@ -1171,6 +1171,8 @@ object SbFilmPrepis {
          * textový vzhled se vynechá — vzhled dává fotka.
          */
         jmenaFotek: List<String> = emptyList(),
+        /** Popis vzhledu uvádí změnu podle oken (5.26, Dar mudrců: vlasy do okna 4 dlouhé, pak krátké). */
+        vzhledSeMeni: Boolean = false,
     ): String {
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
@@ -1248,7 +1250,9 @@ object SbFilmPrepis {
         if (vzhled.isNotEmpty()) {
             sb.append("\nCharacters for the whole film: define each of them in subject_definitions as a ")
             sb.append("<Subject K> with exactly these looks, and keep the looks identical in every shot unless ")
-            sb.append("a shot's action says they change clothes: ")
+            if (vzhledSeMeni) sb.append("a shot's action or the look itself says it changes from a certain window (window N = ")
+                .append("storyboard panel N) — then use the look that belongs to that panel: ")
+            else sb.append("a shot's action says they change clothes: ")
             sb.append(vzhled.entries.joinToString("; ") { "${it.key} — ${it.value}" }).append(".")
         }
         if (usek.panely.any { repliky(it.repliky).isNotEmpty() }) {

@@ -4928,7 +4928,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun setSbDej(text: String) = updateSbFilm { it.copy(dej = text, zadaniUseku = emptyList()) }
 
     /** Storyboard + scénář: text scénáře. Plán platí dál, dokud se nepřečte znovu. */
-    fun setSbScenar(text: String) = updateSbFilm { it.copy(scenar = text) }
+    fun setSbScenar(text: String) = updateSbFilm {
+        // Nově vložený scénář (prázdné pole → text) předvyplní plátno podle „Formát: 9:16“; pak už ho řídí uživatel.
+        val pomer = if (it.scenar.isBlank() && text.isNotBlank())
+            cz.promptlab.h3video.data.SbScenar.rozeber(text)?.pomer ?: it.pomer else it.pomer
+        it.copy(scenar = text, pomer = pomer, zadaniUseku = if (pomer != it.pomer) emptyList() else it.zadaniUseku)
+    }
 
     /** Scénář ze souboru .txt / .md / .docx / .pdf (5.20) — text jde do pole, jde upravit. */
     fun nactiSbScenar(uri: Uri?) {
@@ -4937,7 +4942,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             val text = withContext(Dispatchers.IO) { cz.promptlab.h3video.util.TextZeSouboru.nacti(getApplication(), uri) }
             if (text.isNullOrBlank()) {
                 android.widget.Toast.makeText(getApplication(), t("V souboru není text."), android.widget.Toast.LENGTH_SHORT).show()
-            } else setSbScenar(text)
+            } else {
+                // Soubor nahrazuje celý scénář — plátno podle jeho formátu jako u nového vložení.
+                updateSbFilm { it.copy(scenar = "") }
+                setSbScenar(text)
+            }
         }
     }
 
@@ -5270,8 +5279,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             radku = obrazek.radku ?: 0, sloupcu = obrazek.sloupcu ?: 0,
                             oknaScenare = scenar.okna.size,
                             scenarPlanu = cz.promptlab.h3video.data.otiskScenare(s.scenar),
-                            // Formát ze scénáře („9:16“) nastaví plátno.
-                            pomer = scenar.pomer ?: it.pomer,
+                            // Plátno se při přípravě NEMĚNÍ — uživatel ho mohl přepnout (30. 9. 2026:
+                            // dal na šířku a příprava to vrátila na výšku). Formát ze scénáře se
+                            // předvyplní jen při vložení scénáře (setSbScenar).
                         )
                     }
                     // Jiný počet panelů v obrázku než oken ve scénáři: prompty by
@@ -5524,6 +5534,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 sp.idMluvcich(s.panely), sp.jazykFilmu(s), s.hlasy,
                 predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
                 vzhled = s.vzhled, kontinuita = s.kontinuita,
+                vzhledSeMeni = s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR && cz.promptlab.h3video.data.SbScenar.vzhledSeMeni(s.vzhled),
                 // Fotky se jmény postav (5.17); bez fotek prázdné → prompt beze změny.
                 jmenaFotek = if (s.seStoryboardem && s.postavy.isNotEmpty() && s.postavy.all { s.jmenoFotky(it.soubor) != null })
                     s.postavy.map { s.jmenoFotky(it.soubor)!! } else emptyList(),
