@@ -1,0 +1,30 @@
+subject_definitions:
+<Subject 1> is the young woman with exceptionally long brown hair, as defined by <Picture 1>, appearing in [Shot 1], [Shot 2], and [Shot 3].
+<Subject 2> is the young man in a worn dark coat, as defined by <Picture 1>, appearing in [Shot 2] only.
+<Subject 3> is the gold pocket watch with an aged leather strap, as defined by <Picture 1>, appearing in [Shot 2] only.
+<Subject 4> is the simple new metal necklace for pocket watches, as defined by <Picture 1>, appearing in [Shot 3] only.
+<Subject 5> is the two ornate hair combs, as defined by <Picture 1>, appearing in [Shot 3] only.
+<Picture 1> is a storyboard reference defining the viewpoint, subject placement, and visual style for [Shot 1], [Shot 2], and [Shot 3].
+
+summary:
+[reference generation] The target video adapts O. Henry’s story into a realistic short film set in a modest New York apartment and shops around 1905 during Christmas Eve. It features <Subject 1>, a young woman with long brown hair, and <Subject 2>, a young man in a worn dark coat, interacting through silent, visually expressive actions across three shots defined by <Picture 1>. The video uses no dialogue or on-screen text, relying solely on visual storytelling and ambient sound. The only referenced audio is the generated soundscape.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - her long brown hair, appearance, and emotional state are retained across all shots.
+<Subject 2> (appears in [Shot 2] only): fully_preserved - his worn dark coat and presence are retained as defined by <Picture 1>.
+<Subject 3> (appears in [Shot 2] only): fully_preserved - the gold pocket watch with aged leather strap is shown exactly as defined.
+<Subject 4> (appears in [Shot 3] only): fully_preserved - the simple new metal necklace for pocket watches is shown exactly as defined.
+<Subject 5> (appears in [Shot 3] only): fully_preserved - the two ornate hair combs are shown exactly as defined.
+<Picture 1> (defines [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the viewpoint, subject placement, and visual style are retained for each shot.
+
+detailed_description:
+The target video is in a realistic, silent cinematic style with muted indoor lighting and ambient urban sounds, evoking a modest New York apartment and shops around Christmas Eve, 1905. All shots are medium, static, and camera-straight-on as defined by <Picture 1>.
+[Shot 1] The scene opens in a dimly lit rustic kitchen. <Subject 1>, the young woman with long brown hair, sits at a wooden table, looking down at her hands. She counts several coins with her fingers. Through the window behind her, a snowy evening is visible. She closes her eyes and looks toward an empty space on the table where she intended to place Jim’s Christmas gift. No dialogue or sound effects are spoken; only the clinking of coins and muted street noise are audible.
+[Shot 2] At 00:04.000, the shot cuts to a hallway with wooden doors and a coat rack. <Subject 2>, the young man in a worn dark coat, pulls the gold pocket watch with an aged leather strap from his pocket. <Subject 1> stands beside him, her long brown hair falling past her waist. The camera holds a brief close-up on the watch and her hair. He places the watch back into his pocket and turns to leave without speaking.
+[Shot 3] At 00:08.000, the shot cuts to a room with a wooden dresser and mirror. <Subject 1> stands before the mirror, letting her long brown hair fall loose. She looks at its length, hesitates briefly, then turns decisively toward the door. Her expression conveys sadness, followed by resolve. No dialogue or sound effects are spoken; only ambient room tone continues.
+
+overall_soundscape:
+The soundscape includes the clinking of coins in [Shot 1], muted street noise in [Shot 1], and ambient room tone throughout all shots. No other physical sounds are added.
+
+non_diegetic_music:
+N/A

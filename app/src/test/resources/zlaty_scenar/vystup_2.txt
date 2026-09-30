@@ -1,0 +1,29 @@
+subject_definitions:
+<Subject 1> is the young woman, Della, with short brown curls, as depicted in <Picture 1>, Panel 3 and Panel 8. She wears a modest dress appropriate for a 1905 New York apartment.
+<Subject 2> is the young man, Jim, in a worn dark coat, as depicted in <Picture 1>, Panel 7 and Panel 10. He carries himself with quiet attentiveness.
+<Subject 3> is the gold pocket watch with an old leather strap, belonging to Jim, as referenced by the narrative context of <Picture 1>.
+<Subject 4> is the simple metal chain necklace for pocket watches, as referenced by the narrative context of <Picture 1>.
+<Subject 5> is the two ornate hair combs, Jim’s gift to Della, as depicted in <Picture 1>, Panel 8.
+<Picture 1> is a storyboard reference defining the viewpoint, subject placement, and visual style for [Shot 1] and [Shot 2], with static medium shots.
+
+summary:
+[reference generation] The target video continues directly from the previous part, showing Della (S1) and Jim (S2) in a modest New York apartment around 1905. Shot 1 begins with Jim entering and seeing Della’s short hair; she stands nervously facing him while hiding the chain necklace. Della speaks softly in Czech: “Chtěla jsem ti dát něco krásného.” Shot 2, at 00:04.000, shows Jim presenting a wrapped gift; Della opens it to reveal two ornate hair combs, touches her short hair, and Jim gently takes her hand. The shot is silent except for the sound of crinkling wrapping paper.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved - Della’s short brown curls, modest dress, and nervous posture are retained.
+<Subject 2> (appears in [Shot 1], [Shot 2]): fully_preserved - Jim’s worn dark coat and quiet demeanor are retained.
+<Subject 3> (appears in [Shot 1]): weak_reference - the gold pocket watch is referenced by narrative context but not visually present.
+<Subject 4> (appears in [Shot 1]): weak_reference - the metal chain necklace is referenced by narrative context but not visually present.
+<Subject 5> (appears in [Shot 2]): fully_preserved - the two ornate hair combs are shown as Della opens the gift.
+<Picture 1> (storyboard reference for [Shot 1], [Shot 2]): fully_preserved - the static medium shot composition, subject placement, and visual style are retained.
+
+detailed_description:
+The target video is a realistic short film adaptation of an O. Henry story, set in a modest New York apartment during the Christmas season around 1905. The lighting is warm and subdued, with natural shadows from indoor lamps and window light. The camera remains static throughout both shots.
+[Shot 1] The scene opens with Jim (S2) entering the doorway of the apartment. He pauses as he sees Della (S1), who stands facing him with short brown curls, her back slightly turned. She is nervously holding the metal chain necklace hidden in her hand. Jim’s gaze lingers on her hair, and she shifts her weight slightly. In the same soft, gentle voice as described, Della (S1) says, <d>[Czech] Chtěla jsem ti dát něco krásného.</d> She closes her lips immediately after speaking, eyes downcast, waiting for his reaction.
+[Shot 2] At 00:04.000, the shot cuts to Jim (S2) holding out a wrapped gift. Della (S1) takes it and carefully unwraps the paper with both hands. The camera focuses on her face as she reveals two ornate hair combs inside. She looks at them with quiet admiration, then gently touches her short hair with her fingertips. Jim (S2) steps closer and takes her hand in his, his thumb brushing her knuckles. The shot is silent except for the soft rustling of wrapping paper.
+
+overall_soundscape:
+The ambient sound is a quiet indoor room tone — faint creaks of wooden floors, distant city sounds through the window, and the subtle rustle of paper as Della unwraps the gift.
+
+non_diegetic_music:
+N/A

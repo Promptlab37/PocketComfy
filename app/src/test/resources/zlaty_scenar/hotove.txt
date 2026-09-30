@@ -1,0 +1,125 @@
+===== 0
+subject_definitions:
+<Subject 1> is the young woman with exceptionally long brown hair, as defined by <Picture 1>, appearing in [Shot 1], [Shot 2], and [Shot 3].
+<Subject 2> is the young man in a worn dark coat, as defined by <Picture 1>, appearing in [Shot 2] only.
+<Subject 3> is the gold pocket watch with an aged leather strap, as defined by <Picture 1>, appearing in [Shot 2] only.
+<Subject 4> is the simple new metal necklace for pocket watches, as defined by <Picture 1>, appearing in [Shot 3] only.
+<Subject 5> is the two ornate hair combs, as defined by <Picture 1>, appearing in [Shot 3] only.
+<Picture 1> is a storyboard reference defining the viewpoint, subject placement, and visual style for [Shot 1], [Shot 2], and [Shot 3].
+
+summary:
+[reference generation] The target video adapts O. Henry’s story into a realistic short film set in a modest New York apartment and shops around 1905 during Christmas Eve. It features <Subject 1>, a young woman with long brown hair, and <Subject 2>, a young man in a worn dark coat, interacting through silent, visually expressive actions across three shots defined by <Picture 1>. The video uses no dialogue or on-screen text, relying solely on visual storytelling and ambient sound. The only referenced audio is the generated soundscape.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - her long brown hair, appearance, and emotional state are retained across all shots.
+<Subject 2> (appears in [Shot 2] only): fully_preserved - his worn dark coat and presence are retained as defined by <Picture 1>.
+<Subject 3> (appears in [Shot 2] only): fully_preserved - the gold pocket watch with aged leather strap is shown exactly as defined.
+<Subject 4> (appears in [Shot 3] only): fully_preserved - the simple new metal necklace for pocket watches is shown exactly as defined.
+<Subject 5> (appears in [Shot 3] only): fully_preserved - the two ornate hair combs are shown exactly as defined.
+<Picture 1> (defines [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the viewpoint, subject placement, and visual style are retained for each shot.
+
+detailed_description:
+The target video is in a realistic, silent cinematic style with muted indoor lighting and ambient urban sounds, evoking a modest New York apartment and shops around Christmas Eve, 1905. All shots are medium, static, and camera-straight-on as defined by <Picture 1>.
+[Shot 1] The scene opens in a dimly lit rustic kitchen. <Subject 1>, the young woman with long brown hair, sits at a wooden table, looking down at her hands. She counts several coins with her fingers. Through the window behind her, a snowy evening is visible. She closes her eyes and looks toward an empty space on the table where she intended to place Jim’s Christmas gift. No dialogue or sound effects are spoken; only the clinking of coins and muted street noise are audible.
+[Shot 2] At 00:04.000, the shot cuts to a hallway with wooden doors and a coat rack. <Subject 2>, the young man in a worn dark coat, pulls the gold pocket watch with an aged leather strap from his pocket. <Subject 1> stands beside him, her long brown hair falling past her waist. The camera holds a brief close-up on the watch and her hair. He places the watch back into his pocket and turns to leave without speaking.
+[Shot 3] At 00:08.000, the shot cuts to a room with a wooden dresser and mirror. <Subject 1> stands before the mirror, letting her long brown hair fall loose. She looks at its length, hesitates briefly, then turns decisively toward the door. Her expression conveys sadness, followed by resolve. No dialogue or sound effects are spoken; only ambient room tone continues.
+
+overall_soundscape:
+The soundscape includes the clinking of coins in [Shot 1], muted street noise in [Shot 1], and ambient room tone throughout all shots. No other physical sounds are added.
+
+non_diegetic_music:
+N/A
+===== 1
+subject_definitions:
+<Subject 1> is the young woman from <Picture 1>, with long dark hair, seated at a wooden table in a dimly lit rustic kitchen, looking down at her hands; this appearance is retained in [Shot 1] and [Shot 2]. In [Shot 3], she has short brown curls and holds a simple metal necklace.
+
+<Subject 2> is the man from <Picture 1>, wearing a worn dark coat, appearing only in [Shot 3] as a shopkeeper or passer-by, not Jim.
+
+<Subject 3> is Jim, defined by his appearance in <Picture 1> as a young man in a worn dark coat; he appears only in [Shot 3] as the recipient of the necklace, but does not physically appear in any shot.
+
+
+summary:
+[reference generation] The target video is a silent, 12-second cinematic sequence continuing directly from the previous part, set in a modest New York apartment and shops around 1905 during Christmas Eve. It follows <Subject 1> as she gets her hair cut in a barbershop, walks to a jewelry store, and selects a simple metal necklace for Jim’s pocket watch. The shots are storyboarded from <Picture 1>, with no dialogue or on-screen text. The only sound is the scissors’ snip and ambient environment tones.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - her long dark hair in [Shot 1] and short brown curls in [Shot 2] and [Shot 3] are retained as defined. Her posture, clothing, and emotional state remain consistent with the narrative tone of “pity” followed by “determination.”
+
+<Subject 2> (appears in [Shot 3]): fully_preserved - the shopkeeper or passer-by’s appearance is retained as a generic man in a worn dark coat.
+
+<Subject 3> (appears in [Shot 3]): fully_preserved - Jim’s appearance as a young man in a worn dark coat is retained, though he does not physically appear in any shot.
+
+
+detailed_description:
+The target video is a silent, cinematic short film in a realistic New York setting around Christmas Eve, 1905, with muted lighting and a slightly grainy texture to evoke early 20th-century realism. The camera remains static throughout all shots, matching the storyboard panels exactly.
+
+[Shot 1] The scene opens in a barbershop, as defined by <Picture 1> Panel 4. <Subject 1>, the young woman with long dark hair, sits motionless in a barber’s chair, her hands clasped tightly in her lap. A woman barber stands beside her, holding scissors and cutting her hair. The shop has a window showing snow outside. The only sound is the single sharp “snip” of scissors as the first cut is made — no dialogue or voice. The camera remains static, medium shot, framing both subjects.
+
+[Shot 2] At 00:04.000, the scene cuts to an outdoor snowy street, as defined by <Picture 1> Panel 5. <Subject 1>, now with short brown curls, walks purposefully toward a jewelry store. She holds money in her hand and moves directly toward the shop’s window display. The camera remains static, medium shot, capturing her from the side as she walks. No dialogue or voice is present. The ambient sound of snow crunching underfoot and distant city noise continues.
+
+[Shot 3] At 00:08.000, the scene cuts to a close-up inside the jewelry store, as defined by <Picture 1> Panel 6. <Subject 1> stands before a counter, holding a simple metal necklace in her open palm. She gazes at it thoughtfully, then imagines it on Jim’s pocket watch — though Jim does not appear. The camera remains static, close-up, focused on her hand and the necklace. No dialogue or voice is present. The ambient sound of the store fades slightly, replaced by the soft clink of glass cases and a faint hum of the city outside.
+
+overall_soundscape:
+Ambient urban sounds — snow crunching underfoot, distant street lamps, faint city noise — continue throughout. In [Shot 1], a single sharp “snip” of scissors is audible. In [Shot 3], the sound of glass cases and soft store hum are present.
+
+non_diegetic_music:
+N/A
+===== 2
+subject_definitions:
+<Subject 1> is the young woman, Della, with short brown curls, as depicted in <Picture 1>, Panel 3 and Panel 8. She wears a modest dress appropriate for a 1905 New York apartment.
+<Subject 2> is the young man, Jim, in a worn dark coat, as depicted in <Picture 1>, Panel 7 and Panel 10. He carries himself with quiet attentiveness.
+<Subject 3> is the gold pocket watch with an old leather strap, belonging to Jim, as referenced by the narrative context of <Picture 1>.
+<Subject 4> is the simple metal chain necklace for pocket watches, as referenced by the narrative context of <Picture 1>.
+<Subject 5> is the two ornate hair combs, Jim’s gift to Della, as depicted in <Picture 1>, Panel 8.
+<Picture 1> is a storyboard reference defining the viewpoint, subject placement, and visual style for [Shot 1] and [Shot 2], with static medium shots.
+
+summary:
+[reference generation] The target video continues directly from the previous part, showing Della (S1) and Jim (S2) in a modest New York apartment around 1905. Shot 1 begins with Jim entering and seeing Della’s short hair; she stands nervously facing him while hiding the chain necklace. Della speaks softly in Czech. Shot 2, at 00:04.000, shows Jim presenting a wrapped gift; Della opens it to reveal two ornate hair combs, touches her short hair, and Jim gently takes her hand. The shot is silent except for the sound of crinkling wrapping paper.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved - Della’s short brown curls, modest dress, and nervous posture are retained.
+<Subject 2> (appears in [Shot 1], [Shot 2]): fully_preserved - Jim’s worn dark coat and quiet demeanor are retained.
+<Subject 3> (appears in [Shot 1]): weak_reference - the gold pocket watch is referenced by narrative context but not visually present.
+<Subject 4> (appears in [Shot 1]): weak_reference - the metal chain necklace is referenced by narrative context but not visually present.
+<Subject 5> (appears in [Shot 2]): fully_preserved - the two ornate hair combs are shown as Della opens the gift.
+<Picture 1> (storyboard reference for [Shot 1], [Shot 2]): fully_preserved - the static medium shot composition, subject placement, and visual style are retained.
+
+detailed_description:
+The target video is a realistic short film adaptation of an O. Henry story, set in a modest New York apartment during the Christmas season around 1905. The lighting is warm and subdued, with natural shadows from indoor lamps and window light. The camera remains static throughout both shots.
+[Shot 1] The scene opens with Jim (S2) entering the doorway of the apartment. In the same soft, gentle voice as described, Della (S1) says, <d>[Czech] Chtěla jsem ti dát něco krásného.</d> She closes her lips immediately after speaking, eyes downcast, waiting for his reaction. He pauses as he sees Della (S1), who stands facing him with short brown curls, her back slightly turned. She is nervously holding the metal chain necklace hidden in her hand. Jim’s gaze lingers on her hair, and she shifts her weight slightly.
+[Shot 2] At 00:04.000, the shot cuts to Jim (S2) holding out a wrapped gift. Della (S1) takes it and carefully unwraps the paper with both hands. The camera focuses on her face as she reveals two ornate hair combs inside. She looks at them with quiet admiration, then gently touches her short hair with her fingertips. Jim (S2) steps closer and takes her hand in his, his thumb brushing her knuckles. The shot is silent except for the soft rustling of wrapping paper.
+
+overall_soundscape:
+The ambient sound is a quiet indoor room tone — faint creaks of wooden floors, distant city sounds through the window, and the subtle rustle of paper as Della unwraps the gift.
+
+non_diegetic_music:
+N/A
+===== 3
+subject_definitions:
+<Subject 1> is the young woman, Della, with short brown curls, as depicted in <Picture 1>, Panel 3 and Panel 4. She wears a simple dark dress and appears in domestic or shop settings.
+<Subject 2> is the young man, Jim, in a worn dark coat, as depicted in <Picture 1>, Panel 2 and Panel 7. He has a calm, observant demeanor and holds objects like a pocket watch or necklace.
+<Subject 3> is the gold pocket watch with an old leather strap, referenced from <Picture 1>, Panel 2.
+<Subject 4> is the new simple metal necklace for pocket watches, referenced from <Picture 1>, Panel 6 and Panel 9.
+<Subject 5> is the two ornate hairpins for long hair, referenced from <Picture 1>, Panel 1 and Panel 4.
+<Picture 1> is a storyboard reference defining the viewpoint, subject placement, and visual style for [Shot 1] and [Shot 2], with static camera shots and medium/close framing.
+
+summary:
+[reference generation] The target video continues the story from Part 3 of the O. Henry adaptation, showing Della offering Jim a necklace in a quiet indoor setting, followed by Jim revealing he sold his watch to buy her hairpins. The visuals are defined by <Picture 1>, with static shots and consistent character appearances. No on-screen text is added.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved - Della’s short brown curls, dark dress, and emotional expression remain unchanged.
+<Subject 2> (appears in [Shot 1], [Shot 2]): fully_preserved - Jim’s worn dark coat and calm demeanor are retained.
+<Subject 3> (appears in [Shot 1]): weak_reference - the pocket watch is referenced visually but not physically present in [Shot 1].
+<Subject 4> (appears in [Shot 1]): fully_preserved - Della holds the metal necklace in her open palm.
+<Subject 5> (appears in [Shot 2]): fully_preserved - the hairpins are visible on the table beside the necklace.
+<Picture 1> (shot composition and framing): fully_preserved - both shots use static camera, medium/close framing, and subject placement as defined by the storyboard.
+
+detailed_description:
+The target video is a realistic short film adaptation of O. Henry’s story, set in a modest New York apartment and shops around 1905 during Christmas Eve. The lighting is warm and subdued, with natural indoor tones and soft shadows. No on-screen text or captions appear.
+[Shot 1] A close-up, static shot begins with Della (S1), the young woman with short brown curls, holding out a simple metal necklace toward Jim. Della says in her soft, gentle voice, speaking at a lively, natural pace: <d>[Czech] A já mám něco k tvým hodinkám.</d> She closes her lips briefly after speaking, holding the necklace steady as Jim looks at it. Her expression is gentle and hopeful. Jim (S2), in his worn dark coat, looks down at the necklace with a soft, slightly sad smile.
+[Shot 2] At 00:05.000, the shot cuts to a medium static frame. Jim says in his warm, slightly husky voice, speaking at a lively, natural pace: <d>[Czech] Prodal jsem je, abych ti mohl koupit ty hřebeny.</d> He closes his lips after speaking. Jim (S2) holds up his empty coat pocket and the old leather strap of his watch, now gone. Della (S1) understands and places the necklace beside the hairpins on the table. They embrace. The final frame holds both gifts in the foreground with the couple behind them.
+
+overall_soundscape:
+Silence throughout both shots — no ambient sound or background noise. The only audio is the spoken lines inside <d>.
+
+non_diegetic_music:
+N/A
