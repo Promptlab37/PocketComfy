@@ -486,13 +486,18 @@ fun GradientButton(
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
     icon: (@Composable () -> Unit)? = null,
+    /** Jiná barva než akcent (např. oranžové „Připravit film“, 5.24). */
+    barva: Color? = null,
     onClick: () -> Unit,
 ) {
     Box(
         modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
-            .background(if (enabled) AccentBrush else Brush.linearGradient(listOf(Outline1, Outline1)))
+            .background(
+                if (!enabled) Brush.linearGradient(listOf(Outline1, Outline1))
+                else if (barva != null) Brush.linearGradient(listOf(barva, barva)) else AccentBrush,
+            )
             .clickable(enabled = enabled, onClick = onClick)
             .padding(vertical = 16.dp),
         contentAlignment = Alignment.Center
@@ -503,7 +508,7 @@ fun GradientButton(
                 text,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                color = if (enabled) cz.promptlab.h3video.ui.theme.NaAkcentu else TextLow
+                color = if (!enabled) TextLow else if (barva != null) Color(0xFF1B1308) else cz.promptlab.h3video.ui.theme.NaAkcentu
             )
         }
     }

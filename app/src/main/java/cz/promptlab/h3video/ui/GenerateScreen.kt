@@ -849,10 +849,13 @@ fun GenerateScreen(vm: MainViewModel, busy: Boolean = false, modifier: Modifier 
                 else -> t("Vygenerovat video")
             },
             enabled = !blocked,
+            // Příprava filmu je oranžová, natáčení zelené — dva různé kroky (uživatel 30. 9. 2026).
+            barva = if (sbPripravit) cz.promptlab.h3video.ui.theme.Amber else null,
             icon = {
                 if (!blocked) Icon(
                     if (busy) Icons.Default.PlaylistAdd else Icons.Default.AutoAwesome,
-                    null, Modifier.size(20.dp), cz.promptlab.h3video.ui.theme.NaAkcentu
+                    null, Modifier.size(20.dp),
+                    if (sbPripravit) androidx.compose.ui.graphics.Color(0xFF1B1308) else cz.promptlab.h3video.ui.theme.NaAkcentu
                 )
             },
             onClick = {

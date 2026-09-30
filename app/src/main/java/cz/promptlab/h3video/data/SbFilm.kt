@@ -1202,8 +1202,10 @@ object SbFilmPrepis {
             // Displej telefonu: H3 na něm píše nesmyslná písmena — jen tvary a barvy (5.14, kritici).
             // Osoba na displeji je fotka, ne postava filmu („mladá maminka mrkne“ vs. 72letá maminka).
             if (p.obrazovka) {
-                sb.append("\n    the phone screen shows only pictures, soft colour blocks and simple shapes; ")
-                sb.append("any person seen on the screen is a picture on the display.")
+                // Obraz a video na displeji zůstávají, jen text a ovládání jsou tvary — dřív přepisovač
+                // nahradil i hrnek ve videu na telefonu barevnými plochami (hrnek 30. 9. 2026).
+                sb.append("\n    pictures and video on the phone screen play as described; any text or app interface on it ")
+                sb.append("is only soft colour blocks and simple shapes, and any person seen on the screen is a picture on the display.")
             }
             // Záběr bez napsané repliky: „doktorka volá ke dveřím“ bez textu
             // přepisovač popsal jako volání a H3 si slova vymyslel (29. 9. 2026).

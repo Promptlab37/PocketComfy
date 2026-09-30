@@ -134,7 +134,7 @@ class SbScenarTest {
         assertTrue(vse.contains("Dcera (S1), překvapeně, says <d>[Czech] To jsi vážně ty?</d>"))
         assertTrue(vse.contains("Maminka (S2), tiše a dojatě, says <d>[Czech] To jsem já…</d>"))
         assertTrue(vse.contains("sound in this shot: Šustění stránek."))
-        assertTrue(vse.contains("the phone screen shows only pictures, soft colour blocks"))
+        assertTrue(vse.contains("pictures and video on the phone screen play as described"))
         assertTrue(vse.contains("Dcera (S1) — a woman in her mid-30s"))
         // Tichý záběr nemá žádnou repliku.
         vse.split("\n[Shot").drop(1).map { z -> z.lines().takeWhile { it == z.lines().first() || it.startsWith("    ") } }
