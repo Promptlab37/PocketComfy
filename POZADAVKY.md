@@ -387,6 +387,10 @@ a `Z-Image-Turbo-Fun-Controlnet-Tile-2.1-lite-2601-8steps.safetensors`
   - **adaptér (jen pro ✨ Vylepšit (MiniMax)):**
     [MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16](https://huggingface.co/pytraveler/MiniMax-H3-Prompt-Rewriter-LoRA-8B-GGUF/resolve/main/MiniMax-H3-Prompt-Rewriter-LoRA-8B-F16.gguf) (1,3 GB).
 
+  **Film ze storyboardu – „Storyboard + scénář“** používá stejný základ přes
+  [ComfyUI-llama-cpp_vlm](https://github.com/lihaoyun6/ComfyUI-llama-cpp_vlm) i jako druhé čtení scénáře
+  (kontrola, že se žádná replika nevynechala). Bez něj karta funguje dál, jen bez této kontroly.
+
   Tentýž balík a model obsluhuje i tlačítko **🌐 Přeložit**
   u karet se zadáním — nic dalšího se pro překlad stahovat nemusí.
 
