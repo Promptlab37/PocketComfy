@@ -24,9 +24,13 @@ class SbScenarZamekTest {
     private val dir = File("src/test/resources/zlaty_scenar")
 
     private fun scena(): SbFilmScene {
-        val text = File("src/test/resources/scenar_dar_mudrcu_532.txt").readText()
+        val text = File("src/test/resources/scenar_dar_mudrcu_532.txt").readText().replace("
+", "
+")
         val scenar = SbScenar.rozeber(text)!!
-        val obrazek = SbFilmPlan.precti(File("src/test/resources/cteni_dar_mudrcu_532.txt").readText())
+        val obrazek = SbFilmPlan.precti(File("src/test/resources/cteni_dar_mudrcu_532.txt").readText().replace("
+", "
+"))
         val plan = SbFilmPlan.naplanuj(SbScenar.cteni(scenar, obrazek))
         return SbFilmScene(
             storyboard = File("sbfilm_storyboard.png"), zdroj = SbZdroj.SCENAR, scenar = text,
@@ -50,7 +54,9 @@ class SbScenarZamekTest {
                 vzhledSeMeni = SbScenar.vzhledSeMeni(s.vzhled),
                 zeScenare = true,
             )
-            assertEquals("úsek ${k + 1}", File(dir, "prompt_$k.txt").readText(), // Stejně jako MainViewModel.spustPrepisAPockejRef (hlidatDialogy = false).
+            assertEquals("úsek ${k + 1}", File(dir, "prompt_$k.txt").readText().replace("
+", "
+"), // Stejně jako MainViewModel.spustPrepisAPockejRef (hlidatDialogy = false).
                 sp.zadani(s, k, useky.size).trimEnd().trimEnd('.') + ". Do not add any on-screen text or captions unless explicitly requested." + hlidka)
         }
     }
@@ -61,12 +67,16 @@ class SbScenarZamekTest {
         val sp = SbFilmPrepis
         val out = StringBuilder()
         s.useky.forEachIndexed { k, u ->
-            val surovy = File(dir, "vystup_$k.txt").readText()
+            val surovy = File(dir, "vystup_$k.txt").readText().replace("
+", "
+")
             val hotovy = sp.replikaNaZacatek(SbScenar.opravZnacky(sp.opravObrazky(sp.ocistiPrepis(surovy, u.panely.size), s.uploadImages.size)))
             out.append("===== $k\n").append(hotovy).append("\n")
         }
         val vzor = File(dir, "hotove.txt")
         if (!vzor.exists()) vzor.writeText(out.toString())
-        assertEquals(vzor.readText(), out.toString())
+        assertEquals(vzor.readText().replace("
+", "
+"), out.toString())
     }
 }
