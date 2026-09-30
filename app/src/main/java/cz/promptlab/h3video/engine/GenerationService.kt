@@ -257,7 +257,7 @@ class GenerationService : Service() {
         fun formatEta(seconds: Int): String {
             val m = seconds / 60
             val s = seconds % 60
-            return if (m > 0) "$m min ${s}s" else "${s}s"
+            return if (m > 0) "$m min $s s" else "$s s"
         }
     }
 }

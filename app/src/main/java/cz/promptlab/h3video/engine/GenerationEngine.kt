@@ -1286,6 +1286,17 @@ object GenerationEngine {
         if (berniniScene != null) nodeClasses =
             cz.promptlab.h3video.comfy.BerniniBuilder.nodeClasses(workflow)
 
+        // Ostrý živý náhled pro Qwen 2.1 (5.34) — jen když ho server umí, jinak graf beze změny.
+        val nahled = cz.promptlab.h3video.comfy.NahledQwen21
+        if (nahled.jeQwen21(workflow) &&
+            nahled.serverUmi(runCatching { client.objectInfo("ModelPreviewOverrideKJ") }.getOrNull())
+        ) {
+            val pred = workflow.keys().asSequence().toSet()
+            nahled.vloz(workflow)
+            val nove = workflow.keys().asSequence().filter { it !in pred }.associateWith { "ModelPreviewOverrideKJ" }
+            if (nodeClasses.isNotEmpty()) nodeClasses = nodeClasses + nove
+        }
+
         val promptId = UUID.randomUUID().toString().lowercase()
         // Značka do logu: od téhle chvíle patří hlášky uzlů našemu běhu.
         logSince = runCatching { client.nodeWarnings().lastOrNull()?.first }.getOrNull()

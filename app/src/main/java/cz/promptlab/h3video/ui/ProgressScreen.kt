@@ -18,11 +18,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
@@ -39,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -47,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -131,18 +134,6 @@ fun ProgressScreen(
         animationSpec = tween(600, easing = FastOutSlowInEasing),
         label = "progress"
     )
-    val infinite = rememberInfiniteTransition(label = "spin")
-    val spin by infinite.animateFloat(
-        0f, 360f,
-        infiniteRepeatable(tween(9000, easing = LinearEasing), RepeatMode.Restart),
-        label = "spin"
-    )
-    val breathe by infinite.animateFloat(
-        0.94f, 1.06f,
-        infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
-        label = "breathe"
-    )
-
     // vlastní vteřinový tik, aby čas běžel i ve fázích, kdy server zrovna nic neposílá
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
@@ -194,7 +185,11 @@ fun ProgressScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            ProgressRing(progress, spin, breathe, RING_COMPACT)
+            ProgressRing(
+                progress,
+                indeterminate = state.preparing || state.stage in setOf(Stage.STARTING, Stage.QUEUED, Stage.MODELS),
+                size = RING_COMPACT,
+            )
             Column(Modifier.weight(1f)) {
                 Text(
                     if (state.preparing) t("Načítám model")
@@ -249,17 +244,28 @@ fun ProgressScreen(
 
         Spacer(Modifier.height(14.dp))
 
-        // ---------------------------------------------------------- čísla
+        // ------------------------------- panel průběhu: čísla + souvislý pruh fází
+        // Jedna karta místo tří dlaždic a samostatného pásku (5.34, grafik + UX).
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(Brush.verticalGradient(listOf(Surface2, Surface1)))
+                .border(1.dp, Outline1, RoundedCornerShape(16.dp))
+                .padding(horizontal = 14.dp, vertical = 12.dp)
+        ) {
         Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Modifier.fillMaxWidth().height(androidx.compose.foundation.layout.IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             StatTile(t("Uplynulo"), formatClock(elapsed), Modifier.weight(1f))
+            Oddelovac()
             StatTile(
                 t("Zbývá"),
                 state.etaSeconds?.let { GenerationService.formatEta(it) } ?: t("počítám"),
                 Modifier.weight(1f)
             )
+            Oddelovac()
             // Během přenosu videa ukazuje stejná dlaždice, kolik už je staženo –
             // u větších souborů to trvá a bez čísel to vypadá zaseknutě.
             if (state.stage == Stage.DOWNLOADING && state.transferTotal > 0) {
@@ -282,10 +288,19 @@ fun ProgressScreen(
             }
         }
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // ----------------------------------------------------- pásek fází
-        PhaseStrip(activePhase, state.kind)
+        PhaseStrip(
+            activePhase, state.kind,
+            kroku = if (state.stage == Stage.SAMPLING) state.totalSteps else 0,
+            // Postup uvnitř běžící fáze: kroky vzorkování, bajty přenosu; jinak neznámý.
+            uvnitr = when {
+                state.stage == Stage.SAMPLING && state.totalSteps > 0 -> state.step.toFloat() / state.totalSteps
+                state.stage == Stage.DOWNLOADING && state.transferTotal > 0 -> state.transferDone.toFloat() / state.transferTotal
+                else -> null
+            },
+        )
+        }
 
         // ------------------------------------------------ klidná poznámka
         if (note != null) {
@@ -353,102 +368,168 @@ fun ProgressScreen(
                 prvni = state.label.ifBlank { null },
             )
         } else {
-            Text(
+            TextVesel(
                 t("Telefon můžeš zamknout, generování běží na počítači dál."),
                 style = MaterialTheme.typography.bodySmall,
                 color = TextLow,
-                textAlign = TextAlign.Center,
-                maxLines = 1
             )
         }
         }
 }
 
-/** Prstenec s procenty. Velikost se předává, aby se vešel i vedle živého náhledu. */
+/** Barvy ukazatele: přechod z hlavní barvy motivu do akcentu — sedí ve všech vzhledech. */
+private fun barvyPrubehu(): List<Color> = listOf(Violet, Cyan)
+
+/**
+ * Prstenec s procenty (5.34, grafik + UX + vývojář): oblouk vždy začíná nahoře
+ * a neotáčí se (dřív se točil celý a 14 % viselo na jedenácté hodině). Přechod
+ * z barev motivu, jemná záře pod obloukem, na špičce tepající tečka. Když
+ * procenta stojí (fronta, načítání modelu), obíhá po dráze krátký světelný úsek.
+ */
 @Composable
-private fun ProgressRing(progress: Float, spin: Float, breathe: Float, size: Dp) {
+private fun ProgressRing(progress: Float, indeterminate: Boolean, size: Dp) {
+    val anim = rememberInfiniteTransition(label = "prstenec")
+    val tep by anim.animateFloat(
+        0f, 1f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "tep"
+    )
+    val obeh by anim.animateFloat(
+        0f, 360f, infiniteRepeatable(tween(1600, easing = LinearEasing), RepeatMode.Restart), label = "obeh"
+    )
+    val barvy = barvyPrubehu()
+    val p = progress.coerceIn(0f, 1f)
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
-        // rozostřená aura
-        Box(
-            Modifier
-                .size(size * 0.84f * breathe)
-                .clip(RoundedCornerShape(50))
-                .background(
-                    Brush.radialGradient(listOf(Violet.copy(alpha = .18f), Color.Transparent))
-                )
+        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+            val tloustka = 5.dp.toPx()
+            val tecka = 3.5.dp.toPx()
+            val okraj = tecka * 1.4f + 2.dp.toPx()
+            val prumer = this.size.minDimension - okraj * 2
+            val tl = Offset(okraj, okraj)
+            val rozmer = Size(prumer, prumer)
+            // Dráha — celý kruh, ať je vidět, kolik zbývá.
+            drawArc(Outline1, 0f, 360f, false, tl, rozmer, style = Stroke(tloustka))
+            // Přechod po obvodu otočený tak, aby začínal nahoře (šev pod začátkem oblouku).
+            val stred = Offset(this.size.width / 2, this.size.height / 2)
+            val prechod = Brush.sweepGradient(0f to barvy[0], 1f to barvy[1], center = stred)
+            rotate(-90f, stred) {
+                if (p > 0f) {
+                    // Záře: týž oblouk širší a průsvitný.
+                    drawArc(prechod, 0f, 360f * p, false, tl, rozmer, alpha = .12f,
+                        style = Stroke(tloustka * 1.8f, cap = StrokeCap.Round))
+                    drawArc(prechod, 0f, 360f * p, false, tl, rozmer,
+                        style = Stroke(tloustka, cap = StrokeCap.Round))
+                }
+                if (indeterminate) {
+                    drawArc(barvy[1].copy(alpha = .55f), obeh, 38f, false, tl, rozmer,
+                        style = Stroke(tloustka, cap = StrokeCap.Round))
+                }
+            }
+            // Tečka na špičce oblouku (nahoře, dokud je 0 %).
+            val uhel = Math.toRadians((-90.0 + 360.0 * p))
+            val r = prumer / 2
+            val bod = Offset(stred.x + (r * kotlin.math.cos(uhel)).toFloat(), stred.y + (r * kotlin.math.sin(uhel)).toFloat())
+            // U začátku a konce kruhu by se tečka slepila s kulatým koncem oblouku.
+            if (p <= 0.001f || p in 0.02f..0.92f) {
+                drawCircle(barvy[1].copy(alpha = .25f * (1f - tep) + .1f), tecka * (1.6f + tep), bod)
+                drawCircle(barvy[1], tecka * (1f + .3f * tep), bod)
+            }
+        }
+        val hustota = androidx.compose.ui.platform.LocalDensity.current
+        // Pevné velikosti z dp: prstenec má pevný rozměr, „100 %“ se musí vejít i při velkém písmu.
+        val velke = with(hustota) { (size * 0.27f).toSp() }
+        val male = with(hustota) { (size * 0.14f).toSp() }
+        Text(
+            androidx.compose.ui.text.buildAnnotatedString {
+                append("${(p * 100).roundToInt()}")
+                pushStyle(androidx.compose.ui.text.SpanStyle(fontSize = male, color = TextLow, fontWeight = FontWeight.Medium))
+                append("%")
+                pop()
+            },
+            fontSize = velke,
+            fontWeight = FontWeight.SemiBold,
+            color = TextHi,
+            maxLines = 1,
+            style = androidx.compose.ui.text.TextStyle(fontFeatureSettings = "tnum"),
         )
-        androidx.compose.foundation.Canvas(
-            Modifier
-                .fillMaxSize()
-                .rotate(spin)
-        ) {
-            // Tloušťka roste s prstencem, ať to vypadá stejně na velkém i malém.
-            val stroke = (this.size.minDimension * 0.068f).coerceAtLeast(7f)
-            val inset = stroke / 2
-            val arcSize = Size(this.size.width - stroke, this.size.height - stroke)
-            drawArc(
-                color = Surface2,
-                startAngle = 0f, sweepAngle = 360f, useCenter = false,
-                topLeft = Offset(inset, inset), size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round)
-            )
-            drawArc(
-                brush = AccentSweep,
-                startAngle = -90f,
-                sweepAngle = 360f * progress.coerceIn(0f, 1f),
-                useCenter = false,
-                topLeft = Offset(inset, inset), size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round)
-            )
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                "${(progress * 100).roundToInt()}",
-                fontSize = (size.value * 0.26f).sp,
-                fontWeight = FontWeight.Light,
-                color = TextHi,
-                maxLines = 1
-            )
-            Text("%", style = MaterialTheme.typography.labelMedium, color = TextLow)
-        }
     }
 }
 
 /**
- * Pět fází jako vodorovný pásek. Sloupec pěti řádků zabíral přes 200 dp a kvůli
- * němu se muselo rolovat; tady je stejná informace na dvou řádcích.
+ * Jeden souvislý ukazatel průběhu rozdělený na fáze (5.34, uživatel: „ten
+ * proužek s průběhem a krokama, ať to vypadá profi“). Hotové fáze jsou plné
+ * přechodem z barev motivu, běžící fáze se plní podle kroků (nebo přenosu)
+ * a po naplněné části jede světelný odlesk. Když postup uvnitř fáze není
+ * znám, běží po ní pomalé světlo. Pod pruhem fáze vlevo, kroky vpravo.
  */
 @Composable
-private fun PhaseStrip(activePhase: Int, kind: RunKind = RunKind.VIDEO) {
+private fun PhaseStrip(activePhase: Int, kind: RunKind = RunKind.VIDEO, uvnitr: Float? = null, kroku: Int = 0) {
+    val anim = rememberInfiniteTransition(label = "pruh")
+    val odlesk by anim.animateFloat(
+        -0.4f, 1.4f, infiniteRepeatable(tween(1800, easing = LinearEasing), RepeatMode.Restart), label = "odlesk"
+    )
+    val plneni by animateFloatAsState((uvnitr ?: 0f).coerceIn(0f, 1f), tween(600, easing = FastOutSlowInEasing), label = "plneni")
+    val barvy = barvyPrubehu()
+    val pocet = phases().size
     Column(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            phases().forEachIndexed { i, _ ->
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(5.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(
-                            when {
-                                i < activePhase -> Ok
-                                i == activePhase -> Cyan
-                                else -> Outline1
-                            }
+        androidx.compose.foundation.Canvas(Modifier.fillMaxWidth().height(14.dp)) {
+            val vyska = 8.dp.toPx()
+            val mezera = 4.dp.toPx()
+            val y = (size.height - vyska) / 2
+            val sirka = (size.width - mezera * (pocet - 1)) / pocet
+            val roh = androidx.compose.ui.geometry.CornerRadius(vyska / 2)
+            // Přechod přes CELOU šířku — každý dílek má svůj kus, pruh působí jako jeden.
+            val prechod = Brush.horizontalGradient(barvy, startX = 0f, endX = size.width)
+            for (i in 0 until pocet) {
+                val x = i * (sirka + mezera)
+                drawRoundRect(Outline1, Offset(x, y), Size(sirka, vyska), roh)
+                // Běžící fáze má barevný podklad — hned je vidět, kde se právě pracuje.
+                if (i == activePhase) drawRoundRect(barvy[0].copy(alpha = .22f), Offset(x, y), Size(sirka, vyska), roh)
+                val podil = when {
+                    i < activePhase -> 1f
+                    i == activePhase -> plneni
+                    else -> 0f
+                }
+                if (podil > 0f) {
+                    val w = (sirka * podil).coerceAtLeast(vyska)
+                    // Záře pod naplněnou částí.
+                    drawRoundRect(prechod, Offset(x, y - 2.dp.toPx()), Size(w, vyska + 4.dp.toPx()),
+                        androidx.compose.ui.geometry.CornerRadius(vyska), alpha = .18f)
+                    drawRoundRect(prechod, Offset(x, y), Size(w, vyska), roh)
+                }
+                if (i == activePhase && kroku in 2..8) {
+                    // Pár kroků: hotové dílky oddělené mezerou (víc zářezů by vypadalo jako čárový kód).
+                    for (k in 1 until kroku) {
+                        val zx = x + sirka * k / kroku
+                        if (zx < x + sirka * podil) drawLine(Surface1, Offset(zx, y), Offset(zx, y + vyska), 1.5.dp.toPx())
+                    }
+                }
+                if (i == activePhase) {
+                    // Světelný odlesk: po naplněné části, a když postup neznáme, po celém dílku.
+                    val rozsah = if (uvnitr != null) (sirka * podil).coerceAtLeast(vyska) else sirka
+                    val stredOdlesku = x + rozsah * odlesk
+                    val polomer = sirka * 0.35f
+                    clipRect(x, y, x + rozsah, y + vyska) {
+                        drawRoundRect(
+                            Brush.horizontalGradient(
+                                // S postupem bílý lesk po výplni, bez něj barevné světlo po celé fázi.
+                                if (uvnitr != null) listOf(Color.Transparent, Color.White.copy(alpha = .45f), Color.Transparent)
+                                else listOf(Color.Transparent, barvy[1].copy(alpha = .95f), Color.Transparent),
+                                startX = stredOdlesku - polomer, endX = stredOdlesku + polomer,
+                            ),
+                            Offset(x, y), Size(rozsah, vyska), roh,
                         )
-                )
+                    }
+                }
             }
         }
-        Spacer(Modifier.height(5.dp))
+        Spacer(Modifier.height(6.dp))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                t("Fáze %d z %d").format(activePhase + 1, phases().size),
-                style = MaterialTheme.typography.bodySmall,
+                t("Fáze %d z %d").format(activePhase + 1, pocet),
+                style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
                 color = TextLow
             )
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.width(12.dp))
+            // Velké písmo / úzký displej: zalomí se na druhý řádek, neuřízne.
             Text(
                 when (activePhase) {
                     0 -> firstPhaseTitle(kind)
@@ -457,10 +538,18 @@ private fun PhaseStrip(activePhase: Int, kind: RunKind = RunKind.VIDEO) {
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = TextMid,
-                maxLines = 1
+                maxLines = 2,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f),
             )
         }
     }
+}
+
+/** Svislá čára mezi čísly v panelu průběhu. */
+@Composable
+private fun Oddelovac() {
+    Box(Modifier.width(1.dp).fillMaxHeight(.7f).background(Outline1))
 }
 
 @Composable
@@ -472,14 +561,14 @@ private fun StatTile(
 ) {
     Column(
         modifier
-            .clip(RoundedCornerShape(14.dp))
-            .background(Surface1)
-            .border(1.dp, Outline1, RoundedCornerShape(14.dp))
-            .padding(vertical = 9.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxHeight()
+            .padding(horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top,
     ) {
         // Tři dlaždice vedle sebe — na úzkém telefonu se hodnota zmenší, neuřízne.
-        TextVesel(value, style = MaterialTheme.typography.titleMedium, color = TextHi)
+        // Pevná šířka číslic: čas „3:38“ při tikání neposkakuje.
+        TextVesel(value, style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"), color = TextHi)
         TextVesel(label, style = MaterialTheme.typography.bodySmall, color = TextLow)
         if (hint != null) {
             Text(

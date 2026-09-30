@@ -566,6 +566,11 @@ object Katalog {
         "minimax_h3_video_vae_fp16.safetensors" to Soubor("models/vae", "video karty"),
         "minimax_h3_audio_vae_fp32.safetensors" to Soubor("models/vae", "video karty"),
         "taeh3.safetensors" to Soubor("models/vae_approx", "živý náhled u videa"),
+        // Ostrý náhled Qwen 2.1 (5.34), volitelný — appka ho zapojí, jen když na serveru je.
+        "TAEQwenImage21_AcademiaSD.safetensors" to Soubor(
+            "models/vae_approx", "živý náhled Qwen Image 2.1",
+            "$HF/AcademiaSD/TAE-Qwen-Image-2.1/resolve/main/TAEQwenImage21_AcademiaSD.safetensors"
+        ),
         // Karta Obrázek, modely přidané ve 3.02. Váhy Kleina má Black Forest
         // Labs za souhlasem s licencí, encodér a VAE přebalil Comfy-Org —
         // jejich zápisy jsou výš, u karty Domalovat. Klíč se v mapě nesmí
