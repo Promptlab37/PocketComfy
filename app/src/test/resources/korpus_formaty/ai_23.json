@@ -1,0 +1,32 @@
+{
+ "name": "Jen okna a S-kódy, žádný seznam postav ani nadpis; pohlaví S1 nelze určit, S2 z tvaru 'připravená'",
+ "text": "Formát: 9:16, 16 sekund\n\n[OKNO 1 | 0–5 s]\nDva lidé sedí v čekárně na nádraží.\nS1: „Taky jedete do Brna?“\nS2 (unaveně): „Už třetí hodinu.“\n\n[OKNO 2 | 5–10 s]\nHlášení: vlak má další zpoždění.\nZvuk: gong nádražního rozhlasu\nS1: „Tak to si dáme kafe.“\n\n[OKNO 3 | 10–16 s]\nS2 vytáhne z tašky termosku a dva hrnky.\nS2 (s úsměvem): „Tentokrát jsem připravená.“",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "S1",
+   "Taky jedete do Brna?"
+  ],
+  [
+   1,
+   "S2",
+   "Už třetí hodinu."
+  ],
+  [
+   2,
+   "S1",
+   "Tak to si dáme kafe."
+  ],
+  [
+   3,
+   "S2",
+   "Tentokrát jsem připravená."
+  ]
+ ],
+ "genders": {
+  "S1": "?",
+  "S2": "f"
+ },
+ "props": []
+}

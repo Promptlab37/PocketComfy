@@ -1,0 +1,43 @@
+{
+ "name": "Seznam postav s věkem a rekvizit na začátku, 'OKNO 1 [0–5 s]', 'Hlas mimo obraz (ženský):' = Vypravěč ženského rodu, 'Titulek:' na konci",
+ "text": "Postavy: Jana (30), Martin (35), paní Horáková (75)\nRekvizity: klíče, kytka, dort\n\nOKNO 1 [0–5 s]\nChodba činžáku. Jana a Martin stojí u dveří s kytkou a dortem.\nHlas mimo obraz (ženský): Paní Horáková dnes slaví pětasedmdesát let.\n\nOKNO 2 [5–10 s]\nDveře se otevřou, paní Horáková překvapeně spráskne ruce.\nPaní Horáková: Děti! To jste nemuseli.\nMartin: Všechno nejlepší, paní Horáková!\n\nOKNO 3 [10–15 s]\nJana jí podá kytku.\nJana: A tady je dort. Čokoládový, jak ho máte ráda.\n\nOKNO 4 [15–20 s]\nVšichni tři u stolu, na dortu hoří svíčky.\nPaní Horáková: Tak si pojďte sníst kousek.\nTitulek: Na sousedech záleží.\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Paní Horáková dnes slaví pětasedmdesát let."
+  ],
+  [
+   2,
+   "Paní Horáková",
+   "Děti! To jste nemuseli."
+  ],
+  [
+   2,
+   "Martin",
+   "Všechno nejlepší, paní Horáková!"
+  ],
+  [
+   3,
+   "Jana",
+   "A tady je dort. Čokoládový, jak ho máte ráda."
+  ],
+  [
+   4,
+   "Paní Horáková",
+   "Tak si pojďte sníst kousek."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "f",
+  "Paní Horáková": "f",
+  "Martin": "m",
+  "Jana": "f"
+ },
+ "props": [
+  "klíče",
+  "kytka",
+  "dort"
+ ]
+}

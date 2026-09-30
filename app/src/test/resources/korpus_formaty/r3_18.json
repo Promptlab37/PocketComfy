@@ -1,0 +1,35 @@
+{
+ "name": "pasti: citovaný nápis v Obrazu, citace ve Zvuku a Text na videu, dvě repliky v okně",
+ "text": "STORYBOARD – Kavárna na rohu\nFormát: 16:9, přibližně 16 sekund.\nPostavy:\nTereza: 26 let, krátké fialové vlasy, černá zástěra baristky, bílé tričko\nPavel: 30 let, brýle s tlustými obroučkami, hořčicový kabát, šála\nRekvizity:\nCedule: dřevěná cedule na dveřích\nKelímek: papírový kelímek s víčkem\nKontinuita: malá kavárna, ráno, za oknem mrholí\n\n[OKNO 1 | 0–4 s] Otevírání\nObraz: Tereza otočí ceduli na dveřích, na které stojí „Otevřeno“.\nEmoce: svěží ráno\nZvuk: cinknutí zvonku, kávovar „pšššš“\nText na videu: „Každé ráno v 7:00“\n\n[OKNO 2 | 4–8 s] První zákazník\nObraz: Vejde promoklý Pavel a otřepe si deštník.\nEmoce: vlídnost\nTereza (vesele): „Dobré ráno! Jako obvykle?“\nPavel (s úlevou): „Jako obvykle. A dneska dvojitě, prosím.“\nZvuk: déšť za dveřmi\n\n[OKNO 3 | 8–12 s] Jméno na kelímku\nObraz: Tereza napíše na kelímek „Pavel :)“ a podá mu ho.\nEmoce: úsměv\nTereza (mrkne): „Na účet podniku, ať vám nezmokne nálada.“\nZvuk: šustění fixy\n\n[OKNO 4 | 12–16 s] Odchod\nObraz: Pavel odchází do deště s kelímkem a usmívá se.\nEmoce: teplo\nPavel (od dveří): „Díky, Terezo. Zachránila jste mi den.“\nZvuk: zvonek dveří\nText na videu: „Kavárna Na Rohu – káva, která hřeje“\n",
+ "windows": 4,
+ "lines": [
+  [
+   2,
+   "Tereza",
+   "Dobré ráno! Jako obvykle?"
+  ],
+  [
+   2,
+   "Pavel",
+   "Jako obvykle. A dneska dvojitě, prosím."
+  ],
+  [
+   3,
+   "Tereza",
+   "Na účet podniku, ať vám nezmokne nálada."
+  ],
+  [
+   4,
+   "Pavel",
+   "Díky, Terezo. Zachránila jste mi den."
+  ]
+ ],
+ "genders": {
+  "Tereza": "f",
+  "Pavel": "m"
+ },
+ "props": [
+  "Cedule",
+  "Kelímek"
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "name": "Mini documentary: 'Záběr č. n – description. (time)' with time at END of line, Mluvený komentář in 3 windows without gender, named interviewee 'Včelař Hruška' also mentioned in narration, Text v obraze:",
+ "text": "Krátký dokument: Včely na střeše\nDélka: 30 s\n\nZáběr č. 1 – Střecha paneláku, úly mezi anténami. (0:00–0:06)\nMluvený komentář: Uprostřed sídliště, dvanáct pater nad zemí, žije sto tisíc včel.\n\nZáběr č. 2 – Včelař v kukle otevírá úl. (0:06–0:12)\nMluvený komentář: Pan Hruška je chová už osm let.\nVčelař Hruška: Lidi se diví, ale včelám se tady daří líp než na venkově.\n\nZáběr č. 3 – Detail plástve. (0:12–0:20)\nZvuk: bzukot\nMluvený komentář: Lípy v parku a květiny na balkonech jim dávají celé léto co jíst.\n\nZáběr č. 4 – Sklenice medu na parapetu, za ní panorama města. (0:20–0:30)\nText v obraze: Městský med – 40 kg ročně\nVčelař Hruška (s úsměvem): A med z paneláku? Ten je nejsladší.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Uprostřed sídliště, dvanáct pater nad zemí, žije sto tisíc včel."
+  ],
+  [
+   2,
+   "Vypravěč",
+   "Pan Hruška je chová už osm let."
+  ],
+  [
+   2,
+   "Včelař Hruška",
+   "Lidi se diví, ale včelám se tady daří líp než na venkově."
+  ],
+  [
+   3,
+   "Vypravěč",
+   "Lípy v parku a květiny na balkonech jim dávají celé léto co jíst."
+  ],
+  [
+   4,
+   "Včelař Hruška",
+   "A med z paneláku? Ten je nejsladší."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?",
+  "Včelař Hruška": "m"
+ },
+ "props": []
+}

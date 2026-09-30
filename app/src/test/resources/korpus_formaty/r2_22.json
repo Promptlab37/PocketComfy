@@ -1,0 +1,44 @@
+{
+ "name": "Screenplay sluglines 'SCÉNA n – EXT. PARK – DEN' without times, narrator line BEFORE action with gender+adjective in parens, 'Pan Kučera' speaker, Policista/Prodavačka roles, TEXT NA VIDEU in caps",
+ "text": "SCÉNA 1 – EXT. PARK – DEN\nVypravěč (hluboký mužský hlas): Byl to obyčejný čtvrtek. Dokud se neztratil Brok.\nStarý pán hledá pod lavičkou, v ruce vodítko bez psa.\n\nSCÉNA 2 – EXT. CESTA – DEN\nPolicista na kole zastaví.\nPolicista: Hledáte něco, pane?\nPan Kučera: Psa. Jezevčíka. Jmenuje se Brok a nechodí, když se na něj volá.\n\nSCÉNA 3 – EXT. STÁNEK SE ZMRZLINOU – DEN\nJezevčík sedí u stánku a upřeně kouká na zmrzlinu. Prodavačka se směje.\nProdavačka: Tenhle tu sedí už půl hodiny. Asi čeká na kopeček.\n\nSCÉNA 4 – EXT. STÁNEK – DEN\nPan Kučera a policista dorazí. Brok vrtí ocasem.\nPan Kučera: Broku! Ty jeden mlsoune.\nPolicista (s úsměvem): Případ uzavřen.\nTEXT NA VIDEU: Brok – 1, zmrzlina – 0",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Byl to obyčejný čtvrtek. Dokud se neztratil Brok."
+  ],
+  [
+   2,
+   "Policista",
+   "Hledáte něco, pane?"
+  ],
+  [
+   2,
+   "Pan Kučera",
+   "Psa. Jezevčíka. Jmenuje se Brok a nechodí, když se na něj volá."
+  ],
+  [
+   3,
+   "Prodavačka",
+   "Tenhle tu sedí už půl hodiny. Asi čeká na kopeček."
+  ],
+  [
+   4,
+   "Pan Kučera",
+   "Broku! Ty jeden mlsoune."
+  ],
+  [
+   4,
+   "Policista",
+   "Případ uzavřen."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "m",
+  "Policista": "m",
+  "Pan Kučera": "m",
+  "Prodavačka": "f"
+ },
+ "props": []
+}

@@ -272,7 +272,10 @@ object SbScenarModel {
                     Druh.SETTING, Druh.CONTINUITY -> kontinuita += t
                     Druh.DIALOGUE -> {
                         // Text repliky ze scénáře, ne od modelu: v uvozovkách, jinak za poslední dvojtečkou.
-                        val kusy = Regex("""[„“"«]([^„“"«»”\n]{1,300})[“”"»]""").findAll(t).map { it.groupValues[1].trim() }.toList()
+                        // Uvozovky jen když jimi text za dvojtečkou začíná — „Řekla mi "ne" a odešla.“ je celá replika, ne „ne“.
+                        val zaDvojteckou = t.substringAfter(':', t).trim()
+                        val kusy = (if (zaDvojteckou.isEmpty() || zaDvojteckou.first() in "„“\"«»" || Regex("""[:–—]\s*[„“"«]""").containsMatchIn(t))
+                            Regex("""[„“"«]([^„“"«»”\n]{1,300})[“”"»]""").findAll(t).map { it.groupValues[1].trim() }.toList() else emptyList())
                             // Bez uvozovek: text za PRVNÍ dvojtečkou mluvčího („5:30“ uvnitř repliky zůstane).
                             .ifEmpty { listOf(t.substringAfter(':').trim()) }.filter { it.isNotBlank() }
                         val kdo = SbScenar.jmeno(s.kdo.ifBlank { "Vypravěč" })

@@ -1,0 +1,33 @@
+{
+ "name": "Agency TVC in English: header with Client/Version, SHOT n (0-3s), VO (female, warm) twice, CAPS speakers MAN/WOMAN, SUPER:, 'LOGO + CTA:', Packshot: not spoken",
+ "text": "TVC 15\" – ČAJ HORSKÁ LOUKA\nClient: Horská louka s.r.o. | Version: 2 | Length: 15 s\n\nSHOT 1 (0-3s)\nRainy window, a woman wrapped in a blanket.\nVO (female, warm): Když venku prší...\n\nSHOT 2 (3-7s)\nKettle, steam, tea pouring into a cup.\nSFX: water pouring\nVO (female, warm): Není nic lepšího než šálek horského čaje.\n\nSHOT 3 (7-11s)\nHer husband sits next to her with two cups.\nMAN: Dáš si ještě jeden?\nWOMAN (smiles): Vždycky.\n\nSHOT 4 (11-15s)\nPackshot: box of tea on a wooden table.\nSUPER: Horská louka – teplo z hor\nLOGO + CTA: Vyzkoušejte nové příchutě.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Když venku prší..."
+  ],
+  [
+   2,
+   "Vypravěč",
+   "Není nic lepšího než šálek horského čaje."
+  ],
+  [
+   3,
+   "MAN",
+   "Dáš si ještě jeden?"
+  ],
+  [
+   3,
+   "WOMAN",
+   "Vždycky."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "f",
+  "MAN": "m",
+  "WOMAN": "f"
+ },
+ "props": []
+}

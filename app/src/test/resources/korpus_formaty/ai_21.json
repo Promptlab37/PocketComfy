@@ -1,0 +1,33 @@
+{
+ "name": "Jméno v obsazení s rolí ('Kadeřník Robert', 'Kamarádka Zuzka'), v replikách jen 'Robert,'/'Zuzka,' – nutné párování; '[OKNO n – 0:00–0:05 – název]', scénická poznámka v závorce na samostatném řádku, Poznámka pro střih",
+ "text": "STORYBOARD – Nový účes\nFormát: 9:16, přibližně 24 sekund.\n\nPostavy:\nIvana: 31 let, nově ostříhané zelené mikádo, černý rolák\nKadeřník Robert: 40 let, knírek, zástěra s nůžkami, tetování na předloktí\nKamarádka Zuzka: 30 let, dlouhé černé vlasy, žlutá bunda\n\nKontinuita: Ivanino zelené mikádo musí mít ve všech oknech stejný odstín.\n\n[OKNO 1 – 0:00–0:05 – Zrcadlo]\nObraz: Robert otočí křeslo k zrcadlu.\nRobert, hrdě: „A je to. Svěží jarní zelená.“\n(Ivana ztuhne.)\n\n[OKNO 2 – 0:05–0:11 – Šok]\nObraz: Ivana si sahá na vlasy.\nIvana, tiše: „Já jsem chtěla… zlatavou.“\nRobert, nejistě: „Zlatavá… zelená. Skoro stejné slovo.“\n\n[OKNO 3 – 0:11–0:17 – Kavárna]\nObraz: Ivana přichází do kavárny s kapucí na hlavě.\nEmoce: rozpaky\n\n[OKNO 4 – 0:17–0:24 – Pointa]\nObraz: Zuzka sundá čepici – má úplně stejný zelený účes.\nZuzka, nadšeně: „Ty jsi byla taky u Roberta?!“\nZvuk: smích obou\n\nPoznámka pro střih: okno 4 ukončit na zmrazeném záběru obou tváří.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Kadeřník Robert",
+   "A je to. Svěží jarní zelená."
+  ],
+  [
+   2,
+   "Ivana",
+   "Já jsem chtěla… zlatavou."
+  ],
+  [
+   2,
+   "Kadeřník Robert",
+   "Zlatavá… zelená. Skoro stejné slovo."
+  ],
+  [
+   4,
+   "Kamarádka Zuzka",
+   "Ty jsi byla taky u Roberta?!"
+  ]
+ ],
+ "genders": {
+  "Ivana": "f",
+  "Kadeřník Robert": "m",
+  "Kamarádka Zuzka": "f"
+ },
+ "props": []
+}

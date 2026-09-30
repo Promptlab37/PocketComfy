@@ -1,0 +1,40 @@
+{
+ "name": "Cedule čtená nahlas (mluví) vs. cedule jen ukázaná (nemluví) + stejný text na ceduli i v replice + Text na obrazovce + Nápis bez uvozovek",
+ "text": "Scénář: Na výletě\nPostavy: Lucka (12 let), Jirka (táta, 42 let)\nRekvizity: mapa, turistická značka\n\nOKNO 1\nRozcestí v lese. Na stromě cedule: „Rozhledna 2 km“.\nLucka čte nahlas: „Rozhledna dva kilometry.“\nJirka: Tak to dáme za půl hodiny.\nOKNO 2\nDalší cedule „POZOR, PASOU SE OVCE“. Lucka si jí nevšimne, Jirka studuje mapu.\nText na obrazovce: O hodinu později\nOKNO 3\nLucka ukáže na turistickou značku a přečte: „Rozhledna 3 km.“\nJirka (poškrábe se na hlavě): Hm. Asi jsme šli kolem.\nOKNO 4\nNápis na dveřích rozhledny: OTEVŘENO DO 17:00\nLucka: Tati, je pět a pět.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Lucka",
+   "Rozhledna dva kilometry."
+  ],
+  [
+   1,
+   "Jirka",
+   "Tak to dáme za půl hodiny."
+  ],
+  [
+   3,
+   "Lucka",
+   "Rozhledna 3 km."
+  ],
+  [
+   3,
+   "Jirka",
+   "Hm. Asi jsme šli kolem."
+  ],
+  [
+   4,
+   "Lucka",
+   "Tati, je pět a pět."
+  ]
+ ],
+ "genders": {
+  "Lucka": "f",
+  "Jirka": "m"
+ },
+ "props": [
+  "mapa",
+  "turistická značka"
+ ]
+}

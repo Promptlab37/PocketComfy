@@ -1,0 +1,46 @@
+{
+ "name": "Obsazení na jednom řádku se středníky, číslované scény '1. Místo (a–b s)', mluvčí + způsob za čárkou, repliky bez uvozovek, rekvizity na jednom řádku",
+ "text": "Krátký film: Nový pes\nFormát 9:16, asi 30 s.\nPostavy: Eva (35, blond mikádo, růžový kabát); Honza (8, chlapec, zelená bunda, žlutá čepice); pan Novák (70, soused, hnědý svetr, hůl)\nRekvizity: vodítko (červené), štěně (malý hnědý jezevčík)\n\n1. Park, ráno (0–5 s)\nHonza běží s vodítkem, na konci je štěně.\nHonza, nadšeně: Mami, on mě poslouchá!\n\n2. Lavička (5–12 s)\nPan Novák sedí na lavičce, štěně mu očichává boty.\nPan Novák, přísně: Mladý muži, tohle je můj krajíc.\nHonza, omluvně: Promiňte, on má hlad.\n\n3. Lavička, detail (12–20 s)\nPan Novák se usměje a podá štěněti kousek chleba.\nPan Novák: Tak jo. Ale jen kousek.\n\n4. Cesta domů (20–30 s)\nEva, Honza a štěně jdou po cestě. Pan Novák jim mává.\nEva: Vidíš? Máme nového kamaráda.\nHonza: Dva nové kamarády!",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Honza",
+   "Mami, on mě poslouchá!"
+  ],
+  [
+   2,
+   "pan Novák",
+   "Mladý muži, tohle je můj krajíc."
+  ],
+  [
+   2,
+   "Honza",
+   "Promiňte, on má hlad."
+  ],
+  [
+   3,
+   "pan Novák",
+   "Tak jo. Ale jen kousek."
+  ],
+  [
+   4,
+   "Eva",
+   "Vidíš? Máme nového kamaráda."
+  ],
+  [
+   4,
+   "Honza",
+   "Dva nové kamarády!"
+  ]
+ ],
+ "genders": {
+  "Eva": "f",
+  "Honza": "m",
+  "pan Novák": "m"
+ },
+ "props": [
+  "vodítko",
+  "štěně"
+ ]
+}

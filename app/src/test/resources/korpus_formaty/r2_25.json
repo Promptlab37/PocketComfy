@@ -1,0 +1,33 @@
+{
+ "name": "TV ad all-CAPS: windows 'n. 0:00–0:04', CAPS speakers MAMINKA/VAŠÍK, 'HLAS MIMO OBRAZ (žena):', bare 'STŘIH:' line, HUDBA:/SLOGAN:/LOGO:/VÝZVA: in caps not spoken, product name in narration",
+ "text": "SPOT „BĚLKA“ – 20 s – verze pro TV\n\n1. 0:00–0:04\nDětské hřiště. Syn Vašík sjede po klouzačce přímo do louže.\nMAMINKA (zděšeně): Vašíku! To je nové tričko!\nSTŘIH:\n2. 0:04–0:08\nVašík se zablácený usmívá od ucha k uchu.\nVAŠÍK: Ale mami, byla to nejlepší louže na světě!\n3. 0:08–0:13\nDoma. Maminka dává tričko do pračky, přidá prášek Bělka.\nHLAS MIMO OBRAZ (žena): Bělka si poradí s blátem, trávou i ovocem. Už při třiceti stupních.\nHUDBA: veselá, rytmická\n4. 0:13–0:17\nČisté bílé tričko na šňůře, Vašík v něm znovu běží ven.\nMAMINKA: Tak jo. Ale jen jedna louže!\n5. 0:17–0:20\nBalení Bělky na bílém pozadí.\nSLOGAN: Bělka. Ať si děti hrají.\nLOGO: Bělka\nVÝZVA: Nyní v akčním balení.",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "MAMINKA",
+   "Vašíku! To je nové tričko!"
+  ],
+  [
+   2,
+   "VAŠÍK",
+   "Ale mami, byla to nejlepší louže na světě!"
+  ],
+  [
+   3,
+   "Vypravěč",
+   "Bělka si poradí s blátem, trávou i ovocem. Už při třiceti stupních."
+  ],
+  [
+   4,
+   "MAMINKA",
+   "Tak jo. Ale jen jedna louže!"
+  ]
+ ],
+ "genders": {
+  "MAMINKA": "f",
+  "VAŠÍK": "m",
+  "Vypravěč": "f"
+ },
+ "props": []
+}

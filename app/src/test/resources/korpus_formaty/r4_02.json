@@ -1,0 +1,39 @@
+{
+ "name": "PDF: záhlaví stránek a čísla stran mezi replikami + scénářový formát VELKÝMI + tituly MUDr. + zalomená replika + cedule na zdi",
+ "text": "KRÁTKÝ FILM „KOLENO“                                   strana 1\nPostavy: MUDr. Jana Kovářová (lékařka, 45), pan Novák (důchodce, 70)\nRekvizity: tuba masti\n\n1. INT. ORDINACE – DEN\nČekárna, na dveřích cedule OBJEDNANÍ PACIENTI – KLEPEJTE.\nMUDr. JANA KOVÁŘOVÁ\nDobrý den, pojďte dál,\nprosím.\nPAN NOVÁK\n(nervózně)\nDobrý den, paní doktorko. Mám\nobjednáno na desátou.\n\n- 1 -\nKRÁTKÝ FILM „KOLENO“                                   strana 2\n2. INT. ORDINACE – DEN\nMUDr. JANA KOVÁŘOVÁ\nPosaďte se. Co vás trápí?\nPAN NOVÁK\nKoleno. Hlavně když jdu do\nschodů.\n3. INT. ORDINACE – DEN\nDoktorka prohmatá koleno. Pan Novák sykne.\nMUDr. JANA KOVÁŘOVÁ\nNic zlomeného. Dáme mastičku\na klid.\nPodá mu tubu masti.\n- 2 -",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "MUDr. Jana Kovářová",
+   "Dobrý den, pojďte dál, prosím."
+  ],
+  [
+   1,
+   "pan Novák",
+   "Dobrý den, paní doktorko. Mám objednáno na desátou."
+  ],
+  [
+   2,
+   "MUDr. Jana Kovářová",
+   "Posaďte se. Co vás trápí?"
+  ],
+  [
+   2,
+   "pan Novák",
+   "Koleno. Hlavně když jdu do schodů."
+  ],
+  [
+   3,
+   "MUDr. Jana Kovářová",
+   "Nic zlomeného. Dáme mastičku a klid."
+  ]
+ ],
+ "genders": {
+  "MUDr. Jana Kovářová": "f",
+  "pan Novák": "m"
+ },
+ "props": [
+  "tuba masti"
+ ]
+}

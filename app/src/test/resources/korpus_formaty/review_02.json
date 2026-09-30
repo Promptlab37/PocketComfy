@@ -1,0 +1,22 @@
+{
+ "name": "filmový formát JMÉNO / (podání) / replika",
+ "text": "Postavy:\nJana: 30 let, zástěra\nTáta: 60 let, brýle\n\nOKNO 1\nJana stojí v kuchyni.\nJANA\n(šeptem)\nKde je táta?\n\nOKNO 2\nTáta vejde s nákupem.\nTÁTA\nTady jsem.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Kde je táta?"
+  ],
+  [
+   2,
+   "Táta",
+   "Tady jsem."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Táta": "m"
+ },
+ "props": []
+}

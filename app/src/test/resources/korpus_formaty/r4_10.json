@@ -1,0 +1,41 @@
+{
+ "name": "Pohádka: mluvčí Máma a Pes (mluvící pes s vlastním jménem) + Zvuk: Pes zavrčí + oslovení Alíku + rekvizity ponožka/košík + Scéna n – místo",
+ "text": "Pohádka na dobrou noc – Alík a ponožka\nPostavy: Máma, Tonda (5 let), Pes (mluvící jezevčík Alík)\nRekvizity: ponožka, košík\n\nScéna 1 – dětský pokoj, večer\nMáma: Tondo, kde máš druhou ponožku?\nTonda: Nevím, mami.\nScéna 2 – pod postelí\nPes leží v košíku a drží ponožku v zubech.\nPes (šeptem): Tuhle nikdo nedostane.\nZvuk: Pes zavrčí.\nScéna 3 – dětský pokoj\nMáma se sehne pod postel.\nMáma: Alíku! Tak to jsi byl ty.\nPes: Byla ke mně nejblíž.\nTonda se směje a Máma vrtí hlavou.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Máma",
+   "Tondo, kde máš druhou ponožku?"
+  ],
+  [
+   1,
+   "Tonda",
+   "Nevím, mami."
+  ],
+  [
+   2,
+   "Pes",
+   "Tuhle nikdo nedostane."
+  ],
+  [
+   3,
+   "Máma",
+   "Alíku! Tak to jsi byl ty."
+  ],
+  [
+   3,
+   "Pes",
+   "Byla ke mně nejblíž."
+  ]
+ ],
+ "genders": {
+  "Máma": "f",
+  "Tonda": "m",
+  "Pes": "m"
+ },
+ "props": [
+  "ponožka",
+  "košík"
+ ]
+}

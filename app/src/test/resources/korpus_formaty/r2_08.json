@@ -1,0 +1,32 @@
+{
+ "name": "Copilot: windows as numbered list '1. **title (time)**' with emoji, indented content, '🗣️ Name – delivery: „…“' dash delivery, cast 'Anička (7 let)', 📝 Text na konci: not spoken",
+ "text": "Samozřejmě! Zde je jednoduchý storyboard:\n\n🎥 **Téma:** Dědeček učí vnučku rybařit\n👥 **Postavy:** Děda Josef, Anička (7 let)\n\n1. **Úvodní záběr (0–4 s)** 🌅\n   Klidný rybník za svítání, mlha nad vodou.\n   🎵 Hudba: tichý klavír\n\n2. **Záběr na molo (4–8 s)**\n   Děda Josef ukazuje Aničce, jak nahodit prut.\n   🗣️ Děda Josef – trpělivě: „Pomalu, jako když máváš na pozdrav.“\n\n3. **Detail splávku (8–11 s)**\n   Splávek se zhoupne a zmizí pod hladinou.\n   🗣️ Anička – vzrušeně: „Dědo! Dědo, bere to!“\n\n4. **Radost (11–16 s)**\n   Anička drží malou rybku, oba se smějí.\n   🗣️ Děda Josef: „Tak tohle je tvoje první. Tu pustíme, ať ještě vyroste.“\n   🗣️ Anička: „Ahoj, rybičko!“\n\n📝 Text na konci: Nejlepší chvíle jsou ty společné.\n\nChcete ještě upravit délku nebo styl? 😊",
+ "windows": 4,
+ "lines": [
+  [
+   2,
+   "Děda Josef",
+   "Pomalu, jako když máváš na pozdrav."
+  ],
+  [
+   3,
+   "Anička",
+   "Dědo! Dědo, bere to!"
+  ],
+  [
+   4,
+   "Děda Josef",
+   "Tak tohle je tvoje první. Tu pustíme, ať ještě vyroste."
+  ],
+  [
+   4,
+   "Anička",
+   "Ahoj, rybičko!"
+  ]
+ ],
+ "genders": {
+  "Děda Josef": "m",
+  "Anička": "f"
+ },
+ "props": []
+}

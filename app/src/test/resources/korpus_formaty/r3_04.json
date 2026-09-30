@@ -1,0 +1,35 @@
+{
+ "name": "postavy jen jako S-kódy bez jmen (S1 – mladý muž…)",
+ "text": "STORYBOARD – Stěhování gauče\nFormát: 16:9, přibližně 16 sekund.\nPostavy:\nS1 – mladý muž, 25 let, krátké černé vlasy, šedá mikina s kapucí, černé tepláky\nS2 – mladá žena, 24 let, blond mikádo, oranžové tričko, montérky\nRekvizity:\nGauč: velký tmavě zelený sametový gauč\nMetr: žlutý svinovací metr\nKontinuita: úzká chodba panelového domu, S1 má celou dobu mikinu, S2 oranžové tričko\n\n[OKNO 1 | 0–4 s] Ve dveřích\nObraz: S1 a S2 drží gauč, který se zasekl ve dveřích bytu.\nEmoce: úsilí, humor\nS1 (s námahou): „Zvedni to víc nahoru, prosím tě!“\nZvuk: skřípění, dupání\n\n[OKNO 2 | 4–8 s] Měření\nObraz: S2 gauč pustí, vytáhne metr a měří dveře.\nEmoce: soustředění\nS2 (věcně): „Dveře mají osmdesát. Gauč má devadesát.“\nZvuk: cvaknutí metru\n\n[OKNO 3 | 8–12 s] Nápad\nObraz: S1 se zamyslí a ukáže na nožičky gauče.\nEmoce: nápad\nS1 (nadšeně): „Odšroubujeme nohy!“\nZvuk: krátký hudební akcent\n\n[OKNO 4 | 12–16 s] Hotovo\nObraz: Gauč stojí v obýváku, oba na něj zpocení padnou.\nEmoce: úleva\nS2 (vydýchaně): „Příště si koupíme sedací pytel.“\nZvuk: žuchnutí do polštářů, smích\nText na videu: „Nový domov ✔“\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "S1",
+   "Zvedni to víc nahoru, prosím tě!"
+  ],
+  [
+   2,
+   "S2",
+   "Dveře mají osmdesát. Gauč má devadesát."
+  ],
+  [
+   3,
+   "S1",
+   "Odšroubujeme nohy!"
+  ],
+  [
+   4,
+   "S2",
+   "Příště si koupíme sedací pytel."
+  ]
+ ],
+ "genders": {
+  "S1": "m",
+  "S2": "f"
+ },
+ "props": [
+  "Gauč",
+  "Metr"
+ ]
+}

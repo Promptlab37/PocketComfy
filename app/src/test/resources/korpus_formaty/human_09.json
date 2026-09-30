@@ -1,0 +1,37 @@
+{
+ "name": "Přednes v závorce až za dvojtečkou (Lékařka: (přátelsky) …), víceslovný mluvčí 'Pan Novák' se skloňováním (Nováku), starší muž",
+ "text": "Okno 1\nOrdinace. Lékařka píše do počítače, dovnitř vejde pan Novák, starší muž s holí.\nLékařka: (přátelsky) Dobrý den, pane Nováku. Posaďte se.\nPan Novák: (unaveně) Dobrý den. Zase mě bolí koleno.\n\nOkno 2\nLékařka mu prohlédne koleno.\nLékařka: (klidně) Nic vážného. Hlavně víc chodit a méně sedět.\nPan Novák: (s úsměvem) To mi říká i manželka.\n\nOkno 3\nPan Novák odchází, u dveří se otočí.\nPan Novák: Děkuju, paní doktorko. Příště vám přinesu jablka.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Lékařka",
+   "Dobrý den, pane Nováku. Posaďte se."
+  ],
+  [
+   1,
+   "Pan Novák",
+   "Dobrý den. Zase mě bolí koleno."
+  ],
+  [
+   2,
+   "Lékařka",
+   "Nic vážného. Hlavně víc chodit a méně sedět."
+  ],
+  [
+   2,
+   "Pan Novák",
+   "To mi říká i manželka."
+  ],
+  [
+   3,
+   "Pan Novák",
+   "Děkuju, paní doktorko. Příště vám přinesu jablka."
+  ]
+ ],
+ "genders": {
+  "Lékařka": "f",
+  "Pan Novák": "m"
+ },
+ "props": []
+}

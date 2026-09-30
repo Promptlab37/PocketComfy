@@ -1,0 +1,22 @@
+{
+ "name": "rovné uvozovky uvnitř repliky",
+ "text": "Postavy:\nJana: 35 let, modrá halenka\nPetr: 40 let, šedé sako\n\nOKNO 1\nJana sedí u stolu.\nJANA: Říkali mi \"Květa\" celé léta.\nOKNO 2\nPetr se usměje.\nPETR: „Vždyť vím, ‚Květo‘.“",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Říkali mi \"Květa\" celé léta."
+  ],
+  [
+   2,
+   "Petr",
+   "Vždyť vím, ‚Květo‘."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Petr": "m"
+ },
+ "props": []
+}

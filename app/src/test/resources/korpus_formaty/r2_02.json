@@ -1,0 +1,32 @@
+{
+ "name": "Phone: 'okno1'/'Okno4' no space, lowercase, no diacritics in labels, no space after colon, ASCII/single quotes, 'Petr - text' dash speaker, ellipsis without spaces",
+ "text": "okno1 ranni park,pes bezi za micem\nPetr:\"Azor ke mně!!\"\nokno 2 detail na psa co nese mic v tlame\nOKNO 3:  petr se smeje a hladi psa\nPetr - hodnej kluk...hodnej\nOkno4 prichazi sousedka pani Dvořáková s taskou\nDvořáková:'Dobry den pane Novak, vy jste ale ranní ptáče'\nPetr:'Dobrý, to víte, pes nepočká'",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Azor ke mně!!"
+  ],
+  [
+   3,
+   "Petr",
+   "hodnej kluk...hodnej"
+  ],
+  [
+   4,
+   "Dvořáková",
+   "Dobry den pane Novak, vy jste ale ranní ptáče"
+  ],
+  [
+   4,
+   "Petr",
+   "Dobrý, to víte, pes nepočká"
+  ]
+ ],
+ "genders": {
+  "Petr": "m",
+  "Dvořáková": "f"
+ },
+ "props": []
+}

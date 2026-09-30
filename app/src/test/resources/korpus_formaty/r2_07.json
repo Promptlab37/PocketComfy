@@ -1,0 +1,43 @@
+{
+ "name": "Claude: **Scéna n — title (time)**, cast 'Ing. Karel Veselý'/'Hana Veselá' vs lines 'Karel'/'Hana', narrator listed in cast as female, props list, delivery after comma 'Karel, tiše:', delivery with 2 items in parens, Nápis:",
+ "text": "Tady je storyboard pro krátké komediální video o tatínkovi, který skládá nábytek.\n\n**Postavy**\n- Ing. Karel Veselý – otec, 45 let, přesvědčený, že návod nepotřebuje\n- Hana Veselá – jeho žena\n- Hlas mimo obraz – ženský, ironický\n\n**Rekvizity:** skříň v krabici, imbusový klíč, návod, šroubky\n\n**Scéna 1 — Obývák (0:00–0:04)**\nKarel rozbaluje obří krabici. Návod odhodí přes rameno.\nKarel: Návody jsou pro slabochy.\n\n**Scéna 2 — O tři hodiny později (0:04–0:08)**\nSkříň stojí nakřivo, dvířka visí.\nHlas mimo obraz: O tři hodiny později.\nHana (ve dveřích, s hrnkem): Zlato, proč má ta skříň dveře nahoře?\n\n**Scéna 3 — Detail (0:08–0:11)**\nKarel drží v dlani hrst šroubků navíc.\nKarel, tiše: To jsou... náhradní.\n\n**Scéna 4 — Závěr (0:11–0:15)**\nHana zvedne ze země návod a podá mu ho.\nKarel: Dobře. Jenom se kouknu.\nNápis: Někdy stačí přečíst si návod.\n\nChceš k tomu i prompty pro jednotlivé záběry?",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Ing. Karel Veselý",
+   "Návody jsou pro slabochy."
+  ],
+  [
+   2,
+   "Vypravěč",
+   "O tři hodiny později."
+  ],
+  [
+   2,
+   "Hana Veselá",
+   "Zlato, proč má ta skříň dveře nahoře?"
+  ],
+  [
+   3,
+   "Ing. Karel Veselý",
+   "To jsou... náhradní."
+  ],
+  [
+   4,
+   "Ing. Karel Veselý",
+   "Dobře. Jenom se kouknu."
+  ]
+ ],
+ "genders": {
+  "Ing. Karel Veselý": "m",
+  "Hana Veselá": "f",
+  "Vypravěč": "f"
+ },
+ "props": [
+  "skříň v krabici",
+  "imbusový klíč",
+  "návod",
+  "šroubky"
+ ]
+}

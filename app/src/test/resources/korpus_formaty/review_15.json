@@ -1,0 +1,22 @@
+{
+ "name": "S-kód v závorce za jménem",
+ "text": "Postavy:\nJana: 30 let, kabát\nPetr: 33 let, šála\n\nOKNO 1\nZastávka autobusu.\nJana (S1): <d>[Czech] Jede to vůbec?</d>\nPetr (S2): <d>[Czech] Za pět minut.</d>\nOKNO 2\nPřijíždí autobus.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Jede to vůbec?"
+  ],
+  [
+   1,
+   "Petr",
+   "Za pět minut."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Petr": "m"
+ },
+ "props": []
+}

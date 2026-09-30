@@ -1,0 +1,39 @@
+{
+  "name": "AI – první den ve škole",
+  "text": "Scénář: První den ve škole\n\nPostavy: paní učitelka Svobodová, Adam (7), Klára (7)\n\nShot 1 – exteriér školy, wide\nDěti s aktovkami vcházejí do budovy, rodiče mávají.\nZvuk: školní zvonek\n\nShot 2 – třída, medium\nAdam stojí u dveří a neví, kam si sednout.\nSvobodová: \"Pojď dál, Adame, tady u okna je volné místo.\"\n\nShot 3 – lavice, close-up\nKlára se k Adamovi otočí a podává mu pastelku.\nKlára: \"Ahoj, já jsem Klára. Chceš půjčit modrou?\"\nAdam: \"Jo, děkuju. Já zapomněl penál doma.\"\n\nShot 4 – tabule, over the shoulder\nUčitelka píše na tabuli velké A.\nSvobodová: \"Dnes se naučíme první písmenko. Kdo ví, které to je?\"\n\nShot 5 – třída, wide\nAdam i Klára zvedají ruku zároveň.\nAdam a Klára: \"Áčko!\"\nTitulek: A tak to celé začalo…",
+  "windows": 5,
+  "lines": [
+    [
+      2,
+      "Svobodová",
+      "Pojď dál, Adame, tady u okna je volné místo."
+    ],
+    [
+      3,
+      "Klára",
+      "Ahoj, já jsem Klára. Chceš půjčit modrou?"
+    ],
+    [
+      3,
+      "Adam",
+      "Jo, děkuju. Já zapomněl penál doma."
+    ],
+    [
+      4,
+      "Svobodová",
+      "Dnes se naučíme první písmenko. Kdo ví, které to je?"
+    ],
+    [
+      5,
+      "Adam a Klára",
+      "Áčko!"
+    ]
+  ],
+  "genders": {
+    "Svobodová": "f",
+    "Adam": "m",
+    "Klára": "f",
+    "Adam a Klára": "?"
+  },
+  "props": []
+}

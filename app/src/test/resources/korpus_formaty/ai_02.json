@@ -1,0 +1,62 @@
+{
+ "name": "Skutečná odpověď ChatGPT: NÁZEV:, S1–S5 s popisem za pomlčkou, [OKNO n] bez času, mluvčí + způsob za čárkou, akční věty s S-kódem",
+ "text": "NÁZEV: ŠPATNÝ STŮL\nFormát: realistický krátký film, Reels 9:16, přibližně 40 sekund.\nPostavy:\nS1 – mladý muž v tmavě zeleném saku\nS2 – jeho přítelkyně v krémové halence\nS3 – starší číšník v černé vestě\nS4 – paní u vedlejšího stolu, asi 60 let, v růžovém kostýmku\nS5 – její manžel, šedivý pán s brýlemi\nRekvizita: malá modrá krabička se zásnubním prstenem.\nProstor: Mladý pár sedí u stolu vlevo, starší pár u stolu vpravo.\n\n[OKNO 1]\nMladý pár večeří.\nS2, s úsměvem: „Jsi dneska nějaký nervózní.“\nS1: „Já? Vůbec.“\n\n[OKNO 2]\nS1 nenápadně podá číšníkovi krabičku.\nS1, šeptem: „Až přinesete dezert. Sem, prosím.“\nS3 přikývne.\n\n[OKNO 3]\nČíšník nese dezert s krabičkou ke stolu vpravo.\nS3: „Dezert pro dámu.“\nS4, překvapeně: „Pro mě?“\n\n[OKNO 4]\nStarší paní otevře krabičku a rozzáří se.\nS5, zmateně: „Miláčku, to není ode mě.“\nS4: „Ale teď už je.“\n\n[OKNO 5]\nS1 si dá ruku na čelo, S2 se směje.\nS2: „Tak to bylo pro mě, že jo?“\nS1: „Bylo.“",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "S2",
+   "Jsi dneska nějaký nervózní."
+  ],
+  [
+   1,
+   "S1",
+   "Já? Vůbec."
+  ],
+  [
+   2,
+   "S1",
+   "Až přinesete dezert. Sem, prosím."
+  ],
+  [
+   3,
+   "S3",
+   "Dezert pro dámu."
+  ],
+  [
+   3,
+   "S4",
+   "Pro mě?"
+  ],
+  [
+   4,
+   "S5",
+   "Miláčku, to není ode mě."
+  ],
+  [
+   4,
+   "S4",
+   "Ale teď už je."
+  ],
+  [
+   5,
+   "S2",
+   "Tak to bylo pro mě, že jo?"
+  ],
+  [
+   5,
+   "S1",
+   "Bylo."
+  ]
+ ],
+ "genders": {
+  "S1": "m",
+  "S2": "f",
+  "S3": "m",
+  "S4": "f",
+  "S5": "m"
+ },
+ "props": [
+  "malá modrá krabička se zásnubním prstenem"
+ ]
+}

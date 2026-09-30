@@ -1,0 +1,22 @@
+{
+ "name": "dvě postavy v jednom řádku se čárkou",
+ "text": "Postavy: Petr, 40 let, a jeho syn Tomáš, 10 let.\n\nOKNO 1\nPetr a Tomáš na rybách.\nTomáš: „Tati, bere to!“\nOKNO 2\nPetr vytáhne malou rybku.\nPetr: „No, na polévku to nebude.“",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Tomáš",
+   "Tati, bere to!"
+  ],
+  [
+   2,
+   "Petr",
+   "No, na polévku to nebude."
+  ]
+ ],
+ "genders": {
+  "Petr": "m",
+  "Tomáš": "m"
+ },
+ "props": []
+}

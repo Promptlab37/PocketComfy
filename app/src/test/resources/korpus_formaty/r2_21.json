@@ -1,0 +1,38 @@
+{
+ "name": "Messy phone: 'OKNO1-bazén' dash after label, 'OKNO 2:Kuba…' no space, missing spaces after commas, quotes „…\" / '…' / \"…\" mixed, line broken over 3 lines, 'zvuk-šplouchnutí' dash label that is NOT a speaker, 'OKNO 4 tonda…' lowercase name in action",
+ "text": "kluci na koupališti\nOKNO1-bazén,slunce,kluci leží na dece\nTonda:\"hele,jdem skočit z trojky?\"\nOKNO 2:Kuba kouká nahoru na skokánek,trochu se bojí\nKuba:„Já nevím... je to docela\nvysoko a já jsem\npo obědě\"\nOKNO3: plavčík píská na píšťalku\nPlavčík:'Kluci, na skokánek jen po jednom!'\nOKNO 4 tonda skočí,šplouch\nzvuk-šplouchnutí,děti tleskaj\nOKNO 5:Kuba se odhodlá a skočí taky\nTonda:\"Vidíš!! Nic to nebylo\"\nKuba: \"Bylo to super!!!\"",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Tonda",
+   "hele,jdem skočit z trojky?"
+  ],
+  [
+   2,
+   "Kuba",
+   "Já nevím... je to docela vysoko a já jsem po obědě"
+  ],
+  [
+   3,
+   "Plavčík",
+   "Kluci, na skokánek jen po jednom!"
+  ],
+  [
+   5,
+   "Tonda",
+   "Vidíš!! Nic to nebylo"
+  ],
+  [
+   5,
+   "Kuba",
+   "Bylo to super!!!"
+  ]
+ ],
+ "genders": {
+  "Tonda": "m",
+  "Kuba": "m",
+  "Plavčík": "m"
+ },
+ "props": []
+}

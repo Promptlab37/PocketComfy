@@ -1,0 +1,37 @@
+{
+ "name": "12 windows 'ZÁBĚR n (1,5 s) – description' with decimal-comma durations, most windows silent, 'Zvuk: HAF HAF' in caps, speaker named only in action ('Pošťačka Irena') but lines 'Irena:', 'Pan Kolář' vs vocative 'pane Koláři' in line",
+ "text": "Den pošťačky – 12 záběrů, rytmický střih\n\nZÁBĚR 1 (1,5 s) – Budík ukazuje 5:30.\nZÁBĚR 2 (1,5 s) – Pošťačka Irena si zavazuje boty.\nZÁBĚR 3 (2 s) – Třídění dopisů na poště.\nIrena: Novákovi, Dvořákovi, Černí... a zase Novákovi.\nZÁBĚR 4 (1,5 s) – Kolo s brašnou vyjíždí do ulice.\nZÁBĚR 5 (2 s) – Pes za plotem štěká.\nZvuk: HAF HAF\nZÁBĚR 6 (2 s) – Irena mu přes plot hodí piškot.\nIrena: Tady máš, strážce.\nZÁBĚR 7 (1,5 s) – Schránky v paneláku.\nZÁBĚR 8 (2,5 s) – Starý pán otevírá dveře.\nPan Kolář: Dobrý den, Ireno! Nesete mi pohled od vnoučat?\nIrena: Až z Norska, pane Koláři.\nZÁBĚR 9 (1,5 s) – Déšť. Irena si nasadí kapuci.\nZÁBĚR 10 (2 s) – Duha nad sídlištěm.\nHudba: kytarové sólo\nZÁBĚR 11 (2 s) – Prázdná brašna.\nIrena (spokojeně): Hotovo.\nZÁBĚR 12 (2 s) – Irena doma s nohama nahoře a hrnkem čaje.\nNápis: Díky všem, kdo nosí dobré zprávy.",
+ "windows": 12,
+ "lines": [
+  [
+   3,
+   "Irena",
+   "Novákovi, Dvořákovi, Černí... a zase Novákovi."
+  ],
+  [
+   6,
+   "Irena",
+   "Tady máš, strážce."
+  ],
+  [
+   8,
+   "Pan Kolář",
+   "Dobrý den, Ireno! Nesete mi pohled od vnoučat?"
+  ],
+  [
+   8,
+   "Irena",
+   "Až z Norska, pane Koláři."
+  ],
+  [
+   11,
+   "Irena",
+   "Hotovo."
+  ]
+ ],
+ "genders": {
+  "Irena": "f",
+  "Pan Kolář": "m"
+ },
+ "props": []
+}

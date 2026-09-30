@@ -1,0 +1,32 @@
+{
+ "name": "Comic-style PANEL n (no times), child speaker with age '(6)', long action delivery in parens before colon, 'SFX: ŤUK!' in caps, Na obrazovce: not spoken, window 2 without dialogue",
+ "text": "Storyboard – Robot Bobík\nPANEL 1\nObývák. Robotický vysavač jezdí dokola.\nMaruška (6): Bobíku, kam jedeš?\nPANEL 2\nRobot vrazí do kočičí misky. Kočka uskočí.\nSFX: ŤUK!\nPANEL 3\nTáta vykoukne z kuchyně.\nTáta: Maruško, zase jsi ho zapnula?\nMaruška: On chtěl jezdit!\nPANEL 4\nRobot se zasekne pod gaučem a pípá.\nNa obrazovce: Bobík potřebuje pomoc\nMaruška (lehne si na zem, volá pod gauč): Neboj, Bobíku, já tě zachráním!",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Maruška",
+   "Bobíku, kam jedeš?"
+  ],
+  [
+   3,
+   "Táta",
+   "Maruško, zase jsi ho zapnula?"
+  ],
+  [
+   3,
+   "Maruška",
+   "On chtěl jezdit!"
+  ],
+  [
+   4,
+   "Maruška",
+   "Neboj, Bobíku, já tě zachráním!"
+  ]
+ ],
+ "genders": {
+  "Maruška": "f",
+  "Táta": "m"
+ },
+ "props": []
+}

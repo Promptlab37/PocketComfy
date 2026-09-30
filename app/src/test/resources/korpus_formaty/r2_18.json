@@ -1,0 +1,38 @@
+{
+ "name": "Cooking: windows 'n) time description' on one line, role speakers Kuchař/Pomocnice, 'Komentář:' narrator, Na obrazovce with numbers and |, Zvuk:, Titulek:",
+ "text": "Recept za minutu – palačinky\n\n1) 0:00–0:05 Kuchař stojí za pultem, před ním mísa.\nKuchař: Dneska si uděláme palačinky, jaké dělávala moje máma.\n\n2) 0:05–0:12 Detail rukou – vejce, mléko, mouka.\nKomentář: Dvě vejce, čtvrt litru mléka a sto dvacet gramů hladké mouky.\nNa obrazovce: 2 vejce | 250 ml mléka | 120 g mouky\n\n3) 0:12–0:20 Pánev, těsto se rozlévá.\nZvuk: syčení\nKuchař: Pánev musí být pořádně rozpálená. Jinak se to lepí.\n\n4) 0:20–0:26 Palačinka letí vzduchem a dopadne zpět na pánev.\nPomocnice (tleská): Bravo, šéfe!\n\n5) 0:26–0:30 Talíř s palačinkou, marmeláda, cukr.\nKuchař: Dobrou chuť!\nTitulek: Recept za minutu",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Kuchař",
+   "Dneska si uděláme palačinky, jaké dělávala moje máma."
+  ],
+  [
+   2,
+   "Vypravěč",
+   "Dvě vejce, čtvrt litru mléka a sto dvacet gramů hladké mouky."
+  ],
+  [
+   3,
+   "Kuchař",
+   "Pánev musí být pořádně rozpálená. Jinak se to lepí."
+  ],
+  [
+   4,
+   "Pomocnice",
+   "Bravo, šéfe!"
+  ],
+  [
+   5,
+   "Kuchař",
+   "Dobrou chuť!"
+  ]
+ ],
+ "genders": {
+  "Kuchař": "m",
+  "Pomocnice": "f",
+  "Vypravěč": "?"
+ },
+ "props": []
+}

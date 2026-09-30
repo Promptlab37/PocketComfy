@@ -1,0 +1,32 @@
+{
+ "name": "OKNO N s časem v závorce, bez seznamu postav, role Máma/Syn",
+ "text": "Ráno v kuchyni\n\nOKNO 1 (0–5 s)\nMáma stojí u linky a maže chleba. Do kuchyně vejde rozespalý syn s batohem.\nMáma: Dobré ráno, spáči. Máš všechno na dnešek?\nSyn: Myslím, že jo. Jen nemůžu najít penál.\n\nOKNO 2 (5–10 s)\nMáma ukáže na parapet.\nMáma: Leží tam, kde jsi ho včera nechal.\nSyn: Díky, mami!\n\nOKNO 3 (10–15 s)\nSyn si bere svačinu a běží ke dveřím. Máma se usměje a zamává.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Máma",
+   "Dobré ráno, spáči. Máš všechno na dnešek?"
+  ],
+  [
+   1,
+   "Syn",
+   "Myslím, že jo. Jen nemůžu najít penál."
+  ],
+  [
+   2,
+   "Máma",
+   "Leží tam, kde jsi ho včera nechal."
+  ],
+  [
+   2,
+   "Syn",
+   "Díky, mami!"
+  ]
+ ],
+ "genders": {
+  "Máma": "f",
+  "Syn": "m"
+ },
+ "props": []
+}

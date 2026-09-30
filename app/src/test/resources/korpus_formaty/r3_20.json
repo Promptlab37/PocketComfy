@@ -1,0 +1,30 @@
+{
+ "name": "styl Copilot: úvod a celý storyboard v bloku ```, závěrečná nabídka",
+ "text": "Jasně! Níže najdeš storyboard podle zadané šablony:\n\n```\nSTORYBOARD – Úklid pokojíčku\nFormát: 9:16, přibližně 12 sekund.\nPostavy:\nSofie: 13 let, dlouhé hnědé vlasy, šedá mikina s kočkou, tepláky\nMáma: 44 let, tmavé mikádo, bílá halenka, brýle\nRekvizity:\nKrabice: velká kartonová krabice s nápisem „HRAČKY“\nVysavač: červený tyčový vysavač\nKontinuita: dětský pokoj, sobotní odpoledne, Sofie má celou dobu šedou mikinu\n\n[OKNO 1 | 0–4 s] Chaos\nObraz: Máma otevře dveře do pokoje plného rozházených věcí.\nEmoce: údiv\nMáma (zhluboka se nadechne): „Sofie… co se tu stalo?“\nZvuk: vrznutí dveří\n\n[OKNO 2 | 4–8 s] Rychlý úklid\nObraz: Zrychlený záběr – Sofie hází věci do krabice a vysává.\nEmoce: rychlost, humor\nZvuk: zrychlená hudba, bzučení vysavače\nText na videu: „O 20 minut později…“\n\n[OKNO 3 | 8–12 s] Kontrola\nObraz: Pokoj září čistotou, Sofie stojí s rukama v bok.\nEmoce: pýcha\nSofie (vítězoslavně): „Tak co? Můžu teď jít ven?“\nMáma (smíchem): „Můžeš. A vezmi si bundu.“\nZvuk: cinknutí „ting“\n```\n\nChceš k tomu i verzi 16:9 nebo delší variantu s bratrem, který jí pokoj zase rozhází?\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Máma",
+   "Sofie… co se tu stalo?"
+  ],
+  [
+   3,
+   "Sofie",
+   "Tak co? Můžu teď jít ven?"
+  ],
+  [
+   3,
+   "Máma",
+   "Můžeš. A vezmi si bundu."
+  ]
+ ],
+ "genders": {
+  "Sofie": "f",
+  "Máma": "f"
+ },
+ "props": [
+  "Krabice",
+  "Vysavač"
+ ]
+}

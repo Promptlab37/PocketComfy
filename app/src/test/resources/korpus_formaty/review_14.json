@@ -1,0 +1,22 @@
+{
+ "name": "ženská jména bez -a",
+ "text": "Postavy:\nNikol: 25 let, růžová mikina\nEster: 27 let, černý kabát\n\nOKNO 1\nNikol a Ester v kavárně.\nNikol: „Dáš si dort?“\nEster: „Jen kousek.“\nOKNO 2\nObě se smějí.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Nikol",
+   "Dáš si dort?"
+  ],
+  [
+   1,
+   "Ester",
+   "Jen kousek."
+  ]
+ ],
+ "genders": {
+  "Nikol": "f",
+  "Ester": "f"
+ },
+ "props": []
+}

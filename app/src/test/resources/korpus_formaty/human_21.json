@@ -1,0 +1,21 @@
+{
+ "name": "Jediný mluvčí (monolog kuchaře), 'OKNO 1: 0–6 s', okno jen s akcí, pomlčka v replice, 'Text na obrazovce:' jako výzva",
+ "text": "Recept na palačinky\n\nOKNO 1: 0–6 s\nKuchař Radek, mladý muž se zástěrou, stojí u sporáku.\nRadek: Dneska vám ukážu nejrychlejší palačinky na světě.\n\nOKNO 2: 6–10 s\nRadek rozbíjí vejce do mísy, přilévá mléko a mouku.\n\nOKNO 3: 10–18 s\nRadek obrací palačinku ve vzduchu.\nRadek: Tři vejce, půl litru mléka, dva hrnky mouky – a hotovo.\n\nText na obrazovce: Recept najdete v popisku.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Radek",
+   "Dneska vám ukážu nejrychlejší palačinky na světě."
+  ],
+  [
+   3,
+   "Radek",
+   "Tři vejce, půl litru mléka, dva hrnky mouky – a hotovo."
+  ]
+ ],
+ "genders": {
+  "Radek": "m"
+ },
+ "props": []
+}

@@ -1,0 +1,28 @@
+{
+ "name": "Bez nadpisu a bez sekce Postavy – obsazení v souvislé próze se závorkami ('Petr (35 let, modrá košile) a jeho žena Eva (33 let…)'), 'Záběr č. n'",
+ "text": "Petr (35 let, modrá košile) a jeho žena Eva (33 let, červené šaty, drdol) jsou na první společné dovolené u moře. Jejich syn Kuba (5 let, plavky s kotvami) staví hrad z písku.\n\nFormát: 9:16, přibližně 24 sekund.\n\nZáběr č. 1 (0–6 s)\nPláž, slunce. Petr rozkládá obří slunečník, vítr mu ho vyrve z ruky.\nPetr: „Drž ho! Drž ho!“\n\nZáběr č. 2 (6–12 s)\nSlunečník letí po pláži, Eva za ním běží v žabkách.\nEva (se smíchem): „Ten si jede na dovolenou sám!“\n\nZáběr č. 3 (12–18 s)\nSlunečník přistane přímo na Kubův hrad a vytvoří mu střechu.\nKuba (nadšeně): „Tati! Můj hrad má střechu!“\n\nZáběr č. 4 (18–24 s)\nRodina sedí ve stínu pod slunečníkem zapíchnutým v hradu.\nZvuk: šumění moře, racci",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Drž ho! Drž ho!"
+  ],
+  [
+   2,
+   "Eva",
+   "Ten si jede na dovolenou sám!"
+  ],
+  [
+   3,
+   "Kuba",
+   "Tati! Můj hrad má střechu!"
+  ]
+ ],
+ "genders": {
+  "Petr": "m",
+  "Eva": "f",
+  "Kuba": "m"
+ },
+ "props": []
+}

@@ -1,0 +1,37 @@
+{
+ "name": "Skloňování jmen v akci (Karel/Karlovi/Karla), časy s dvojtečkou uvnitř replik (14:20), čísla v replice",
+ "text": "OKNO 1\nKarel stojí na nástupišti a telefonuje. Lucie přichází a klepe Karlovi na rameno.\nLucie: Ahoj! Tak jsem tady.\nKarel: Skvělé. Vlak jede ve 14:20 z třetí koleje.\n\nOKNO 2\nLucie hledá v kabelce jízdenky, Karla to pobaví.\nKarel: Zase jsi je nechala doma?\nLucie: Ne, tady jsou! Odjezd 14:20, vůz 5, místa 31 a 32.\n\nOKNO 3\nNastupují do vlaku. Lucie pouští Karla napřed.\nLucie: Ty máš místo u okna.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Lucie",
+   "Ahoj! Tak jsem tady."
+  ],
+  [
+   1,
+   "Karel",
+   "Skvělé. Vlak jede ve 14:20 z třetí koleje."
+  ],
+  [
+   2,
+   "Karel",
+   "Zase jsi je nechala doma?"
+  ],
+  [
+   2,
+   "Lucie",
+   "Ne, tady jsou! Odjezd 14:20, vůz 5, místa 31 a 32."
+  ],
+  [
+   3,
+   "Lucie",
+   "Ty máš místo u okna."
+  ]
+ ],
+ "genders": {
+  "Lucie": "f",
+  "Karel": "m"
+ },
+ "props": []
+}

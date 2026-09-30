@@ -1,0 +1,38 @@
+{
+ "name": "Filmový scénář: '1. INT. KUCHYŇ – RÁNO (0–6 s)', jméno VELKÝMI na samostatném řádku, způsob v závorce na dalším řádku, replika pod tím bez uvozovek, TITULEK:",
+ "text": "KRÁTKÝ FILM: „PŘIJÍMAČKY“\n(9:16, cca 30 s)\n\nPOSTAVY:\nADAM – 15 let, rozcuchané vlasy, školní uniforma\nMAMKA – 45 let, kostýmek, klíče od auta v ruce\nUČITELKA NOVOTNÁ – 55 let, brýle, šedý svetr\n\n1. INT. KUCHYŇ – RÁNO (0–6 s)\n\nAdam spí s hlavou na učebnici.\n\nMAMKA\n(vyděšeně)\nAdame! Je osm!\n\n2. INT. AUTO – DEN (6–14 s)\n\nMamka řídí, Adam si opakuje vzorce.\n\nADAM\nPí je tři celá čtrnáct…\n\nMAMKA\nPatnáct devadesát dva!\n\n3. INT. ŠKOLNÍ CHODBA – DEN (14–22 s)\n\nUčitelka Novotná stojí u dveří třídy.\n\nUČITELKA NOVOTNÁ\nAdam Kratochvíl? Jdete přesně.\n\n4. EXT. PŘED ŠKOLOU – DEN (22–30 s)\n\nAdam vyběhne ven, mamka čeká u auta.\n\nADAM\n(zadýchaně)\nMami, bylo tam pí!\n\nTITULEK: O měsíc později… přijat.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "MAMKA",
+   "Adame! Je osm!"
+  ],
+  [
+   2,
+   "ADAM",
+   "Pí je tři celá čtrnáct…"
+  ],
+  [
+   2,
+   "MAMKA",
+   "Patnáct devadesát dva!"
+  ],
+  [
+   3,
+   "UČITELKA NOVOTNÁ",
+   "Adam Kratochvíl? Jdete přesně."
+  ],
+  [
+   4,
+   "ADAM",
+   "Mami, bylo tam pí!"
+  ]
+ ],
+ "genders": {
+  "ADAM": "m",
+  "MAMKA": "f",
+  "UČITELKA NOVOTNÁ": "f"
+ },
+ "props": []
+}

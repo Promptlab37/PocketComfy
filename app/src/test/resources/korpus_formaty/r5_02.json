@@ -1,0 +1,32 @@
+{
+  "name": "AI Claude – ranní procházka se psem",
+  "text": "Tady je návrh scénáře na krátké video (cca 30 s):\n\nZáběr 1 – Ložnice, brzy ráno\nPes Max strká čumák do peřiny. Budík ukazuje 6:00.\nVypravěč: „Každé ráno začíná stejně. Max má jasno.“\n\nZáběr 2 – Předsíň\nMajitel Filip si obouvá boty, Max netrpělivě přešlapuje s vodítkem v tlamě.\nFilip: „Dobře, dobře, už jdu, ty jeden netrpělivče.“\n\nZáběr 3 – Park, východ slunce\nCelkový záběr, Max běží po mokré trávě. Kamera sleduje psa v nízkém úhlu.\nZvuk: ptáci, vzdálený štěkot\n\nZáběr 4 – Lavička\nFilip sedí, Max mu položí hlavu na koleno.\nVypravěč: „A možná to vlastně není Filip, kdo venčí Maxe.“\n\nZáběr 5 – Závěr\nText na obrazovce: RÁNO PATŘÍ PSŮM\nFilip: „Tak jo, parťáku, jdeme domů na snídani.“\n\nPokud chcete, můžu scénář upravit na delší verzi nebo přidat hudbu.",
+  "windows": 5,
+  "lines": [
+    [
+      1,
+      "Vypravěč",
+      "Každé ráno začíná stejně. Max má jasno."
+    ],
+    [
+      2,
+      "Filip",
+      "Dobře, dobře, už jdu, ty jeden netrpělivče."
+    ],
+    [
+      4,
+      "Vypravěč",
+      "A možná to vlastně není Filip, kdo venčí Maxe."
+    ],
+    [
+      5,
+      "Filip",
+      "Tak jo, parťáku, jdeme domů na snídani."
+    ]
+  ],
+  "genders": {
+    "Vypravěč": "?",
+    "Filip": "m"
+  },
+  "props": []
+}

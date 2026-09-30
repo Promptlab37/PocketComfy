@@ -1,0 +1,42 @@
+{
+  "name": "AI Gemini – babiččiny buchty",
+  "text": "## Scénář: Babiččiny buchty\n\n**Obsazení:**\n* **S1** – Babička Marie (70 let, laskavá, v zástěře)\n* **S2** – Eliška (10 let, vnučka)\n\n**Scéna 1:** Kuchyně na chalupě\n* **Obraz:** Babička sype mouku do mísy, sluneční světlo z okna.\n* **Dialog:**\n  * **Marie:** „Nejdřív mouka, pak trocha cukru a špetka soli.“\n\n**Scéna 2:** Detail rukou\n* **Obraz:** Eliška rozbíjí vajíčko, skořápka padá do mísy.\n* **Dialog:**\n  * **Eliška:** „Jejda! Babi, spadla tam skořápka.“\n\n**Scéna 3:** Stůl\n* **Obraz:** Babička se směje a lžičkou skořápku vylovuje.\n* **Dialog:**\n  * **Marie:** „To nevadí, to se stane i mně.“\n\n**Scéna 4:** Hnětení těsta\n* **Obraz:** Obě hnětou těsto, prach z mouky ve světle.\n* **Zvuk:** tiché rádio v pozadí\n\n**Scéna 5:** Trouba\n* **Obraz:** Eliška kouká skrz sklo trouby, buchty rostou.\n* **Dialog:**\n  * **Eliška:** „Babi, jak dlouho ještě?“\n  * **Marie:** „Ještě dvacet minut, trpělivost.“\n\n**Scéna 6:** Závěr\n* **Obraz:** Plný plech zlatavých buchet, Eliška si bere první.\n* **Dialog:**\n  * **Eliška:** „Tyhle jsou nejlepší na světě.“\n\nDoufám, že vám scénář pomůže! Mám připravit i verzi v angličtině?",
+  "windows": 6,
+  "lines": [
+    [
+      1,
+      "Marie",
+      "Nejdřív mouka, pak trocha cukru a špetka soli."
+    ],
+    [
+      2,
+      "Eliška",
+      "Jejda! Babi, spadla tam skořápka."
+    ],
+    [
+      3,
+      "Marie",
+      "To nevadí, to se stane i mně."
+    ],
+    [
+      5,
+      "Eliška",
+      "Babi, jak dlouho ještě?"
+    ],
+    [
+      5,
+      "Marie",
+      "Ještě dvacet minut, trpělivost."
+    ],
+    [
+      6,
+      "Eliška",
+      "Tyhle jsou nejlepší na světě."
+    ]
+  ],
+  "genders": {
+    "Marie": "f",
+    "Eliška": "f"
+  },
+  "props": []
+}

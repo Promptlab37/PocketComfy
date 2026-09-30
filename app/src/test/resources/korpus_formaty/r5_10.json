@@ -1,0 +1,43 @@
+{
+  "name": "PDF – pondělní porada",
+  "text": "Pondělní porada – scénář interního videa\nStrana 1 / 2\n\nOkno 1 – Zasedačka, ráno. Hana vchází s notebookem, Martin a Lucie už\nsedí u stolu s kávou.\nHana: „Dobré ráno všem, dneska máme jen patnáct minut, tak\nto vezmeme rychle.“\n\nOkno 2 – Martin ukazuje graf na plátně.\nMartin: „Prodeje za září vzrostly o osm procent, nejvíc\ntáhne nový e-shop.“\n\nOkno 3 – Lucie zvedne ruku.\nLucie: „A co zákaznická podpora? Máme pořád hodně\ndotazů na dopravu.“\n\nStrana 2 / 2\n\nOkno 4 – Hana si dělá poznámky, přikyvuje.\nHana: „Dobrý postřeh. Lucie, připravíš do pátku krátký\npřehled?“\nLucie: „Jasně, pošlu ho všem mailem.“\n\nOkno 5 – Všichni se zvedají, Martin si bere poslední sušenku.\nMartin: „Tak to byla nejrychlejší porada roku.“\nTitulek: Díky, že jste s námi.",
+  "windows": 5,
+  "lines": [
+    [
+      1,
+      "Hana",
+      "Dobré ráno všem, dneska máme jen patnáct minut, tak to vezmeme rychle."
+    ],
+    [
+      2,
+      "Martin",
+      "Prodeje za září vzrostly o osm procent, nejvíc táhne nový e-shop."
+    ],
+    [
+      3,
+      "Lucie",
+      "A co zákaznická podpora? Máme pořád hodně dotazů na dopravu."
+    ],
+    [
+      4,
+      "Hana",
+      "Dobrý postřeh. Lucie, připravíš do pátku krátký přehled?"
+    ],
+    [
+      4,
+      "Lucie",
+      "Jasně, pošlu ho všem mailem."
+    ],
+    [
+      5,
+      "Martin",
+      "Tak to byla nejrychlejší porada roku."
+    ]
+  ],
+  "genders": {
+    "Hana": "f",
+    "Martin": "m",
+    "Lucie": "f"
+  },
+  "props": []
+}

@@ -1,0 +1,48 @@
+{
+  "name": "AI ChatGPT – Nela u zubaře",
+  "text": "Samozřejmě! Tady je scénář krátkého videa pro děti o návštěvě zubaře:\n\n**Název:** Nela a statečný zoubek\n**Délka:** cca 45 sekund\n\n**Postavy:**\n- Nela (6 let)\n- Zubař pan Beneš\n- Vypravěč\n\n---\n\n**Scéna 1 – Čekárna**\nNela sedí mamince na klíně, pevně svírá plyšového zajíce.\nVypravěč: „Nela dnes jde poprvé k zubaři. A trochu se bojí.“\n\n**Scéna 2 – Dveře ordinace**\nPan Beneš vykoukne s úsměvem.\nBeneš: „Nelo, pojď dál. A zajíc může taky.“\n\n**Scéna 3 – Zubařské křeslo**\nNela si sedá, křeslo se pomalu zvedá.\nZvuk: tiché bzučení křesla\nNela: „Jéé, já letím jako v letadle!“\n\n**Scéna 4 – Detail**\nPan Beneš ukazuje zrcátko, nejdřív zajícovi.\nBeneš: „Nejdřív se podíváme na zoubky tady zajícovi. Hezké, čisté.“\n\n**Scéna 5 – Nela otevírá pusu**\nKamera z pohledu zubaře, Nela má pusu dokořán.\nBeneš: „Výborně, tvoje zoubky jsou úplně zdravé.“\n\n**Scéna 6 – Odchod**\nNela odchází s nálepkou na tričku a zajícem v podpaží.\nNela: „Mami, můžu sem přijít zase zítra?“\nVypravěč: „A strach? Ten zůstal v čekárně.“\nText: Choďte k zubaři pravidelně!\n\n---\n\nMám připravit i verzi pro starší děti?",
+  "windows": 6,
+  "lines": [
+    [
+      1,
+      "Vypravěč",
+      "Nela dnes jde poprvé k zubaři. A trochu se bojí."
+    ],
+    [
+      2,
+      "Beneš",
+      "Nelo, pojď dál. A zajíc může taky."
+    ],
+    [
+      3,
+      "Nela",
+      "Jéé, já letím jako v letadle!"
+    ],
+    [
+      4,
+      "Beneš",
+      "Nejdřív se podíváme na zoubky tady zajícovi. Hezké, čisté."
+    ],
+    [
+      5,
+      "Beneš",
+      "Výborně, tvoje zoubky jsou úplně zdravé."
+    ],
+    [
+      6,
+      "Nela",
+      "Mami, můžu sem přijít zase zítra?"
+    ],
+    [
+      6,
+      "Vypravěč",
+      "A strach? Ten zůstal v čekárně."
+    ]
+  ],
+  "genders": {
+    "Vypravěč": "?",
+    "Beneš": "m",
+    "Nela": "f"
+  },
+  "props": []
+}

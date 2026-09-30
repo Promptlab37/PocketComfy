@@ -1,0 +1,45 @@
+{
+ "name": "Phone: one-line cast 'Postavy:' with 'Učitelka Mgr. Dana Šťastná' vs line 'Učitelka', 'OKNO n:(0-4s)' no spaces, delivery glued 'Učitelka(přísně):„…“', no space after colon, lowercase start of line, Vypravěč in the middle of dialogue",
+ "text": "Školní výlet do ZOO\nPostavy: Učitelka Mgr. Dana Šťastná, Adam, Bety, Ríša\nOKNO 1:(0-4s) autobus zastavuje u zoo,děti se tlačí u okna\nUčitelka(přísně):„Všichni zůstaňte sedět, dokud neřeknu.“\nOKNO 2:(4-8s) děti u výběhu žiraf\nAdam:\"Paní učitelko,ta žirafa má modrej jazyk!\"\nBety:\"fuj,to je hnusný...ale hezký\"\nOKNO 3:(8-12s) Ríša podává žirafě list salátu přes plot,ošetřovatel se směje\nRíša (hrdě):Mně to snědla z ruky!\nOKNO 4:(12-16s)děti sedí na trávě a svačí\nVypravěč: A tak se z obyčejného úterka stal den, na který se nezapomíná.\nUčitelka:„Tak kdo mi řekne, co jíme my a co žirafy?“",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Učitelka Mgr. Dana Šťastná",
+   "Všichni zůstaňte sedět, dokud neřeknu."
+  ],
+  [
+   2,
+   "Adam",
+   "Paní učitelko,ta žirafa má modrej jazyk!"
+  ],
+  [
+   2,
+   "Bety",
+   "fuj,to je hnusný...ale hezký"
+  ],
+  [
+   3,
+   "Ríša",
+   "Mně to snědla z ruky!"
+  ],
+  [
+   4,
+   "Vypravěč",
+   "A tak se z obyčejného úterka stal den, na který se nezapomíná."
+  ],
+  [
+   4,
+   "Učitelka Mgr. Dana Šťastná",
+   "Tak kdo mi řekne, co jíme my a co žirafy?"
+  ]
+ ],
+ "genders": {
+  "Učitelka Mgr. Dana Šťastná": "f",
+  "Adam": "m",
+  "Bety": "f",
+  "Ríša": "m",
+  "Vypravěč": "?"
+ },
+ "props": []
+}

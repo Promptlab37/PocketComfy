@@ -1,0 +1,35 @@
+{
+ "name": "repliky bez uvozovek",
+ "text": "STORYBOARD – Porucha v kanceláři\nFormát: 16:9, přibližně 16 sekund.\nPostavy:\nKarel: 45 let, prošedivělé vlasy, bílá košile s vyhrnutými rukávy, modrá kravata\nSimona: 29 let, dlouhé černé vlasy, žlutý svetr, hnědé kalhoty\nRekvizity:\nTiskárna: velká šedá kancelářská tiskárna\nHrnek s kávou: černý hrnek s nápisem „Pondělí“\nKontinuita: kancelář s rostlinami, dopoledne, Karel má kravatu celou dobu\n\n[OKNO 1 | 0–4 s] Zaseknutý papír\nObraz: Karel bouchá do tiskárny, bliká na ní červené světlo.\nEmoce: frustrace\nKarel (unaveně): Zase to nejde. Už potřetí dneska.\nZvuk: pípání tiskárny\n\n[OKNO 2 | 4–8 s] Pomoc\nObraz: Simona přijde s hrnkem kávy a nahlédne do tiskárny.\nEmoce: klid\nSimona (klidně): Počkej, to je jen zmačkaný papír vzadu.\nZvuk: otevření dvířek\n\n[OKNO 3 | 8–12 s] Oprava\nObraz: Simona vytáhne zmačkaný list, tiskárna se rozjede.\nEmoce: úleva\nKarel (překvapeně): Ty jsi kouzelnice.\nZvuk: rozjezd tiskárny, šelest papírů\n\n[OKNO 4 | 12–16 s] Káva\nObraz: Simona mu podá hrnek s kávou a odchází.\nEmoce: humor\nSimona (s mrknutím): Ne, jen čtu návody.\nZvuk: smích kolegů\nText na videu: Pondělí zvládnuto\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Karel",
+   "Zase to nejde. Už potřetí dneska."
+  ],
+  [
+   2,
+   "Simona",
+   "Počkej, to je jen zmačkaný papír vzadu."
+  ],
+  [
+   3,
+   "Karel",
+   "Ty jsi kouzelnice."
+  ],
+  [
+   4,
+   "Simona",
+   "Ne, jen čtu návody."
+  ]
+ ],
+ "genders": {
+  "Karel": "m",
+  "Simona": "f"
+ },
+ "props": [
+  "Tiskárna",
+  "Hrnek s kávou"
+ ]
+}

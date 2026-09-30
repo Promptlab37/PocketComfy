@@ -1,0 +1,35 @@
+{
+ "name": "způsob řeči za replikou nebo na samostatném řádku Tón:",
+ "text": "STORYBOARD – Překvapení pro babičku\nFormát: 9:16, přibližně 16 sekund.\nPostavy:\nMarie: 9 let, dva copánky, růžové šaty s puntíky\nBabička Věra: 72 let, bílé vlasy v drdolu, modrá zástěra s květy\nRekvizity:\nDort: čokoládový dort se svíčkou ve tvaru čísla 72\nPřání: ručně malované přání se sluníčkem\nKontinuita: babiččina zahrada, odpolední slunce, Marie má celou dobu růžové šaty\n\n[OKNO 1 | 0–4 s] Plížení\nObraz: Marie se s dortem plíží za keřem, babička zalévá květiny.\nEmoce: napětí, hravost\nMarie: „Pššt, ještě nás nevidí.“ (šeptem)\nZvuk: cvrlikání ptáků, šumění konve\n\n[OKNO 2 | 4–8 s] Překvapení\nObraz: Marie vyskočí zpoza keře s dortem.\nEmoce: výbuch radosti\nMarie: „Všechno nejlepší, babi!“\nTón: nahlas, radostně\nZvuk: fanfára\n\n[OKNO 3 | 8–12 s] Dojetí\nObraz: Babička upustí konev a přitiskne si ruce k tváři.\nEmoce: dojetí\nBabička Věra: „Ty moje zlatíčko, ty sis to pamatovala?“ – dojatě, trochu se jí třese hlas\nZvuk: žbluňknutí konve do trávy\n\n[OKNO 4 | 12–16 s] Přání\nObraz: Marie podá babičce přání, ta ji obejme.\nEmoce: láska\nMarie (hrdě): „To jsem kreslila sama.“\nZvuk: tichá melodie\nText na videu: „Babičce k narozeninám“\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Marie",
+   "Pššt, ještě nás nevidí."
+  ],
+  [
+   2,
+   "Marie",
+   "Všechno nejlepší, babi!"
+  ],
+  [
+   3,
+   "Babička Věra",
+   "Ty moje zlatíčko, ty sis to pamatovala?"
+  ],
+  [
+   4,
+   "Marie",
+   "To jsem kreslila sama."
+  ]
+ ],
+ "genders": {
+  "Marie": "f",
+  "Babička Věra": "f"
+ },
+ "props": [
+  "Dort",
+  "Přání"
+ ]
+}

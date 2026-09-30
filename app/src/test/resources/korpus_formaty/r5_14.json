@@ -1,0 +1,77 @@
+{
+  "name": "AI Gemini – překvapení pro dědu",
+  "text": "**Překvapení pro dědu – storyboard (10 záběrů)**\n\n**Obsazení:**\n* S1: Děda Karel (80 let)\n* S2: Babička Věra (78 let)\n* S3: Petra (dcera, 50 let)\n* S4: Honza (vnuk, 20 let)\n* S5: Anička (pravnučka, 6 let)\n* Vypravěč: klidný mužský hlas\n\n**Záběr 1** – Zahrada, dopoledne\nDěda Karel zalévá rajčata a nic netuší.\nVypravěč: „Dědovi Karlovi je dnes osmdesát. A myslí si, že na to všichni zapomněli.“\n\n**Záběr 2** – Kuchyně\nBabička Věra potichu telefonuje, dlaň přes sluchátko.\nVěra: „Petro, je na zahradě. Máte asi půl hodiny.“\n\n**Záběr 3** – Před domem\nZ auta vystupuje Petra s dortem, Honza nese balónky.\nPetra: „Honzo, opatrně s tím dortem, ne s balónky!“\nHonza: „Mami, já nesu balónky, ty neseš dort.“\n\n**Záběr 4** – Obývák\nVšichni se schovávají za gauč. Anička se chichotá.\nAnička: „Pššt, už jde!“\n\n**Záběr 5** – Dveře\nDěda vchází, sundává si klobouk.\nZvuk: vrzání dveří\n\n**Záběr 6** – Obývák, celek\nVšichni vyskočí.\nVšichni: „Překvapení!“\n\n**Záběr 7** – Detail dědy\nDěda si chytá srdce, pak se začne smát.\nKarel: „No to snad není pravda. Vy jste mě ale vyděsili.“\n\n**Záběr 8** – Stůl\nAnička mu podává obrázek, který sama nakreslila.\nAnička: „Dědo, to jsi ty na traktoru.“\nKarel: „Ten je krásnější než ten opravdový.“\n\n**Záběr 9** – Stůl, celek\nBabička zapaluje svíčky, všichni zpívají.\nHudba: Hodně štěstí, zdraví (zpěv rodiny)\n\n**Záběr 10** – Zahrada, večer\nDěda a babička sedí na lavičce, v dálce světla z domu.\nVěra: „Tak co, Karle, zapomněli?“\nKarel: „Ani trochu.“\nVypravěč: „Nejlepší dárek je, když se sejdou všichni.“\nText na obrazovce: Všechno nejlepší, dědo!",
+  "windows": 10,
+  "lines": [
+    [
+      1,
+      "Vypravěč",
+      "Dědovi Karlovi je dnes osmdesát. A myslí si, že na to všichni zapomněli."
+    ],
+    [
+      2,
+      "Věra",
+      "Petro, je na zahradě. Máte asi půl hodiny."
+    ],
+    [
+      3,
+      "Petra",
+      "Honzo, opatrně s tím dortem, ne s balónky!"
+    ],
+    [
+      3,
+      "Honza",
+      "Mami, já nesu balónky, ty neseš dort."
+    ],
+    [
+      4,
+      "Anička",
+      "Pššt, už jde!"
+    ],
+    [
+      6,
+      "Všichni",
+      "Překvapení!"
+    ],
+    [
+      7,
+      "Karel",
+      "No to snad není pravda. Vy jste mě ale vyděsili."
+    ],
+    [
+      8,
+      "Anička",
+      "Dědo, to jsi ty na traktoru."
+    ],
+    [
+      8,
+      "Karel",
+      "Ten je krásnější než ten opravdový."
+    ],
+    [
+      10,
+      "Věra",
+      "Tak co, Karle, zapomněli?"
+    ],
+    [
+      10,
+      "Karel",
+      "Ani trochu."
+    ],
+    [
+      10,
+      "Vypravěč",
+      "Nejlepší dárek je, když se sejdou všichni."
+    ]
+  ],
+  "genders": {
+    "Vypravěč": "m",
+    "Věra": "f",
+    "Petra": "f",
+    "Honza": "m",
+    "Anička": "f",
+    "Všichni": "?",
+    "Karel": "m"
+  },
+  "props": []
+}

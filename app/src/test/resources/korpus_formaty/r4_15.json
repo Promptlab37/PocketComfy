@@ -1,0 +1,31 @@
+{
+ "name": "Časové kódy 00:00–00:05 | + Vypravěč hlasem dědy s … a pokračováním na dalším řádku + dopis ukázaný (nemluví) a pak čtený nahlas (mluví) + SMS na displeji + postava, která nemluví",
+ "text": "Mikrofilm: Dopis od dědy\nObsazení: Klára (25), Děda Jaroslav (80, jen na fotce, nemluví), Vypravěč (hlas dědy, starší muž)\nRekvizity: dopis, stará fotografie, mobil\n\n00:00–00:05 | Klára otevírá obálku u okna, na parapetu stará fotografie.\nVypravěč: Milá Klárko, jestli tohle čteš…\ntak jsi konečně uklidila půdu.\n00:05–00:10 | Detail dopisu, rukou psané: „Klíč je pod květináčem.“\nKlára (nahlas čte): „Klíč je pod květináčem.“\n00:10–00:15 | Na mobilu přijde SMS od mámy: „Už jsi to našla?“\nKlára odepisuje, nic neříká.\n00:15–00:20 | Klára zvedne květináč, pod ním malý klíček.\nKlára: Dědo, ty jsi byl ale šibal.\nText na obrazovce: Pro dědu J.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Milá Klárko, jestli tohle čteš… tak jsi konečně uklidila půdu."
+  ],
+  [
+   2,
+   "Klára",
+   "Klíč je pod květináčem."
+  ],
+  [
+   4,
+   "Klára",
+   "Dědo, ty jsi byl ale šibal."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "m",
+  "Klára": "f"
+ },
+ "props": [
+  "dopis",
+  "stará fotografie",
+  "mobil"
+ ]
+}

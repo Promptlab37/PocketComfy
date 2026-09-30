@@ -1,0 +1,42 @@
+{
+ "name": "'S1 – Petr: popis' v obsazení a 'S2 – Dana:' před replikou, 'SCÉNA n — 00:00–00:06', rekvizity na jednom řádku se středníky, okno jen s replikou bez popisu obrazu",
+ "text": "NEDĚLNÍ OBĚD\nFormát: 9:16 · 40 s\n\nPostavy:\nS1 – Petr: 42 let, kulaté brýle, svetr s jeleny\nS2 – Dana: 40 let, jeho žena, zástěra s třešněmi, drdol\nS3 – Babi Marta: 82 let, bílé vlasy, fialová vesta, sluchadlo\nS4 – Filip: 9 let, vnuk, tričko s dinosaurem\n\nRekvizity: Svíčková – velký talíř s knedlíky; Sluchadlo – malé, béžové\n\nSCÉNA 1 — 00:00–00:06\nRodina u stolu, Dana přináší svíčkovou.\nS2 – Dana: „Tak, dobrou chuť všem.“\n\nSCÉNA 2 — 00:06–00:12\nS3 – Babi Marta (hlasitě): „Co? Kdo tu má narozeniny?“\nS1 – Petr: „Nikdo, mami! Říkala dobrou chuť!“\n\nSCÉNA 3 — 00:12–00:18\nFilip se k babičce nakloní a něco jí pošeptá.\nS4 – Filip (šeptem): „Babi, máš vypnuté sluchadlo.“\n\nSCÉNA 4 — 00:18–00:24\nBabička si zapne sluchadlo, ozve se pískání.\nZvuk: vysoké pípnutí\n\nSCÉNA 5 — 00:24–00:32\nS3 – Babi Marta: „Aha. Tak dobrou chuť. A kdy je ten dort?“\n\nSCÉNA 6 — 00:32–00:40\nVšichni se smějí, Petr jde pro dort do lednice.\nText na videu: „Babička slyší, co chce.“",
+ "windows": 6,
+ "lines": [
+  [
+   1,
+   "Dana",
+   "Tak, dobrou chuť všem."
+  ],
+  [
+   2,
+   "Babi Marta",
+   "Co? Kdo tu má narozeniny?"
+  ],
+  [
+   2,
+   "Petr",
+   "Nikdo, mami! Říkala dobrou chuť!"
+  ],
+  [
+   3,
+   "Filip",
+   "Babi, máš vypnuté sluchadlo."
+  ],
+  [
+   5,
+   "Babi Marta",
+   "Aha. Tak dobrou chuť. A kdy je ten dort?"
+  ]
+ ],
+ "genders": {
+  "Petr": "m",
+  "Dana": "f",
+  "Babi Marta": "f",
+  "Filip": "m"
+ },
+ "props": [
+  "Svíčková",
+  "Sluchadlo"
+ ]
+}

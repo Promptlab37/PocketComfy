@@ -1,0 +1,32 @@
+{
+ "name": "'Okno 1:' s titulkem okna na vlastním řádku, skloňování Jana/Janě/Janu, dvojtečka uvnitř repliky (5:30), okno jen s akcí",
+ "text": "Okno 1:\nNa nádraží\nJana čeká na peróně s kufrem. Petr přiběhne a podá Janě kávu.\nPetr: Promiň, fronta byla nekonečná.\nJana: To nevadí. Vlak má stejně zpoždění.\n\nOkno 2:\nTabule s odjezdy\nPetr se dívá na tabuli, pak na Janu.\nPetr: Zítra máme sraz v 5:30. Nezaspíš?\nJana: Sraz v 5:30? To si nastavím tři budíky.\n\nOkno 3:\nOdjezd\nVlak přijíždí. Petr pomůže Janě s kufrem a Jana mu zamává z okna.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Promiň, fronta byla nekonečná."
+  ],
+  [
+   1,
+   "Jana",
+   "To nevadí. Vlak má stejně zpoždění."
+  ],
+  [
+   2,
+   "Petr",
+   "Zítra máme sraz v 5:30. Nezaspíš?"
+  ],
+  [
+   2,
+   "Jana",
+   "Sraz v 5:30? To si nastavím tři budíky."
+  ]
+ ],
+ "genders": {
+  "Petr": "m",
+  "Jana": "f"
+ },
+ "props": []
+}

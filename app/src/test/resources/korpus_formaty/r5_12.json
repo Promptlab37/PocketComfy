@@ -1,0 +1,21 @@
+{
+  "name": "Mobil – kočka a krabice",
+  "text": "#1 obyvak, na zemi velka krabice od pracky. kocka Micka do ni skoci\nEma: \"Micko, to neni pro tebe, to je na odpad\"\n\n#2 ema zkusi krabici zvednout, kocka se v ni schova a kouka jen usima\nEma: \"Tak jo, vyhralas. Krabice zustava\"\n\n#3 vecer, ema cte knizku na gauci a kocka spi v krabici vedle\ntext: kocky vzdycky vyhrajou",
+  "windows": 3,
+  "lines": [
+    [
+      1,
+      "Ema",
+      "Micko, to neni pro tebe, to je na odpad"
+    ],
+    [
+      2,
+      "Ema",
+      "Tak jo, vyhralas. Krabice zustava"
+    ]
+  ],
+  "genders": {
+    "Ema": "f"
+  },
+  "props": []
+}

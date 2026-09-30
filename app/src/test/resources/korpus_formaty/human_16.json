@@ -1,0 +1,37 @@
+{
+ "name": "Výpustky … a pomlčky – — uvnitř replik i v nadpisu okna, starší sousedé Věra a Pan Kučera, poslední okno jen akce",
+ "text": "Okno 1 — balkon\nStarší paní Věra zalévá muškáty. Na vedlejším balkoně se objeví soused, pan Kučera.\nPan Kučera: Dobrý večer… Krásně vám to letos kvete.\nVěra: Děkuju – dávám jim kávovou sedlinu.\n\nOkno 2 — detail\nPan Kučera: Kávovou sedlinu? No… to jsem ještě neslyšel.\nVěra: Zkuste to — ale jen trochu, jinak je přelijete.\n\nOkno 3 — balkon\nPan Kučera se usměje a zvedne konev.\nPan Kučera: Tak zítra… zítra to zkusím.\n\nOkno 4 — noc\nOba balkony osvícené lampičkami, muškáty kvetou.\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Pan Kučera",
+   "Dobrý večer… Krásně vám to letos kvete."
+  ],
+  [
+   1,
+   "Věra",
+   "Děkuju – dávám jim kávovou sedlinu."
+  ],
+  [
+   2,
+   "Pan Kučera",
+   "Kávovou sedlinu? No… to jsem ještě neslyšel."
+  ],
+  [
+   2,
+   "Věra",
+   "Zkuste to — ale jen trochu, jinak je přelijete."
+  ],
+  [
+   3,
+   "Pan Kučera",
+   "Tak zítra… zítra to zkusím."
+  ]
+ ],
+ "genders": {
+  "Pan Kučera": "m",
+  "Věra": "f"
+ },
+ "props": []
+}

@@ -1,0 +1,39 @@
+{
+ "name": "'Hrají:' místo Postavy, 'Vypravěč (VO):' v replikách, okna '#n | 0 s – 6 s', repliky bez uvozovek, 4 mluvčí včetně dítěte",
+ "text": "Krátké video: „Sousedská hádka o hrušky“\nPoměr 16:9, délka asi 32 s\n\nHrají:\n- Vypravěč (VO)\n- Bohouš – soused, 66 let, zahradnický klobouk, montérky\n- Hedvika – sousedka, 64 let, zástěra, košík\n- Emička – vnučka, 9 let, copánky, růžové holinky\n\n#1 | 0 s – 6 s\nHruška na hranici dvou zahrad.\nVypravěč (VO): Ta hruška stojí přesně na hranici. Na centimetr.\n\n#2 | 6 s – 12 s\nBohouš a Hedvika drží každý svůj žebřík.\nBohouš: Ta větev je moje.\nHedvika: Kdepak, ta visí k nám.\n\n#3 | 12 s – 20 s\nEmička mezitím vyleze na strom a trhá hrušky.\nZvuk: praskání větví, cvrlikání\n\n#4 | 20 s – 26 s\nEmička seskočí s plným košíkem.\nEmička: Babi, dědo, já je rozdělím napůl!\n\n#5 | 26 s – 32 s\nVšichni tři sedí na lavičce a jedí hrušky.\nVypravěč (VO): Od té doby se o hrušky nehádají. Jen o švestky.",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Ta hruška stojí přesně na hranici. Na centimetr."
+  ],
+  [
+   2,
+   "Bohouš",
+   "Ta větev je moje."
+  ],
+  [
+   2,
+   "Hedvika",
+   "Kdepak, ta visí k nám."
+  ],
+  [
+   4,
+   "Emička",
+   "Babi, dědo, já je rozdělím napůl!"
+  ],
+  [
+   5,
+   "Vypravěč",
+   "Od té doby se o hrušky nehádají. Jen o švestky."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?",
+  "Bohouš": "m",
+  "Hedvika": "f",
+  "Emička": "f"
+ },
+ "props": []
+}

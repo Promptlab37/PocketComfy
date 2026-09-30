@@ -1,0 +1,36 @@
+{
+ "name": "vypravěčka označená (VO), postava mluví i mimo obraz (hlasem z telefonu)",
+ "text": "STORYBOARD – Dopis z tábora\nFormát: 9:16, přibližně 16 sekund.\nPostavy:\nVypravěčka (VO): mladý ženský hlas, vzpomínající\nKristýna: 11 let, dlouhé blond vlasy, tábornické tričko s logem, modré kraťasy\nTáta: 45 let, krátké tmavé vlasy, šedé polo tričko\nRekvizity:\nDopis: obálka s nakresleným sluncem a známkou\nBaterka: malá stříbrná baterka\nKontinuita: stanový tábor v lese, večer, Kristýna má celou dobu tábornické tričko\n\n[OKNO 1 | 0–4 s] Večer ve stanu\nObraz: Kristýna leží ve stanu a píše dopis při světle baterky.\nEmoce: stesk\nVypravěčka (VO, něžně): „To léto jsem byla poprvé na táboře.“\nZvuk: cvrčci, šumění lesa\n\n[OKNO 2 | 4–8 s] Psaní\nObraz: Detail ruky, která píše: „Milý tati, je tu super.“\nEmoce: odvaha\nKristýna (čte si potichu): „Milý tati, je tu super, ale trochu se mi stýská.“\nZvuk: škrábání tužky\n\n[OKNO 3 | 8–12 s] Telefon\nObraz: Druhý den volá z táborové kanceláře, na displeji je Táta.\nEmoce: radost\nTáta (z telefonu, hřejivě): „Ahoj, broučku! Tvůj dopis mi udělal radost.“\nZvuk: šum telefonu\n\n[OKNO 4 | 12–16 s] Oheň\nObraz: Kristýna se se smíchem přidá k ostatním dětem u táboráku.\nEmoce: štěstí\nVypravěčka (VO, s úsměvem): „A pak už se mi nestýskalo vůbec.“\nZvuk: praskání ohně, kytara\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "To léto jsem byla poprvé na táboře."
+  ],
+  [
+   2,
+   "Kristýna",
+   "Milý tati, je tu super, ale trochu se mi stýská."
+  ],
+  [
+   3,
+   "Táta",
+   "Ahoj, broučku! Tvůj dopis mi udělal radost."
+  ],
+  [
+   4,
+   "Vypravěč",
+   "A pak už se mi nestýskalo vůbec."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "f",
+  "Kristýna": "f",
+  "Táta": "m"
+ },
+ "props": [
+  "Dopis",
+  "Baterka"
+ ]
+}

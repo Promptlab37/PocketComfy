@@ -1,0 +1,22 @@
+{
+ "name": "číslovaný seznam postav a číslovaná okna",
+ "text": "Postavy:\n1. Jana, 35 let, modré šaty\n2. Petr, 40 let, šedý oblek\n\n1. Jana čeká před kinem.\nJana: „Už zase jde pozdě.“\n2. Petr přibíhá s kyticí.\nPetr: „Promiň, zácpa.“\n3. Oba se smějí a jdou dovnitř.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Už zase jde pozdě."
+  ],
+  [
+   2,
+   "Petr",
+   "Promiň, zácpa."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Petr": "m"
+ },
+ "props": []
+}

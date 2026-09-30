@@ -1,0 +1,29 @@
+{
+ "name": "Diktovaný odstavec: všechna okna v jednom řádku, replika uvnitř věty („a řekne …“), s plnou pusou: + zmínka „od mámy“ není mluvčí",
+ "text": "scénka návštěva, 3 okna. Jana (30) a Petr (30), rekvizita koláč na talíři.\nOkno 1: Petr zvoní, Jana otevře a s úsměvem řekne „Ahoj, pojď dál.“ Okno 2: Petr jí podá koláč na talíři a řekne „Upekl jsem ho sám, tak nic nečekej.“ Jana ochutná. Okno 3: Jana s plnou pusou: „Tohle je lepší než od mámy!“ Petr se začervená.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Ahoj, pojď dál."
+  ],
+  [
+   2,
+   "Petr",
+   "Upekl jsem ho sám, tak nic nečekej."
+  ],
+  [
+   3,
+   "Jana",
+   "Tohle je lepší než od mámy!"
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Petr": "m"
+ },
+ "props": [
+  "koláč na talíři"
+ ]
+}

@@ -1,0 +1,53 @@
+{
+  "name": "Word – kontrola u lékařky",
+  "text": "KONTROLA\nkrátký film\n\nPostavy:\nSestra – zdravotní sestra, 40 let\nPavel – pacient, 35 let\nNováková – lékařka, 55 let\n\nSCÉNA 1 – INT. ČEKÁRNA – RÁNO\nPavel sedí v čekárně a nervózně poklepává nohou. Sestra otevře dveře ordinace.\n\nSESTRA\nPan Dvořák, prosím.\n\nPAVEL\nTo jsem já. Už jdu.\n\nSCÉNA 2 – INT. ORDINACE – RÁNO\nNováková sedí za stolem a dívá se do počítače. Pavel si sedá na židli.\n\nNOVÁKOVÁ\nTak co vás k nám přivádí?\n\nPAVEL\nUž týden mě bolí záda, hlavně ráno.\n\nSCÉNA 3 – INT. ORDINACE – POZDĚJI\nNováková prohlíží Pavlova záda. Kamera zabírá detail její ruky na lopatce.\n\nNOVÁKOVÁ\nZkuste se předklonit. Bolí to tady?\n\nPAVEL\nAu. Jo, přesně tam.\n\nSCÉNA 4 – INT. ORDINACE – POZDĚJI\nNováková píše na papír a podává ho Pavlovi.\n\nNOVÁKOVÁ\nNic vážného. Každý den deset minut cviků a za týden se mi ukážete.\n\nPAVEL\nDěkuju, paní doktorko.\n\nKONEC",
+  "windows": 4,
+  "lines": [
+    [
+      1,
+      "Sestra",
+      "Pan Dvořák, prosím."
+    ],
+    [
+      1,
+      "Pavel",
+      "To jsem já. Už jdu."
+    ],
+    [
+      2,
+      "Nováková",
+      "Tak co vás k nám přivádí?"
+    ],
+    [
+      2,
+      "Pavel",
+      "Už týden mě bolí záda, hlavně ráno."
+    ],
+    [
+      3,
+      "Nováková",
+      "Zkuste se předklonit. Bolí to tady?"
+    ],
+    [
+      3,
+      "Pavel",
+      "Au. Jo, přesně tam."
+    ],
+    [
+      4,
+      "Nováková",
+      "Nic vážného. Každý den deset minut cviků a za týden se mi ukážete."
+    ],
+    [
+      4,
+      "Pavel",
+      "Děkuju, paní doktorko."
+    ]
+  ],
+  "genders": {
+    "Sestra": "f",
+    "Pavel": "m",
+    "Nováková": "f"
+  },
+  "props": []
+}

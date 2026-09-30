@@ -1,0 +1,21 @@
+{
+ "name": "hlas vypravěče a vypravěčka",
+ "text": "OKNO 1\nLouka za vesnicí.\nHlas vypravěče: Bylo nebylo.\nOKNO 2\nDívka trhá květiny.\nVypravěčka: Žila tam dívka jménem Eliška.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Bylo nebylo."
+  ],
+  [
+   2,
+   "Vypravěč",
+   "Žila tam dívka jménem Eliška."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?"
+ },
+ "props": []
+}

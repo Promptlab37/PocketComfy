@@ -1,0 +1,43 @@
+{
+ "name": "Okna '1)' bez času, vše malými písmeny včetně jmen mluvčích (babička, honzík, děda), mezera za '2) '",
+ "text": "1) zahrada u chalupy, léto\nbabička zalévá rajčata, vnuk honzík běhá kolem s konví.\nbabička: honzíku, nepolej mi boty!\nhonzík: já jen pomáhám, babi.\n\n2)\nděda sedí na lavičce a čte noviny.\nděda: pojď sem, ukážu ti, jak se sbírají fazole.\nhonzík: a můžu si pak jednu sníst?\n\n3)\nvšichni tři sedí u stolu s miskou fazolí.\nbabička: tak co, chutná?\nhonzík: jo! nejlepší fazole na světě.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "babička",
+   "honzíku, nepolej mi boty!"
+  ],
+  [
+   1,
+   "honzík",
+   "já jen pomáhám, babi."
+  ],
+  [
+   2,
+   "děda",
+   "pojď sem, ukážu ti, jak se sbírají fazole."
+  ],
+  [
+   2,
+   "honzík",
+   "a můžu si pak jednu sníst?"
+  ],
+  [
+   3,
+   "babička",
+   "tak co, chutná?"
+  ],
+  [
+   3,
+   "honzík",
+   "jo! nejlepší fazole na světě."
+  ]
+ ],
+ "genders": {
+  "babička": "f",
+  "honzík": "m",
+  "děda": "m"
+ },
+ "props": []
+}

@@ -1,0 +1,30 @@
+{
+ "name": "Číslování '1) Místo (0–5 s)', způsob v hranatých závorkách a replika za pomlčkou ('Tomáš [podrážděně] — „…“') bez dvojtečky, nadpis bez slova STORYBOARD",
+ "text": "Ovladač\n16:9 · asi 20 s\n\nPostavy\nTomáš – 45 let, tatínek, domácí triko s fotbalovým klubem\nBára – 14 let, dcera, fialové vlasy, mikina s kapucí\nDěda Standa – 76 let, vesta, noviny\n\nRekvizita\nOvladač – černý, přelepený izolepou\n\n1) Obývák (0–5 s)\nTomáš hledá pod polštáři.\nTomáš [podrážděně] — „Kdo zase schoval ovladač?“\n\n2) Kuchyň (5–10 s)\nBára ukazuje na dědu.\nBára [šeptem] — „Děda na něm sedí.“\n\n3) Křeslo (10–15 s)\nDěda Standa spí, ovladač mu trčí zpod stehna.\nZvuk: chrápání, televize přepíná kanály sama\n\n4) Konec (15–20 s)\nDěda se probudí.\nDěda Standa [ospale] — „Já se jen dívám na zprávy.“",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Tomáš",
+   "Kdo zase schoval ovladač?"
+  ],
+  [
+   2,
+   "Bára",
+   "Děda na něm sedí."
+  ],
+  [
+   4,
+   "Děda Standa",
+   "Já se jen dívám na zprávy."
+  ]
+ ],
+ "genders": {
+  "Tomáš": "m",
+  "Bára": "f",
+  "Děda Standa": "m"
+ },
+ "props": [
+  "Ovladač"
+ ]
+}

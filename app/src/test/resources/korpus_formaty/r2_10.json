@@ -1,0 +1,32 @@
+{
+ "name": "Phone: no title case, 'OKNO n:' + description on same line, plain-word delivery ('Jana šeptem:', 'Filip ospale:'), action line mentioning 'mamka Jana', same speaker twice in one window, lowercase 'zvuk:'",
+ "text": "video uspavanka\nOKNO 1: detsky pokojicek vecer, lampička svítí\nmamka Jana sedí u postýlky\nJana šeptem: Tak dobrou noc, broučku.\nOKNO 2: malej Filip otevře oči\nFilip ospale: Mami, ještě jednu pohádku...\nOKNO 3: Jana se usměje\nJana: Tak jo. Ale jenom krátkou.\nJana: Byl jednou jeden medvídek...\nOKNO 4: Filip už spí,Jana zhasne\nzvuk: tiché cvaknutí vypínače",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Tak dobrou noc, broučku."
+  ],
+  [
+   2,
+   "Filip",
+   "Mami, ještě jednu pohádku..."
+  ],
+  [
+   3,
+   "Jana",
+   "Tak jo. Ale jenom krátkou."
+  ],
+  [
+   3,
+   "Jana",
+   "Byl jednou jeden medvídek..."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Filip": "m"
+ },
+ "props": []
+}

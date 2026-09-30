@@ -1,0 +1,38 @@
+{
+ "name": "Způsob holými slovy bez závorky a čárky ('Jana tiše:', 'Josef s úsměvem:'), časy jako délka '(4 s)', obsazení v závorkách na jednom řádku, repliky bez uvozovek",
+ "text": "Návrh storyboardu – Pokladna\n\nFormát: 9:16 | ~20 s\nPostavy: Jana (pokladní, 40 let, modrá vesta, jmenovka), Lukáš (student, 20 let, sluchátka, batoh), Josef (starý pán, 80 let, klobouk, síťovka)\n\nOkno 1 (4 s) – Fronta\nObraz: dlouhá fronta, Lukáš nervózně přešlapuje.\nLukáš netrpělivě: Tak dělejte…\n\nOkno 2 (5 s) – Drobné\nObraz: pán Josef počítá drobné po jedné korunce.\nJosef pomalu: Sedmnáct… osmnáct…\nJana tiše: Nespěchejte, pane Josefe.\n\nOkno 3 (5 s) – Zlom\nObraz: Lukášovi upadne peněženka, mince se rozkutálí.\nZvuk: cinkot mincí po podlaze\n\nOkno 4 (6 s) – Konec\nObraz: pán Josef se sehne a pomáhá sbírat mince.\nJosef s úsměvem: Vidíte, mladíku. Nikam se nespěchá.\nLukáš: Díky. Máte pravdu.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Lukáš",
+   "Tak dělejte…"
+  ],
+  [
+   2,
+   "Josef",
+   "Sedmnáct… osmnáct…"
+  ],
+  [
+   2,
+   "Jana",
+   "Nespěchejte, pane Josefe."
+  ],
+  [
+   4,
+   "Josef",
+   "Vidíte, mladíku. Nikam se nespěchá."
+  ],
+  [
+   4,
+   "Lukáš",
+   "Díky. Máte pravdu."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Lukáš": "m",
+  "Josef": "m"
+ },
+ "props": []
+}

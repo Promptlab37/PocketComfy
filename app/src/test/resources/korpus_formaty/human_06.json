@@ -1,0 +1,38 @@
+{
+ "name": "'Záběr č. 1 | 0:00–0:04', způsob přednesu v závorce před dvojtečkou (Petr (smutně): …), role Číšník",
+ "text": "Záběr č. 1 | 0:00–0:04\nKavárna, dopoledne. Petr sedí u okna, přichází číšník.\nČíšník (zdvořile): Dobrý den, co si dáte?\nPetr (smutně): Jen černou kávu, prosím.\n\nZáběr č. 2 | 0:04–0:09\nČíšník přinese kávu. Ke stolu si přisedne Klára.\nKlára (vesele): Ahoj! Proč se tváříš jak o pohřbu?\nPetr (s povzdechem): Ztratil jsem klíče od bytu.\n\nZáběr č. 3 | 0:09–0:13\nKlára vytáhne z kabelky svazek klíčů.\nKlára (smíchem): Tyhle? Nechal jsi je včera u mě.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Číšník",
+   "Dobrý den, co si dáte?"
+  ],
+  [
+   1,
+   "Petr",
+   "Jen černou kávu, prosím."
+  ],
+  [
+   2,
+   "Klára",
+   "Ahoj! Proč se tváříš jak o pohřbu?"
+  ],
+  [
+   2,
+   "Petr",
+   "Ztratil jsem klíče od bytu."
+  ],
+  [
+   3,
+   "Klára",
+   "Tyhle? Nechal jsi je včera u mě."
+  ]
+ ],
+ "genders": {
+  "Číšník": "m",
+  "Petr": "m",
+  "Klára": "f"
+ },
+ "props": []
+}

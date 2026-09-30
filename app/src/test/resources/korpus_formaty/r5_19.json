@@ -1,0 +1,33 @@
+{
+  "name": "Mobil – kufr na letišti",
+  "text": "Video letiste\n\n1. Letiste, pas s kufry se toci, Jarda stoji a ceka. Vsechny kufry uz jsou pryc\nJarda: \"No super. Kde je muj kufr?\"\n\n2. Jarda u prepazky, zena za prepazkou pise do pocitace\nÚřednice: \"Váš kufr omylem odletěl do Lisabonu. Zítra ho máte doma.\"\n\n3. Jarda kouka z okna na letadla, smutne\nVypravec: Jarda se poprvé těšil na dovolenou víc než jeho kufr.\n\n4. Druhy den, doorbell, kuryr s kufrem, Jarda se smeje\nJarda: \"Vítej doma, cestovateli.\"",
+  "windows": 4,
+  "lines": [
+    [
+      1,
+      "Jarda",
+      "No super. Kde je muj kufr?"
+    ],
+    [
+      2,
+      "Úřednice",
+      "Váš kufr omylem odletěl do Lisabonu. Zítra ho máte doma."
+    ],
+    [
+      3,
+      "Vypravěč",
+      "Jarda se poprvé těšil na dovolenou víc než jeho kufr."
+    ],
+    [
+      4,
+      "Jarda",
+      "Vítej doma, cestovateli."
+    ]
+  ],
+  "genders": {
+    "Jarda": "m",
+    "Úřednice": "f",
+    "Vypravěč": "?"
+  },
+  "props": []
+}

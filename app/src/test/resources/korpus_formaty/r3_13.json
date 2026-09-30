@@ -1,0 +1,36 @@
+{
+ "name": "okna číslovaná „Okno 1 – název (0–4 s)“",
+ "text": "STORYBOARD – Nový kolega ve třídě\nFormát: 16:9, přibližně 16 sekund.\nPostavy:\nFilip: 11 let, zrzavé vlasy, pihy, oranžová mikina, batoh s raketou\nPaní učitelka Dvořáková: 48 let, tmavé vlasy v drdolu, zelená halenka, dlouhá sukně\nNikola: 11 let, černé kudrnaté vlasy, modré tričko s hvězdou\nRekvizity:\nTabule: zelená školní tabule s křídou\nPenál: fialový penál na zip\nKontinuita: třída se starými lavicemi, dopoledne, Filip má pořád oranžovou mikinu\n\nOkno 1 – Příchod (0–4 s)\nObraz: Paní učitelka přivede Filipa před tabuli, třída ho zvědavě sleduje.\nEmoce: nejistota\nPaní učitelka Dvořáková (vlídně): „Děti, tohle je Filip. Od dneška chodí k nám.“\nZvuk: šepot dětí\n\nOkno 2 – Kam si sednout (4–8 s)\nObraz: Filip se rozhlíží, všechna místa vypadají obsazená.\nEmoce: rozpaky\nFilip (tiše): „Kam si mám sednout?“\nZvuk: tikání hodin\n\nOkno 3 – Volné místo (8–12 s)\nObraz: Nikola posune svůj penál a poklepe na lavici vedle sebe.\nEmoce: vstřícnost\nNikola (s úsměvem): „Tady je volno. Máš rád rakety?“\nZvuk: posunutí židle\n\nOkno 4 – Kamarádi (12–16 s)\nObraz: Filip si přisedne, oba si ukazují obrázky raket v sešitě.\nEmoce: radost\nFilip (nadšeně): „Jasně! Chci být astronaut.“\nZvuk: školní zvonek\nText na videu: „Nové začátky“\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Paní učitelka Dvořáková",
+   "Děti, tohle je Filip. Od dneška chodí k nám."
+  ],
+  [
+   2,
+   "Filip",
+   "Kam si mám sednout?"
+  ],
+  [
+   3,
+   "Nikola",
+   "Tady je volno. Máš rád rakety?"
+  ],
+  [
+   4,
+   "Filip",
+   "Jasně! Chci být astronaut."
+  ]
+ ],
+ "genders": {
+  "Filip": "m",
+  "Paní učitelka Dvořáková": "f",
+  "Nikola": "?"
+ },
+ "props": [
+  "Tabule",
+  "Penál"
+ ]
+}

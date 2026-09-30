@@ -1,0 +1,35 @@
+{
+ "name": "Celé anglicky kromě replik: **Cast** číslovaný seznam, 'Voice-over' jako vypravěč (mužský), **Panel n** (0:00–0:06), *kurzíva* kolem jména i způsobu, SFX:, On-screen text:",
+ "text": "**Short film: \"The Lost Letter\" (Ztracený dopis)**\nAspect ratio: 16:9 | Runtime: ~30 s\n\n**Cast**\n1. **Pošťák Jarda** (male, 55) – blue postal uniform, big leather bag\n2. **Paní Zelenková** (female, 70) – floral dress, watering can\n3. **Voice-over** – warm male narrator\n\n**Props**\n- Letter – yellowed envelope with a 1976 stamp\n\n**Panel 1** (0:00–0:06)\n*Visual:* A quiet village street. The postman stops at a small gate.\n*Voice-over:* Některé dopisy cestují déle než lidé.\n\n**Panel 2** (0:06–0:14)\n*Visual:* He hands an old envelope to the lady watering flowers.\n*Pošťák Jarda:* \"Paní Zelenková, tohle se našlo za automatem na poště.\"\n\n**Panel 3** (0:14–0:22)\n*Visual:* She opens it with trembling hands, then smiles.\n*Paní Zelenková (tearing up):* \"To je od Jiřího. Z vojny. Psal, že se vrátí na jaře.\"\n*SFX:* birds, distant church bell\n\n**Panel 4** (0:22–0:30)\n*Visual:* An old man with a cane comes out of the house.\n*Voice-over:* Vrátil se. A už čtyřicet osm let spolu zalévají kytky.\n*On-screen text:* \"Nikdy není pozdě.\"",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Některé dopisy cestují déle než lidé."
+  ],
+  [
+   2,
+   "Pošťák Jarda",
+   "Paní Zelenková, tohle se našlo za automatem na poště."
+  ],
+  [
+   3,
+   "Paní Zelenková",
+   "To je od Jiřího. Z vojny. Psal, že se vrátí na jaře."
+  ],
+  [
+   4,
+   "Vypravěč",
+   "Vrátil se. A už čtyřicet osm let spolu zalévají kytky."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "m",
+  "Pošťák Jarda": "m",
+  "Paní Zelenková": "f"
+ },
+ "props": [
+  "Letter"
+ ]
+}

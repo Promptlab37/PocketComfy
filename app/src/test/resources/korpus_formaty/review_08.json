@@ -1,0 +1,27 @@
+{
+ "name": "přídavné jméno + role jako mluvčí",
+ "text": "OKNO 1\nNa lavičce v parku.\nMladá žena: „Promiňte, je tu volno?“\nStarý muž: „Samozřejmě, posaďte se.“\nOKNO 2\nOba krmí holuby.\nMladá žena: „Děkuju.“",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Mladá žena",
+   "Promiňte, je tu volno?"
+  ],
+  [
+   1,
+   "Starý muž",
+   "Samozřejmě, posaďte se."
+  ],
+  [
+   2,
+   "Mladá žena",
+   "Děkuju."
+  ]
+ ],
+ "genders": {
+  "Mladá žena": "f",
+  "Starý muž": "m"
+ },
+ "props": []
+}

@@ -1,0 +1,40 @@
+{
+ "name": "Francouzské uvozovky «…» smíchané s rovnými \"…\", 'Scéna n: název | 0-6s', titul s tečkou (MUDr.) ve jméně, odrážky s dvojtečkou",
+ "text": "Scénář krátkého videa „Lékařka má pravdu“\nFormát: 16:9, přibližně 30 s\n\nPostavy\n- MUDr. Alena Horáková: 45 let, bílý plášť, stetoskop, krátké tmavé vlasy\n- Pan Vrba: 60 let, kostkovaná košile, obvaz na palci\n- Sestra Petra: 30 let, modrá uniforma, cop\n\nRekvizity\n- Obvaz: přehnaně velký, jako boxerská rukavice\n\nScéna 1: Čekárna | 0-6s\nPan Vrba sedí s obrovským obvazem na palci.\nSestra Petra: «Pane Vrbo, můžete jít dál.»\n\nScéna 2: Ordinace | 6-14s\nLékařka si prohlíží obvaz, zvedne obočí.\nMUDr. Alena Horáková: \"Co jste si to udělal?\"\nPan Vrba (stydlivě): \"Zatloukal jsem hřebík. Na obraz od manželky.\"\n\nScéna 3: Detail | 14-22s\nLékařka odmotává obvaz. Metry a metry obvazu.\nZvuk: komické šustění\n\nScéna 4: Pointa | 22-30s\nPod obvazem je malá náplast.\nMUDr. Alena Horáková (suše): «Budete žít.»\nPan Vrba: «A obraz visí!»",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Sestra Petra",
+   "Pane Vrbo, můžete jít dál."
+  ],
+  [
+   2,
+   "MUDr. Alena Horáková",
+   "Co jste si to udělal?"
+  ],
+  [
+   2,
+   "Pan Vrba",
+   "Zatloukal jsem hřebík. Na obraz od manželky."
+  ],
+  [
+   4,
+   "MUDr. Alena Horáková",
+   "Budete žít."
+  ],
+  [
+   4,
+   "Pan Vrba",
+   "A obraz visí!"
+  ]
+ ],
+ "genders": {
+  "MUDr. Alena Horáková": "f",
+  "Pan Vrba": "m",
+  "Sestra Petra": "f"
+ },
+ "props": [
+  "Obvaz"
+ ]
+}

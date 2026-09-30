@@ -1,0 +1,33 @@
+{
+ "name": "Markdown tabulka s řádkem na repliku (okno se opakuje), sloupce Postava/Replika, obsazení se středníky, poslední okno bez repliky (— v buňkách)",
+ "text": "**STORYBOARD – Parkování**\nFormát 16:9, přibližně 20 s\n\nPostavy: Radek (35 let, sportovní bunda); Simona (33 let, sluneční brýle, bílé tričko); Parkovací hlídač (60 let, reflexní vesta)\n\n| # | Čas | Obraz | Postava | Replika |\n|---|-----|-------|---------|---------|\n| 1 | 0–5 s | Radek se snaží zaparkovat do malého místa. | Radek | „Tohle dám na první pokus.“ |\n| 2 | 5–10 s | Po desátém pokusu. Simona si čte časopis. | Simona | „Pokus číslo jedenáct?“ |\n| 3 | 10–15 s | U okna se objeví hlídač. | Parkovací hlídač | „Pane, tady je to jen pro kola.“ |\n| 3 | 10–15 s | — | Radek | „To mi mohl někdo říct dřív.“ |\n| 4 | 15–20 s | Auto odjíždí, Simona se směje. | — | — |",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Radek",
+   "Tohle dám na první pokus."
+  ],
+  [
+   2,
+   "Simona",
+   "Pokus číslo jedenáct?"
+  ],
+  [
+   3,
+   "Parkovací hlídač",
+   "Pane, tady je to jen pro kola."
+  ],
+  [
+   3,
+   "Radek",
+   "To mi mohl někdo říct dřív."
+  ]
+ ],
+ "genders": {
+  "Radek": "m",
+  "Simona": "f",
+  "Parkovací hlídač": "m"
+ },
+ "props": []
+}

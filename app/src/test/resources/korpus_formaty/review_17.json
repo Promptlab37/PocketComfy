@@ -1,0 +1,22 @@
+{
+ "name": "dva mluvčí na jednom řádku",
+ "text": "Postavy:\nJana: 30 let, kabát\nPetr: 33 let, šála\n\nOKNO 1\nSetkání na ulici.\nJANA: „Ahoj.“ PETR: „Čau.“\nOKNO 2\nJdou spolu dál.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Ahoj."
+  ],
+  [
+   1,
+   "Petr",
+   "Čau."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Petr": "m"
+ },
+ "props": []
+}

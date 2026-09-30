@@ -1,0 +1,33 @@
+{
+ "name": "Vypravěč zapsaný jako 'VO:' i 'Narrator:', '[1] 0:00-0:05', 'Titulek:' uprostřed okna, děda a vnučka (Děda Jaroslav, Anička)",
+ "text": "[1] 0:00-0:05\nHorská chata v zimě, kouř z komína.\nVO: Tohle je chata, kde jsme trávili každé Vánoce.\n\n[2] 0:05-0:10\nUvnitř: děda Jaroslav přikládá do kamen, vnučka Anička mu podává polínko.\nAnička: Dědo, tohle je poslední.\nDěda: Tak to musíme zítra naštípat nové.\n\n[3] 0:10-0:15\nTitulek: Vánoce 1998\nNarrator: Děda nás naučil, že teplo se musí zasloužit.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Tohle je chata, kde jsme trávili každé Vánoce."
+  ],
+  [
+   2,
+   "Anička",
+   "Dědo, tohle je poslední."
+  ],
+  [
+   2,
+   "Děda",
+   "Tak to musíme zítra naštípat nové."
+  ],
+  [
+   3,
+   "Vypravěč",
+   "Děda nás naučil, že teplo se musí zasloužit."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?",
+  "Anička": "f",
+  "Děda": "m"
+ },
+ "props": []
+}

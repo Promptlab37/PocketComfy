@@ -1,0 +1,38 @@
+{
+ "name": "Vypravěč jako VO (v obsazení 'Vypravěč'), 'Záběr n (00:00–00:05)', odrážky •, repliky bez uvozovek, Titulek:",
+ "text": "Název: Poslední autobus\nPoměr stran: 9:16\nDélka: cca 30 sekund\n\nPOSTAVY\n• Vypravěč (hlas mimo obraz)\n• Babička Věra – 72 let, šedé vlasy, tmavě modrý kabát, červená šála\n• Řidič Karel – 45 let, uniforma dopravního podniku, knír\n\nZáběr 1 (00:00–00:05)\nZastávka v dešti, babička Věra čeká s taškou.\nVO: V našem městě jezdí poslední autobus ve 22:40.\n\nZáběr 2 (00:05–00:12)\nAutobus přijíždí, dveře se otevřou.\nŘidič Karel: Dobrý večer, paní Věro. Zase z divadla?\nBabička Věra: Jako každý čtvrtek, Karle.\n\nZáběr 3 (00:12–00:20)\nBabička vytáhne z tašky termosku a podá ji řidiči.\nBabička Věra: Čaj s citronem. Ať nenastydnete.\n\nZáběr 4 (00:20–00:30)\nAutobus odjíždí do tmy, v okně se svítí.\nVO: A tak na ni každý čtvrtek čeká.\nTitulek: Inspirováno skutečným příběhem",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "V našem městě jezdí poslední autobus ve 22:40."
+  ],
+  [
+   2,
+   "Řidič Karel",
+   "Dobrý večer, paní Věro. Zase z divadla?"
+  ],
+  [
+   2,
+   "Babička Věra",
+   "Jako každý čtvrtek, Karle."
+  ],
+  [
+   3,
+   "Babička Věra",
+   "Čaj s citronem. Ať nenastydnete."
+  ],
+  [
+   4,
+   "Vypravěč",
+   "A tak na ni každý čtvrtek čeká."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?",
+  "Babička Věra": "f",
+  "Řidič Karel": "m"
+ },
+ "props": []
+}

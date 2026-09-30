@@ -1,0 +1,35 @@
+{
+ "name": "všechny postavy na jednom řádku za dvojtečkou",
+ "text": "STORYBOARD – Ztracené klíče\nFormát: 9:16, přibližně 12 sekund.\nPostavy: Eva (31 let, kudrnaté zrzavé vlasy, fialový kabát), Petr (33 let, vousy, tmavě modrá bunda a béžové kalhoty)\nRekvizity: Klíče (svazek klíčů s přívěskem ve tvaru kočky), Kabelka (velká hnědá kožená kabelka)\nKontinuita: předsíň bytu, večer, teplé světlo lampy\n\n[OKNO 1 | 0–4 s] Panika\nObraz: Eva přehrabuje kabelku, Petr netrpělivě čeká u dveří.\nEmoce: spěch\nPetr (netrpělivě): „Evo, za deset minut nám jede vlak.“\nZvuk: tikání hodin\n\n[OKNO 2 | 4–8 s] Hledání\nObraz: Eva vysype obsah kabelky na botník.\nEmoce: zoufalství\nEva (rozčileně): „Včera tady byly, přísahám!“\nZvuk: rachot drobností\n\n[OKNO 3 | 8–12 s] Nález\nObraz: Petr sáhne do kapsy své bundy a vytáhne klíče s kočičím přívěskem.\nEmoce: rozpaky, pak smích\nPetr (rozpačitě): „Aha… tak to jsem asi já.“\nEva (se smíchem): „Ty jeden!“\nZvuk: cinknutí klíčů, smích\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Evo, za deset minut nám jede vlak."
+  ],
+  [
+   2,
+   "Eva",
+   "Včera tady byly, přísahám!"
+  ],
+  [
+   3,
+   "Petr",
+   "Aha… tak to jsem asi já."
+  ],
+  [
+   3,
+   "Eva",
+   "Ty jeden!"
+  ]
+ ],
+ "genders": {
+  "Eva": "f",
+  "Petr": "m"
+ },
+ "props": [
+  "Klíče",
+  "Kabelka"
+ ]
+}

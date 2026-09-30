@@ -1,0 +1,32 @@
+{
+ "name": "ChatGPT: markdown ###, **bold labels**, emoji, empty **Dialog:** label, cast 'Vnuk Kuba' vs line 'Kuba', chatty intro/outro",
+ "text": "Jasně! Tady je storyboard pro krátké video (cca 20 s) na téma „Ranní kakao s babičkou“ ☕\n\n## 🎬 Postavy\n- **Babička Marie** – 70 let, veselá, v zástěře\n- **Vnuk Kuba** – 8 let, rozcuchaný\n\n---\n\n### Záběr 1 (0–4 s)\n**Popis:** Kuchyň zalitá ranním sluncem. Babička Marie nalévá mléko do hrnku.\n**Zvuk:** cinkání lžičky\n**Dialog:**\n**Babička Marie:** „Dobré ráno, zlatíčko! Dáš si kakao?“\n\n### Záběr 2 (4–8 s)\n**Popis:** Kuba přiběhne v pyžamu a sedne si ke stolu.\n**Dialog:**\n**Kuba (nadšeně):** „Jo! A můžu i rohlík s medem?“\n\n### Záběr 3 (8–13 s)\n**Popis:** Detail na hrnek, pára stoupá.\n**Text na videu:** *Ta nejlepší rána začínají spolu*\n**Hudba:** jemné kytarové brnkání\n\n### Záběr 4 (13–20 s)\n**Popis:** Babička a Kuba se smějí, Kuba má knír od kakaa.\n**Babička Marie:** „Máš knír jako děda!“\n**Kuba:** „Tak to jsem teď velký chlap.“\n\n---\n\n💡 **Tip:** Pro konzistentní postavy použij stejný popis babičky ve všech záběrech. Chceš, abych připravil i verzi v angličtině? 😊",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Babička Marie",
+   "Dobré ráno, zlatíčko! Dáš si kakao?"
+  ],
+  [
+   2,
+   "Vnuk Kuba",
+   "Jo! A můžu i rohlík s medem?"
+  ],
+  [
+   4,
+   "Babička Marie",
+   "Máš knír jako děda!"
+  ],
+  [
+   4,
+   "Vnuk Kuba",
+   "Tak to jsem teď velký chlap."
+  ]
+ ],
+ "genders": {
+  "Babička Marie": "f",
+  "Vnuk Kuba": "m"
+ },
+ "props": []
+}

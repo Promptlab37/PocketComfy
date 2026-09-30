@@ -1,0 +1,34 @@
+{
+ "name": "Anglické nadpisy (TITLE/Characters/SHOT n (0-5s)/Visual/Dialogue/On-screen text), jména VELKÝMI, rovné uvozovky, česká replika",
+ "text": "TITLE: Babiččin recept\nFormat: 9:16, ~25 seconds\nCharacters:\n- GRANDMA ZDENA (78) – grey bun, flowered apron, glasses\n- LUKÁŠ (12) – boy, red hoodie, headphones around neck\nProps:\n- Recipe book – old, stained, handwritten\nContinuity: Apron stays on for the whole film.\n\nSHOT 1 (0-5s)\nVisual: Kitchen. Grandma is kneading dough.\nDialogue:\nGRANDMA ZDENA: \"Lukáši, podej mi mouku.\"\nSound: radio playing quietly\n\nSHOT 2 (5-10s)\nVisual: Lukáš looks at his phone, searching.\nLUKÁŠ: \"Babi, podle internetu se to dělá jinak.\"\n\nSHOT 3 (10-18s)\nVisual: Grandma taps the recipe book.\nGRANDMA ZDENA (calmly): \"Internet nikdy nepekl pro dědu.\"\n\nSHOT 4 (18-25s)\nVisual: Both eating buchty, Lukáš with his mouth full.\nLUKÁŠ (with full mouth): \"Dobře, internet prohrál.\"\nOn-screen text: \"Babička 1 : Internet 0\"",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "GRANDMA ZDENA",
+   "Lukáši, podej mi mouku."
+  ],
+  [
+   2,
+   "LUKÁŠ",
+   "Babi, podle internetu se to dělá jinak."
+  ],
+  [
+   3,
+   "GRANDMA ZDENA",
+   "Internet nikdy nepekl pro dědu."
+  ],
+  [
+   4,
+   "LUKÁŠ",
+   "Dobře, internet prohrál."
+  ]
+ ],
+ "genders": {
+  "GRANDMA ZDENA": "f",
+  "LUKÁŠ": "m"
+ },
+ "props": [
+  "Recipe book"
+ ]
+}

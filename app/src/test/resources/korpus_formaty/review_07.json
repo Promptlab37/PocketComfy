@@ -1,0 +1,16 @@
+{
+ "name": "štítky velkými písmeny nejsou mluvčí",
+ "text": "Postavy:\nPetr: 40 let, zástěra\n\nOKNO 1\nLOKACE: Kuchyně, ráno.\nSVĚTLO: Teplé ranní slunce.\nPetr krájí chleba.\nPETR: „Snídaně je hotová.“\nPŘECHOD: Střih.\nOKNO 2\nPetr prostírá stůl.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Snídaně je hotová."
+  ]
+ ],
+ "genders": {
+  "Petr": "m"
+ },
+ "props": []
+}

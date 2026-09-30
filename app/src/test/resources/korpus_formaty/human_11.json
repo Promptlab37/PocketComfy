@@ -1,0 +1,32 @@
+{
+ "name": "Guillemety »…«, 'Okno 1: Trh' s titulkem za dvojtečkou, řádek 'Prostředí:', trojtečka v replice, 'Titulek:' na konci",
+ "text": "Okno 1: Trh\nProstředí: farmářský trh na náměstí, slunečno.\nProdavač stojí za stánkem s jablky. Přijde starší paní s košíkem.\nProdavač: »Dobrý den, dnes máme čerstvá jablka ze sadu.«\nZákaznice: »Jsou sladká, nebo kyselá?«\n\nOkno 2: Ochutnávka\nProdavač nakrojí jablko a podá jí dílek.\nProdavač: »Ochutnejte sama.«\nZákaznice: »Mmm… Tak mi dejte dvě kila.«\n\nOkno 3: Odchod\nZákaznice odchází s plným košíkem.\nTitulek: Nakupujte lokálně.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Prodavač",
+   "Dobrý den, dnes máme čerstvá jablka ze sadu."
+  ],
+  [
+   1,
+   "Zákaznice",
+   "Jsou sladká, nebo kyselá?"
+  ],
+  [
+   2,
+   "Prodavač",
+   "Ochutnejte sama."
+  ],
+  [
+   2,
+   "Zákaznice",
+   "Mmm… Tak mi dejte dvě kila."
+  ]
+ ],
+ "genders": {
+  "Prodavač": "m",
+  "Zákaznice": "f"
+ },
+ "props": []
+}

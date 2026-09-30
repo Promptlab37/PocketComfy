@@ -1,0 +1,27 @@
+{
+ "name": "Markdown TABLE (Záběr | Popis | Zvuk / dialog), two lines in one cell joined by <br>, Zvuk: and Nápis: inside the dialog column, window 1 and 4 without speech",
+ "text": "Tady je návrh v tabulce, ať se to dobře čte:\n\n| Záběr | Popis | Zvuk / dialog |\n|---|---|---|\n| 1 | Autobusová zastávka, prší. Starší paní mává deštníkem. | Zvuk: déšť, přijíždějící autobus |\n| 2 | Řidič otevře dveře a usměje se. | Řidič: „Dobrý den, paní Marková, dneska zase na trh?“ |\n| 3 | Paní Marková nastupuje s taškou na kolečkách. | Paní Marková: „Ano, pro jablka. Vám taky nějaká přivezu.“<br>Řidič: „To nemusíte, opravdu.“ |\n| 4 | Autobus odjíždí, na zadním okně je vidět nápis. | Nápis: Linka 12 – jezdíme pro vás |\n\nCelé video vychází zhruba na 15 sekund. Mám doplnit časy jednotlivých záběrů?",
+ "windows": 4,
+ "lines": [
+  [
+   2,
+   "Řidič",
+   "Dobrý den, paní Marková, dneska zase na trh?"
+  ],
+  [
+   3,
+   "Paní Marková",
+   "Ano, pro jablka. Vám taky nějaká přivezu."
+  ],
+  [
+   3,
+   "Řidič",
+   "To nemusíte, opravdu."
+  ]
+ ],
+ "genders": {
+  "Řidič": "m",
+  "Paní Marková": "f"
+ },
+ "props": []
+}

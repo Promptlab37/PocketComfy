@@ -1,0 +1,36 @@
+{
+ "name": "'Okno n – název (a–b s)' bez Obraz:, obsazení s věkem v závorce 'Lékařka Jitka (42) – …' a odrážkami •, rovné uvozovky, české uvozovky uvnitř popisu akce, Kamera:",
+ "text": "Storyboard – Očkování\n\nFormát: 9:16, zhruba 21 sekund\n\nPostavy:\n• Lékařka Jitka (42) – krátké blond vlasy, bílý plášť, růžové brýle\n• Matyáš (6) – kluk, triko se superhrdinou, chybí mu přední zub\n• Maminka Lenka (34) – hnědý cop, béžový trenčkot\n\nRekvizity:\n• Plyšový medvěd – hnědý, s obvazem na tlapce\n• Samolepka – zlatá hvězda\n\nOkno 1 – Čekárna (0–4 s)\nMatyáš svírá medvěda a kouká na dveře ordinace.\nMatyáš (tiše): \"Mami, bude to bolet?\"\nMaminka Lenka: \"Jen jako štípnutí komára.\"\n\nOkno 2 – Ordinace (4–10 s)\nLékařka Jitka ukáže na medvěda.\nLékařka Jitka (vážně): \"Nejdřív musím očkovat pacienta číslo jedna.\"\n\nOkno 3 – Medvěd (10–15 s)\nLékařka dá medvědovi „injekci“ a nalepí mu náplast.\nKamera: detail na medvědí tlapku\n\nOkno 4 – Hrdina (15–21 s)\nMatyáš má náplast a zlatou hvězdu na tričku.\nMatyáš (hrdě): \"Ani jsem nebrečel. A medvěd taky ne.\"\nText na videu: \"Malý hrdina\"",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Matyáš",
+   "Mami, bude to bolet?"
+  ],
+  [
+   1,
+   "Maminka Lenka",
+   "Jen jako štípnutí komára."
+  ],
+  [
+   2,
+   "Lékařka Jitka",
+   "Nejdřív musím očkovat pacienta číslo jedna."
+  ],
+  [
+   4,
+   "Matyáš",
+   "Ani jsem nebrečel. A medvěd taky ne."
+  ]
+ ],
+ "genders": {
+  "Lékařka Jitka": "f",
+  "Matyáš": "m",
+  "Maminka Lenka": "f"
+ },
+ "props": [
+  "Plyšový medvěd",
+  "Samolepka"
+ ]
+}

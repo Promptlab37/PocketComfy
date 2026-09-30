@@ -1,0 +1,22 @@
+{
+ "name": "mluvčí s číslem (MUŽ 1, Muž 2)",
+ "text": "OKNO 1\nDva muži u stánku s párky.\nMUŽ 1: „Dvakrát s hořčicí.“\nMuž 2: „Pro mě s kečupem.“\nOKNO 2\nOba jedí.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Muž 1",
+   "Dvakrát s hořčicí."
+  ],
+  [
+   1,
+   "Muž 2",
+   "Pro mě s kečupem."
+  ]
+ ],
+ "genders": {
+  "Muž 1": "m",
+  "Muž 2": "m"
+ },
+ "props": []
+}

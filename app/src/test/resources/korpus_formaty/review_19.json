@@ -1,0 +1,16 @@
+{
+ "name": "záběr s dějem za dvojtečkou",
+ "text": "Postavy:\nPetr: 40 let, montérky\n\nZÁBĚR 1: Petr otevře dveře\nPetr: „Je tu někdo?“\nZÁBĚR 2: Petr rozsvítí",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Je tu někdo?"
+  ]
+ ],
+ "genders": {
+  "Petr": "m"
+ },
+ "props": []
+}

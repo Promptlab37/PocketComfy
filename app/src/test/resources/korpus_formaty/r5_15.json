@@ -1,0 +1,32 @@
+{
+  "name": "PC – sobotní trh",
+  "text": "Scéna 1\nFarmářský trh na náměstí, ráno. Zuzana prochází mezi stánky s košíkem.\nZuzana: »Dobrý den, máte ještě ty domácí vajíčka?«\n\nScéna 2\nProdavač za stánkem s vejci a zeleninou, kývne.\nProdavač: »Mám, poslední dvě plata. Jsou dneska ráno od slepic.«\n\nScéna 3\nZuzana bere plato, prodavač jí k tomu přidá svazek ředkviček.\nProdavač: »A tohle máte ode mě navíc, ať se vám vrátíte.«\nZuzana: »To je od vás moc milé, děkuju.«\n\nScéna 4\nZuzana odchází, v košíku vajíčka, ředkvičky a kytka. Kamera ji sleduje zezadu.\nHudba: veselá harmonika",
+  "windows": 4,
+  "lines": [
+    [
+      1,
+      "Zuzana",
+      "Dobrý den, máte ještě ty domácí vajíčka?"
+    ],
+    [
+      2,
+      "Prodavač",
+      "Mám, poslední dvě plata. Jsou dneska ráno od slepic."
+    ],
+    [
+      3,
+      "Prodavač",
+      "A tohle máte ode mě navíc, ať se vám vrátíte."
+    ],
+    [
+      3,
+      "Zuzana",
+      "To je od vás moc milé, děkuju."
+    ]
+  ],
+  "genders": {
+    "Zuzana": "f",
+    "Prodavač": "m"
+  },
+  "props": []
+}

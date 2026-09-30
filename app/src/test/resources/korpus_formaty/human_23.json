@@ -1,0 +1,42 @@
+{
+ "name": "Kopie z PDF: tvrdé zalomení uprostřed akce i replik v rovných uvozovkách, oslovení v 5. pádě (Vojto)",
+ "text": "Okno 1\nPekárna, brzy ráno. Pekařka Hana vytahuje z pece\nprvní plech s rohlíky. Do dveří vejde učeň Vojta.\nHana: \"Dobré ráno, Vojto. Umyj si ruce a vezmi si\nzástěru, dneska toho je hodně.\"\nVojta: \"Jasně, šéfová. Kolik\ndělá dnešní objednávka?\"\n\nOkno 2\nHana ukazuje na tabuli s objednávkami.\nHana: \"Tři sta rohlíků, padesát chlebů a dvacet\nkoláčů pro školku.\"\nVojta: \"To stihneme.\"\n\nOkno 3\nVojta pyšně drží první koláč,\nkterý upekl sám.\nVojta: \"Můžu ho ochutnat?\"\nHana: \"Až po práci.\"\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Hana",
+   "Dobré ráno, Vojto. Umyj si ruce a vezmi si zástěru, dneska toho je hodně."
+  ],
+  [
+   1,
+   "Vojta",
+   "Jasně, šéfová. Kolik dělá dnešní objednávka?"
+  ],
+  [
+   2,
+   "Hana",
+   "Tři sta rohlíků, padesát chlebů a dvacet koláčů pro školku."
+  ],
+  [
+   2,
+   "Vojta",
+   "To stihneme."
+  ],
+  [
+   3,
+   "Vojta",
+   "Můžu ho ochutnat?"
+  ],
+  [
+   3,
+   "Hana",
+   "Až po práci."
+  ]
+ ],
+ "genders": {
+  "Hana": "f",
+  "Vojta": "m"
+ },
+ "props": []
+}

@@ -66,18 +66,23 @@ object SbScenarPokryti {
             // Prázdné pole („Zvuk: žádný“, „Dialog – žádný“) rozbor zahodí záměrně.
             if (SbScenar.PRAZDNE_POLE.containsMatchIn(r) || (r.contains(':') && SbScenar.jeNic(r.substringAfter(':')))) return@forEachIndexed
             // Záhlaví okna: obsah za ním se kontroluje.
-            SbScenar.ZNACKA.find(r)?.takeIf { it.range.first == 0 }?.let { m ->
+            (SbScenar.ZNACKA.find(r) ?: SbScenar.ZNACKA_CISLO.find(r))?.takeIf { it.range.first == 0 }?.let { m ->
                 val zbytek = r.substring(m.range.last + 1)
                 val za = zbytek.substringAfter(']', zbytek)
                 r = if (SbScenar.jeNadpis(za)) "" else za
             }
             if (r.isBlank()) return@forEachIndexed
             if (r.none { it.isLowerCase() }) return@forEachIndexed
+            // Nadpis sekce bez obsahu („Rekvizita“, „Postavy“) — obsah pod ním se kontroluje zvlášť.
+            if (Regex("""(?iu)^(postavy a rekvizity|postavy|rekvizity|rekvizita|characters|cast|props|obsazení|hrají|účinkují|prostor|prostředí|lokace|místo děje|setting|location)\s*:?$""").matches(r)) return@forEachIndexed
             if (i == prvniNeprazdny && !r.contains(':')) return@forEachIndexed
             if (Regex("""(?iu)^(formát|format|délka|length|duration)\s*:""").containsMatchIn(r)) return@forEachIndexed
             val okno = if (poOknech && bloky[i] > 0) c.okna[bloky[i] - 1] else null
             val pytel = if (okno != null) filmu + pytelOkna(okno) else vse
             SbScenarModel.vetyMimoUvozovky(r).forEach { v ->
+                // „INT.“, „KUCHYŇ – RÁNO“ — hlavička scény velkými písmeny.
+                if (v.none { it.isLowerCase() }) return@forEach
+                if (Regex("""(?iu)^(mrs|mr|ms|dr|ing|mudr|mgr|bc|judr|phdr|prof|doc|st|sv)\.?$""").matches(v.trim())) return@forEach
                 // Záhlaví okna „1. Příchod (0–3 s)“: čas + nejvýš 4 slova.
                 if (SbScenar.cas(v) != null &&
                     v.replace(Regex("""[\d:.,–—\-()]+"""), " ").trim().split(Regex("""\s+""")).filter { it != "s" }.size <= 4
@@ -87,7 +92,8 @@ object SbScenarPokryti {
                 // Replika se jménem před uvozovkou musí být replikou nebo textem, ne jen poznámkou.
                 if (okno != null) {
                     val vyslovene = (okno.repliky.map { it.text } + okno.texty + okno.vyzva).map { norm(it) }
-                    Regex("""(?<![\p{L}\d])\p{Lu}[\p{L}\d]{1,20}[^„“"«\n:]{0,40}[:–—-]\s*[„“"«]([^„“"«»”\n]{2,300})[“”"»]""").findAll(v).forEach { m ->
+                    Regex("""(?<![\p{L}\d])\p{Lu}[\p{L}\d]{1,20}[^„“"«\n:]{0,40}[:–—-]\s*[„“"«]([^„“"«»”\n]{2,300})[“”"»]""").findAll(v)
+                        .filterNot { Regex("""(?iu)^(na|v|ve|u|do|z|ze|od|po|při|za|před|pod|nad|detail|nápis|cedule)\b""").containsMatchIn(it.value) }.forEach { m ->
                         val q = norm(m.groupValues[1])
                         if (vyslovene.none { it == q || (q.length > 3 && it.contains(q)) }) out += v.trim()
                     }

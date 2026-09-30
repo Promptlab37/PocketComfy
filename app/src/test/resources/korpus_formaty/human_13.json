@@ -1,0 +1,36 @@
+{
+ "name": "Řádky Prostředí:/Rekvizity:/Kontinuita: uvnitř oken (nejsou mluvčí ani repliky), Lucie/Ondřej",
+ "text": "OKNO 1\nProstředí: malá kancelář, odpoledne, světlo z okna.\nRekvizity: hrnek, telefon, notebook\nKontinuita: Lucie má modrý svetr a vlasy v culíku.\nLucie sedí u stolu, zazvoní telefon.\nLucie: Dobrý den, tady Lucie Malá, jak vám můžu pomoct?\n\nOKNO 2\nRekvizity: hrnek, telefon\nKontinuita: hrnek stále vlevo od notebooku.\nLucie poslouchá a dělá si poznámky.\nLucie: Rozumím. Balík vám pošleme ještě dnes.\n\nOKNO 3\nLucie položí telefon a napije se z hrnku. Do dveří nakoukne kolega Ondřej.\nOndřej: Jdeš na oběd?\nLucie: Za pět minut jsem tam.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Lucie",
+   "Dobrý den, tady Lucie Malá, jak vám můžu pomoct?"
+  ],
+  [
+   2,
+   "Lucie",
+   "Rozumím. Balík vám pošleme ještě dnes."
+  ],
+  [
+   3,
+   "Ondřej",
+   "Jdeš na oběd?"
+  ],
+  [
+   3,
+   "Lucie",
+   "Za pět minut jsem tam."
+  ]
+ ],
+ "genders": {
+  "Lucie": "f",
+  "Ondřej": "m"
+ },
+ "props": [
+  "hrnek",
+  "telefon",
+  "notebook"
+ ]
+}

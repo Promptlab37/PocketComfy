@@ -1,0 +1,35 @@
+{
+ "name": "Markdown: ### nadpis, **tučné** jméno, *kurzíva* u způsobu, **SCÉNA n (a–b s)**, odrážky v obsazení, oddělovače --- a Poznámka pro střih",
+ "text": "### **Storyboard: Ztracené klíče**\n\n**Formát:** 16:9, cca 30 sekund\n\n**Postavy:**\n- **Petr** – 40 let, plešatějící, modrá košile, béžové kalhoty\n- **Marie** – 38 let, dlouhé zrzavé vlasy, zelené šaty\n\n**Rekvizity:**\n- **Klíče** – svazek klíčů s červenou klíčenkou\n- **Kabelka** – velká hnědá kožená kabelka\n\n---\n\n**SCÉNA 1 (0–6 s)**\n*Obraz:* Petr stojí u dveří a prohledává kapsy.\n**Petr** *(nervózně)*: „Kde jsou ty klíče?“\n\n**SCÉNA 2 (6–12 s)**\n*Obraz:* Marie přichází s kabelkou přes rameno.\n**Marie:** „Hledal jsi v kabelce?“\n**Petr:** „V tvojí kabelce? Proč bych tam hledal?“\n\n**SCÉNA 3 (12–20 s)**\n*Obraz:* Marie vysype kabelku na stolek. Hromada věcí.\n*Zvuk:* cinkání, šustění\n\n**SCÉNA 4 (20–30 s)**\n*Obraz:* Klíče visí Petrovi na krku na šňůrce.\n**Marie** *(se smíchem)*: „Petře… podívej se dolů.“\n*Text na videu:* **Klasika.**\n\n---\n*Poznámka pro střih: poslední záběr nechat o vteřinu delší.*",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Kde jsou ty klíče?"
+  ],
+  [
+   2,
+   "Marie",
+   "Hledal jsi v kabelce?"
+  ],
+  [
+   2,
+   "Petr",
+   "V tvojí kabelce? Proč bych tam hledal?"
+  ],
+  [
+   4,
+   "Marie",
+   "Petře… podívej se dolů."
+  ]
+ ],
+ "genders": {
+  "Petr": "m",
+  "Marie": "f"
+ },
+ "props": [
+  "Klíče",
+  "Kabelka"
+ ]
+}

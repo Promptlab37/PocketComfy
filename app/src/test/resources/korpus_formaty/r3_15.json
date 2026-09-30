@@ -1,0 +1,30 @@
+{
+ "name": "přejmenované popisky: Záběr místo OKNO, Akce místo Obraz, Dialog: před replikou",
+ "text": "STORYBOARD – Oprava kola\nFormát: 16:9, přibližně 12 sekund.\nPostavy:\nLucie: 16 let, hnědé vlasy v copu, černá cyklistická helma, tyrkysová bunda\nDěda Josef: 70 let, bílé vousy, kostkovaná košile, montérky s laclem\nRekvizity:\nKolo: zelené horské kolo s prázdnou zadní pneumatikou\nPumpička: stará kovová pumpička\nKontinuita: dvůr u garáže, sobotní ráno, Lucie má helmu celou dobu na hlavě\n\nZáběr 1 (0–4 s) – Píchlá guma\nAkce: Lucie přivede kolo k dědovi a ukazuje na splasklou pneumatiku.\nNálada: smutek\nDialog: Lucie (smutně): „Dědo, zase jsem píchla. A zítra je závod.“\nZvuky: cvrlikání, kroky po štěrku\n\nZáběr 2 (4–8 s) – Děda ví\nAkce: Děda Josef vytáhne ze šuplíku záplaty a pumpičku.\nNálada: jistota\nDialog: Děda Josef (klidně): „Nic se neboj, to spravíme za pět minut.“\nZvuky: rachot nářadí\n\nZáběr 3 (8–12 s) – Hotovo\nAkce: Lucie pumpuje, pneumatika je zase tvrdá. Děda ji poplácá po helmě.\nNálada: radost\nDialog: Lucie (vděčně): „Jsi nejlepší mechanik na světě!“\nZvuky: syčení pumpičky, smích\nTitulek: „Děda to spraví“\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Lucie",
+   "Dědo, zase jsem píchla. A zítra je závod."
+  ],
+  [
+   2,
+   "Děda Josef",
+   "Nic se neboj, to spravíme za pět minut."
+  ],
+  [
+   3,
+   "Lucie",
+   "Jsi nejlepší mechanik na světě!"
+  ]
+ ],
+ "genders": {
+  "Lucie": "f",
+  "Děda Josef": "m"
+ },
+ "props": [
+  "Kolo",
+  "Pumpička"
+ ]
+}

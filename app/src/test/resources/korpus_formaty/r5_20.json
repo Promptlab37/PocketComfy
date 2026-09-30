@@ -1,0 +1,32 @@
+{
+  "name": "AI Claude – palačinky s tátou",
+  "text": "Tady je jednoduchý scénář na krátké video o vaření s tátou:\n\nOkno 1 – Sobotní ráno, kuchyň\nTáta si uvazuje zástěru, dcera Bára (9) sedí na lince.\nTáta: „Tak, šéfkuchařko, co dneska vaříme?“\nBára: „Palačinky! A velký kopec.“\n\nOkno 2 – Míchání těsta\nBára šlehá těsto, trochu stříká kolem. Detail metly.\nZvuk: cinkání metly o mísu\n\nOkno 3 – Pánev\nTáta se chystá palačinku obrátit vyhozením do vzduchu.\nTáta: „Pozor, teď přijde mistrovský kousek.“\n\nOkno 4 – Detail stropu\nPalačinka se přilepí na lampu. Oba se dívají nahoru.\nBára: „Tati… to byl ten mistrovský kousek?“\n\nOkno 5 – Stůl\nOba jedí palačinky s jahodami, smějí se.\nText na obrazovce: Nejlepší recepty se nepovedou napoprvé.\nHudba: veselá, ukulele",
+  "windows": 5,
+  "lines": [
+    [
+      1,
+      "Táta",
+      "Tak, šéfkuchařko, co dneska vaříme?"
+    ],
+    [
+      1,
+      "Bára",
+      "Palačinky! A velký kopec."
+    ],
+    [
+      3,
+      "Táta",
+      "Pozor, teď přijde mistrovský kousek."
+    ],
+    [
+      4,
+      "Bára",
+      "Tati… to byl ten mistrovský kousek?"
+    ]
+  ],
+  "genders": {
+    "Táta": "m",
+    "Bára": "f"
+  },
+  "props": []
+}

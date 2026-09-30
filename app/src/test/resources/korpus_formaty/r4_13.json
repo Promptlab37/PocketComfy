@@ -1,0 +1,40 @@
+{
+ "name": "Scénářový formát: stejný mluvčí dvakrát za sebou přerušený akcí (POKRAČ.) + replika končící … a navazující …a + poznámka na vlastním řádku + ZVUK:",
+ "text": "PODZIMNÍ ÚKLID\nPostavy: LENKA (40), SOUSED KAREL (65)\nRekvizity: hrábě, pytel na listí\n\nZÁBĚR 1\nZahrada plná listí. Lenka hrabe hráběmi.\nLENKA\nTak. Ještě tenhle roh a…\nPřiletí poryv větru, listí se rozletí po trávníku.\nLENKA (POKRAČ.)\n…a zase od začátku.\nZVUK: šumění větru\n\nZÁBĚR 2\nPřes plot nakoukne soused Karel.\nSOUSED KAREL\n(pobaveně)\nNechcete půjčit můj foukač?\nLENKA\nTo byste byl anděl.\n\nZÁBĚR 3\nKarel podává přes plot pytel na listí.\nSOUSED KAREL\nPytel dostanete k tomu.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "LENKA",
+   "Tak. Ještě tenhle roh a…"
+  ],
+  [
+   1,
+   "LENKA",
+   "…a zase od začátku."
+  ],
+  [
+   2,
+   "SOUSED KAREL",
+   "Nechcete půjčit můj foukač?"
+  ],
+  [
+   2,
+   "LENKA",
+   "To byste byl anděl."
+  ],
+  [
+   3,
+   "SOUSED KAREL",
+   "Pytel dostanete k tomu."
+  ]
+ ],
+ "genders": {
+  "LENKA": "f",
+  "SOUSED KAREL": "m"
+ },
+ "props": [
+  "hrábě",
+  "pytel na listí"
+ ]
+}

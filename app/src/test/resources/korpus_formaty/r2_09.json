@@ -1,0 +1,33 @@
+{
+ "name": "Perplexity: citations [1][2] in intro and sources list at end, windows '#n (time) — description' on one line, Mluvený komentář (žena), Text na obrazovce with | separators, Výzva:, SFX:",
+ "text": "Pro krátké video o třídění odpadu se osvědčuje struktura háček – problém – řešení – výzva[1][2]. Níže je návrh:\n\n**Storyboard: „Kam s tím?“**\n\n#1 (0–3 s) — Kuchyň, dívka drží prázdnou plastovou lahev a nerozhodně stojí u košů.\nKlára: Plast, papír, nebo... sklo?\n\n#2 (3–7 s) — Vedle se objeví její mladší bratr s tabletem.\nVojta: Plast je žlutá. To ví každej.\n\n#3 (7–10 s) — Klára lahev sešlápne a hodí do žlutého koše.\nKlára: Díky, profesore.\nSFX: křupnutí lahve\n\n#4 (10–14 s) — Grafika s barevnými koši.\nText na obrazovce: Žlutá – plast | Modrá – papír | Zelená – sklo\nMluvený komentář (žena): Třídit je jednoduché. Stačí začít.\n\n#5 (14–16 s) — Logo města.\nVýzva: Třiďte s námi!\n\nZdroje:\n[1] Jak natočit krátké vzdělávací video – průvodce pro obce\n[2] Struktura videí do 30 sekund",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Klára",
+   "Plast, papír, nebo... sklo?"
+  ],
+  [
+   2,
+   "Vojta",
+   "Plast je žlutá. To ví každej."
+  ],
+  [
+   3,
+   "Klára",
+   "Díky, profesore."
+  ],
+  [
+   4,
+   "Vypravěč",
+   "Třídit je jednoduché. Stačí začít."
+  ]
+ ],
+ "genders": {
+  "Klára": "f",
+  "Vojta": "m",
+  "Vypravěč": "f"
+ },
+ "props": []
+}

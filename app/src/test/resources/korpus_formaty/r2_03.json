@@ -1,0 +1,38 @@
+{
+ "name": "Word paste: classic screenplay (NAME on own line, tab-indented dialogue), parenthetical line, dialogue broken across 2 lines with trailing space, MUDr. title in CAPS cast, page number '- 2 -', STŘIH NA:, TITULEK:",
+ "text": "KRÁTKÝ FILM „ZTRACENÝ KLÍČ“\nScénář: pracovní verze 3\n\nPOSTAVY:\n\tALENA SVOBODOVÁ, 35 let\n\tMUDr. PAVEL SVOBODA, její manžel\n\tEMA, jejich dcera, 10 let\n\nSCÉNA 1 – INT. PŘEDSÍŇ – RÁNO\nAlena prohledává kapsy kabátu. Je nervózní.\n\t\tALENA\n\tPavle, neviděl jsi klíče od\n\tauta? Byly tady na háčku.\n\t\tPAVEL\n\t(z kuchyně)\n\tVčera jsi je měla v kabelce.\n\nSCÉNA 2 – INT. KUCHYŇ – RÁNO\nPavel dopíjí čaj, Ema snídá cereálie.\n\t\tEMA\n\tMami, já vím, kde jsou!\n\n- 2 -\n\nSCÉNA 3 – INT. PŘEDSÍŇ – RÁNO\nEma vytáhne klíče z boty.\n\t\tEMA\n\tPan Pes je tam schoval. Zase.\n\t\tALENA\n\t(směje se)\n\tTak to má dneska zaracha.\n\nSTŘIH NA:\n\nSCÉNA 4 – EXT. PŘED DOMEM – RÁNO\nCelá rodina odjíždí. Ema mává z okna.\nTITULEK: KONEC",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "ALENA SVOBODOVÁ",
+   "Pavle, neviděl jsi klíče od auta? Byly tady na háčku."
+  ],
+  [
+   1,
+   "MUDr. PAVEL SVOBODA",
+   "Včera jsi je měla v kabelce."
+  ],
+  [
+   2,
+   "EMA",
+   "Mami, já vím, kde jsou!"
+  ],
+  [
+   3,
+   "EMA",
+   "Pan Pes je tam schoval. Zase."
+  ],
+  [
+   3,
+   "ALENA SVOBODOVÁ",
+   "Tak to má dneska zaracha."
+  ]
+ ],
+ "genders": {
+  "ALENA SVOBODOVÁ": "f",
+  "MUDr. PAVEL SVOBODA": "m",
+  "EMA": "f"
+ },
+ "props": []
+}

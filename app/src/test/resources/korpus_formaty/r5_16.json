@@ -1,0 +1,41 @@
+{
+  "name": "Word tabulka – první půlmaraton",
+  "text": "První půlmaraton – storyboard\n\nPostavy: Lída (běžkyně, 30), Trenérka Olga (45)\nRekvizity: startovní číslo, láhev s vodou, medaile\n\nOkno\tObraz\tDialog\tZvuk / hudba\n1\tStart závodu, dav běžců, Lída si připíná startovní číslo.\tLída: „Tak, teď už není cesta zpátky.“\tstartovní výstřel\n2\tDesátý kilometr, Lída zpomaluje, Olga běží vedle ní po chodníku.\tOlga: „Dýchej, Lído! Krátký krok, pravidelně.“\tdech, kroky\n3\tObčerstvovací stanice, Lída bere láhev s vodou.\tLída: „Ještě jedenáct kilometrů… to zvládnu.“\ttleskání diváků\n4\tCíl, Lída probíhá páskou, dostává medaili.\tOlga: „Jsem na tebe hrdá. Příště celý maraton?“\nLída: „Nejdřív se musím naučit znovu chodit.“\tepická hudba",
+  "windows": 4,
+  "lines": [
+    [
+      1,
+      "Lída",
+      "Tak, teď už není cesta zpátky."
+    ],
+    [
+      2,
+      "Olga",
+      "Dýchej, Lído! Krátký krok, pravidelně."
+    ],
+    [
+      3,
+      "Lída",
+      "Ještě jedenáct kilometrů… to zvládnu."
+    ],
+    [
+      4,
+      "Olga",
+      "Jsem na tebe hrdá. Příště celý maraton?"
+    ],
+    [
+      4,
+      "Lída",
+      "Nejdřív se musím naučit znovu chodit."
+    ]
+  ],
+  "genders": {
+    "Lída": "f",
+    "Olga": "f"
+  },
+  "props": [
+    "startovní číslo",
+    "láhev s vodou",
+    "medaile"
+  ]
+}

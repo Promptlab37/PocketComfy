@@ -1,0 +1,35 @@
+{
+ "name": "přesně podle šablony, 4 okna, 16:9",
+ "text": "STORYBOARD – Nedělní snídaně\nFormát: 16:9, přibližně 16 sekund.\nPostavy:\nJana: 38 let, hnědé vlasy v culíku, béžový svetr a modré džíny\nTomáš: 10 let, krátké světlé vlasy, zelené tričko s dinosaurem\nRekvizity:\nHrnek: bílý keramický hrnek s červeným srdíčkem\nTalíř s palačinkami: velký modrý talíř, na něm stoh palačinek s jahodami\nKontinuita: kuchyň se žlutými závěsy, ranní slunce z okna, Tomáš má pořád zelené tričko\n\n[OKNO 1 | 0–4 s] Probuzení\nObraz: Tomáš přijde rozespalý do kuchyně a mne si oči. Jana stojí u sporáku.\nEmoce: klidná, domácí\nJana (vesele): „Dobré ráno, spáči! Dneska jsou palačinky.“\nZvuk: syčení pánve, tiché rádio\nText na videu: „Neděle, 8:00“\n\n[OKNO 2 | 4–8 s] Palačinky na stole\nObraz: Jana položí na stůl talíř s palačinkami. Tomáš vykulí oči.\nEmoce: radost, překvapení\nTomáš (nadšeně): „Jů, s jahodami? Ty jsi nejlepší, mami!“\nZvuk: cinknutí talíře\n\n[OKNO 3 | 8–12 s] Kakao\nObraz: Tomáš si přisune hrnek a opatrně upíjí. Jana si přisedne naproti.\nEmoce: pohoda\nJana (s úsměvem): „Opatrně, je ještě horké.“\nZvuk: foukání do hrnku, ptáci za oknem\n\n[OKNO 4 | 12–16 s] Společně\nObraz: Oba se smějí a jedí, kamera pomalu odjíždí od stolu.\nEmoce: vřelost\nTomáš (s plnou pusou): „Můžeme to dělat každou neděli?“\nZvuk: smích, hudba zesílí\nText na videu: „Nejlepší chvíle jsou ty obyčejné“\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Dobré ráno, spáči! Dneska jsou palačinky."
+  ],
+  [
+   2,
+   "Tomáš",
+   "Jů, s jahodami? Ty jsi nejlepší, mami!"
+  ],
+  [
+   3,
+   "Jana",
+   "Opatrně, je ještě horké."
+  ],
+  [
+   4,
+   "Tomáš",
+   "Můžeme to dělat každou neděli?"
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Tomáš": "m"
+ },
+ "props": [
+  "Hrnek",
+  "Talíř s palačinkami"
+ ]
+}

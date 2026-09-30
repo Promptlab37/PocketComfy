@@ -1,0 +1,41 @@
+{
+ "name": "S-kód se jménem v závorce 'S1 (Martin)' v obsazení i v replikách, způsob za závorkou po čárce, 'Okno n (a–b s): název', řádek Kamera:, okno bez repliky",
+ "text": "Storyboard: Stěhování\nFormát: 16:9, zhruba 35 sekund\n\nPostavy:\nS1 (Martin) – 40 let, montérky, modré tričko, kšiltovka\nS2 (Hana) – 38 let, jeho žena, šedá mikina, šátek ve vlasech\nS3 (Tadeáš) – 10 let, syn, pruhované tričko\n\nRekvizity:\nPohovka – zelená, obrovská\nKrabice s nápisem KŘEHKÉ\n\nOkno 1 (0–5 s): Schodiště\nMartin a Hana nesou pohovku, zasekne se ve dveřích.\nS1 (Martin): „Zvedni to víc doleva!“\nS2 (Hana): „Moje doleva, nebo tvoje?“\n\nOkno 2 (5–12 s): Chodba\nTadeáš přeleze pohovku s krabicí v rukou.\nS3 (Tadeáš), vesele: „Já jsem prošel!“\n\nOkno 3 (12–20 s): Detail\nKamera: detail na zaseknutou nohu pohovky.\nZvuk: vrzání dřeva\n\nOkno 4 (20–28 s): Nápad\nS3 (Tadeáš): „Tati, a co ji otočit?“\nMartin a Hana ztuhnou.\n\nOkno 5 (28–35 s): Hotovo\nPohovka projede dveřmi. Všichni tři se smějí.\nS2 (Hana): „Ten kluk půjde na stavárnu.“",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Martin",
+   "Zvedni to víc doleva!"
+  ],
+  [
+   1,
+   "Hana",
+   "Moje doleva, nebo tvoje?"
+  ],
+  [
+   2,
+   "Tadeáš",
+   "Já jsem prošel!"
+  ],
+  [
+   4,
+   "Tadeáš",
+   "Tati, a co ji otočit?"
+  ],
+  [
+   5,
+   "Hana",
+   "Ten kluk půjde na stavárnu."
+  ]
+ ],
+ "genders": {
+  "Martin": "m",
+  "Hana": "f",
+  "Tadeáš": "m"
+ },
+ "props": [
+  "Pohovka",
+  "Krabice s nápisem KŘEHKÉ"
+ ]
+}

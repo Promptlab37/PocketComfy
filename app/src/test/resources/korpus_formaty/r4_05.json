@@ -1,0 +1,29 @@
+{
+ "name": "Reklama: dva VO (muž a žena) + název produktu jako jméno (MÍLA:) ve sloganu + packshot + CTA",
+ "text": "Reklamní spot: MÍLA – jogurt z hor\nDélka 20 s, 9:16\nObsazení: holčička Bára (6 let), VO muž, VO žena\nProdukt: kelímek jogurtu MÍLA\n\nZáběr 1: Horská louka, krávy se pasou v mlze.\nVO (muž): Na horách se nikdo nikam nežene.\nZáběr 2: Bára otevírá kelímek MÍLA u snídaně, máma nalévá čaj.\nBára: Mami, Míla je zase nejlepší!\nZáběr 3: Detail lžičky v bílém jogurtu.\nVO (žena): Míla. Z mléka, které si dalo na čas.\nZáběr 4: Packshot, kelímek na dřevěném stole.\nMÍLA: jogurt, co má čas.\nCTA: Hledejte v chladicím boxu.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Na horách se nikdo nikam nežene."
+  ],
+  [
+   2,
+   "Bára",
+   "Mami, Míla je zase nejlepší!"
+  ],
+  [
+   3,
+   "Vypravěč",
+   "Míla. Z mléka, které si dalo na čas."
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?",
+  "Bára": "f"
+ },
+ "props": [
+  "kelímek jogurtu MÍLA"
+ ]
+}

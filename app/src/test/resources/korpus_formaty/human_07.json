@@ -1,0 +1,37 @@
+{
+ "name": "'PANEL 1 🎬' s emoji odrážkami (📍 ➡️ 💬) před řádky, role Dcera/Táta, poslední panel jen akce",
+ "text": "PANEL 1 🎬\n📍 Dětský pokoj, sobota ráno\n➡️ Dcera staví hrad z kostek, táta si k ní klekne.\n💬 Dcera: Tati, tohle bude věž pro princeznu.\n💬 Táta: A kde bude bydlet drak?\n\nPANEL 2 🎬\n➡️ Dcera ukáže na krabici pod postelí.\n💬 Dcera: Drak bydlí tady. Je hodný.\n\nPANEL 3 🎬\n➡️ Táta přinese plyšového draka a posadí ho na věž.\n💬 Táta: Tak, teď hlídá celý hrad.\n💬 Dcera: Jupí!\n\nPANEL 4 🎬\n➡️ Celý hrad z výšky, oba se smějí.\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Dcera",
+   "Tati, tohle bude věž pro princeznu."
+  ],
+  [
+   1,
+   "Táta",
+   "A kde bude bydlet drak?"
+  ],
+  [
+   2,
+   "Dcera",
+   "Drak bydlí tady. Je hodný."
+  ],
+  [
+   3,
+   "Táta",
+   "Tak, teď hlídá celý hrad."
+  ],
+  [
+   3,
+   "Dcera",
+   "Jupí!"
+  ]
+ ],
+ "genders": {
+  "Dcera": "f",
+  "Táta": "m"
+ },
+ "props": []
+}

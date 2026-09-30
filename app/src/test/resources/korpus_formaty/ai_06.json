@@ -1,0 +1,29 @@
+{
+ "name": "Okna 'Okno n – název (a–b s)', repliky v tagu <d>[Czech] …</d>, uvozovky uvnitř popisu rekvizity, tučný nadpis",
+ "text": "**STORYBOARD – Ranní káva**\nFormát: 16:9, přibližně 18 sekund.\n\nPostavy:\nKlára: 29 let, tmavé kudrnaté vlasy, bílá košile, černé kalhoty\nBarista Ondra: 25 let, zrzavý vous, hnědá zástěra\nRekvizity:\nHrnek: velký modrý hrnek s nápisem „PONDĚLÍ“\n\nOkno 1 – U pultu (0–3 s)\nObraz: Klára přichází k pultu, zívá.\nKlára (ospale): <d>[Czech] Jedno kafe. Hodně velký.</d>\n\nOkno 2 – Příprava (3–9 s)\nObraz: Ondra nalévá kávu do obřího hrnku.\nBarista Ondra (vesele): <d>[Czech] Pondělí, co?</d>\nZvuk: syčení kávovaru\n\nOkno 3 – Konec (9–18 s)\nObraz: Klára si přiloží hrnek k ústům a oči se jí rozsvítí.\nKlára: <d>[Czech] Už je to lepší.</d>\nText na videu: „Pondělí poražené“",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Klára",
+   "Jedno kafe. Hodně velký."
+  ],
+  [
+   2,
+   "Barista Ondra",
+   "Pondělí, co?"
+  ],
+  [
+   3,
+   "Klára",
+   "Už je to lepší."
+  ]
+ ],
+ "genders": {
+  "Klára": "f",
+  "Barista Ondra": "m"
+ },
+ "props": [
+  "Hrnek"
+ ]
+}

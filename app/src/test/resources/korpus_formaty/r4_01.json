@@ -1,0 +1,41 @@
+{
+ "name": "Markdown tabulka + Vypravěč v buňce + S-kódy jen s popisem + dvě repliky v jedné buňce přes <br> + zvuk v hvězdičkách",
+ "text": "Tady je scénář k videu o pečení chleba 🍞\n\n**Postavy:** S1 (žena, 70 let, zástěra s kytičkami), S2 (chlapec, 10 let, pruhované tričko)\n**Rekvizity:** kvásek ve sklenici, bochník chleba\n\n| Okno | Obraz | Zvuk / dialog |\n|---|---|---|\n| 1 | Kuchyně ráno, na stole mouka a kvásek ve sklenici. | Vypravěč: Každou sobotu se u babičky peče chleba. |\n| 2 | S1 hněte těsto, S2 se dívá přes rameno. | S1: Těsto se musí hníst aspoň deset minut. |\n| 3 | Detail rukou v těstě. | S2 *(nadšeně)*: Můžu to zkusit taky? |\n| 4 | Trouba, bochník se peče. Titulek: „Za hodinu“ | *cinknutí trouby* |\n| 5 | Oba krájí bochník chleba. | S1: Tak, a teď ochutnej.<br>S2 *(s plnou pusou)*: Mňam! |\n\nChcete ještě přidat hudbu?",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Každou sobotu se u babičky peče chleba."
+  ],
+  [
+   2,
+   "S1",
+   "Těsto se musí hníst aspoň deset minut."
+  ],
+  [
+   3,
+   "S2",
+   "Můžu to zkusit taky?"
+  ],
+  [
+   5,
+   "S1",
+   "Tak, a teď ochutnej."
+  ],
+  [
+   5,
+   "S2",
+   "Mňam!"
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?",
+  "S1": "f",
+  "S2": "m"
+ },
+ "props": [
+  "kvásek ve sklenici",
+  "bochník chleba"
+ ]
+}

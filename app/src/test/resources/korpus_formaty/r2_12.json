@@ -1,0 +1,56 @@
+{
+ "name": "Family drama, 6 speakers: cast with ages in () and roles after dash, lines use short forms ('Babička', 'Děda', 'Lucinka', 'Jan') mapped to cast, two Nováks, delivery in [brackets], window 'Okno n [00:00–00:05]'",
+ "text": "RODINNÝ OBĚD – scénář krátkého videa (cca 40 s)\n\nPostavy:\nBabička Věra (78)\nDěda Zdeněk (80)\nJan Novák – syn\nPetra Nováková – snacha\nTomáš Novák (12) – vnuk\nLucinka Nováková (5) – vnučka\n\nOkno 1 [00:00–00:05]\nVelký stůl na zahradě, babička nese mísu knedlíků.\nBabička [hrdě]: Tak, děti, knedlíky jsou na stole!\n\nOkno 2 [00:05–00:10]\nDěda si zastrčí ubrousek za límec.\nDěda: Na tohle jsem čekal celý týden.\n\nOkno 3 [00:10–00:16]\nLucinka ukazuje na mísu.\nLucinka [nesměle]: Babi, a jsou tam i ty s jahodama?\nBabička: Ty jsou až na zákusek, beruško.\n\nOkno 4 [00:16–00:22]\nTomáš fotí jídlo mobilem.\nPetra: Tomáši, mobil pryč, prosím.\nTomáš: Jen jednu fotku, pro dědu na památku!\n\nOkno 5 [00:22–00:30]\nJan zvedá sklenici s limonádou.\nJan [vstane]: Na babičku a dědu. Ať nám to spolu ještě dlouho vaří.\n\nOkno 6 [00:30–00:40]\nVšichni si ťuknou, děda mrkne na babičku.\nDěda: Vaří hlavně babička. Já ochutnávám.\nHudba: veselá dechovka, ztišit pod dialog",
+ "windows": 6,
+ "lines": [
+  [
+   1,
+   "Babička Věra",
+   "Tak, děti, knedlíky jsou na stole!"
+  ],
+  [
+   2,
+   "Děda Zdeněk",
+   "Na tohle jsem čekal celý týden."
+  ],
+  [
+   3,
+   "Lucinka Nováková",
+   "Babi, a jsou tam i ty s jahodama?"
+  ],
+  [
+   3,
+   "Babička Věra",
+   "Ty jsou až na zákusek, beruško."
+  ],
+  [
+   4,
+   "Petra Nováková",
+   "Tomáši, mobil pryč, prosím."
+  ],
+  [
+   4,
+   "Tomáš Novák",
+   "Jen jednu fotku, pro dědu na památku!"
+  ],
+  [
+   5,
+   "Jan Novák",
+   "Na babičku a dědu. Ať nám to spolu ještě dlouho vaří."
+  ],
+  [
+   6,
+   "Děda Zdeněk",
+   "Vaří hlavně babička. Já ochutnávám."
+  ]
+ ],
+ "genders": {
+  "Babička Věra": "f",
+  "Děda Zdeněk": "m",
+  "Jan Novák": "m",
+  "Petra Nováková": "f",
+  "Tomáš Novák": "m",
+  "Lucinka Nováková": "f"
+ },
+ "props": []
+}

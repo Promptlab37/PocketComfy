@@ -1,0 +1,75 @@
+{
+ "name": "12 oken, 5 mluvčích-rolí (Máma, Táta, Syn, Dcera, Babička), několik oken jen s akcí, 'Titulek:' na konci",
+ "text": "Nedělní oběd\n\nOkno 1\nJídelna, polední slunce. Máma prostírá stůl.\nMáma: Kdo mi pomůže s talíři?\n\nOkno 2\nDcera přiběhne z pokoje.\nDcera: Já! Já!\n\nOkno 3\nTáta nese z kuchyně hrnec s polévkou.\nTáta: Pozor, horké!\n\nOkno 4\nZazvoní zvonek. Syn jde otevřít.\n\nOkno 5\nVe dveřích stojí babička s bábovkou.\nBabička: Ahoj, děti! Nesu zákusek.\nSyn: Babi! Pojď dál.\n\nOkno 6\nVšichni si sedají ke stolu.\nMáma: Tak dobrou chuť.\n\nOkno 7\nDetail polévky, lžíce se noří do vývaru.\n\nOkno 8\nBabička: Tahle polévka je skoro jako moje.\nTáta: Skoro?\n\nOkno 9\nVšichni se smějí.\n\nOkno 10\nDcera: Babi, můžu si vzít dva kousky bábovky?\nBabička: Když sníš maso, tak klidně tři.\n\nOkno 11\nSyn ukazuje na hodinky.\nSyn: Po obědě jdeme hrát fotbal, jo?\nTáta: Jasně, ale nejdřív umyjeme nádobí.\n\nOkno 12\nCelá rodina u stolu, záběr z okna.\nTitulek: Neděle patří rodině.\n",
+ "windows": 12,
+ "lines": [
+  [
+   1,
+   "Máma",
+   "Kdo mi pomůže s talíři?"
+  ],
+  [
+   2,
+   "Dcera",
+   "Já! Já!"
+  ],
+  [
+   3,
+   "Táta",
+   "Pozor, horké!"
+  ],
+  [
+   5,
+   "Babička",
+   "Ahoj, děti! Nesu zákusek."
+  ],
+  [
+   5,
+   "Syn",
+   "Babi! Pojď dál."
+  ],
+  [
+   6,
+   "Máma",
+   "Tak dobrou chuť."
+  ],
+  [
+   8,
+   "Babička",
+   "Tahle polévka je skoro jako moje."
+  ],
+  [
+   8,
+   "Táta",
+   "Skoro?"
+  ],
+  [
+   10,
+   "Dcera",
+   "Babi, můžu si vzít dva kousky bábovky?"
+  ],
+  [
+   10,
+   "Babička",
+   "Když sníš maso, tak klidně tři."
+  ],
+  [
+   11,
+   "Syn",
+   "Po obědě jdeme hrát fotbal, jo?"
+  ],
+  [
+   11,
+   "Táta",
+   "Jasně, ale nejdřív umyjeme nádobí."
+  ]
+ ],
+ "genders": {
+  "Máma": "f",
+  "Dcera": "f",
+  "Táta": "m",
+  "Babička": "f",
+  "Syn": "m"
+ },
+ "props": []
+}

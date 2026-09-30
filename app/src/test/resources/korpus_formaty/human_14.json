@@ -1,0 +1,57 @@
+{
+ "name": "Dvě mluvčí se v jednom okně střídají šestkrát, okno jen s akcí, výpustka ' … ' uvnitř repliky, skloňování Monika/Monice",
+ "text": "OKNO 1 (0–12 s)\nDvě kamarádky, Tereza a Monika, sedí v tramvaji.\nTereza: Tak co, jak dopadl pohovor?\nMonika: Myslím, že dobře.\nTereza: Ptali se na plat?\nMonika: Jo, a řekla jsem přesně tu částku, co jsme vymyslely.\nTereza: A oni?\nMonika: Že se ozvou do pátku.\n\nOKNO 2 (12–16 s)\nTramvaj zastaví, Monice zazvoní telefon.\n\nOKNO 3 (16–24 s)\nMonika: Haló? … Opravdu? Děkuju moc!\nTereza: Tak co?!\nMonika: Beru tu práci!\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Tereza",
+   "Tak co, jak dopadl pohovor?"
+  ],
+  [
+   1,
+   "Monika",
+   "Myslím, že dobře."
+  ],
+  [
+   1,
+   "Tereza",
+   "Ptali se na plat?"
+  ],
+  [
+   1,
+   "Monika",
+   "Jo, a řekla jsem přesně tu částku, co jsme vymyslely."
+  ],
+  [
+   1,
+   "Tereza",
+   "A oni?"
+  ],
+  [
+   1,
+   "Monika",
+   "Že se ozvou do pátku."
+  ],
+  [
+   3,
+   "Monika",
+   "Haló? … Opravdu? Děkuju moc!"
+  ],
+  [
+   3,
+   "Tereza",
+   "Tak co?!"
+  ],
+  [
+   3,
+   "Monika",
+   "Beru tu práci!"
+  ]
+ ],
+ "genders": {
+  "Tereza": "f",
+  "Monika": "f"
+ },
+ "props": []
+}

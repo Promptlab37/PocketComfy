@@ -1,0 +1,52 @@
+{
+ "name": "9 oken, dovolená u moře, Kamera: řádky, upovídaný závěr s variantami",
+ "text": "STORYBOARD – Hrad z písku\nFormát: 16:9, přibližně 36 sekund.\nPostavy:\nViktor: 8 let, světlé kudrnaté vlasy, modré plavky s kotvami, kšiltovka\nNela: 5 let, tmavé vlasy v culíku, žluté plavky s volánky\nMáma Petra: 37 let, hnědé vlasy, bílá plážová tunika, sluneční brýle\nTáta Robert: 39 let, strniště, zelené koupací šortky\nRekvizity:\nKyblík: červený plastový kyblík s lopatkou\nMušle: velká růžová mušle\nKontinuita: písečná pláž, dopolední slunce, děti mají celou dobu stejné plavky\n\n[OKNO 1 | 0–4 s] Pláž\nKamera: široký celek\nObraz: Rodina rozkládá deku na pláži, moře se třpytí.\nEmoce: pohoda\nMáma Petra (spokojeně): „Tak, a teď dva týdny nic nemusíme.“\nZvuk: vlny, racci\n\n[OKNO 2 | 4–8 s] Plán\nKamera: polodetail\nObraz: Viktor ukazuje lopatkou na písek.\nEmoce: nadšení\nViktor (rozhodně): „Postavíme největší hrad na celé pláži!“\nZvuk: vlny\n\n[OKNO 3 | 8–12 s] Stavba\nKamera: nadhled\nObraz: Viktor a táta nosí kyblíky písku, Nela zdobí věže kamínky.\nEmoce: soustředění\nZvuk: šoupání písku\n\n[OKNO 4 | 12–16 s] Mušle\nKamera: detail\nObraz: Nela najde velkou růžovou mušli a přiloží si ji k uchu.\nEmoce: úžas\nNela (šeptem): „Slyším moře!“\nZvuk: šumění v mušli\n\n[OKNO 5 | 16–20 s] Ozdoba\nKamera: polodetail\nObraz: Nela položí mušli na nejvyšší věž.\nEmoce: hrdost\nNela (pyšně): „To je okno pro princeznu.“\nZvuk: tichá melodie\n\n[OKNO 6 | 20–24 s] Táta\nKamera: polocelek\nObraz: Táta Robert vyhloubí kolem hradu příkop.\nEmoce: humor\nTáta Robert (s vážnou tváří): „Každý pořádný hrad potřebuje vodní příkop.“\nZvuk: kopání\n\n[OKNO 7 | 24–28 s] Vlna\nKamera: celek\nObraz: Přijde velká vlna a naplní příkop vodou, hrad ale vydrží.\nEmoce: napětí, pak úleva\nViktor (jásá): „Vydržel! Náš hrad vydržel!“\nZvuk: šplouchnutí, jásot\n\n[OKNO 8 | 28–32 s] Fotka\nKamera: detail na telefon\nObraz: Máma fotí děti před hradem.\nEmoce: radost\nMáma Petra (vesele): „Úsměv, stavitelé!“\nZvuk: cvaknutí fotoaparátu\n\n[OKNO 9 | 32–36 s] Západ slunce\nKamera: široký celek, pomalý odjezd\nObraz: Rodina odchází z pláže, hrad zůstává osvětlený zapadajícím sluncem.\nEmoce: nostalgie\nZvuk: vlny, doznívající hudba\nText na videu: „Léto 2026“\n\nPoznámka: Okna 3 a 9 jsou schválně bez dialogu, aby video mělo prostor dýchat. Kdybys chtěl, můžu přidat vypravěče, zkrátit to na 20 sekund pro Reels, nebo repliky přepsat do slovenštiny.\n",
+ "windows": 9,
+ "lines": [
+  [
+   1,
+   "Máma Petra",
+   "Tak, a teď dva týdny nic nemusíme."
+  ],
+  [
+   2,
+   "Viktor",
+   "Postavíme největší hrad na celé pláži!"
+  ],
+  [
+   4,
+   "Nela",
+   "Slyším moře!"
+  ],
+  [
+   5,
+   "Nela",
+   "To je okno pro princeznu."
+  ],
+  [
+   6,
+   "Táta Robert",
+   "Každý pořádný hrad potřebuje vodní příkop."
+  ],
+  [
+   7,
+   "Viktor",
+   "Vydržel! Náš hrad vydržel!"
+  ],
+  [
+   8,
+   "Máma Petra",
+   "Úsměv, stavitelé!"
+  ]
+ ],
+ "genders": {
+  "Viktor": "m",
+  "Nela": "f",
+  "Máma Petra": "f",
+  "Táta Robert": "m"
+ },
+ "props": [
+  "Kyblík",
+  "Mušle"
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "name": "Upovídaný asistent + S1 = jméno + způsob v závorce za dvojtečkou + Hlas mimo obraz (žena) + Titulek + závěr asistenta s ukázkovou replikou v uvozovkách (nemluví)",
+ "text": "Jasně! Tady je scénář ve formátu, který jste chtěl 😊\n\n**Postavy**\nS1 = Marek, 16 let, sluchátka na krku\nS2 = Táta, 45 let, montérky\n\n**Okno 1**\nGaráž. S2 opravuje kolo, S1 přichází.\nS1: (otráveně) Tati, musím ti pomáhat?\n\n**Okno 2**\nS2: (bez ohlédnutí) Podej mi klíč desítku.\nTitulek: „O dvě hodiny později“\n\n**Okno 3**\nKolo stojí hotové. S1 se na něj poprvé usměje.\nHlas mimo obraz (žena): Někdy stačí jedno společné odpoledne.\nS1: Dobrý. Můžu se projet?\n\n---\nChcete k tomu ještě hudbu? Nebo můžu na konec přidat repliku jako „Díky, tati!“.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Marek",
+   "Tati, musím ti pomáhat?"
+  ],
+  [
+   2,
+   "Táta",
+   "Podej mi klíč desítku."
+  ],
+  [
+   3,
+   "Vypravěč",
+   "Někdy stačí jedno společné odpoledne."
+  ],
+  [
+   3,
+   "Marek",
+   "Dobrý. Můžu se projet?"
+  ]
+ ],
+ "genders": {
+  "Marek": "m",
+  "Táta": "m",
+  "Vypravěč": "f"
+ },
+ "props": []
+}

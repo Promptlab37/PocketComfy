@@ -1,0 +1,27 @@
+{
+ "name": "Gemini: markdown TABLE (# | Čas | Obraz | Dialog | Text na obrazovce), speaker with role+double name inside cell, *(smích dětí)* not a line, on-screen column, emoji outro",
+ "text": "Zde je návrh storyboardu pro video „Učitelka a nezbedná křída“ 📚\n\n| # | Čas | Obraz | Dialog | Text na obrazovce |\n|---|---|---|---|---|\n| 1 | 0–3 s | Třída, učitelka píše na tabuli, křída se zlomí. | Učitelka Jana Kopecká: „No tohle, už třetí dnes!“ | – |\n| 2 | 3–6 s | Žák v první lavici zvedá ruku. | Matěj: „Paní učitelko, já mám křídu doma, přinesu vám!“ | – |\n| 3 | 6–9 s | Celá třída se směje. | *(smích dětí)* | – |\n| 4 | 9–12 s | Učitelka se usmívá a podává Matějovi razítko. | Učitelka Jana Kopecká (s úsměvem): „Tak to si zasloužíš jedničku za ochotu.“ | „Škola hrou“ |\n\n**Poznámky k produkci:**\n* Světlo: teplé odpolední, okna vlevo.\n* Hudba: hravé pizzicato.\n\nDoufám, že vám to pomůže! Pokud chcete, můžu doplnit i prompty pro jednotlivé záběry. 🎵",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Učitelka Jana Kopecká",
+   "No tohle, už třetí dnes!"
+  ],
+  [
+   2,
+   "Matěj",
+   "Paní učitelko, já mám křídu doma, přinesu vám!"
+  ],
+  [
+   4,
+   "Učitelka Jana Kopecká",
+   "Tak to si zasloužíš jedničku za ochotu."
+  ]
+ ],
+ "genders": {
+  "Učitelka Jana Kopecká": "f",
+  "Matěj": "m"
+ },
+ "props": []
+}

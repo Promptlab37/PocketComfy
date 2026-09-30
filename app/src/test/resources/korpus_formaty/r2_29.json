@@ -1,0 +1,48 @@
+{
+ "name": "Claude: '**Obsazení**' cast 'Kadeřník Robert'/'Paní Ludmila Horká'/'Učednice Sára' vs lines 'Robert'/'Paní Horká'/'Sára', diminutive 'Robertku' inside line, delivery after comma, props list, quoted on-screen text '„O 20 let mladší?“' (not spoken)",
+ "text": "Tady je storyboard pro video z kadeřnictví. Držel jsem se krátkých replik, aby se dobře generovaly.\n\n**Obsazení**\n- Kadeřník Robert (40) – klidný profík\n- Paní Ludmila Horká (65) – stálá zákaznice\n- Učednice Sára (18)\n\n**Rekvizity:** nůžky, fén, katalog účesů, zrcadlo\n\n**Okno 1 (0–5 s)**\nPaní Horká si sedá do křesla a ukazuje katalog.\nPaní Horká: Robertku, chtěla bych tohle. Ale mladší.\nRobert, s úsměvem: To zvládneme, paní Horká.\n\n**Okno 2 (5–10 s)**\nSára podává nůžky a zakopne o kabel od fénu.\nSára (vyděšeně): Pardon! Nic se nestalo!\nZvuk: cinknutí nůžek o podlahu\n\n**Okno 3 (10–16 s)**\nRobert stříhá, paní Horká se napjatě dívá do zrcadla.\nText na videu: „O 20 let mladší?“\n\n**Okno 4 (16–22 s)**\nHotový účes. Paní Horká se otáčí.\nPaní Horká: No tedy! Doma mě nepoznají.\nRobert: To je dobře, ne?\nSára: Můžu si to vyfotit do portfolia?\n\nPokud chceš, můžu k tomu napsat i prompty pro jednotlivá okna.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Paní Ludmila Horká",
+   "Robertku, chtěla bych tohle. Ale mladší."
+  ],
+  [
+   1,
+   "Kadeřník Robert",
+   "To zvládneme, paní Horká."
+  ],
+  [
+   2,
+   "Učednice Sára",
+   "Pardon! Nic se nestalo!"
+  ],
+  [
+   4,
+   "Paní Ludmila Horká",
+   "No tedy! Doma mě nepoznají."
+  ],
+  [
+   4,
+   "Kadeřník Robert",
+   "To je dobře, ne?"
+  ],
+  [
+   4,
+   "Učednice Sára",
+   "Můžu si to vyfotit do portfolia?"
+  ]
+ ],
+ "genders": {
+  "Kadeřník Robert": "m",
+  "Paní Ludmila Horká": "f",
+  "Učednice Sára": "f"
+ },
+ "props": [
+  "nůžky",
+  "fén",
+  "katalog účesů",
+  "zrcadlo"
+ ]
+}

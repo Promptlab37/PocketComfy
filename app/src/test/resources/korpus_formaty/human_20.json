@@ -1,0 +1,32 @@
+{
+ "name": "Obsazení v první větě prózy s věkem a popisem (Malá Ema (6 let) a její děda Josef), skloňování Emě, dítě a senior",
+ "text": "Malá Ema (6 let) a její děda Josef, šedivý pán v kostkované košili, krmí kachny u rybníka.\n\nOkno 1 – rybník\nEma drží v ruce sáček s pečivem.\nEma: Dědo, proč mají kachny oranžové nohy?\nJosef: Aby je bylo vidět i ve vodě.\n\nOkno 2 – detail\nKachny se sbíhají k břehu. Ema háže drobky.\nEma: Ta malá nic nedostala!\n\nOkno 3 – lavička\nDěda Josef podá Emě poslední kousek.\nJosef: Tak jí hoď tenhle, ať je spravedlnost.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Ema",
+   "Dědo, proč mají kachny oranžové nohy?"
+  ],
+  [
+   1,
+   "Josef",
+   "Aby je bylo vidět i ve vodě."
+  ],
+  [
+   2,
+   "Ema",
+   "Ta malá nic nedostala!"
+  ],
+  [
+   3,
+   "Josef",
+   "Tak jí hoď tenhle, ať je spravedlnost."
+  ]
+ ],
+ "genders": {
+  "Ema": "f",
+  "Josef": "m"
+ },
+ "props": []
+}

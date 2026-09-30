@@ -1,0 +1,22 @@
+{
+  "name": "Reklama – krmivo Hafík",
+  "text": "Spot HAFÍK – 15 sekund\n\nOKNO 1\nKuchyň, zlatý retrívr sedí před prázdnou miskou a upřeně kouká.\nMajitelka: „Já vím, já vím, už to nesu.“\n\nOKNO 2\nDetail granulí sypajících se do misky, pes vrtí ocasem.\nZvuk: chroupání\nVypravěč: „Hafík. Plnohodnotné krmivo z českého masa.“\n\nOKNO 3\nBalení krmiva vedle spokojeného psa, logo.\nSlogan: HAFÍK – MISKA PLNÁ RADOSTI\nText: Nyní v akci ve všech chovatelských potřebách",
+  "windows": 3,
+  "lines": [
+    [
+      1,
+      "Majitelka",
+      "Já vím, já vím, už to nesu."
+    ],
+    [
+      2,
+      "Vypravěč",
+      "Hafík. Plnohodnotné krmivo z českého masa."
+    ]
+  ],
+  "genders": {
+    "Majitelka": "f",
+    "Vypravěč": "?"
+  },
+  "props": []
+}

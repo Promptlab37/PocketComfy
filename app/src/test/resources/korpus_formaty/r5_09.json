@@ -1,0 +1,47 @@
+{
+  "name": "AI ChatGPT – vlakem na hory",
+  "text": "Tady je storyboard pro krátké cestovatelské video 🚆⛰️\n\n**Postavy:**\n- Vypravěč (ženský hlas mimo obraz)\n- Lukáš – 25 let, nadšený cestovatel\n- Tereza – 24 let, jeho kamarádka\n\n**Rekvizity:** batoh, papírová mapa, termoska\n\n---\n\n**Panel 1**\nNádraží, ráno. Lukáš a Tereza běží po nástupišti s batohy.\nVypravěč: „Plán byl jednoduchý. Stihnout vlak v 7:12.“\n\n**Panel 2**\nDveře vlaku se zavírají těsně za nimi.\nLukáš: „Stihli jsme to! Já ti říkal, že to dáme.“\n\n**Panel 3**\nKupé, Tereza rozkládá papírovou mapu na stolek.\nTereza: „Tak kudy vlastně půjdeme, pane navigátore?“\n\n**Panel 4**\nLukáš ukazuje prstem na mapu, pak ji otočí vzhůru nohama.\nLukáš: „No… asi tudy. Nebo tudy.“\n\n**Panel 5**\nZa oknem ubíhají kopce a lesy. Kamera se pomalu přibližuje k oknu.\nHudba: lehká akustická melodie\n\n**Panel 6**\nHorská chata, oba nalévají čaj z termosky.\nTereza: „Nakonec jsme to našli. I s tvojí navigací.“\n\n**Panel 7**\nZápad slunce nad hřebeny, dva siluety na vrcholu.\nVypravěč: „Někdy nejlepší cesty začínají tím, že skoro ujede vlak.“\nText na obrazovce: #vlakemnahory\n\n---\n\nChceš k tomu i návrh popisku na Instagram?",
+  "windows": 7,
+  "lines": [
+    [
+      1,
+      "Vypravěč",
+      "Plán byl jednoduchý. Stihnout vlak v 7:12."
+    ],
+    [
+      2,
+      "Lukáš",
+      "Stihli jsme to! Já ti říkal, že to dáme."
+    ],
+    [
+      3,
+      "Tereza",
+      "Tak kudy vlastně půjdeme, pane navigátore?"
+    ],
+    [
+      4,
+      "Lukáš",
+      "No… asi tudy. Nebo tudy."
+    ],
+    [
+      6,
+      "Tereza",
+      "Nakonec jsme to našli. I s tvojí navigací."
+    ],
+    [
+      7,
+      "Vypravěč",
+      "Někdy nejlepší cesty začínají tím, že skoro ujede vlak."
+    ]
+  ],
+  "genders": {
+    "Vypravěč": "f",
+    "Lukáš": "m",
+    "Tereza": "f"
+  },
+  "props": [
+    "batoh",
+    "papírová mapa",
+    "termoska"
+  ]
+}

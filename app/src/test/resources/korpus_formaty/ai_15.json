@@ -1,0 +1,27 @@
+{
+ "name": "Styl Gemini: úvodní a závěrečná věta, '**[Záběr n: 0-4s]**', odrážky * s **Vizuál:**/**Dialog:**, vnořené repliky, 'Postava 1: Viktor', Text na obrazovce:",
+ "text": "Tady je storyboard pro vaše krátké video:\n\n**Název:** Zmrzlina\n**Formát:** 9:16, cca 15 sekund\n\n**Postavy:**\n* **Postava 1: Viktor** – 7 let, chlapec, oranžové tričko, kšiltovka dozadu\n* **Postava 2: Prodavačka Irena** – 50 let, bílá zástěra, papírová čepička\n\n**[Záběr 1: 0-4s]**\n* **Vizuál:** Viktor stojí na špičkách u pultu se zmrzlinou.\n* **Dialog:**\n    * **Viktor:** „Jednu vanilkovou. A čokoládovou. A jahodovou.“\n\n**[Záběr 2: 4-9s]**\n* **Vizuál:** Prodavačka staví obří věž z kopečků.\n* **Dialog:**\n    * **Prodavačka Irena:** „A ještě něco, mladý pane?“\n    * **Viktor:** „Lžičku. Dvě lžičky.“\n\n**[Záběr 3: 9-15s]**\n* **Vizuál:** Viktor odchází a podává druhou lžičku mladší sestře na lavičce.\n* **Zvuk:** Dětský smích, šum parku\n* **Text na obrazovce:** Sdílená radost je dvojitá.\n\nDoufám, že vám to pomůže! Pokud chcete, mohu přidat i hudbu nebo upravit délku.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Viktor",
+   "Jednu vanilkovou. A čokoládovou. A jahodovou."
+  ],
+  [
+   2,
+   "Prodavačka Irena",
+   "A ještě něco, mladý pane?"
+  ],
+  [
+   2,
+   "Viktor",
+   "Lžičku. Dvě lžičky."
+  ]
+ ],
+ "genders": {
+  "Viktor": "m",
+  "Prodavačka Irena": "f"
+ },
+ "props": []
+}

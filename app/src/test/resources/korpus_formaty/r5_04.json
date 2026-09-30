@@ -1,0 +1,37 @@
+{
+  "name": "Mobil – nákup v elektru",
+  "text": "video obchod\n\n1. petr stoji v obchode pred regalem s televizema, drbe se na hlave\npetr: tak ktera z nich je ta spravna\n\n2. prijde prodavacka s usmevem\nprodavacka: muzu vam s necim pomoct?\npetr: jo, hledam neco na fotbal, ale nechci utratit majlant\n\n3. prodavacka ukaze na jednu televizi, petr se usmeje\nprodavacka: tahle je v akci a na sport je super\npetr: tak to beru!",
+  "windows": 3,
+  "lines": [
+    [
+      1,
+      "petr",
+      "tak ktera z nich je ta spravna"
+    ],
+    [
+      2,
+      "prodavacka",
+      "muzu vam s necim pomoct?"
+    ],
+    [
+      2,
+      "petr",
+      "jo, hledam neco na fotbal, ale nechci utratit majlant"
+    ],
+    [
+      3,
+      "prodavacka",
+      "tahle je v akci a na sport je super"
+    ],
+    [
+      3,
+      "petr",
+      "tak to beru!"
+    ]
+  ],
+  "genders": {
+    "petr": "m",
+    "prodavacka": "f"
+  },
+  "props": []
+}

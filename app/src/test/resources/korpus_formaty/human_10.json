@@ -1,0 +1,33 @@
+{
+ "name": "Okna jen holým číslem na řádku, 'Hlas mimo obraz:' = Vypravěč bez udání pohlaví, okno jen s akcí, 'Text na konci:'",
+ "text": "1\nSvítání nad vesnicí. Kohout na plotě.\nHlas mimo obraz: Každé ráno tady začíná stejně.\n\n2\nPekař otevírá krámek a vystavuje rohlíky.\nHlas mimo obraz: Pan Dvořák peče chleba už čtyřicet let.\n\n3\nDěti běží po návsi do školy.\n\n4\nPekař podává malé holčičce rohlík.\nPekař: Tady máš, ať se ti dobře učí.\nHolčička: Děkuju!\n\nText na konci: Ochutnejte poctivé pečivo z vesnice.\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Každé ráno tady začíná stejně."
+  ],
+  [
+   2,
+   "Vypravěč",
+   "Pan Dvořák peče chleba už čtyřicet let."
+  ],
+  [
+   4,
+   "Pekař",
+   "Tady máš, ať se ti dobře učí."
+  ],
+  [
+   4,
+   "Holčička",
+   "Děkuju!"
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?",
+  "Pekař": "m",
+  "Holčička": "f"
+ },
+ "props": []
+}

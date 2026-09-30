@@ -1,0 +1,24 @@
+{
+ "name": "Mluvčí a replika v oddělených polích ('Postava: Zdeněk' / 'Replika (zoufale): …'), okna '[OKNO 1/3 | 0–6 s]', repliky bez uvozovek",
+ "text": "STORYBOARD – Vánoční světýlka\nFormát: 16:9, přibližně 20 sekund.\nPostavy:\nZdeněk: 48 let, vousy, červený svetr se sobem\nAlžběta: 46 let, jeho žena, bílá čepice s bambulí, modrý kabát\nRekvizity:\nSvětýlka: dlouhý zamotaný řetěz barevných světýlek\n\n[OKNO 1/3 | 0–6 s] Zámotek\nObraz: Zdeněk stojí na zahradě, celý omotaný světýlky.\nPostava: Zdeněk\nReplika (zoufale): Našel jsem konec. Myslím.\n\n[OKNO 2/3 | 6–13 s] Pomoc\nObraz: Alžběta vyjde z domu s hrnkem punče.\nPostava: Alžběta\nReplika (pobaveně): Miláčku, ty jsi ten stromeček.\n\n[OKNO 3/3 | 13–20 s] Rozsvícení\nObraz: Alžběta zapojí zástrčku, Zdeněk se rozsvítí jako stromeček.\nZvuk: cvaknutí, potlesk sousedů\nText na videu: „Veselé Vánoce od Zdeňka“",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Zdeněk",
+   "Našel jsem konec. Myslím."
+  ],
+  [
+   2,
+   "Alžběta",
+   "Miláčku, ty jsi ten stromeček."
+  ]
+ ],
+ "genders": {
+  "Zdeněk": "m",
+  "Alžběta": "f"
+ },
+ "props": [
+  "Světýlka"
+ ]
+}

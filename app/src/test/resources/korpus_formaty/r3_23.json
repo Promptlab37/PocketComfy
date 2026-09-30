@@ -1,0 +1,35 @@
+{
+ "name": "časy 0:00–0:04 v závorce, řádek „Replika (Jméno, jak):“",
+ "text": "STORYBOARD – Vlak do Brna\nFormát: 16:9, přibližně 16 sekund.\nPostavy:\nPavla: 50 let, prošedivělý bob, tmavě zelený kabát, kostkovaná šála\nDan: 20 let, delší hnědé vlasy, sluchátka na krku, černá bunda\nRekvizity:\nKufr: velký modrý kufr na kolečkách\nJízdenka: papírová jízdenka\nKontinuita: nádraží a vagon vlaku, dopoledne, Pavla má celou dobu šálu\n\nOKNO 1 (0:00–0:04) – Nástupiště\nObraz: Pavla se marně snaží zvednout kufr do schodů vlaku.\nEmoce: bezradnost\nReplika (Pavla, pro sebe): „Kdo mi tam dal ty cihly?“\nZvuk: hlášení nádraží\n\nOKNO 2 (0:04–0:08) – Pomoc\nObraz: Dan si sundá sluchátka a kufr jednou rukou vyzvedne.\nEmoce: ochota\nReplika (Dan, s úsměvem): „Dovolte, já vám pomůžu.“\nZvuk: bouchnutí kufru\n\nOKNO 3 (0:08–0:12) – Místo\nObraz: Ve vagonu zjistí, že mají místa vedle sebe.\nEmoce: překvapení\nReplika (Pavla, pobaveně): „To je náhoda. Tak to budeme sousedé až do Brna.“\nZvuk: rozjezd vlaku\n\nOKNO 4 (0:12–0:16) – Cesta\nObraz: Oba se smějí nad Pavlinými fotkami vnoučat v telefonu.\nEmoce: pohoda\nReplika (Dan, upřímně): „Ta malá má úplně stejný úsměv jako vy.“\nZvuk: rytmus kol vlaku\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Pavla",
+   "Kdo mi tam dal ty cihly?"
+  ],
+  [
+   2,
+   "Dan",
+   "Dovolte, já vám pomůžu."
+  ],
+  [
+   3,
+   "Pavla",
+   "To je náhoda. Tak to budeme sousedé až do Brna."
+  ],
+  [
+   4,
+   "Dan",
+   "Ta malá má úplně stejný úsměv jako vy."
+  ]
+ ],
+ "genders": {
+  "Pavla": "f",
+  "Dan": "m"
+ },
+ "props": [
+  "Kufr",
+  "Jízdenka"
+ ]
+}

@@ -1,0 +1,32 @@
+{
+ "name": "Google Docs paste: 'ZÁBĚR n<TAB>00:00:00 – 00:00:04', every label in CAPS followed by TAB (LOKACE/KAMERA/POPIS/SVĚTLO/HUDBA/TITULEK), CAPS role speakers, delivery before colon+TAB, line broken over 2 lines, 'Strana 1 z 2' footer",
+ "text": "ZÁBĚR 1\t00:00:00 – 00:00:04\nLOKACE:\tKnihovna, odpoledne\nKAMERA:\tpomalý pojezd mezi regály\nPOPIS:\tStarší knihovník rovná knihy.\nKNIHOVNÍK:\tTak, a Máchu zase na své místo.\n\nZÁBĚR 2\t00:00:04 – 00:00:09\nKAMERA:\tpolodetail\nPOPIS:\tKe stolku přistoupí studentka.\nSTUDENTKA:\tDobrý den, prosím vás, máte tady něco\no sopkách? Potřebuju to na referát.\n\nStrana 1 z 2\n\nZÁBĚR 3\t00:00:09 – 00:00:14\nSVĚTLO:\tteplé z okna\nKNIHOVNÍK (potěšeně):\tSopky! Pojďte se mnou, mám tu celou polici.\n\nZÁBĚR 4\t00:00:14 – 00:00:18\nPOPIS:\tKnihovník podává studentce tlustou knihu.\nSTUDENTKA:\tTu si půjčím. Děkuju moc!\nHUDBA:\tjemné smyčce\nTITULEK:\tKnihovna. Místo, kde se ptát nevadí.\n\nStrana 2 z 2",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "KNIHOVNÍK",
+   "Tak, a Máchu zase na své místo."
+  ],
+  [
+   2,
+   "STUDENTKA",
+   "Dobrý den, prosím vás, máte tady něco o sopkách? Potřebuju to na referát."
+  ],
+  [
+   3,
+   "KNIHOVNÍK",
+   "Sopky! Pojďte se mnou, mám tu celou polici."
+  ],
+  [
+   4,
+   "STUDENTKA",
+   "Tu si půjčím. Děkuju moc!"
+  ]
+ ],
+ "genders": {
+  "KNIHOVNÍK": "m",
+  "STUDENTKA": "f"
+ },
+ "props": []
+}

@@ -1,0 +1,43 @@
+{
+ "name": "PDF paste: repeated running header 'Scénář – Stěhování   strana n' mid-script, hard line breaks inside action AND inside dialogue (continuation line starts with a name 'Ondřej a Bára…'), 'Záběr n:' + description on same line, 'Soused Pavel' speaker",
+ "text": "Scénář – Stěhování                                    strana 1\nZáběr 1: Prázdný byt, krabice všude. Mladý pár\nOndřej a Bára nesou gauč.\nOndřej: Ještě kousek... doprava... ne, tvoje\ndoprava!\nBára: Moje doprava je tvoje doleva, Ondro.\nZáběr 2: Gauč se zasekne ve dveřích.\nZvuk: dřevěné zaskřípání\nOndřej: Tak. A jsme tu doma.\nScénář – Stěhování                                    strana 2\nZáběr 3: Soused z vedlejšího bytu vykoukne ze dveří.\nSoused Pavel: Potřebujete pomoct? Já jsem\nstěhoval piano do čtvrtého patra.\nZáběr 4: Všichni tři zvednou gauč a projdou.\nBára: Vítejte u nás, sousede. Kafe?\nSoused Pavel: Rád.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Ondřej",
+   "Ještě kousek... doprava... ne, tvoje doprava!"
+  ],
+  [
+   1,
+   "Bára",
+   "Moje doprava je tvoje doleva, Ondro."
+  ],
+  [
+   2,
+   "Ondřej",
+   "Tak. A jsme tu doma."
+  ],
+  [
+   3,
+   "Soused Pavel",
+   "Potřebujete pomoct? Já jsem stěhoval piano do čtvrtého patra."
+  ],
+  [
+   4,
+   "Bára",
+   "Vítejte u nás, sousede. Kafe?"
+  ],
+  [
+   4,
+   "Soused Pavel",
+   "Rád."
+  ]
+ ],
+ "genders": {
+  "Ondřej": "m",
+  "Bára": "f",
+  "Soused Pavel": "m"
+ },
+ "props": []
+}

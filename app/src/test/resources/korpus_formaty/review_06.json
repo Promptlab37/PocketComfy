@@ -1,0 +1,22 @@
+{
+ "name": "text na displeji se neříká",
+ "text": "Postavy:\nMáma: 45 let, svetr\nSyn: 12 let, mikina\n\nOKNO 1\nNa stole zvoní telefon.\nNa displeji: „Máma volá“\nSyn: „Babi, to je máma!“\nOKNO 2\nNa zdi je cedule.\nNÁPIS NA ZDI: „OTEVŘENO“\nMáma: „Už jdu.“",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Syn",
+   "Babi, to je máma!"
+  ],
+  [
+   2,
+   "Máma",
+   "Už jdu."
+  ]
+ ],
+ "genders": {
+  "Máma": "f",
+  "Syn": "m"
+ },
+ "props": []
+}

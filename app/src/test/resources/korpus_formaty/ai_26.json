@@ -1,0 +1,39 @@
+{
+ "name": "Šablona celá obalená **tučným** markdownem ('**[OKNO n | a–b s] název**', '**Obraz:**', '**Jméno:**' v obsazení), prázdný 'Text na videu: —'",
+ "text": "**STORYBOARD – Šachy v parku**\n**Formát:** 16:9, přibližně 28 sekund.\n\n**Postavy:**\n**Pan Emil:** 81 let, bílý knír, tvídové sako, baret\n**Nikola:** 11 let, dívka, brýle, modrá bunda, culíky\n**Rekvizity:**\n**Šachovnice:** dřevěná, ošoupaná\n**Kontinuita:** Emil má celou dobu tvídové sako.\n\n**[OKNO 1 | 0–6 s] Výzva**\n**Obraz:** Nikola si přisedne k Emilovi k šachovnici.\n**Emoce:** zvědavost\n**Nikola** (sebevědomě): „Můžu si zahrát?“\n**Pan Emil** (s úsměvem): „Jen jestli se nebudeš zlobit, až prohraješ.“\n**Zvuk:** ptáci, vzdálený smích dětí\n**Text na videu:** —\n\n**[OKNO 2 | 6–14 s] Hra**\n**Obraz:** Rychlé tahy, Emil se mračí čím dál víc.\n**Emoce:** napětí\n**Zvuk:** klapání figurek\n\n**[OKNO 3 | 14–20 s] Mat**\n**Obraz:** Nikola posune dámu.\n**Nikola:** „Šach mat.“\n\n**[OKNO 4 | 20–28 s] Respekt**\n**Obraz:** Emil sundá baret a podá jí ruku.\n**Pan Emil:** „Zítra ve stejnou dobu?“\n**Nikola:** „Přinesu i dědu.“\n**Text na videu:** „Věk je jen číslo.“",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Nikola",
+   "Můžu si zahrát?"
+  ],
+  [
+   1,
+   "Pan Emil",
+   "Jen jestli se nebudeš zlobit, až prohraješ."
+  ],
+  [
+   3,
+   "Nikola",
+   "Šach mat."
+  ],
+  [
+   4,
+   "Pan Emil",
+   "Zítra ve stejnou dobu?"
+  ],
+  [
+   4,
+   "Nikola",
+   "Přinesu i dědu."
+  ]
+ ],
+ "genders": {
+  "Pan Emil": "m",
+  "Nikola": "f"
+ },
+ "props": [
+  "Šachovnice"
+ ]
+}

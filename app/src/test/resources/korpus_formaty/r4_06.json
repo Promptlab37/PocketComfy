@@ -1,0 +1,40 @@
+{
+ "name": "Děti s přezdívkami: obsazení Vojtěch „Vojta“ / Kateřina (Káťa), repliky střídavě pod přezdívkou i celým jménem + oslovení v 5. pádě + [n] okna",
+ "text": "Scénka: Míč za plotem\nPostavy:\nVojtěch „Vojta“ – 9 let, červená kšiltovka\nKateřina (všichni jí říkají Káťa) – 8 let, copánky\nPan Hlaváček – soused, 70 let, zahradnické rukavice\nRekvizity: míč\n\n[1]\nVojta kope míč přes plot k sousedům.\nKáťa: To jsi přehnal, Vojto!\n[2]\nVojtěch: Já ho přinesu.\nKateřina: Ale pan Hlaváček tam má záhony!\n[3]\nPan Hlaváček vykoukne přes plot s míčem v ruce.\nPan Hlaváček: Ztratil se někomu tenhle míč?\nVojta (zaraženě): Nám… Promiňte.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Kateřina",
+   "To jsi přehnal, Vojto!"
+  ],
+  [
+   2,
+   "Vojtěch",
+   "Já ho přinesu."
+  ],
+  [
+   2,
+   "Kateřina",
+   "Ale pan Hlaváček tam má záhony!"
+  ],
+  [
+   3,
+   "Pan Hlaváček",
+   "Ztratil se někomu tenhle míč?"
+  ],
+  [
+   3,
+   "Vojtěch",
+   "Nám… Promiňte."
+  ]
+ ],
+ "genders": {
+  "Vojtěch": "m",
+  "Kateřina": "f",
+  "Pan Hlaváček": "m"
+ },
+ "props": [
+  "míč"
+ ]
+}

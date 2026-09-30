@@ -1,0 +1,58 @@
+{
+ "name": "ChatGPT long: 8 windows '#### 🎞️ SHOT n – Title (time)', nested bullet dialogue '  - **Name:** \"…\"', 'Postavy:' bullet inside shot 1, Kamera: bullets, Voice-over (ženský hlas) bolded, 2 lines in one window twice",
+ "text": "Tady je kompletní storyboard! 🎨 Video je rozdělené do 8 záběrů, každý má popis kamery a dialog.\n\n---\n\n#### 🎞️ SHOT 1 – Hook (0:00–0:03)\n- **Kamera:** široký záběr, prázdný pokoj se starými tapetami\n- **Postavy:** Tereza (25), Lenka (19) – sestry\n- **Dialog:**\n  - **Tereza:** \"Tak jo. Dneska z toho uděláme pokoj snů.\"\n\n#### 🎞️ SHOT 2 – Výběr barvy (0:03–0:06)\n- **Kamera:** detail na vzorník barev\n- **Dialog:**\n  - **Lenka:** \"Mentolová!\"\n  - **Tereza:** \"Šedá.\"\n\n#### 🎞️ SHOT 3 – Kompromis (0:06–0:09)\n- **Kamera:** sestry se na sebe dívají, pak si plácnou\n- **Dialog:**\n  - **Lenka (s úšklebkem):** \"Tak mentolově šedá.\"\n\n#### 🎞️ SHOT 4 – Práce (0:09–0:13)\n- **Kamera:** time-lapse, válečky jezdí po stěně\n- **Hudba:** rytmický pop\n\n#### 🎞️ SHOT 5 – Nehoda (0:13–0:16)\n- **Kamera:** Lenka couvne a šlápne do vaničky s barvou\n- **SFX:** mlasknutí\n- **Dialog:**\n  - **Lenka:** \"Ups.\"\n\n#### 🎞️ SHOT 6 – Reakce (0:16–0:19)\n- **Kamera:** Tereza se chytá za hlavu, pak se rozesměje\n- **Dialog:**\n  - **Tereza:** \"Aspoň víme, že ta barva drží.\"\n\n#### 🎞️ SHOT 7 – Hotovo (0:19–0:24)\n- **Kamera:** pomalý pojezd po hotovém pokoji, na podlaze mentolové šlépěje\n- **Voice-over (ženský hlas):** \"Někdy ty nejlepší nápady vzniknou úplně náhodou.\"\n\n#### 🎞️ SHOT 8 – Závěr (0:24–0:27)\n- **Kamera:** sestry sedí na zemi a pijí limonádu\n- **Text na videu:** Pokoj snů – 1 den, 2 sestry, 3 kbelíky\n- **Dialog:**\n  - **Lenka:** \"Příště kuchyň?\"\n  - **Tereza:** \"Ani náhodou.\"\n\n---\n\n✨ **Tipy:** Drž stejné oblečení sester ve všech záběrech. Chceš, abych k tomu napsal i anglické prompty?",
+ "windows": 8,
+ "lines": [
+  [
+   1,
+   "Tereza",
+   "Tak jo. Dneska z toho uděláme pokoj snů."
+  ],
+  [
+   2,
+   "Lenka",
+   "Mentolová!"
+  ],
+  [
+   2,
+   "Tereza",
+   "Šedá."
+  ],
+  [
+   3,
+   "Lenka",
+   "Tak mentolově šedá."
+  ],
+  [
+   5,
+   "Lenka",
+   "Ups."
+  ],
+  [
+   6,
+   "Tereza",
+   "Aspoň víme, že ta barva drží."
+  ],
+  [
+   7,
+   "Vypravěč",
+   "Někdy ty nejlepší nápady vzniknou úplně náhodou."
+  ],
+  [
+   8,
+   "Lenka",
+   "Příště kuchyň?"
+  ],
+  [
+   8,
+   "Tereza",
+   "Ani náhodou."
+  ]
+ ],
+ "genders": {
+  "Tereza": "f",
+  "Lenka": "f",
+  "Vypravěč": "f"
+ },
+ "props": []
+}

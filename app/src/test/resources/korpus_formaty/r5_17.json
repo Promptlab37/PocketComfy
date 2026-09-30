@@ -1,0 +1,32 @@
+{
+  "name": "Reklama – CK Slunečnice",
+  "text": "CK SLUNEČNICE – TV spot 25 s\n\nZáběr 1: Šedá kancelář, za oknem prší. Zákaznice unaveně kouká do monitoru.\nVO (ženský hlas): „Už máte dost podzimu?“\n\nZáběr 2: Zákaznice otevře na telefonu aplikaci cestovky.\nZákaznice: „Chorvatsko, Řecko… nebo radši obojí?“\n\nZáběr 3: Střih, pláž, zákaznice v klobouku vstupuje do moře.\nZvuk: vlny, racci\n\nZáběr 4: Na lehátku, se sklenicí limonády, mává do kamery.\nZákaznice: „Tohle byl nejlepší nápad letošního roku.“\n\nZáběr 5: Logo CK Slunečnice na modrém pozadí.\nVO: „CK Slunečnice. Léto, kdy si řeknete.“\nNa obrazovce: www.ck-slunecnice.cz | Last minute od 9 990 Kč",
+  "windows": 5,
+  "lines": [
+    [
+      1,
+      "Vypravěč",
+      "Už máte dost podzimu?"
+    ],
+    [
+      2,
+      "Zákaznice",
+      "Chorvatsko, Řecko… nebo radši obojí?"
+    ],
+    [
+      4,
+      "Zákaznice",
+      "Tohle byl nejlepší nápad letošního roku."
+    ],
+    [
+      5,
+      "Vypravěč",
+      "CK Slunečnice. Léto, kdy si řeknete."
+    ]
+  ],
+  "genders": {
+    "Vypravěč": "f",
+    "Zákaznice": "f"
+  },
+  "props": []
+}

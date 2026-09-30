@@ -1,0 +1,32 @@
+{
+ "name": "Filmový formát: jméno VELKÝMI na samostatném řádku, přednes v závorce na dalším řádku, replika pod ním; okna '1) INT. … – DEN'",
+ "text": "1) INT. KNIHOVNA – DEN\n\nStudentka Barbora hledá knihu mezi regály. Knihovník, starší pán s brýlemi, ji pozoruje.\n\nBARBORA\nPromiňte, nevíte, kde najdu atlasy?\n\nKNIHOVNÍK\n(ukazuje)\nDruhé patro, úplně vzadu u okna.\n\n2) INT. KNIHOVNA, DRUHÉ PATRO – DEN\n\nBarbora vytáhne těžký atlas a málem ho upustí.\n\nBARBORA\n(sama pro sebe)\nTen váží snad deset kilo.\n\n3) INT. KNIHOVNA, PULT – DEN\n\nKnihovník razítkuje výpůjčku.\n\nKNIHOVNÍK\nVrátit do čtrnácti dnů. A nenoste ho v dešti.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Barbora",
+   "Promiňte, nevíte, kde najdu atlasy?"
+  ],
+  [
+   1,
+   "Knihovník",
+   "Druhé patro, úplně vzadu u okna."
+  ],
+  [
+   2,
+   "Barbora",
+   "Ten váží snad deset kilo."
+  ],
+  [
+   3,
+   "Knihovník",
+   "Vrátit do čtrnácti dnů. A nenoste ho v dešti."
+  ]
+ ],
+ "genders": {
+  "Barbora": "f",
+  "Knihovník": "m"
+ },
+ "props": []
+}

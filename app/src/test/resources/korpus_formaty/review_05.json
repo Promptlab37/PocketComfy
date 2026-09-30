@@ -1,0 +1,16 @@
+{
+ "name": "replika přes tři řádky",
+ "text": "Postavy:\nJana: 30 let, kabát\n\nOKNO 1\nJana stojí na nástupišti.\nJana: „Tohle je první řádek,\ndruhý řádek\na třetí řádek.“\nOKNO 2\nVlak přijíždí.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Tohle je první řádek, druhý řádek a třetí řádek."
+  ]
+ ],
+ "genders": {
+  "Jana": "f"
+ },
+ "props": []
+}

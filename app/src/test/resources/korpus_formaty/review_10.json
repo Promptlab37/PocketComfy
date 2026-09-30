@@ -1,0 +1,22 @@
+{
+ "name": "S-kódy za odrážkou a tučně",
+ "text": "Postavy:\nS1 – Jana: 30 let, zelený svetr\nS2 – Petr: 32 let, džínová bunda\n\nOKNO 1\nJana a Petr na chodníku.\n- S1: <d>[Czech] Ahoj, kam jdeš?</d>\n- **S2:** <d>[Czech] Na vlak.</d>\nOKNO 2\nPetr odchází.",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Ahoj, kam jdeš?"
+  ],
+  [
+   1,
+   "Petr",
+   "Na vlak."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Petr": "m"
+ },
+ "props": []
+}

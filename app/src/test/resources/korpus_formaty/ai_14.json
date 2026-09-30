@@ -1,0 +1,47 @@
+{
+ "name": "Styl Claude: ## a ### nadpisy, '**Okno n** · 0:00–0:05 · *místo*', repliky jako odrážky s **tučným** jménem, Kamera:, dva mluvčí v jednom okně, 4 postavy",
+ "text": "## Storyboard – Překvapení pro tátu\n\n**Formát:** 9:16, přibližně 36 sekund\n\n### Postavy\n- **Táta Pavel** — 50 let, šedivé spánky, flanelová košile v červené kostce\n- **Kristýna** — 22 let, dcera, dlouhé blond vlasy, černá bunda\n- **Ondřej** — 17 let, syn, brýle, zelená mikina\n- **Babička Libuše** — 75 let, perleťový náhrdelník, béžový svetr\n\n### Rekvizity\n- **Dort** — čokoládový, s číslem 50\n- **Konfety** — barevné, v papírovém kornoutu\n\n### Kontinuita\nTáta má celý film stejnou kostkovanou košili.\n\n---\n\n**Okno 1** · 0:00–0:05 · *Chodba*\n- Obraz: Táta odemyká dveře, uvnitř je tma.\n- Kamera: přes rameno\n- **Táta Pavel** (unaveně): „Haló? Nikdo doma?“\n\n**Okno 2** · 0:05–0:10 · *Obývák*\n- Obraz: Rozsvítí se světla, všichni vyskočí.\n- **Kristýna**: „Překvapení!“\n- **Ondřej**: „Všechno nejlepší!“\n\n**Okno 3** · 0:10–0:18 · *Konfety*\n- Obraz: Ondřejovi se kornout roztrhne, konfety spadnou babičce do vlasů.\n- **Babička Libuše** (klidně): „Tak to jsem letos taky oslavenkyně.“\n- Zvuk: smích\n\n**Okno 4** · 0:18–0:26 · *Dort*\n- Obraz: Kristýna nese dort, svíčky hoří.\n- **Táta Pavel**: „Padesát? Vždyť mi je sotva čtyřicet.“\n- **Ondřej**: „Tati, ten dort nelže.“\n\n**Okno 5** · 0:26–0:36 · *Závěr*\n- Obraz: Celá rodina na gauči, táta s konfetami na hlavě.\n- Text na videu: „Všechno nejlepší, tati!“",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Táta Pavel",
+   "Haló? Nikdo doma?"
+  ],
+  [
+   2,
+   "Kristýna",
+   "Překvapení!"
+  ],
+  [
+   2,
+   "Ondřej",
+   "Všechno nejlepší!"
+  ],
+  [
+   3,
+   "Babička Libuše",
+   "Tak to jsem letos taky oslavenkyně."
+  ],
+  [
+   4,
+   "Táta Pavel",
+   "Padesát? Vždyť mi je sotva čtyřicet."
+  ],
+  [
+   4,
+   "Ondřej",
+   "Tati, ten dort nelže."
+  ]
+ ],
+ "genders": {
+  "Táta Pavel": "m",
+  "Kristýna": "f",
+  "Ondřej": "m",
+  "Babička Libuše": "f"
+ },
+ "props": [
+  "Dort",
+  "Konfety"
+ ]
+}

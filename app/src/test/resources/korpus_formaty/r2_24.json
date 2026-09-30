@@ -1,0 +1,38 @@
+{
+ "name": "EN/CZ: 'Characters:' with English roles after dash, 'Shot n – 0:00-0:05', Location:/Camera: labels, English delivery '(laughing, off-screen)', 'Narrator (female):', 'Caption:' not spoken, only 3 windows",
+ "text": "Concept: \"Babi online\"\nCharacters: Libuše – grandma (75), Nela – granddaughter (16)\n\nShot 1 – 0:00-0:05\nLocation: Grandma's living room\nCamera: close-up on the tablet screen, we see only grandma's forehead\nLibuše: Nelinko, vidíš mě? Já tě vidím celou.\nNela (laughing, off-screen): Babi, vidím jenom tvoje čelo!\n\nShot 2 – 0:05-0:10\nCamera: over the shoulder\nGrandma tilts the tablet, now we see the ceiling.\nLibuše: A teď?\nNela: Teď lustr. Hezký lustr.\n\nShot 3 – 0:10-0:15\nFinally the whole face. Both laugh.\nNarrator (female): Někdy stačí jen trocha trpělivosti.\nCaption: Zavolejte babičce. Dneska.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Libuše",
+   "Nelinko, vidíš mě? Já tě vidím celou."
+  ],
+  [
+   1,
+   "Nela",
+   "Babi, vidím jenom tvoje čelo!"
+  ],
+  [
+   2,
+   "Libuše",
+   "A teď?"
+  ],
+  [
+   2,
+   "Nela",
+   "Teď lustr. Hezký lustr."
+  ],
+  [
+   3,
+   "Vypravěč",
+   "Někdy stačí jen trocha trpělivosti."
+  ]
+ ],
+ "genders": {
+  "Libuše": "f",
+  "Nela": "f",
+  "Vypravěč": "f"
+ },
+ "props": []
+}

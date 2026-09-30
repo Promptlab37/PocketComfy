@@ -1,0 +1,34 @@
+{
+ "name": "Tabulka zkopírovaná z tabulkového editoru (TAB oddělovače, hlavička Záběr/Obraz/Dialog/Poznámka) + jména VELKÝMI v buňce + pomlčka = bez dialogu + zvuk v poznámce",
+ "text": "Scénář z mojí tabulky:\nPostavy: Eva (35), Filip (37)\nRekvizity: hrnek s kávou\n\nZáběr\tObraz\tDialog\tPoznámka\n1\tRanní kuchyň, Eva vaří kávu.\tEVA: Dobré ráno, spáči.\tteplé světlo\n2\tFilip se vypotácí z ložnice v županu.\tFILIP: Kolik je hodin?\t\n3\tDetail hodin na zdi: 6:15\t—\ttikání\n4\tEva mu podá hrnek s kávou.\tEVA: Brzo. Ale káva je hotová.\t\n5\tFilip se usměje.\tFILIP: Tak to jsi nejlepší.\tzvuk: srkání",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Eva",
+   "Dobré ráno, spáči."
+  ],
+  [
+   2,
+   "Filip",
+   "Kolik je hodin?"
+  ],
+  [
+   4,
+   "Eva",
+   "Brzo. Ale káva je hotová."
+  ],
+  [
+   5,
+   "Filip",
+   "Tak to jsi nejlepší."
+  ]
+ ],
+ "genders": {
+  "Eva": "f",
+  "Filip": "m"
+ },
+ "props": [
+  "hrnek s kávou"
+ ]
+}

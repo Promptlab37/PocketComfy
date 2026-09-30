@@ -1,0 +1,34 @@
+{
+ "name": "Šablona dodržená přesně (základní případ)",
+ "text": "STORYBOARD – Zapomenutý dort\nFormát: 9:16, přibližně 20 sekund.\nPostavy:\nJana: 34 let, hnědé vlasy do culíku, žlutý svetr, modré džíny\nTomáš: 36 let, krátké černé vlasy, šedá mikina\nRekvizity:\nDort: bílý dort se svíčkami\nKontinuita: Jana má celý film žlutý svetr.\n\n[OKNO 1 | 0–4 s] Příchod\nObraz: Tomáš otevírá dveře kuchyně a vidí Janu u linky.\nEmoce: napětí\nTomáš (opatrně): „Ahoj, co tu tak voní?“\nZvuk: cvaknutí dveří\nText na videu: „Sobota ráno“\n\n[OKNO 2 | 4–8 s] Odhalení\nObraz: Jana schovává dort za zády.\nEmoce: rozpaky\nJana (rychle): „Nic! Vůbec nic.“\nZvuk: šustění\n\n[OKNO 3 | 8–14 s] Pravda\nObraz: Tomáš se usměje a ukáže na kalendář.\nEmoce: dojetí\nTomáš (s úsměvem): „Narozeniny mám až zítra.“\nJana (zděšeně): „Cože? Zítra?“\nZvuk: tikání hodin\n\n[OKNO 4 | 14–20 s] Oslava\nObraz: Oba se smějí a sfoukávají svíčky.\nEmoce: radost\nZvuk: smích\nText na videu: „Lepší o den dřív“",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Tomáš",
+   "Ahoj, co tu tak voní?"
+  ],
+  [
+   2,
+   "Jana",
+   "Nic! Vůbec nic."
+  ],
+  [
+   3,
+   "Tomáš",
+   "Narozeniny mám až zítra."
+  ],
+  [
+   3,
+   "Jana",
+   "Cože? Zítra?"
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Tomáš": "m"
+ },
+ "props": [
+  "Dort"
+ ]
+}

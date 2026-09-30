@@ -1,0 +1,48 @@
+{
+ "name": "Cast with title 'MUDr. Eva Malá' used as 'MUDr. Malá:' in lines, 'Jan Novák'/'Kryštof Novák' share surname, lines by first name, 'SCÉNA n / PLACE / time' slash headers, quotes inside action line",
+ "text": "U doktorky – krátké video (20 s)\n\nPostavy:\nMUDr. Eva Malá – dětská lékařka\nJan Novák – tatínek\nKryštof Novák – syn, 4 roky\n\nSCÉNA 1 / ČEKÁRNA / 0–5 s\nKryštof sedí tátovi na klíně a drží plyšového dinosaura.\nKryštof: Tati, bude to bolet?\nJan: Vůbec. Paní doktorka se jen podívá do pusy.\n\nSCÉNA 2 / ORDINACE / 5–10 s\nLékařka se sklání ke Kryštofovi.\nMUDr. Malá: Ahoj, Kryštofe. A kdo je tohle?\nKryštof (hrdě): To je Rexík. Je taky nemocnej.\n\nSCÉNA 3 / ORDINACE / 10–16 s\nLékařka „vyšetří“ nejdřív dinosaura, pak Kryštofa.\nMUDr. Malá: Rexík je zdravý jako rybička. A ty taky. Otevři pusu dokořán.\nKryštof: Ááá.\n\nSCÉNA 4 / ODCHOD / 16–20 s\nKryštof dostane samolepku se lvem.\nKryštof: Rexíku, jsme stateční!",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Kryštof Novák",
+   "Tati, bude to bolet?"
+  ],
+  [
+   1,
+   "Jan Novák",
+   "Vůbec. Paní doktorka se jen podívá do pusy."
+  ],
+  [
+   2,
+   "MUDr. Eva Malá",
+   "Ahoj, Kryštofe. A kdo je tohle?"
+  ],
+  [
+   2,
+   "Kryštof Novák",
+   "To je Rexík. Je taky nemocnej."
+  ],
+  [
+   3,
+   "MUDr. Eva Malá",
+   "Rexík je zdravý jako rybička. A ty taky. Otevři pusu dokořán."
+  ],
+  [
+   3,
+   "Kryštof Novák",
+   "Ááá."
+  ],
+  [
+   4,
+   "Kryštof Novák",
+   "Rexíku, jsme stateční!"
+  ]
+ ],
+ "genders": {
+  "MUDr. Eva Malá": "f",
+  "Jan Novák": "m",
+  "Kryštof Novák": "m"
+ },
+ "props": []
+}

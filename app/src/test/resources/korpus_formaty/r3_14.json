@@ -1,0 +1,35 @@
+{
+ "name": "tučné hlavičky oken „**[OKNO 1 | 0–4 s] Název**“, jinak šablona",
+ "text": "STORYBOARD – Pečení cukroví\nFormát: 9:16, přibližně 16 sekund.\nPostavy:\nDominik: 35 let, krátké blond vlasy, červený svetr se soby, bílá zástěra\nBára: 6 let, světlé vlasy ve dvou culících, modré šaty, zástěrka s jahodami\nRekvizity:\nVykrajovátka: kovová vykrajovátka ve tvaru hvězdy a srdce\nPlech: černý plech s pečicím papírem\nKontinuita: kuchyň s vánoční výzdobou, večer, všude trochu mouky\n\n**[OKNO 1 | 0–4 s] Těsto**\nObraz: Dominik válí těsto, Bára netrpělivě drží vykrajovátka.\nEmoce: těšení\nBára (netrpělivě): „Tati, už můžu vykrajovat?“\nZvuk: bouchání válečku\n\n**[OKNO 2 | 4–8 s] Mouka**\nObraz: Bára plácne rukou do mouky a oba mají bílé tváře.\nEmoce: legrace\nDominik (se smíchem): „No nazdar, teď vypadáme jako sněhuláci.“\nZvuk: pufnutí mouky, smích\n\n**[OKNO 3 | 8–12 s] Vykrajování**\nObraz: Bára soustředěně vykrajuje hvězdy a klade je na plech.\nEmoce: soustředění\nBára (pyšně): „Tahle hvězda je pro mámu.“\nZvuk: tichá vánoční melodie\n\n**[OKNO 4 | 12–16 s] Z trouby**\nObraz: Dominik vytáhne plech se zlatavým cukrovím, Bára tleská.\nEmoce: radost\nDominik (spokojeně): „Tak, a teď ochutnávka.“\nZvuk: cinknutí trouby\nText na videu: „Veselé Vánoce“\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Bára",
+   "Tati, už můžu vykrajovat?"
+  ],
+  [
+   2,
+   "Dominik",
+   "No nazdar, teď vypadáme jako sněhuláci."
+  ],
+  [
+   3,
+   "Bára",
+   "Tahle hvězda je pro mámu."
+  ],
+  [
+   4,
+   "Dominik",
+   "Tak, a teď ochutnávka."
+  ]
+ ],
+ "genders": {
+  "Dominik": "m",
+  "Bára": "f"
+ },
+ "props": [
+  "Vykrajovátka",
+  "Plech"
+ ]
+}

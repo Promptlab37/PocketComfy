@@ -1,0 +1,38 @@
+{
+  "name": "PC – Kubův první gól",
+  "text": "Kubův první gól (video pro trenéra na web oddílu)\n\n[1] Hřiště, sobota ráno. Děti se rozcvičují, trenér tleská.\nTrenér: Tak kluci, dneska to dáme, hlavně se nebojte střílet!\n\n[2] Táta stojí za plotem s telefonem v ruce.\nTáta: Kubo, drž se, jsem tady!\n\n[3] Zápas, Kuba dostane přihrávku, běží s míčem. Kamera běží vedle něj.\n\n[4] Kuba vystřelí, míč letí do rohu branky.\nZvuk: fandění, píšťalka\n\n[5] Kuba se otočí k plotu, ruce nad hlavou.\nKuba: Tatí, viděls to?! Dal jsem gól!\nTáta: Viděl, ty jsi hvězda!\n\n[6] Po zápase, trenér podává Kubovi ruku.\nTrenér: Tak tohle byl tvůj první, ale určitě ne poslední.",
+  "windows": 6,
+  "lines": [
+    [
+      1,
+      "Trenér",
+      "Tak kluci, dneska to dáme, hlavně se nebojte střílet!"
+    ],
+    [
+      2,
+      "Táta",
+      "Kubo, drž se, jsem tady!"
+    ],
+    [
+      5,
+      "Kuba",
+      "Tatí, viděls to?! Dal jsem gól!"
+    ],
+    [
+      5,
+      "Táta",
+      "Viděl, ty jsi hvězda!"
+    ],
+    [
+      6,
+      "Trenér",
+      "Tak tohle byl tvůj první, ale určitě ne poslední."
+    ]
+  ],
+  "genders": {
+    "Trenér": "m",
+    "Táta": "m",
+    "Kuba": "m"
+  },
+  "props": []
+}

@@ -1,0 +1,37 @@
+{
+ "name": "Mluvčí VELKÝMI písmeny s přednesem za čárkou (PETR, tiše: …), 'OKNO 1 – místo' na jednom řádku",
+ "text": "OKNO 1 – park, podzim\nEva a Petr jdou alejí, pod nohama šustí listí.\nPETR, tiše: Pamatuješ, jak jsme tu byli poprvé?\nEVA, s úsměvem: Pršelo a ty jsi neměl deštník.\n\nOKNO 2 – lavička\nSednou si na lavičku. Eva vytáhne termosku.\nEVA, nabízí mu hrnek: Dáš si čaj?\nPETR, vděčně: Rád.\n\nOKNO 3 – detail\nRuce kolem hrnku, z čaje stoupá pára.\nPETR, po chvíli: Tohle je nejlepší podzim.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Pamatuješ, jak jsme tu byli poprvé?"
+  ],
+  [
+   1,
+   "Eva",
+   "Pršelo a ty jsi neměl deštník."
+  ],
+  [
+   2,
+   "Eva",
+   "Dáš si čaj?"
+  ],
+  [
+   2,
+   "Petr",
+   "Rád."
+  ],
+  [
+   3,
+   "Petr",
+   "Tohle je nejlepší podzim."
+  ]
+ ],
+ "genders": {
+  "Petr": "m",
+  "Eva": "f"
+ },
+ "props": []
+}

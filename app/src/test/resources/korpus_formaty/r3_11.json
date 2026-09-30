@@ -1,0 +1,35 @@
+{
+ "name": "anglické popisky (Format, Characters, WINDOW, Visual, Sound…), české repliky",
+ "text": "STORYBOARD – Cesta k moři\nFormat: 16:9, approximately 16 seconds.\nCharacters:\nMartin: 40 years, short brown hair, sunglasses, white linen shirt, beige shorts\nLenka: 38 years, blonde ponytail, red sundress, straw hat\nProps:\nCar: old light-blue family car with a roof box\nMap: large paper road map\nContinuity: summer highway, bright sun, Lenka keeps the straw hat on the whole time\n\n[WINDOW 1 | 0–4 s] Loading the car\nVisual: Martin pushes the last suitcase into the full trunk.\nEmotion: excited\nMartin (triumphantly): „Všechno se vešlo! Můžeme vyrazit.“\nSound: trunk slam\n\n[WINDOW 2 | 4–8 s] Navigation\nVisual: In the car, Lenka unfolds the huge paper map, it covers half the windshield.\nEmotion: comedic\nLenka (confused): „Kde přesně teď jsme? Tady je jenom Rakousko.“\nSound: rustling paper\n\n[WINDOW 3 | 8–12 s] Phone\nVisual: Martin calmly hands her his phone with navigation.\nEmotion: amused\nMartin (smiling): „Zkus radši tohle, lásko.“\nSound: navigation beep\n\n[WINDOW 4 | 12–16 s] The sea\nVisual: The car crests a hill and the blue sea appears.\nEmotion: joy\nLenka (excited): „Moře! Vidím moře!“\nSound: seagulls, waves\nOn-screen text: „Dovolená začíná“\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Martin",
+   "Všechno se vešlo! Můžeme vyrazit."
+  ],
+  [
+   2,
+   "Lenka",
+   "Kde přesně teď jsme? Tady je jenom Rakousko."
+  ],
+  [
+   3,
+   "Martin",
+   "Zkus radši tohle, lásko."
+  ],
+  [
+   4,
+   "Lenka",
+   "Moře! Vidím moře!"
+  ]
+ ],
+ "genders": {
+  "Martin": "m",
+  "Lenka": "f"
+ },
+ "props": [
+  "Car",
+  "Map"
+ ]
+}

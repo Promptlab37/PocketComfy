@@ -1,0 +1,38 @@
+{
+ "name": "Delivery in parens AFTER the colon 'Děda Franta: (něžně) …', line broken over 2 lines, 'Scéna n – place' without times, 'Voice-over:' without gender, two-word role+name speakers",
+ "text": "Scéna 1 – Zahrádka, ráno\nDěda Franta v klobouku zalévá rajčata konví.\nDěda Franta: (něžně) Tak co, holky, jak jste se vyspaly?\n\nScéna 2 – Detail rajčete\nJedno rajče je už červené.\nDěda Franta: (šeptem) Ty jsi ale krasavice. Tebe si nechám\nna zítřejší snídani.\n\nScéna 3 – Plot\nPřes plot se nakloní sousedka.\nSousedka Běla: Františku, vy si zase povídáte s rajčaty?\nDěda Franta: (bez zaváhání) Oni aspoň neodmlouvají, Bělo.\nVoice-over: Nejlepší rozhovory jsou ty, co rostou pomalu.",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Děda Franta",
+   "Tak co, holky, jak jste se vyspaly?"
+  ],
+  [
+   2,
+   "Děda Franta",
+   "Ty jsi ale krasavice. Tebe si nechám na zítřejší snídani."
+  ],
+  [
+   3,
+   "Sousedka Běla",
+   "Františku, vy si zase povídáte s rajčaty?"
+  ],
+  [
+   3,
+   "Děda Franta",
+   "Oni aspoň neodmlouvají, Bělo."
+  ],
+  [
+   3,
+   "Vypravěč",
+   "Nejlepší rozhovory jsou ty, co rostou pomalu."
+  ]
+ ],
+ "genders": {
+  "Děda Franta": "m",
+  "Sousedka Běla": "f",
+  "Vypravěč": "?"
+ },
+ "props": []
+}

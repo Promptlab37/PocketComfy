@@ -1,0 +1,30 @@
+{
+ "name": "odrážkový markdown: „- **Jméno** (jak): „…““ a „- **Obraz:**“",
+ "text": "# STORYBOARD – Ranní běh\n\n**Formát:** 9:16, přibližně 12 sekund.\n\n### Postavy\n- **Radek:** 34 let, krátké tmavé vlasy, neonově zelené běžecké tričko, černé legíny\n- **Soused Mirek:** 60 let, šedé vlasy, pruhované pyžamo, papuče\n\n### Rekvizity\n- **Chytré hodinky:** černé sportovní hodinky\n- **Noviny:** ranní noviny srolované v gumičce\n\n### Kontinuita\nUlice s rodinnými domky, svítání, Radek má celou dobu zelené tričko.\n\n### [OKNO 1 | 0–4 s] Start\n- **Obraz:** Radek se protahuje před domem a zapíná hodinky.\n- **Emoce:** odhodlání\n- **Radek** (odhodlaně): „Dneska dám deset kilometrů.“\n- **Zvuk:** pípnutí hodinek\n\n### [OKNO 2 | 4–8 s] Soused\n- **Obraz:** Soused Mirek vyjde v pyžamu pro noviny a zívá.\n- **Emoce:** pobavení\n- **Soused Mirek** (ospale): „V šest ráno? Vy jste blázen, sousede.“\n- **Zvuk:** zívnutí, vrzání branky\n\n### [OKNO 3 | 8–12 s] Výběh\n- **Obraz:** Radek se zasměje a vyběhne do ulice, Mirek za ním mává novinami.\n- **Emoce:** energie\n- **Radek** (v běhu): „Zítra poběžíte se mnou!“\n- **Zvuk:** kroky, ptáci\n- **Text na videu:** „Každý kilometr se počítá“\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Radek",
+   "Dneska dám deset kilometrů."
+  ],
+  [
+   2,
+   "Soused Mirek",
+   "V šest ráno? Vy jste blázen, sousede."
+  ],
+  [
+   3,
+   "Radek",
+   "Zítra poběžíte se mnou!"
+  ]
+ ],
+ "genders": {
+  "Radek": "m",
+  "Soused Mirek": "m"
+ },
+ "props": [
+  "Chytré hodinky",
+  "Noviny"
+ ]
+}

@@ -1,0 +1,35 @@
+{
+ "name": "obsazení S1/S2 se jmény, v replikách jen S-kódy (mluvčí = jméno)",
+ "text": "STORYBOARD – Stavíme stan\nFormát: 16:9, přibližně 16 sekund.\nPostavy:\nS1 – Honza: 12 let, krátké hnědé vlasy, oranžová skautská košile, zelený šátek\nS2 – Iveta: 36 let, blond cop, tmavě modrá bunda, turistické boty\nRekvizity:\nStan: zelený dvoumístný stan v obalu\nNávod: pomačkaný papírový návod\nKontinuita: louka u lesa, pozdní odpoledne, Honza má celou dobu zelený šátek\n\n[OKNO 1 | 0–4 s] Vybalení\nObraz: S1 vysype obsah obalu na trávu, kolem leží tyčky a kolíky.\nEmoce: sebevědomí\nS1 (nadšeně): „To zvládnu sám, mami. Jsem přece skaut.“\nZvuk: chrastění tyček\n\n[OKNO 2 | 4–8 s] Zmatek\nObraz: S1 se zamotá do plachty, vykukuje mu jen hlava.\nEmoce: komika\nS2 (pobaveně): „Nechceš se podívat do návodu?“\nZvuk: šustění plachty\n\n[OKNO 3 | 8–12 s] Spolupráce\nObraz: S2 drží tyčku, S1 zatlouká kolíky.\nEmoce: týmová práce\nS1 (soustředěně): „Drž to rovně… teď!“\nZvuk: klepání kolíků\n\n[OKNO 4 | 12–16 s] Hotovo\nObraz: Stan stojí, oba sedí před ním a pozorují západ slunce.\nEmoce: klid\nS2 (tiše): „Pěkná práce, skaute.“\nZvuk: cvrčci\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Honza",
+   "To zvládnu sám, mami. Jsem přece skaut."
+  ],
+  [
+   2,
+   "Iveta",
+   "Nechceš se podívat do návodu?"
+  ],
+  [
+   3,
+   "Honza",
+   "Drž to rovně… teď!"
+  ],
+  [
+   4,
+   "Iveta",
+   "Pěkná práce, skaute."
+  ]
+ ],
+ "genders": {
+  "Honza": "m",
+  "Iveta": "f"
+ },
+ "props": [
+  "Stan",
+  "Návod"
+ ]
+}

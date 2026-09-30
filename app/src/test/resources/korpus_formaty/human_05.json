@@ -1,0 +1,37 @@
+{
+ "name": "Okna '[1]', české uvozovky „…“, replika zalomená tvrdým koncem řádku uvnitř uvozovek (PDF), okno jen s akcí",
+ "text": "[1] Obývák, večer\nEliška sedí na gauči s knihou, do pokoje vejde Tomáš s dvěma hrnky čaje.\nTomáš: „Uvařil jsem ti ten malinový, co máš ráda,\ni když jsme ho skoro dopili.“\nEliška: „Jsi zlatý. Sedni si ke mně.“\n\n[2] Detail\nHrnky na stolku, pára stoupá.\n\n[3] Gauč\nEliška: „Dočetla jsem kapitolu, kde se hlavní hrdina\nkonečně vrací domů.“\nTomáš: „A jak to dopadne?“\nEliška: „To ti neřeknu.“\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Tomáš",
+   "Uvařil jsem ti ten malinový, co máš ráda, i když jsme ho skoro dopili."
+  ],
+  [
+   1,
+   "Eliška",
+   "Jsi zlatý. Sedni si ke mně."
+  ],
+  [
+   3,
+   "Eliška",
+   "Dočetla jsem kapitolu, kde se hlavní hrdina konečně vrací domů."
+  ],
+  [
+   3,
+   "Tomáš",
+   "A jak to dopadne?"
+  ],
+  [
+   3,
+   "Eliška",
+   "To ti neřeknu."
+  ]
+ ],
+ "genders": {
+  "Tomáš": "m",
+  "Eliška": "f"
+ },
+ "props": []
+}

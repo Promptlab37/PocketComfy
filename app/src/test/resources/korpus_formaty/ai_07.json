@@ -1,0 +1,33 @@
+{
+ "name": "Markdown tabulka (okno | čas | obraz | replika), obsazení v závorkách v jednom odstavci, prázdné okno s pomlčkou, dvě repliky v jedné buňce oddělené lomítkem",
+ "text": "# Storyboard: Výtah\n**Formát:** 9:16 · **Délka:** ~24 s\n\n**Postavy:** Jiří (50 let, oblek, kufřík), paní Dvořáková (65 let, fialový klobouk), Anička (6 let, holčička, žlutá pláštěnka)\n\n| Okno | Čas | Obraz | Replika |\n|---|---|---|---|\n| 1 | 0–4 s | Jiří nastupuje do výtahu, spěchá. | **Jiří:** „Dvanácté patro, prosím rychle.“ |\n| 2 | 4–10 s | Výtah se zastaví, světlo zabliká. | — |\n| 3 | 10–16 s | Paní Dvořáková vytáhne z tašky bonbony. | **Paní Dvořáková** (klidně): „Kdo si dá lízátko?“ |\n| 4 | 16–24 s | Anička podává Jiřímu lízátko, on se poprvé usměje. | **Anička:** „Tady, pane, ať se nebojíte.“ / **Jiří:** „Děkuju. Už se nebojím.“ |",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Jiří",
+   "Dvanácté patro, prosím rychle."
+  ],
+  [
+   3,
+   "paní Dvořáková",
+   "Kdo si dá lízátko?"
+  ],
+  [
+   4,
+   "Anička",
+   "Tady, pane, ať se nebojíte."
+  ],
+  [
+   4,
+   "Jiří",
+   "Děkuju. Už se nebojím."
+  ]
+ ],
+ "genders": {
+  "Jiří": "m",
+  "paní Dvořáková": "f",
+  "Anička": "f"
+ },
+ "props": []
+}

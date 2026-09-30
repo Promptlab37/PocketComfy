@@ -1,0 +1,30 @@
+{
+ "name": "markdown: nadpis ##, tučné popisky, oddělovače ---",
+ "text": "## STORYBOARD – Poslední rohlík\n\n**Formát:** 9:16, přibližně 12 sekund.\n\n**Postavy:**\n- **Pan Novák:** 67 let, šedé vlasy, brýle, hnědá manšestrová bunda\n- **Prodavačka Olga:** 45 let, krátké rudé vlasy, zelená zástěra s logem pekárny\n\n**Rekvizity:**\n- **Papírový sáček:** hnědý sáček s natištěným klasem\n- **Košík s pečivem:** proutěný košík, v něm jeden poslední rohlík\n\n**Kontinuita:** malá pekárna, dřevěný pult, teplé světlo, Olga má celou dobu zástěru\n\n---\n\n**[OKNO 1 | 0–4 s] Prázdné regály**\n**Obraz:** Pan Novák vejde do pekárny a smutně se dívá na prázdné regály.\n**Emoce:** zklamání\n**Pan Novák (zklamaně):** „To už je všechno pryč?“\n**Zvuk:** zvonek nade dveřmi\n\n---\n\n**[OKNO 2 | 4–8 s] Schovaný rohlík**\n**Obraz:** Olga se usměje a zpod pultu vytáhne košík s posledním rohlíkem.\n**Emoce:** vlídnost\n**Prodavačka Olga (spiklenecky):** „Pro vás jsem jeden schovala, jako vždycky.“\n**Zvuk:** šustění papíru\n\n---\n\n**[OKNO 3 | 8–12 s] Poděkování**\n**Obraz:** Olga vloží rohlík do papírového sáčku a podá ho panu Novákovi, ten se rozzáří.\n**Emoce:** vděčnost\n**Pan Novák (dojatě):** „Vy jste poklad, paní Olgo. Děkuju.“\n**Zvuk:** tichá kytara\n**Text na videu:** „Pekárna U Klasu – pečeme s láskou“\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Pan Novák",
+   "To už je všechno pryč?"
+  ],
+  [
+   2,
+   "Prodavačka Olga",
+   "Pro vás jsem jeden schovala, jako vždycky."
+  ],
+  [
+   3,
+   "Pan Novák",
+   "Vy jste poklad, paní Olgo. Děkuju."
+  ]
+ ],
+ "genders": {
+  "Pan Novák": "m",
+  "Prodavačka Olga": "f"
+ },
+ "props": [
+  "Papírový sáček",
+  "Košík s pečivem"
+ ]
+}

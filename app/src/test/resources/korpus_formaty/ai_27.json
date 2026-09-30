@@ -1,0 +1,47 @@
+{
+ "name": "Vše VELKÝMI: 'POSTAVY:' se středníky na jednom řádku, role místo jmen (PRODAVAČ, VEDOUCÍ – žena, OCHRANKA), 'ZÁBĚR n / 0:00–0:05', způsob za čárkou, repliky bez uvozovek, TITULEK:",
+ "text": "REKLAMACE\nformát 9:16 / cca 35 s\n\nPOSTAVY: PRODAVAČ (28, zelená firemní polokošile, jmenovka „Dan“); PANÍ SVOBODOVÁ (58, kožich, obří taška); VEDOUCÍ (45, žena, kostým, sluchátko v uchu); OCHRANKA (50, muž, černá uniforma)\nREKVIZITY: TOPINKOVAČ (stříbrný, kouří se z něj); ÚČTENKA (dlouhá jako ruka)\n\nZÁBĚR 1 / 0:00–0:05\nPaní Svobodová bouchne topinkovačem o pult.\nPANÍ SVOBODOVÁ, rázně: Chci vrátit peníze. Pálí.\n\nZÁBĚR 2 / 0:05–0:11\nPRODAVAČ, ochotně: A na jaký stupeň jste to měla?\nPANÍ SVOBODOVÁ: Na devítku. Jako vždycky.\n\nZÁBĚR 3 / 0:11–0:17\nProdavač otočí knoflíkem na dvojku. Vyskočí dokonalý toast.\nZvuk: cink\n\nZÁBĚR 4 / 0:17–0:24\nPřijde vedoucí, ochranka stojí opodál.\nVEDOUCÍ: Nějaký problém, Dane?\nOCHRANKA: Voní to tu fajn.\n\nZÁBĚR 5 / 0:24–0:30\nPaní Svobodová si ukousne z toastu.\nPANÍ SVOBODOVÁ, smířlivě: Tak já si ho nechám. A vezmu ještě jeden.\n\nZÁBĚR 6 / 0:30–0:35\nVšichni jedí toasty u pultu.\nTITULEK: Návod se čte PŘED použitím.",
+ "windows": 6,
+ "lines": [
+  [
+   1,
+   "PANÍ SVOBODOVÁ",
+   "Chci vrátit peníze. Pálí."
+  ],
+  [
+   2,
+   "PRODAVAČ",
+   "A na jaký stupeň jste to měla?"
+  ],
+  [
+   2,
+   "PANÍ SVOBODOVÁ",
+   "Na devítku. Jako vždycky."
+  ],
+  [
+   4,
+   "VEDOUCÍ",
+   "Nějaký problém, Dane?"
+  ],
+  [
+   4,
+   "OCHRANKA",
+   "Voní to tu fajn."
+  ],
+  [
+   5,
+   "PANÍ SVOBODOVÁ",
+   "Tak já si ho nechám. A vezmu ještě jeden."
+  ]
+ ],
+ "genders": {
+  "PRODAVAČ": "m",
+  "PANÍ SVOBODOVÁ": "f",
+  "VEDOUCÍ": "f",
+  "OCHRANKA": "m"
+ },
+ "props": [
+  "TOPINKOVAČ",
+  "ÚČTENKA"
+ ]
+}

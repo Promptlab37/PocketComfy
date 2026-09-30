@@ -1,0 +1,40 @@
+{
+ "name": "Poznámka z mobilu: bez interpunkce, malá jména, číslo okna splývá s akcí, mix uvozovek \" ‚‘ »« „“, mluvčí bez dvojtečky",
+ "text": "video pro babi k narozkam\npostavy: pepa (brácha 12), klárka (ségra 8), babi\nrekvizity: dort s prskavkou\n1 pepa zvoní u dveří babi otevře\npepa \"vše nejlepší babi\"\nbabi: ‚no to je překvapení‘\n2 klárka nese dort s prskavkou opatrně\nklárka »sfoukni to rychle než to spadne«\n3 babi fouká všichni tleskaj\nbabi \"děkuju vám broučci\"\npepa „a teď dárek“",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "pepa",
+   "vše nejlepší babi"
+  ],
+  [
+   1,
+   "babi",
+   "no to je překvapení"
+  ],
+  [
+   2,
+   "klárka",
+   "sfoukni to rychle než to spadne"
+  ],
+  [
+   3,
+   "babi",
+   "děkuju vám broučci"
+  ],
+  [
+   3,
+   "pepa",
+   "a teď dárek"
+  ]
+ ],
+ "genders": {
+  "pepa": "m",
+  "klárka": "f",
+  "babi": "f"
+ },
+ "props": [
+  "dort s prskavkou"
+ ]
+}

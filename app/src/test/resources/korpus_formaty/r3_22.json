@@ -1,0 +1,30 @@
+{
+ "name": "rovné uvozovky \"...\" místo českých, citované zvuky a text na videu",
+ "text": "STORYBOARD - Hledání Micinky\nFormát: 9:16, přibližně 12 sekund.\nPostavy:\nŠtěpán: 9 let, černé vlasy, žluté triko, kraťasy\nPaní Marková: 65 let, bílé kudrnaté vlasy, modré šaty s puntíky\nRekvizity:\nPlakát: ručně kreslený plakát s kočkou\nKonzerva: plechovka kočičího žrádla\nKontinuita: klidná ulice s činžáky, léto, Štěpán má celou dobu žluté triko\n\n[OKNO 1 | 0-4 s] Plakát\nObraz: Štěpán lepí na lampu plakát s nápisem \"Ztratila se kočka\".\nEmoce: starost\nPaní Marková (smutně): \"Už ji nevidím třetí den.\"\nZvuk: páska \"vrrr\"\n\n[OKNO 2 | 4-8 s] Nápad\nObraz: Štěpán zatřese konzervou a zaposlouchá se.\nEmoce: naděje\nŠtěpán (volá): \"Micinko! Máme dobrotu!\"\nZvuk: chrastění plechovky, tiché \"mňau\"\n\n[OKNO 3 | 8-12 s] Shledání\nObraz: Z keře vyleze kočka a otírá se paní Markové o nohy.\nEmoce: štěstí\nPaní Marková (dojatě): \"Ty jsi můj hrdina, Štěpánku.\"\nZvuk: předení\nText na videu: \"Nalezena!\"\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Paní Marková",
+   "Už ji nevidím třetí den."
+  ],
+  [
+   2,
+   "Štěpán",
+   "Micinko! Máme dobrotu!"
+  ],
+  [
+   3,
+   "Paní Marková",
+   "Ty jsi můj hrdina, Štěpánku."
+  ]
+ ],
+ "genders": {
+  "Štěpán": "m",
+  "Paní Marková": "f"
+ },
+ "props": [
+  "Plakát",
+  "Konzerva"
+ ]
+}

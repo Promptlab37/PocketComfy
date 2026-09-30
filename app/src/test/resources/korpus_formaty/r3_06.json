@@ -1,0 +1,35 @@
+{
+ "name": "navíc řádky Hudba:, Kamera:, Přechod:",
+ "text": "STORYBOARD – První den v práci\nFormát: 16:9, přibližně 20 sekund.\nPostavy:\nLukáš: 23 let, krátké hnědé vlasy, světle modrá košile, tmavé chino kalhoty\nIvana: 40 let, černý bob, červené brýle, šedé sako\nRekvizity:\nNotebook: stříbrný notebook s nálepkou firmy\nVisačka: bílá visačka na modré šňůrce se jménem\nKontinuita: moderní open space, dopolední světlo, Lukáš má po celou dobu visačku na krku\nHudba: lehký optimistický indie pop\n\n[OKNO 1 | 0–4 s] Recepce\nKamera: celek, pomalý nájezd\nObraz: Lukáš nervózně stojí v recepci a upravuje si visačku.\nEmoce: nervozita\nLukáš (pro sebe, potichu): „Tak jo. Dýchat. Zvládneš to.“\nZvuk: šum kanceláře\nPřechod: střih\n\n[OKNO 2 | 4–8 s] Přivítání\nKamera: polodetail\nObraz: Přijde Ivana a podá mu ruku.\nEmoce: vlídnost\nIvana (přátelsky): „Ty budeš Lukáš. Vítej v týmu!“\nZvuk: kroky\nHudba: nástup rytmu\nPřechod: švenk doprava\n\n[OKNO 3 | 8–12 s] Stůl\nKamera: detail na stůl\nObraz: Ivana ho dovede ke stolu, kde leží nový notebook s mašlí.\nEmoce: překvapení\nIvana (s úsměvem): „Tohle je tvoje místo. Káva je hned za rohem.“\nZvuk: šustění mašle\n\n[OKNO 4 | 12–16 s] Kolegové\nKamera: celek\nObraz: Kolegové od vedlejších stolů zamávají.\nEmoce: přijetí\nZvuk: potlesk, smích\nText na videu: „Den první“\nPřechod: prolínačka\n\n[OKNO 5 | 16–20 s] Úsměv\nKamera: detail tváře\nObraz: Lukáš si sedne, otevře notebook a poprvé se uvolněně usměje.\nEmoce: úleva\nLukáš (spokojeně): „Tak tohle bude dobrý.“\nZvuk: klapnutí notebooku\nHudba: vyvrcholení a doznění\n",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Lukáš",
+   "Tak jo. Dýchat. Zvládneš to."
+  ],
+  [
+   2,
+   "Ivana",
+   "Ty budeš Lukáš. Vítej v týmu!"
+  ],
+  [
+   3,
+   "Ivana",
+   "Tohle je tvoje místo. Káva je hned za rohem."
+  ],
+  [
+   5,
+   "Lukáš",
+   "Tak tohle bude dobrý."
+  ]
+ ],
+ "genders": {
+  "Lukáš": "m",
+  "Ivana": "f"
+ },
+ "props": [
+  "Notebook",
+  "Visačka"
+ ]
+}

@@ -1,0 +1,40 @@
+{
+ "name": "S-kódy se jménem v obsazení ('S1 – Petr, 30 let…'), v replikách jen S1:/S3, pobaveně:; rekvizita 'Název – popis' na řádku Rekvizita:",
+ "text": "NÁZEV: Kolo\nFormát: Reels 9:16, přibližně 25 sekund.\nPostavy:\nS1 – Petr, 30 let, cyklistický dres v neonově žluté, helma\nS2 – Lucie, 28 let, jeho sestra, džínová bunda, culík\nS3 – Prodavač, asi 55 let, šedý plášť, brýle na nose\nRekvizita: Staré červené kolo – rezavý řetěz, zvonek.\n\n[OKNO 1]\nDílna. Petr tlačí staré kolo k pultu.\nS1: „Dobrý den, potřebuju to spravit do zítřka.“\nS3, pobaveně: „Do zítřka? To kolo pamatuje mého dědu.“\n\n[OKNO 2]\nLucie vejde se dvěma kafi.\nS2: „Říkala jsem ti, kup si nové.“\n\n[OKNO 3]\nProdavač zatočí pedálem, zvonek cinkne.\nS3 obdivně hvízdne.\nZvuk: cinknutí zvonku\n\n[OKNO 4]\nS3: „Víte co? Opravím ho zadarmo. Za to, že ho nevyhodíte.“\nS1 a S2 se na sebe podívají.\nS1: „Beru.“",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Petr",
+   "Dobrý den, potřebuju to spravit do zítřka."
+  ],
+  [
+   1,
+   "Prodavač",
+   "Do zítřka? To kolo pamatuje mého dědu."
+  ],
+  [
+   2,
+   "Lucie",
+   "Říkala jsem ti, kup si nové."
+  ],
+  [
+   4,
+   "Prodavač",
+   "Víte co? Opravím ho zadarmo. Za to, že ho nevyhodíte."
+  ],
+  [
+   4,
+   "Petr",
+   "Beru."
+  ]
+ ],
+ "genders": {
+  "Petr": "m",
+  "Lucie": "f",
+  "Prodavač": "m"
+ },
+ "props": [
+  "Staré červené kolo"
+ ]
+}

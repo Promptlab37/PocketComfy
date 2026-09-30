@@ -1,0 +1,42 @@
+{
+ "name": "Windows '[n] time' in square brackets, delivery after em-dash 'Martin — otráveně:', unicode ellipsis '…', no quotes, 2-speaker office banter",
+ "text": "Kancelář – Kávovar\n\n[1] 0–4 s\nOpen space. Kávovar bliká červeně. Martin do něj ťuká.\nMartin: No tak, dělej…\n\n[2] 4–8 s\nPřijde kolegyně Zuzana s hrnkem.\nZuzana: Zkoušel jsi ho vypnout a zapnout?\nMartin — otráveně: Třikrát.\n\n[3] 8–12 s\nZuzana otevře dvířka a vytáhne plný zásobník sedliny.\nZuzana: Chtělo by to vysypat, ne?\n\n[4] 12–15 s\nKávovar radostně zapípá a začne mlít.\nMartin (zahanbeně): Ty jsi génius.\nZuzana: Já vím.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Martin",
+   "No tak, dělej…"
+  ],
+  [
+   2,
+   "Zuzana",
+   "Zkoušel jsi ho vypnout a zapnout?"
+  ],
+  [
+   2,
+   "Martin",
+   "Třikrát."
+  ],
+  [
+   3,
+   "Zuzana",
+   "Chtělo by to vysypat, ne?"
+  ],
+  [
+   4,
+   "Martin",
+   "Ty jsi génius."
+  ],
+  [
+   4,
+   "Zuzana",
+   "Já vím."
+  ]
+ ],
+ "genders": {
+  "Martin": "m",
+  "Zuzana": "f"
+ },
+ "props": []
+}

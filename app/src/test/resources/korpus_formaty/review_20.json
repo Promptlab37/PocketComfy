@@ -1,0 +1,27 @@
+{
+ "name": "scény a záběry s číslováním od jedné",
+ "text": "Postavy:\nJana: 30 let, kabát\nPetr: 33 let, šála\n\nSCÉNA 1 – Kavárna\nZáběr 1\nJana čeká u stolu.\nJana: „Kde je?“\nZáběr 2\nPetr vejde dveřmi.\nSCÉNA 2 – Ulice\nZáběr 1\nJdou spolu po chodníku.\nPetr: „Promiň.“\nZáběr 2\nJana se usměje.\nJana: „Nic se neděje.“",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Kde je?"
+  ],
+  [
+   3,
+   "Petr",
+   "Promiň."
+  ],
+  [
+   4,
+   "Jana",
+   "Nic se neděje."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Petr": "m"
+ },
+ "props": []
+}

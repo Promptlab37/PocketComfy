@@ -1,0 +1,35 @@
+{
+ "name": "Šablona s 10 okny, většina oken bez repliky, jen 2 postavy, Kontinuita a Emoce",
+ "text": "STORYBOARD – Ranní rutina\nFormát: 9:16, přibližně 30 sekund.\nPostavy:\nFilip: 27 let, rozcuchané hnědé vlasy, šedé tepláky, bílé tílko\nPaní Olga: 68 let, sousedka, natáčky, růžový župan\nRekvizity:\nBudík: starý kovový budík se dvěma zvonky\nKonvice: červená rychlovarná konvice\nKontinuita: Filip má celou dobu jednu ponožku modrou a jednu zelenou.\n\n[OKNO 1 | 0–3 s] Budík\nObraz: Budík zvoní, Filip ho plácne.\nZvuk: řinčení budíku\n\n[OKNO 2 | 3–6 s] Znovu\nObraz: Budík zvoní znovu. Filip se schová pod polštář.\nFilip (do polštáře): „Ještě pět minut.“\n\n[OKNO 3 | 6–9 s] Pohled\nObraz: Filip vykoukne a vidí hodiny: 8:47.\nEmoce: panika\n\n[OKNO 4 | 9–12 s] Skok\nObraz: Filip vyskočí z postele a zamotá se do deky.\nZvuk: žuchnutí\n\n[OKNO 5 | 12–15 s] Kuchyň\nObraz: Zapne konvici, obléká si triko naruby.\n\n[OKNO 6 | 15–18 s] Zvonek\nObraz: Někdo zvoní u dveří.\nZvuk: ding-dong\n\n[OKNO 7 | 18–21 s] Sousedka\nObraz: Ve dveřích stojí paní Olga s talířem buchet.\nPaní Olga (vlídně): „Dobré ráno, Filípku. Dneska je sobota.“\n\n[OKNO 8 | 21–24 s] Uvědomění\nObraz: Filip ztuhne s kartáčkem v puse.\nFilip: „Sobota?“\n\n[OKNO 9 | 24–27 s] Úleva\nObraz: Filip se sveze po zárubni na zem.\nPaní Olga: „Buchtu?“\n\n[OKNO 10 | 27–30 s] Konec\nObraz: Oba sedí na schodech, jedí buchty, konvice píská.\nText na videu: „Víkend zachráněn.“",
+ "windows": 10,
+ "lines": [
+  [
+   2,
+   "Filip",
+   "Ještě pět minut."
+  ],
+  [
+   7,
+   "Paní Olga",
+   "Dobré ráno, Filípku. Dneska je sobota."
+  ],
+  [
+   8,
+   "Filip",
+   "Sobota?"
+  ],
+  [
+   9,
+   "Paní Olga",
+   "Buchtu?"
+  ]
+ ],
+ "genders": {
+  "Filip": "m",
+  "Paní Olga": "f"
+ },
+ "props": [
+  "Budík",
+  "Konvice"
+ ]
+}

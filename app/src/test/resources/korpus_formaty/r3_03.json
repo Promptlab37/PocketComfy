@@ -1,0 +1,29 @@
+{
+ "name": "upovídaný úvod a závěr kolem storyboardu",
+ "text": "Jasně, rád pomůžu! Tady je storyboard pro krátké video o ranní procházce se psem. Snažil jsem se držet tvou šablonu a udělat to svižné:\n\nSTORYBOARD – Rex a kaluž\nFormát: 9:16, přibližně 16 sekund.\nPostavy:\nKlára: 27 let, dlouhé tmavé vlasy, žlutá pláštěnka a modré holínky\nRekvizity:\nVodítko: červené vodítko s reflexním proužkem\nRex: zlatý retrívr s modrým obojkem\nKontinuita: podzimní park, mokrá cesta, Klára má pořád žlutou pláštěnku\n\n[OKNO 1 | 0–4 s] Vyrážíme\nObraz: Klára otevře dveře domu, Rex netrpělivě tahá za vodítko.\nEmoce: dobrá nálada\nKlára (smíchem): „Počkej, Rexi, vždyť ani nemám zavřeno!“\nZvuk: štěkot, cvaknutí zámku\n\n[OKNO 2 | 4–8 s] Kaluž\nObraz: V parku Rex uvidí velkou kaluž a zastaví se.\nEmoce: napětí\nKlára (varovně): „Ne, ne, ne… ani na to nemysli.“\nZvuk: kapky deště\n\n[OKNO 3 | 8–12 s] Skok\nObraz: Rex skočí do kaluže a ohodí Kláru vodou.\nEmoce: komická\nZvuk: velké šplouchnutí\nText na videu: „No jasně.“\n\n[OKNO 4 | 12–16 s] Smíření\nObraz: Klára se mokrá směje a drbe Rexe za ušima.\nEmoce: láska, humor\nKlára (rezignovaně, s úsměvem): „Tak jo, stejně jsem se chtěla převléknout.“\nZvuk: veselé štěkání, hudba\n\nPokud chceš, můžu z toho udělat i delší verzi s cestou domů, nebo upravit repliky, aby byly vtipnější. Stačí říct!\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Klára",
+   "Počkej, Rexi, vždyť ani nemám zavřeno!"
+  ],
+  [
+   2,
+   "Klára",
+   "Ne, ne, ne… ani na to nemysli."
+  ],
+  [
+   4,
+   "Klára",
+   "Tak jo, stejně jsem se chtěla převléknout."
+  ]
+ ],
+ "genders": {
+  "Klára": "f"
+ },
+ "props": [
+  "Vodítko",
+  "Rex"
+ ]
+}

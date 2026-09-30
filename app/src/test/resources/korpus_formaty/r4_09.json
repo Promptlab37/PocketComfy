@@ -1,0 +1,38 @@
+{
+ "name": "Mluvčí s obecnými jmény Šéf / Host / Číšnice + akční věty začínající jménem bez dvojtečky + Na tabuli: + okna 1) 2)",
+ "text": "Restaurace U Lípy – krátký skeč\nObsazení:\nŠéf – šéfkuchař, 50 let, vysoká bílá čepice\nHost – muž v obleku, 40 let\nČíšnice – mladá, černá zástěra\n\n1) Host sedí u stolu u okna, Číšnice přináší polévku.\nHost: Promiňte, ta polévka je studená.\nČíšnice: Hned to řeknu šéfovi.\n2) Kuchyně. Šéf ochutná polévku a zamračí se.\nŠéf: Studená? To je přece gazpacho!\n3) Šéf přijde k hostovi osobně.\nŠéf (hrdě): Pane, to je naše letní specialita.\nHost: Aha. Tak to je vynikající.\n4) Host dojídá, číšnice se usmívá.\nNa tabuli: Polévka dne – gazpacho",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Host",
+   "Promiňte, ta polévka je studená."
+  ],
+  [
+   1,
+   "Číšnice",
+   "Hned to řeknu šéfovi."
+  ],
+  [
+   2,
+   "Šéf",
+   "Studená? To je přece gazpacho!"
+  ],
+  [
+   3,
+   "Šéf",
+   "Pane, to je naše letní specialita."
+  ],
+  [
+   3,
+   "Host",
+   "Aha. Tak to je vynikající."
+  ]
+ ],
+ "genders": {
+  "Host": "m",
+  "Číšnice": "f",
+  "Šéf": "m"
+ },
+ "props": []
+}

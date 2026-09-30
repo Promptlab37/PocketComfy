@@ -1,0 +1,35 @@
+{
+ "name": "vypravěč bez určeného pohlaví + jedna postava",
+ "text": "STORYBOARD – Semínko\nFormát: 9:16, přibližně 16 sekund.\nPostavy:\nEma: 7 let, hnědé vlasy s mašlí, žluté tričko, zahradnické rukavice\nVypravěč: klidný hlas mimo obraz\nRekvizity:\nKvětináč: malý terakotový květináč\nKonvička: zelená plastová konvička\nKontinuita: okenní parapet v dětském pokoji, Ema má žluté tričko\n\n[OKNO 1 | 0–4 s] Zasazení\nObraz: Ema zatlačí semínko prstem do hlíny v květináči.\nEmoce: zvědavost\nVypravěč (klidně): „Každá velká věc začíná úplně malá.“\nZvuk: šustění hlíny\n\n[OKNO 2 | 4–8 s] Čekání\nObraz: Ema den co den zalévá květináč konvičkou a nic se neděje.\nEmoce: netrpělivost\nEma (netrpělivě): „Tak už vylez, semínko!“\nZvuk: kapky vody\nText na videu: „Den 1… Den 3… Den 5…“\n\n[OKNO 3 | 8–12 s] Klíček\nObraz: Z hlíny vykoukne drobný zelený klíček.\nEmoce: úžas\nEma (šeptem, užasle): „Mami… ono to roste!“\nZvuk: jemné zazvonění\n\n[OKNO 4 | 12–16 s] Poučení\nObraz: Ema pyšně drží květináč s rostlinkou u okna.\nEmoce: hrdost\nVypravěč (s úsměvem v hlase): „Stačí trpělivost a trocha vody.“\nZvuk: hudba doznívá\n",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Každá velká věc začíná úplně malá."
+  ],
+  [
+   2,
+   "Ema",
+   "Tak už vylez, semínko!"
+  ],
+  [
+   3,
+   "Ema",
+   "Mami… ono to roste!"
+  ],
+  [
+   4,
+   "Vypravěč",
+   "Stačí trpělivost a trocha vody."
+  ]
+ ],
+ "genders": {
+  "Ema": "f",
+  "Vypravěč": "?"
+ },
+ "props": [
+  "Květináč",
+  "Konvička"
+ ]
+}

@@ -1,0 +1,44 @@
+{
+ "name": "Okno jen s replikou + replika s … pokračující na dalším řádku + stejný mluvčí dvakrát za sebou (…tady!) + Řidič jako mluvčí",
+ "text": "Krátké video: Ranní autobus\nPostavy: Dáša (studentka, 19 let, velký batoh), Řidič (muž, 50 let, knírek)\nRekvizity: jízdenková karta\n\nOkno 1 (0–5 s)\nDáša běží k zastávce, autobus zavírá dveře.\nDáša: Počkejte…\nprosím, počkejte!\n\nOkno 2 (5–8 s)\nŘidič: No tak honem, slečno.\n\nOkno 3 (8–14 s)\nDáša nastoupí a hledá v batohu jízdenkovou kartu.\nDáša: Moment, já ji tu někde mám…\nDáša: …tady! Ne, to je průkaz do knihovny.\nŘidič (se smíchem): Ten vám tu neuznám.\n\nOkno 4 (14–18 s)\nŘidič: Dneska to nechám být. Sedněte si.\nDáša si sedne a vydechne.",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Dáša",
+   "Počkejte… prosím, počkejte!"
+  ],
+  [
+   2,
+   "Řidič",
+   "No tak honem, slečno."
+  ],
+  [
+   3,
+   "Dáša",
+   "Moment, já ji tu někde mám…"
+  ],
+  [
+   3,
+   "Dáša",
+   "…tady! Ne, to je průkaz do knihovny."
+  ],
+  [
+   3,
+   "Řidič",
+   "Ten vám tu neuznám."
+  ],
+  [
+   4,
+   "Řidič",
+   "Dneska to nechám být. Sedněte si."
+  ]
+ ],
+ "genders": {
+  "Dáša": "f",
+  "Řidič": "m"
+ },
+ "props": [
+  "jízdenková karta"
+ ]
+}

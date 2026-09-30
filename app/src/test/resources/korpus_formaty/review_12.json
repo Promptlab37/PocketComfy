@@ -1,0 +1,22 @@
+{
+ "name": "věk jednou číslicí a dítě",
+ "text": "Postavy: Jana (35) a její dcera Ema (8).\n\nOKNO 1\nJana zavazuje Emě tkaničky.\nEma: „Mami, já to umím sama!“\nOKNO 2\nJana se usměje.\nJana: „Tak ukaž.“",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Ema",
+   "Mami, já to umím sama!"
+  ],
+  [
+   2,
+   "Jana",
+   "Tak ukaž."
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Ema": "f"
+ },
+ "props": []
+}

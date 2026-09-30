@@ -1,0 +1,32 @@
+{
+ "name": "Obsazení v první větě prózy (Keramička s kudrnatými vlasy a tvůrce videa v tmavé košili), záběry '1. záběr', závěrečný text na konci",
+ "text": "Keramička s kudrnatými vlasy a tvůrce videa v tmavé košili sedí v malé dílně plné hrnků.\n\n1. záběr\nKeramička točí na kruhu misku, tvůrce videa ji natáčí telefonem.\nKeramička: Tahle hlína je z Kadaně, je hodně jemná.\nTvůrce videa: Jak dlouho trvá, než miska uschne?\n\n2. záběr\nKeramička zvedne misku proti světlu.\nKeramička: Zhruba týden. Pak jde do pece.\n\n3. záběr\nDetail rukou od hlíny.\nTvůrce videa: Tak to se na výpal určitě přijdu podívat.\n\nText na konci: Sledujte nás každý čtvrtek.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Keramička",
+   "Tahle hlína je z Kadaně, je hodně jemná."
+  ],
+  [
+   1,
+   "Tvůrce videa",
+   "Jak dlouho trvá, než miska uschne?"
+  ],
+  [
+   2,
+   "Keramička",
+   "Zhruba týden. Pak jde do pece."
+  ],
+  [
+   3,
+   "Tvůrce videa",
+   "Tak to se na výpal určitě přijdu podívat."
+  ]
+ ],
+ "genders": {
+  "Keramička": "f",
+  "Tvůrce videa": "m"
+ },
+ "props": []
+}

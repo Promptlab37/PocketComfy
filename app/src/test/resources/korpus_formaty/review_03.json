@@ -1,0 +1,27 @@
+{
+ "name": "vypravěč s podáním a V.O.",
+ "text": "OKNO 1\nRáno nad městem.\nVypravěč (klidně): Bylo nebylo jedno město.\nOKNO 2\nTramvaj projíždí ulicí.\nVYPRAVĚČ (V.O.): A v něm žila Jana.\nOKNO 3\nJana mává z okna.\nJana: „Dobré ráno!“",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Bylo nebylo jedno město."
+  ],
+  [
+   2,
+   "Vypravěč",
+   "A v něm žila Jana."
+  ],
+  [
+   3,
+   "Jana",
+   "Dobré ráno!"
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "?",
+  "Jana": "f"
+ },
+ "props": []
+}

@@ -1,0 +1,52 @@
+{
+ "name": "10 oken, sportovní zápas, víc mluvčích",
+ "text": "STORYBOARD – Rozhodující penalta\nFormát: 16:9, přibližně 40 sekund.\nPostavy:\nKuba: 12 let, krátké černé vlasy, žlutý dres s číslem 9, černé trenýrky\nTrenér Milan: 50 let, plešatý, šedivý knír, tmavě modrá šusťáková bunda\nAdéla: 12 let, blond cop, zelený dres brankářky, rukavice\nTáta Kuby: 42 let, kšiltovka, žlutá šála stejného klubu\nRekvizity:\nMíč: bílo-černý fotbalový míč\nPíšťalka: stříbrná píšťalka na šňůrce\nKontinuita: vesnické hřiště, podvečer, Kuba má celou dobu žlutý dres s číslem 9\n\n[OKNO 1 | 0–4 s] Stav\nObraz: Ukazatel skóre 1:1, poslední minuta, hráči sedí na lavičce.\nEmoce: napětí\nZvuk: šum diváků\nText na videu: „1:1 – 90. minuta“\n\n[OKNO 2 | 4–8 s] Faul\nObraz: Kuba běží s míčem a v šestnáctce upadne. Rozhodčí píská.\nEmoce: dramatická\nZvuk: hvizd píšťalky\n\n[OKNO 3 | 8–12 s] Rozhodnutí\nObraz: Trenér Milan ukáže na Kubu.\nEmoce: důvěra\nTrenér Milan (rozhodně): „Kubo, kopeš ty.“\nZvuk: ztichnutí diváků\n\n[OKNO 4 | 12–16 s] Pochybnost\nObraz: Kuba zbledne a podívá se na tribunu.\nEmoce: strach\nKuba (nejistě): „Já? Ale co když to nedám?“\nZvuk: tlukot srdce\n\n[OKNO 5 | 16–20 s] Táta\nObraz: Táta Kuby na tribuně zvedne palec.\nEmoce: podpora\nTáta Kuby (volá): „Věřím ti, kamaráde!“\nZvuk: tlukot srdce pokračuje\n\n[OKNO 6 | 20–24 s] Brankářka\nObraz: Adéla v bráně se připraví a tleskne rukavicemi.\nEmoce: soupeřivost\nAdéla (sebevědomě): „Tak ukaž, co umíš.“\nZvuk: tlesknutí rukavic\n\n[OKNO 7 | 24–28 s] Rozběh\nObraz: Kuba postaví míč na značku, pár kroků couvne a nadechne se.\nEmoce: soustředění\nZvuk: ticho, vítr\n\n[OKNO 8 | 28–32 s] Kop\nObraz: Zpomalený záběr – Kuba kope, Adéla skáče na opačnou stranu.\nEmoce: vyvrcholení\nZvuk: dunivé kopnutí\n\n[OKNO 9 | 32–36 s] Gól\nObraz: Míč zavlní síť, spoluhráči se vrhnou na Kubu.\nEmoce: euforie\nKuba (křičí radostí): „Góóól!“\nZvuk: jásot, hvizd konce zápasu\n\n[OKNO 10 | 36–40 s] Fair play\nObraz: Adéla přijde a podá Kubovi ruku.\nEmoce: respekt\nAdéla (s úsměvem): „Dobrá rána. Příště ji chytím.“\nKuba (smíchem): „To uvidíme!“\nZvuk: potlesk\nText na videu: „Hrajeme fér“\n",
+ "windows": 10,
+ "lines": [
+  [
+   3,
+   "Trenér Milan",
+   "Kubo, kopeš ty."
+  ],
+  [
+   4,
+   "Kuba",
+   "Já? Ale co když to nedám?"
+  ],
+  [
+   5,
+   "Táta Kuby",
+   "Věřím ti, kamaráde!"
+  ],
+  [
+   6,
+   "Adéla",
+   "Tak ukaž, co umíš."
+  ],
+  [
+   9,
+   "Kuba",
+   "Góóól!"
+  ],
+  [
+   10,
+   "Adéla",
+   "Dobrá rána. Příště ji chytím."
+  ],
+  [
+   10,
+   "Kuba",
+   "To uvidíme!"
+  ]
+ ],
+ "genders": {
+  "Kuba": "m",
+  "Trenér Milan": "m",
+  "Adéla": "f",
+  "Táta Kuby": "m"
+ },
+ "props": [
+  "Míč",
+  "Píšťalka"
+ ]
+}

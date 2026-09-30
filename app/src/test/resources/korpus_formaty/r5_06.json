@@ -1,0 +1,33 @@
+{
+  "name": "Reklama – Pekárna U Kláska",
+  "text": "REKLAMNÍ SPOT 20 s – PEKÁRNA U KLÁSKA\n\nOKNO 1\nObraz: Ranní ulice, rozsvícená výloha pekárny, pára z komína.\nHudba: klidná kytara\nVypravěč (mužský hlas, klidný): „Když město ještě spí, u nás už voní chleba.“\n\nOKNO 2\nObraz: Pekař vytahuje z pece křupavé bochníky.\nPekař: „Kvas máme vlastní už třicet let.“\n\nOKNO 3\nObraz: Zákaznice si přebírá papírový sáček, usmívá se.\nZákaznice: „Tenhle chleba si dávám každé ráno.“\n\nOKNO 4\nObraz: Logo pekárny na dřevěném prkénku.\nText: PEKÁRNA U KLÁSKA – POCTIVĚ OD ROKU 1995\nVypravěč: „Pekárna U Kláska. Chleba, jak má být.“\nCTA na obrazovce: Najdete nás na Hlavní 12",
+  "windows": 4,
+  "lines": [
+    [
+      1,
+      "Vypravěč",
+      "Když město ještě spí, u nás už voní chleba."
+    ],
+    [
+      2,
+      "Pekař",
+      "Kvas máme vlastní už třicet let."
+    ],
+    [
+      3,
+      "Zákaznice",
+      "Tenhle chleba si dávám každé ráno."
+    ],
+    [
+      4,
+      "Vypravěč",
+      "Pekárna U Kláska. Chleba, jak má být."
+    ]
+  ],
+  "genders": {
+    "Vypravěč": "m",
+    "Pekař": "m",
+    "Zákaznice": "f"
+  },
+  "props": []
+}

@@ -1,0 +1,42 @@
+{
+ "name": "Rovné uvozovky \"…\", čas '(0-6s)' se spojovníkem, tři tečky '...' jako ASCII, role Soused, nadpis filmu na prvním řádku",
+ "text": "Soused na chodbě\n\nOkno 1 (0-6s)\nChodba paneláku. Martin nese tašky s nákupem, u výtahu stojí soused.\nSoused: \"Dobrý den, jedete taky do pátého?\"\nMartin: \"Jo, zmáčknu to.\"\n\nOkno 2 (6-12s)\nVe výtahu. Soused ukáže na tašku s moukou.\nSoused: \"Budete péct?\"\nMartin: \"Buchty. Mamka přijede na návštěvu.\"\n\nOkno 3 (12-18s)\nDveře výtahu se otevřou.\nSoused: \"Tak ať se vydaří. A kdyby něco zbylo...\"\nMartin: \"Zazvoním, slibuju.\"\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Soused",
+   "Dobrý den, jedete taky do pátého?"
+  ],
+  [
+   1,
+   "Martin",
+   "Jo, zmáčknu to."
+  ],
+  [
+   2,
+   "Soused",
+   "Budete péct?"
+  ],
+  [
+   2,
+   "Martin",
+   "Buchty. Mamka přijede na návštěvu."
+  ],
+  [
+   3,
+   "Soused",
+   "Tak ať se vydaří. A kdyby něco zbylo..."
+  ],
+  [
+   3,
+   "Martin",
+   "Zazvoním, slibuju."
+  ]
+ ],
+ "genders": {
+  "Soused": "m",
+  "Martin": "m"
+ },
+ "props": []
+}

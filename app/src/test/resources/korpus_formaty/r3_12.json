@@ -1,0 +1,24 @@
+{
+ "name": "na konci Poznámky k produkci s citovanými příklady",
+ "text": "STORYBOARD – Kočka a klubíčko\nFormát: 9:16, přibližně 12 sekund.\nPostavy:\nHana: 55 let, krátké šedé vlasy, vínový pletený svetr, brýle na řetízku\nRekvizity:\nKlubíčko: velké klubko modré vlny\nMicka: mourovatá kočka s bílými tlapkami\nKontinuita: obývák s křeslem a lampou, večer, Hana má celou dobu vínový svetr\n\n[OKNO 1 | 0–4 s] Pletení\nObraz: Hana plete v křesle, klubíčko leží u jejích nohou. Micka ho pozoruje.\nEmoce: klid\nHana (spokojeně): „Ještě pár řad a šála je hotová.“\nZvuk: cvakání jehlic, praskání krbu\n\n[OKNO 2 | 4–8 s] Útok\nObraz: Micka skočí na klubíčko a odkutálí ho pod stůl.\nEmoce: rozpustilost\nZvuk: dupot tlapek\n\n[OKNO 3 | 8–12 s] Zamotaná\nObraz: Micka leží zamotaná ve vlně a nevinně mrká.\nEmoce: humor, něha\nHana (se smíchem): „Tak takhle ty mi pomáháš?“\nZvuk: předení\nText na videu: „Pomocnice roku“\n\nPoznámky k produkci:\n- Kočka musí být ve všech oknech stejná (mourovatá, bílé tlapky).\n- Repliky držet krátké; u okna 3 je důležitý smích v hlase, ne slova typu „Micko, nech toho“ – ta nechceme.\n- Světlo teplé, jako od lampy, žádné modré tóny.\n- Hudbu přidat až ve střižně.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Hana",
+   "Ještě pár řad a šála je hotová."
+  ],
+  [
+   3,
+   "Hana",
+   "Tak takhle ty mi pomáháš?"
+  ]
+ ],
+ "genders": {
+  "Hana": "f"
+ },
+ "props": [
+  "Klubíčko",
+  "Micka"
+ ]
+}

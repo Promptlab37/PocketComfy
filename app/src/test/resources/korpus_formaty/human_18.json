@@ -1,0 +1,42 @@
+{
+ "name": "Každý řádek s odrážkou '• ', mnoho prázdných řádků, čas '(0-4s)', obsazení jen v akci (student Jakub, Natálie)",
+ "text": "• Okno 1 (0-4s)\n\n\n• Autobusová zastávka, prší. Student Jakub čeká s deštníkem.\n\n• Vedle něj stojí dívka bez deštníku, Natálie.\n\n\n• Jakub: Chcete se schovat?\n\n• Natálie: To by bylo moc milé, díky.\n\n\n\n• Okno 2 (4-8s)\n\n• Oba pod jedním deštníkem.\n• Natálie: Jezdíte tímhle autobusem často?\n• Jakub: Každý den do školy.\n\n\n• Okno 3 (8-12s)\n• Přijíždí autobus.\n• Jakub: Tak třeba zítra zase.\n• Natálie: Ráda.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Jakub",
+   "Chcete se schovat?"
+  ],
+  [
+   1,
+   "Natálie",
+   "To by bylo moc milé, díky."
+  ],
+  [
+   2,
+   "Natálie",
+   "Jezdíte tímhle autobusem často?"
+  ],
+  [
+   2,
+   "Jakub",
+   "Každý den do školy."
+  ],
+  [
+   3,
+   "Jakub",
+   "Tak třeba zítra zase."
+  ],
+  [
+   3,
+   "Natálie",
+   "Ráda."
+  ]
+ ],
+ "genders": {
+  "Jakub": "m",
+  "Natálie": "f"
+ },
+ "props": []
+}

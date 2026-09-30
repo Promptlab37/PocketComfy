@@ -1,0 +1,32 @@
+{
+  "name": "AI ChatGPT – narozeniny Tomáše",
+  "text": "Jasně! Tady je krátký storyboard na video o narozeninách:\n\n**Postavy:**\n- Jana – maminka, 35 let\n- Tomáš – syn, 8 let\n\n---\n\n**OKNO 1**\n*Obraz:* Obývák ozdobený balónky, Tomáš vchází dovnitř s rukama přes oči.\n*Dialog:*\nJana: „Tak, Tome, teď můžeš otevřít oči!“\n\n**OKNO 2**\n*Obraz:* Detail Tomášova překvapeného obličeje.\n*Dialog:*\nTomáš: „Páni, to je dort s dinosaurem!“\n\n**OKNO 3**\n*Obraz:* Jana zapaluje svíčky, na dortu svítí číslo 8.\n*Dialog:*\nJana: „Všechno nejlepší, zlatíčko. Přej si něco.“\n\n**OKNO 4**\n*Obraz:* Tomáš sfoukne svíčky, konfety padají.\n*Hudba:* veselá dětská melodie\n*Dialog:*\nTomáš: „Mami, to je nejlepší den!“\n\n---\n\nChceš, abych k tomu přidal i popis kamery nebo délku jednotlivých oken?",
+  "windows": 4,
+  "lines": [
+    [
+      1,
+      "Jana",
+      "Tak, Tome, teď můžeš otevřít oči!"
+    ],
+    [
+      2,
+      "Tomáš",
+      "Páni, to je dort s dinosaurem!"
+    ],
+    [
+      3,
+      "Jana",
+      "Všechno nejlepší, zlatíčko. Přej si něco."
+    ],
+    [
+      4,
+      "Tomáš",
+      "Mami, to je nejlepší den!"
+    ]
+  ],
+  "genders": {
+    "Jana": "f",
+    "Tomáš": "m"
+  },
+  "props": []
+}

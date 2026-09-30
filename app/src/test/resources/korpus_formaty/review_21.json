@@ -1,0 +1,32 @@
+{
+ "name": "čas před značkou záběru",
+ "text": "Postavy:\nJana: 30 let, kabát\nPetr: 33 let, šála\n\n00:00–00:03 — Záběr 1\nJana čeká na zastávce.\nJana: „Zase mešká.“\n00:03–00:06 — Záběr 2\nPetr přibíhá.\nPetr: „Promiň!“",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Jana",
+   "Zase mešká."
+  ],
+  [
+   2,
+   "Petr",
+   "Promiň!"
+  ]
+ ],
+ "genders": {
+  "Jana": "f",
+  "Petr": "m"
+ },
+ "props": [],
+ "times": [
+  [
+   0,
+   3
+  ],
+  [
+   3,
+   6
+  ]
+ ]
+}

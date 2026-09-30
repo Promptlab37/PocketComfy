@@ -1,0 +1,35 @@
+{
+ "name": "Úvodní a závěrečná chatovací věta, okna jako číslovaný markdown seznam '1. **Název (0–6 s)**' s odsazeným obsahem, způsob holými slovy ('Ondřej si pro sebe:', 'Veronika se smíchem:'), akční věta 'Oba současně…'",
+ "text": "Jasně! Tady je návrh krátkého filmu podle šablony:\n\n**STORYBOARD – Rande naslepo**\nFormát: 9:16, přibližně 30 sekund.\n\nPostavy:\n- Ondřej: 32 let, tmavé vlasy, béžové sako, bílá košile\n- Veronika: 30 let, rudé vlasy, zelené šaty\n- Číšník: 50 let, černý frak, motýlek\n\nRekvizity:\n- Růže: jedna červená růže v celofánu\n\n1. **Příchod (0–6 s)**\n   Obraz: Ondřej sedí s růží a nervózně kouká na hodinky.\n   Ondřej si pro sebe: „Snad přijde.“\n\n2. **Setkání (6–12 s)**\n   Obraz: Veronika přichází, oba se ve stejnou chvíli postaví a srazí se hlavami.\n   Veronika se smíchem: „Au. Tak to je začátek.“\n   Ondřej rozpačitě: „Aspoň si nás zapamatujou.“\n\n3. **Objednávka (12–20 s)**\n   Obraz: Číšník stojí u stolu s bločkem.\n   Číšník: „Co si dáte?“\n   Oba současně ukážou na stejné jídlo.\n\n4. **Konec (20–30 s)**\n   Obraz: Oba se smějí, růže leží na stole mezi nimi.\n   Text na videu: „Pokračování příště?“\n\nChceš ještě upravit délku nebo přidat hudbu?",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Ondřej",
+   "Snad přijde."
+  ],
+  [
+   2,
+   "Veronika",
+   "Au. Tak to je začátek."
+  ],
+  [
+   2,
+   "Ondřej",
+   "Aspoň si nás zapamatujou."
+  ],
+  [
+   3,
+   "Číšník",
+   "Co si dáte?"
+  ]
+ ],
+ "genders": {
+  "Ondřej": "m",
+  "Veronika": "f",
+  "Číšník": "m"
+ },
+ "props": [
+  "Růže"
+ ]
+}

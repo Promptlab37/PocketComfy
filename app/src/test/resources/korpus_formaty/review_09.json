@@ -1,0 +1,27 @@
+{
+ "name": "Martin a Martina",
+ "text": "Postavy:\nMartin: 30 let, modrá košile\nMartina: 28 let, žluté šaty\n\nOKNO 1\nPár u snídaně.\nMartina: „Podáš mi sůl?“\nMartin: „Jasně.“\nOKNO 2\nMartina se usměje.\nMartina: „Díky.“",
+ "windows": 2,
+ "lines": [
+  [
+   1,
+   "Martina",
+   "Podáš mi sůl?"
+  ],
+  [
+   1,
+   "Martin",
+   "Jasně."
+  ],
+  [
+   2,
+   "Martina",
+   "Díky."
+  ]
+ ],
+ "genders": {
+  "Martin": "m",
+  "Martina": "f"
+ },
+ "props": []
+}

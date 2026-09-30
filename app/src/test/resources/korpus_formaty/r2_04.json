@@ -1,0 +1,33 @@
+{
+ "name": "EN/CZ mix: 'Cast:' inline with English roles, SHOT n | time, Visual:/SFX:/Music:/On-screen text:/End card:, 'Mrs.' title, English delivery (proudly)",
+ "text": "SHORT VIDEO – \"First Day at School\"\nCast: Lucie (mom), Ondra (son, 6), Mrs. Horáková (teacher)\n\nSHOT 1 | 0:00–0:03\nVisual: Front door, Ondra with a huge backpack.\nSFX: door creak\nLucie: „Máš svačinu? A pití?“\n\nSHOT 2 | 0:03–0:07\nVisual: Ondra nods, very serious.\nOndra (proudly): \"Mami, já už jsem školák.\"\n\nSHOT 3 | 0:07–0:12\nVisual: Classroom, the teacher kneels down to Ondra.\nMrs. Horáková: „Ahoj Ondro, vítej v první třídě.“\nOndra: \"Dobrý den. Můžu sedět u okna?\"\n\nSHOT 4 | 0:12–0:15\nOn-screen text: \"Velký den. Malý krok.\"\nMusic: upbeat ukulele\nEnd card: LOGO",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Lucie",
+   "Máš svačinu? A pití?"
+  ],
+  [
+   2,
+   "Ondra",
+   "Mami, já už jsem školák."
+  ],
+  [
+   3,
+   "Mrs. Horáková",
+   "Ahoj Ondro, vítej v první třídě."
+  ],
+  [
+   3,
+   "Ondra",
+   "Dobrý den. Můžu sedět u okna?"
+  ]
+ ],
+ "genders": {
+  "Lucie": "f",
+  "Ondra": "m",
+  "Mrs. Horáková": "f"
+ },
+ "props": []
+}

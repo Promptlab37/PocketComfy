@@ -1,0 +1,33 @@
+{
+ "name": "Ad spot: 'Záběr č. n (time)', Obraz:, VO with gender+delivery in parens, VO split over 2 windows, Slogan:/CTA:/Logo: not spoken, roles Prodavačka/Holčička",
+ "text": "REKLAMNÍ SPOT – PEKÁRNA U ZLATÉHO KLASU (20 s)\nFormát: 9:16, Reels\n\nZáběr č. 1 (0–3 s)\nObraz: Ruce hnětou těsto, mouka ve vzduchu.\nVO (mužský hlas, klidně): Každé ráno ve čtyři, když město ještě spí...\n\nZáběr č. 2 (3–7 s)\nObraz: Pec se otevírá, zlaté bochníky.\nVO: A my už pečeme váš chleba.\nZvuk: praskání kůrky\n\nZáběr č. 3 (7–12 s)\nObraz: Prodavačka podává rohlíky malé holčičce.\nProdavačka: „Tady máš, ještě jsou teplé.“\nHolčička: „Děkuju!“\n\nZáběr č. 4 (12–16 s)\nObraz: Pomalý nájezd na pult plný pečiva.\nSlogan: U Zlatého klasu. Poctivě od čtyř ráno.\n\nZáběr č. 5 (16–20 s)\nObraz: Logo na dřevěném pozadí.\nCTA: Objednávejte na zlatyklas.cz\nLogo: Pekárna U Zlatého klasu",
+ "windows": 5,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Každé ráno ve čtyři, když město ještě spí..."
+  ],
+  [
+   2,
+   "Vypravěč",
+   "A my už pečeme váš chleba."
+  ],
+  [
+   3,
+   "Prodavačka",
+   "Tady máš, ještě jsou teplé."
+  ],
+  [
+   3,
+   "Holčička",
+   "Děkuju!"
+  ]
+ ],
+ "genders": {
+  "Vypravěč": "m",
+  "Prodavačka": "f",
+  "Holčička": "f"
+ },
+ "props": []
+}

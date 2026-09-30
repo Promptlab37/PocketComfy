@@ -1,0 +1,43 @@
+{
+ "name": "Kopie z Wordu: okna '1.' + titulek okna na dalším řádku, tabulátor mezi mluvčím a replikou, nadpis VELKÝMI, děti Filip a Klárka",
+ "text": "KRÁTKÝ FILM – DÁREK PRO MÁMU\n\n1.\nPapírnictví\nDvanáctiletý Filip a jeho sestra Klárka stojí u regálu s přáníčky.\nFilip:\tTohle je hezké, ne?\nKlárka:\tJe tam kočka. Máma má radši psy.\n\n2.\nPokladna\nProdavačka se na ně usměje.\nProdavačka:\tHledáte něco k narozeninám?\nKlárka:\tPro mámu. Má zítra padesát.\n\n3.\nUlice\nFilip nese přání a kytičku.\nFilip:\tDoufám, že se jí to bude líbit.\nKlárka:\tBude. Hlavně ji obejmi.\n",
+ "windows": 3,
+ "lines": [
+  [
+   1,
+   "Filip",
+   "Tohle je hezké, ne?"
+  ],
+  [
+   1,
+   "Klárka",
+   "Je tam kočka. Máma má radši psy."
+  ],
+  [
+   2,
+   "Prodavačka",
+   "Hledáte něco k narozeninám?"
+  ],
+  [
+   2,
+   "Klárka",
+   "Pro mámu. Má zítra padesát."
+  ],
+  [
+   3,
+   "Filip",
+   "Doufám, že se jí to bude líbit."
+  ],
+  [
+   3,
+   "Klárka",
+   "Bude. Hlavně ji obejmi."
+  ]
+ ],
+ "genders": {
+  "Filip": "m",
+  "Klárka": "f",
+  "Prodavačka": "f"
+ },
+ "props": []
+}

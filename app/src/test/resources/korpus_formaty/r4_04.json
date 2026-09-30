@@ -1,0 +1,35 @@
+{
+ "name": "Anglické popisky (SHOT, SFX, ON SCREEN) + české repliky + způsob v závorce ZA uvozovkou + víceslovná role + trojtečky uvnitř repliky",
+ "text": "SHORT: \"Parkování\"\nCHARACTERS: Martin (male, 30s), Petra (female, 30s), Parking attendant (male, 60)\nPROPS: parking ticket\n\nSHOT 1 – EXT. PARKING LOT – DAY\nMartin backs the car into a tight spot. Petra watches the mirror.\nPETRA: \"Ještě kousek… ještě… stop!\" (panicky)\n\nSHOT 2\nMARTIN: \"V pohodě, mám to pod kontrolou.\" (confident)\nSFX: crunch of plastic\n\nSHOT 3\nThe attendant knocks on the window.\nPARKING ATTENDANT: \"Dobrý den, tady se parkuje jen s lístkem.\" (dry)\nON SCREEN: \"Parkoviště P2\"\n\nSHOT 4\nMartin hands over the parking ticket. Petra hides her face.\nMARTIN: \"Tady je.\" (quietly)",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Petra",
+   "Ještě kousek… ještě… stop!"
+  ],
+  [
+   2,
+   "Martin",
+   "V pohodě, mám to pod kontrolou."
+  ],
+  [
+   3,
+   "Parking attendant",
+   "Dobrý den, tady se parkuje jen s lístkem."
+  ],
+  [
+   4,
+   "Martin",
+   "Tady je."
+  ]
+ ],
+ "genders": {
+  "Petra": "f",
+  "Martin": "m",
+  "Parking attendant": "m"
+ },
+ "props": [
+  "parking ticket"
+ ]
+}

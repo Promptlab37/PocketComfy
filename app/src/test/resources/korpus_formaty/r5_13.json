@@ -1,0 +1,49 @@
+{
+  "name": "AI Claude – nedělní večeře",
+  "text": "# Nedělní večeře – scénář krátkého videa\n\n**Postavy**\n- **Táta** (Jiří, 45)\n- **Máma** (Lenka, 43)\n- **Ondra** (syn, 14)\n- **Babička** (72)\n\n### Okno 1 – Kuchyň\nMáma vytahuje z trouby pekáč s kuřetem.\n**Máma:** „Večeře! Všichni ke stolu, ať to nevystydne.“\n\n### Okno 2 – Pokoj\nOndra leží na posteli se sluchátky, neslyší.\n*Zvuk: tlumená hudba ze sluchátek*\n\n### Okno 3 – Chodba\nTáta klepe na Ondrovy dveře.\n**Táta:** „Ondro, sluchátka dolů, jde se jíst.“\n\n### Okno 4 – Jídelna\nBabička už sedí u stolu a skládá ubrousky.\n**Babička:** „Já jsem tu první, jako vždycky.“\n\n### Okno 5 – Jídelna, celek\nVšichni sedí, máma nabírá. Ondra se konečně objeví.\n**Ondra:** „Promiňte, dohrával jsem zápas.“\n**Táta:** „A vyhrál jsi aspoň?“\n\n### Okno 6 – Detail Ondry\nOndra se zašklebí.\n**Ondra:** „Ne. Ale příště určitě.“\n\n### Okno 7 – Jídelna\nBabička podává Ondrovi největší stehno.\n**Babička:** „Na, ať máš sílu na ten zápas.“\n\n### Okno 8 – Závěr\nKamera pomalu odjíždí od okna, rodina se u stolu směje.\n*Hudba: jemné piano*\n*Text na obrazovce: Nejlepší zápasy se hrají u stolu.*\n\n---\nPokud budeš chtít, můžu přidat i časování jednotlivých oken.",
+  "windows": 8,
+  "lines": [
+    [
+      1,
+      "Máma",
+      "Večeře! Všichni ke stolu, ať to nevystydne."
+    ],
+    [
+      3,
+      "Táta",
+      "Ondro, sluchátka dolů, jde se jíst."
+    ],
+    [
+      4,
+      "Babička",
+      "Já jsem tu první, jako vždycky."
+    ],
+    [
+      5,
+      "Ondra",
+      "Promiňte, dohrával jsem zápas."
+    ],
+    [
+      5,
+      "Táta",
+      "A vyhrál jsi aspoň?"
+    ],
+    [
+      6,
+      "Ondra",
+      "Ne. Ale příště určitě."
+    ],
+    [
+      7,
+      "Babička",
+      "Na, ať máš sílu na ten zápas."
+    ]
+  ],
+  "genders": {
+    "Máma": "f",
+    "Táta": "m",
+    "Babička": "f",
+    "Ondra": "m"
+  },
+  "props": []
+}

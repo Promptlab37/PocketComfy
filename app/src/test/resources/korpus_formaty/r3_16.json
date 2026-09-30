@@ -1,0 +1,69 @@
+{
+ "name": "12 oken, školní výlet, krátká okna, vypravěčka i postavy",
+ "text": "STORYBOARD – Školní výlet na hrad\nFormát: 16:9, přibližně 36 sekund.\nPostavy:\nPan učitel Hora: 38 let, hnědé vousy, zelená outdoorová bunda, batoh\nAnička: 10 let, dva copy, růžová bunda, fialová čepice\nOndra: 10 let, černé ježaté vlasy, modrá mikina, kšiltovka obráceně\nPrůvodkyně: 30 let, dobový kostým – dlouhé hnědé šaty a čepec\nVypravěčka: ženský hlas mimo obraz\nRekvizity:\nAutobus: žlutý školní autobus\nKlíč: obrovský starý železný klíč\nSvačina: řízek v alobalu\nKontinuita: slunečný jarní den, hrad na kopci, Anička má pořád fialovou čepici\n\n[OKNO 1 | 0–3 s] Odjezd\nObraz: Děti nastupují do autobusu.\nEmoce: vzrušení\nVypravěčka (vesele): „Třída čtyři B vyráží na dobrodružství.“\nZvuk: motor autobusu\n\n[OKNO 2 | 3–6 s] Cesta\nObraz: Ondra se nudí a lepí nos na okno.\nEmoce: nuda\nOndra (otráveně): „Už tam budeme?“\nZvuk: jízda\n\n[OKNO 3 | 6–9 s] Odpověď\nObraz: Pan učitel se otočí dozadu a usměje se.\nEmoce: trpělivost\nPan učitel Hora (klidně): „Ještě jedna zatáčka, Ondro.“\nZvuk: blinkr\n\n[OKNO 4 | 9–12 s] Hrad\nObraz: Z lesa se vynoří hrad na kopci.\nEmoce: úžas\nAnička (užasle): „Ten je obrovský!“\nZvuk: fanfáry\n\n[OKNO 5 | 12–15 s] Brána\nObraz: U brány čeká průvodkyně v dobovém kostýmu s obrovským klíčem.\nEmoce: tajemno\nPrůvodkyně (vznešeně): „Vítejte, urození pánové a dámy.“\nZvuk: skřípot brány\n\n[OKNO 6 | 15–18 s] Smích\nObraz: Děti se chichotají, Ondra se ukloní.\nEmoce: legrace\nZvuk: smích dětí\n\n[OKNO 7 | 18–21 s] Rytířský sál\nObraz: Děti procházejí sálem plným brnění.\nEmoce: zvědavost\nOndra (šeptem): „Myslíš, že v tom někdo je?“\nZvuk: ozvěna kroků\n\n[OKNO 8 | 21–24 s] Brnění\nObraz: Anička se opatrně dotkne brnění, to zacinká.\nEmoce: leknutí\nAnička (vyjekne): „Au! Hýbe se!“\nZvuk: kovové zacinkání\n\n[OKNO 9 | 24–27 s] Vysvětlení\nObraz: Průvodkyně se směje a klepe na brnění.\nEmoce: úleva\nPrůvodkyně (pobaveně): „Neboj, rytíř Jindřich spí už pět set let.“\nZvuk: smích\n\n[OKNO 10 | 27–30 s] Svačina\nObraz: Na nádvoří děti rozbalují řízky z alobalu.\nEmoce: pohoda\nZvuk: šustění alobalu, ptáci\nText na videu: „Nejlepší část výletu“\n\n[OKNO 11 | 30–33 s] Foto\nObraz: Celá třída se fotí před hradem.\nEmoce: radost\nPan učitel Hora (vesele): „Všichni řekněte sýr!“\nZvuk: cvaknutí fotoaparátu\n\n[OKNO 12 | 33–36 s] Návrat\nObraz: Autobus odjíždí do západu slunce, děti spí.\nEmoce: spokojenost\nVypravěčka (tiše): „A cestou domů už nikdo nemluvil.“\nZvuk: tiché oddechování, motor\n",
+ "windows": 12,
+ "lines": [
+  [
+   1,
+   "Vypravěč",
+   "Třída čtyři B vyráží na dobrodružství."
+  ],
+  [
+   2,
+   "Ondra",
+   "Už tam budeme?"
+  ],
+  [
+   3,
+   "Pan učitel Hora",
+   "Ještě jedna zatáčka, Ondro."
+  ],
+  [
+   4,
+   "Anička",
+   "Ten je obrovský!"
+  ],
+  [
+   5,
+   "Průvodkyně",
+   "Vítejte, urození pánové a dámy."
+  ],
+  [
+   7,
+   "Ondra",
+   "Myslíš, že v tom někdo je?"
+  ],
+  [
+   8,
+   "Anička",
+   "Au! Hýbe se!"
+  ],
+  [
+   9,
+   "Průvodkyně",
+   "Neboj, rytíř Jindřich spí už pět set let."
+  ],
+  [
+   11,
+   "Pan učitel Hora",
+   "Všichni řekněte sýr!"
+  ],
+  [
+   12,
+   "Vypravěč",
+   "A cestou domů už nikdo nemluvil."
+  ]
+ ],
+ "genders": {
+  "Pan učitel Hora": "m",
+  "Anička": "f",
+  "Ondra": "m",
+  "Průvodkyně": "f",
+  "Vypravěč": "f"
+ },
+ "props": [
+  "Autobus",
+  "Klíč",
+  "Svačina"
+ ]
+}

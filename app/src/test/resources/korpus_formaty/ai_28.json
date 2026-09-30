@@ -1,0 +1,35 @@
+{
+ "name": "Šablona s drobnými odchylkami: obsazení 'Jméno (věk): popis', čas '0–5s' bez mezery, způsob za pomlčkou ('Rozálie – plačtivě:')",
+ "text": "STORYBOARD – Ztracený kocour\nFormát: 9:16, přibližně 26 sekund.\nPostavy:\nRozálie (10): drobná holčička, rezavé copy, žlutá pláštěnka\nPan Hrubý (70): soused, plešatý, zelená bunda, holinky\nHasič Milan (35): hasičská uniforma, přilba\nRekvizity:\nŽebřík: dlouhý hliníkový\nKontinuita: prší po celou dobu.\n\n[OKNO 1 | 0–5s] Strom\nObraz: Rozálie ukazuje nahoru do koruny stromu.\nRozálie – plačtivě: „Mourek je nahoře a nemůže dolů!“\n\n[OKNO 2 | 5–10s] Soused\nObraz: Pan Hrubý přinese žebřík, ale je krátký.\nPan Hrubý – zadýchaně: „Chybí mi tak dva metry.“\n\n[OKNO 3 | 10–17s] Hasiči\nObraz: Přijíždí hasičské auto, Milan vyleze po velkém žebříku.\nHasič Milan – klidně: „Pojď sem, kamaráde.“\nZvuk: siréna, déšť\n\n[OKNO 4 | 17–26s] Překvapení\nObraz: Kocour seskočí sám po větvích a otírá se Rozálii o nohy. Milan zůstane nahoře.\nHasič Milan – z výšky: „Tak mě teď sundejte vy.“\nText na videu: „Kočky mají vlastní plán.“",
+ "windows": 4,
+ "lines": [
+  [
+   1,
+   "Rozálie",
+   "Mourek je nahoře a nemůže dolů!"
+  ],
+  [
+   2,
+   "Pan Hrubý",
+   "Chybí mi tak dva metry."
+  ],
+  [
+   3,
+   "Hasič Milan",
+   "Pojď sem, kamaráde."
+  ],
+  [
+   4,
+   "Hasič Milan",
+   "Tak mě teď sundejte vy."
+  ]
+ ],
+ "genders": {
+  "Rozálie": "f",
+  "Pan Hrubý": "m",
+  "Hasič Milan": "m"
+ },
+ "props": [
+  "Žebřík"
+ ]
+}
