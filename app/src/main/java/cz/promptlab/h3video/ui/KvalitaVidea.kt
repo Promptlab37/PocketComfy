@@ -41,16 +41,16 @@ import cz.promptlab.h3video.ui.theme.TextLow
  * storyboardu i Long MiniMax měly hodnoty natvrdo.
  */
 fun souhrnKvality(p: GenParams, sTeaCache: Boolean = true, sShiftem: Boolean = true): String = listOfNotNull(
-    if (p.sageAttention) t("Sage") else t("Plná kvalita"),
-    if (p.teaCache && sTeaCache) "TeaCache" else null,
-    if (sShiftem) t("zvuk %s").format("%.1f".format(p.shiftAudio)) else null,
+    if (p.sageAttention) t("Sage zapnutá") else t("Sage vypnutá"),
+    if (p.teaCache && sTeaCache) t("TeaCache zapnutá") else null,
+    if (sShiftem) t("shift zvuku %s").format("%.1f".format(p.shiftAudio)) else null,
 ).joinToString(" · ")
 
 /** Sekce v Nastavení. */
 @Composable
 fun KvalitaVideaNastaveni(vm: MainViewModel) {
     val params by vm.params.collectAsStateWithLifecycle()
-    SectionCard(title = t("Kvalita a rychlost videa"), stav = souhrnKvality(params)) {
+    SectionCard(title = t("Zrychlení a vzorkování"), stav = souhrnKvality(params)) {
         KvalitaVideaVolby(vm, params)
     }
 }
@@ -87,7 +87,7 @@ fun KvalitaVideaRadek(vm: MainViewModel, params: GenParams, sTeaCache: Boolean =
         val aktualni by vm.params.collectAsStateWithLifecycle()
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { otevreno = false },
-            title = { Text(t("Kvalita a rychlost videa")) },
+            title = { Text(t("Zrychlení a vzorkování")) },
             text = { KvalitaVideaVolby(vm, aktualni, sTeaCache, sShiftem) },
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = { otevreno = false }) { Text(t("Hotovo"), color = Cyan) }
@@ -107,10 +107,13 @@ fun KvalitaVideaRadek(vm: MainViewModel, params: GenParams, sTeaCache: Boolean =
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text(t("Kvalita videa"), style = MaterialTheme.typography.bodyMedium, color = TextHi)
-        // Na úzkém telefonu se souhrn zmenší, neuřízne (TextVesel).
-        androidx.compose.foundation.layout.Box(Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-            TextVesel(souhrnKvality(params, sTeaCache, sShiftem), style = MaterialTheme.typography.bodySmall, color = Cyan)
+        // Název a pod ním souhrn — vedle sebe se na telefon nevešly (souhrn se uřízl).
+        Column(Modifier.weight(1f)) {
+            Text(t("Zrychlení a vzorkování"), style = MaterialTheme.typography.bodyMedium, color = TextHi)
+            Text(
+                souhrnKvality(params, sTeaCache, sShiftem),
+                style = MaterialTheme.typography.bodySmall, color = Cyan,
+            )
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, Modifier.size(20.dp), tint = TextLow)
     }

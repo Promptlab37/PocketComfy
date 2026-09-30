@@ -126,7 +126,7 @@ enum class LongMmPozornost(private val titleCs: String, private val popisCs: Str
      * přebije i Sage zapnutou při startu serveru. Řídí ji společné nastavení
      * „Kvalita a rychlost videa“.
      */
-    PLNA("Plná kvalita", "");
+    PLNA("Bez Sage", "");
 
     val title: String get() = t(titleCs)
     val popis: String get() = t(popisCs)

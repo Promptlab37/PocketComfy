@@ -236,11 +236,12 @@ internal val SLOVNIK_D: Map<String, String> = mapOf(
     "Stahuji %s" to "Downloading %s",
 
     // ---- kvalita a rychlost videa, aktualizace, příprava (5.39–5.42)
-    "Plná kvalita" to "Full quality",
+    "Sage zapnutá" to "Sage on",
+    "Sage vypnutá" to "Sage off",
+    "TeaCache zapnutá" to "TeaCache on",
+    "shift zvuku %s" to "audio shift %s",
+    "Zrychlení a vzorkování" to "Acceleration and sampling",
     "Rozšířené nastavení" to "Advanced settings",
-    "Kvalita a rychlost videa" to "Video quality and speed",
-    "Kvalita videa" to "Video quality",
-    "zvuk %s" to "audio %s",
     "Sage Attention" to "Sage Attention",
     "Film už na serveru není." to "The film is no longer on the server.",
     "Příprava na počítači" to "Preparing on the computer",
