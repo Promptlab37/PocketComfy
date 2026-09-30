@@ -173,6 +173,8 @@ internal val SLOVNIK_D: Map<String, String> = mapOf(
     "Hlasitost hudby" to "Music volume",
     "Přidat hudbu" to "Add music",
     "Hudba je ve frontě." to "The music is in the queue.",
+    "Načíst ze souboru" to "Load from file",
+    "V souboru není text." to "The file has no text.",
     "hudba" to "music",
     "Přidat hudbu k poslednímu filmu" to "Add music to the last film",
     // Storyboard + scénář (5.14)

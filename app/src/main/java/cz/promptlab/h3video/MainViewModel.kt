@@ -4927,6 +4927,17 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Storyboard + scénář: text scénáře. Plán platí dál, dokud se nepřečte znovu. */
     fun setSbScenar(text: String) = updateSbFilm { it.copy(scenar = text) }
 
+    /** Scénář ze souboru .txt / .md / .docx / .pdf (5.20) — text jde do pole, jde upravit. */
+    fun nactiSbScenar(uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val text = withContext(Dispatchers.IO) { cz.promptlab.h3video.util.TextZeSouboru.nacti(getApplication(), uri) }
+            if (text.isNullOrBlank()) {
+                android.widget.Toast.makeText(getApplication(), t("V souboru není text."), android.widget.Toast.LENGTH_SHORT).show()
+            } else setSbScenar(text)
+        }
+    }
+
     fun setSbPomer(v: cz.promptlab.h3video.data.LongMmPomer) = updateSbFilm { it.copy(pomer = v, zadaniUseku = emptyList()) }
 
     fun setSbRozliseni(v: cz.promptlab.h3video.data.SbRozliseni) = updateSbFilm { it.copy(rozliseni = v) }

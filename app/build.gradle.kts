@@ -35,8 +35,8 @@ android {
         applicationId = "cz.promptlab.h3video"
         minSdk = 26
         targetSdk = 35
-        versionCode = 330
-        versionName = "5.19"
+        versionCode = 331
+        versionName = "5.20"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "GITHUB_TOKEN", "\"\"")
         buildConfigField("String", "DEFAULT_SERVER", "\"\"")
@@ -123,6 +123,8 @@ dependencies {
     implementation("androidx.media3:media3-ui:1.4.1")
 
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // Scénář ze souboru PDF (5.20) — text z PDF Android sám neumí. Apache 2.0.
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
 
     testImplementation("junit:junit:4.13.2")
     // org.json je v android.jar jen prázdná skořápka, která v testech hází

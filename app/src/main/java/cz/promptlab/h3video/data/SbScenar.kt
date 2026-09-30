@@ -208,13 +208,27 @@ object SbScenar {
      * Sjednocení zápisu: tučné písmo a nadpisy z markdownu, odrážky, emoji,
      * pomlčka před mluvčím pryč. Obsah se nemění.
      */
-    fun uprav(vstup: String): String = vstup.replace('\u00A0', ' ').replace("\r", "")
+    fun uprav(vstup: String): String = spojReplikyPresRadek(vstup.replace('\u00A0', ' ').replace("\r", ""))
         .replace(Regex("""[\u200B-\u200D\uFE0E\uFE0F]"""), "")
         .replace(Regex("""\p{So}"""), "")
         .replace("**", "").replace("__", "")
         .lines().joinToString("\n") { r ->
             r.replace(Regex("""^[ \t]*(?:#{1,6}[ \t]*|>[ \t]*)+"""), "").replace(Regex("""^[ \t]*[-•*–—][ \t]+"""), "")
         }
+
+    /**
+     * Replika „…“ zalomená přes řádek (PDF, úzké okno) se spojí — jinak by ji
+     * rozbor nenašel. Jen české uvozovky: „ otevírá, “ zavírá, jednoznačně.
+     */
+    private fun spojReplikyPresRadek(t: String): String {
+        var s = t
+        repeat(5) {
+            val dalsi = s.replace(Regex("""(„[^“”„\n]{0,300})\n[ \t]*(?=[^\n]*“)"""), "$1 ")
+            if (dalsi == s) return s
+            s = dalsi
+        }
+        return s
+    }
 
     // ------------------------------------------------------------------ časy
 

@@ -130,6 +130,14 @@ fun SbFilmSection(vm: MainViewModel) {
                     onClear = { vm.setSbScenar("") },
                     rostouci = true,
                 )
+                // Scénář ze souboru (5.20): ChatGPT ho často dá ke stažení jako PDF nebo Word.
+                val vyberSouboru = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { vm.nactiSbScenar(it) }
+                OutlineButton(t("Načíst ze souboru"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
+                    vyberSouboru.launch(arrayOf(
+                        "text/plain", "text/markdown", "text/x-markdown", "application/pdf",
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    ))
+                }
             }
             if (scene.zdroj == SbZdroj.DEJ) {
                 DarkTextField(

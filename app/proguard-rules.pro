@@ -18,3 +18,7 @@
 # Zachovat čitelné názvy zdrojových souborů a řádků v případném pádu.
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# PdfBox pro Android (5.20): JPEG 2000 dekodér je volitelný a v appce není.
+-dontwarn com.gemalto.jp2.**
+-dontwarn com.tom_roush.pdfbox.filter.JPXFilter
