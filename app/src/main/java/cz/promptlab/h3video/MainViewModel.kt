@@ -5529,6 +5529,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_CELE)) + List(minuleRadku) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) } + prompty,
         )
         viewModelScope.launch { try {
+            // Zvuk z čtení po řádcích (ZVUK/HUDBA) — do popisu panelu (1. 10. 2026).
+            val zvuky = java.util.concurrent.ConcurrentHashMap<Int, String>()
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
@@ -5601,6 +5603,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             )
                             opravene += cz.promptlab.h3video.data.SbFilmPlan.prectiRepliky(odpoved)
                             nalady += cz.promptlab.h3video.data.SbFilmPlan.prectiNalady(odpoved)
+                            zvuky += cz.promptlab.h3video.data.SbFilmPlan.prectiZvuky(odpoved)
                         }
                     }
                     Triple(prvni, opravene, nalady) to poRadcich
@@ -5612,7 +5615,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     // Repliky z ostřejšího čtení po řádcích mají přednost.
                     c.copy(panely = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(c.panely, repliky).map { p ->
                         // Nálada z řádků do popisu záběru → herecké podání.
-                        p.copy(popis = cz.promptlab.h3video.data.SbFilmPlan.doplnNaladu(p.popis, nalady[p.cislo]))
+                        p.copy(popis = cz.promptlab.h3video.data.SbFilmPlan.doplnZvuk(
+                            cz.promptlab.h3video.data.SbFilmPlan.doplnNaladu(p.popis, nalady[p.cislo]), zvuky[p.cislo]))
                     })
                 }
                 val plan = cz.promptlab.h3video.data.SbFilmPlan.naplanuj(cteni)

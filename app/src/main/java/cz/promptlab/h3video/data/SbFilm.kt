@@ -268,11 +268,12 @@ object SbFilmPlan {
     fun otazkaRadku(prvni: Int, posledni: Int): String =
         "This image is one row of a film storyboard: the shot panels numbered $prvni to $posledni, " +
             "left to right. Answer in plain lines only, one line per panel, exactly in this form: " +
-            "PANEL <number> | <every spoken line printed with that panel, with the speaker's name as " +
-            "printed, copied letter by letter exactly as printed, in its original language, as " +
-            "Speaker: \"line\", separated by ; — or none> | MOOD: <the text printed after EMOCE, " +
-            "NÁLADA, EMOTION or MOOD on that panel, copied exactly, or none>\n" +
-            "For example: PANEL 3 | ANNA: \"Kde je?\" | MOOD: Anna je netrpělivá.\n" +
+            "PANEL <number> | <every spoken line printed with that panel, always starting with the " +
+            "speaker's name printed before it, copied letter by letter exactly as printed, in its " +
+            "original language, as Speaker: \"line\", separated by ; — or none> | MOOD: <the text " +
+            "printed after EMOCE, NÁLADA, EMOTION or MOOD on that panel, copied exactly, or none> | " +
+            "SOUND: <the text printed after ZVUK, SOUND, SFX or HUDBA on that panel, copied exactly, or none>\n" +
+            "For example: PANEL 3 | ANNA: \"Kde je?\" | MOOD: Anna je netrpělivá. | SOUND: none\n" +
             "Keep the exact spelling, including colloquial words and punctuation. Do not translate or " +
             "correct anything. Text labelled as action, plot, description, emotion, mood or a note (for " +
             "example DĚJ, AKCE, POPIS, EMOCE) is not a spoken line — never put it among the lines. A " +
@@ -290,9 +291,53 @@ object SbFilmPlan {
             // Pole MOOD (od 5.10) do replik nepatří.
             // Třetí pole je nálada — i když model návěští MOOD vynechá (ověřeno
             // 29. 9. 2026), jinak by ji postava řekla nahlas.
-            val repliky = casti[1].takeUnless { NALADA_POLE.containsMatchIn(it) }.orEmpty()
-            n to repliky.takeUnless { it.equals("none", true) }.orEmpty().trim()
+            val repliky = casti[1].takeUnless { NALADA_POLE.containsMatchIn(it) || ZVUK_POLE.containsMatchIn(it) }.orEmpty()
+                .takeUnless { it.equals("none", true) }.orEmpty().trim()
+            n to repliky
         }.toMap()
+    }
+
+    /**
+     * Model občas vrátí repliku bez jména i bez uvozovek („Tak, pro dnešek už bylo
+     * internetu dost.“ — Příšera, 1. 10. 2026): appka ji pak nepoznala a celý film šel
+     * jako němý. Každý kus bez „Jméno:“ dostane výchozího mluvčího a uvozovky.
+     */
+    internal fun sMluvcim(repliky: String, vychozi: String): String {
+        if (repliky.isBlank()) return repliky
+        return repliky.split(Regex("""\s*;\s*(?=[^„“"]*(?:$|[„“"\p{L}]))""")).filter { it.isNotBlank() }.joinToString("; ") { kus ->
+            val k = kus.trim()
+            when {
+                Regex("""^[^„“":]{1,40}:\s*[„“"]""").containsMatchIn(k) -> k
+                Regex("""^[^„“":]{1,40}:\s*\S""").containsMatchIn(k) ->
+                    k.substringBefore(':').trim() + ": „" + k.substringAfter(':').trim().trim('"', '„', '“', '”') + "“"
+                else -> "$vychozi: „" + k.trim('"', '„', '“', '”') + "“"
+            }
+        }
+    }
+
+    /** Mluvčí, když jméno vynechá celé čtení i čtení řádku. */
+    const val VYCHOZI_MLUVCI = "Mluvčí"
+
+    private val ZVUK_POLE = Regex("""(?i)^\s*(SOUND|ZVUK|SFX)\s*:""")
+
+    /** Odpověď [otazkaRadku] → číslo panelu → zvuk (text za ZVUK / SOUND / SFX / HUDBA). */
+    fun prectiZvuky(text: String): Map<Int, String> {
+        val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
+        return radky.lines().mapNotNull { r ->
+            val casti = r.trim().split("|").map { it.trim() }
+            if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
+            val zvuk = casti.drop(1).firstOrNull { ZVUK_POLE.containsMatchIn(it) }?.substringAfter(":")
+                ?.trim()?.trim('"', '„', '“', '”')?.trim()
+                ?.takeUnless { it.isEmpty() || it.equals("none", true) } ?: return@mapNotNull null
+            n to zvuk
+        }.toMap()
+    }
+
+    /** Doplní zvuk do popisu panelu jako „Sound: …“ (dřív se z obrázku ztrácel — taneční hudba). */
+    fun doplnZvuk(popis: String, zvuk: String?): String {
+        if (zvuk.isNullOrBlank() || popis.contains("Sound:", ignoreCase = true)) return popis
+        return popis.trimEnd() + " Sound: " + zvuk.trimEnd('.') + "."
     }
 
     private val NALADA_POLE = Regex("""(?i)^\s*MOOD\s*:""")
@@ -309,7 +354,7 @@ object SbFilmPlan {
             if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
             val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
             val pole = casti.drop(1).firstOrNull { NALADA_POLE.containsMatchIn(it) }
-                ?.substringAfter(":") ?: casti.getOrNull(2)
+                ?.substringAfter(":") ?: casti.getOrNull(2)?.takeUnless { ZVUK_POLE.containsMatchIn(it) }
             val nalada = pole?.trim()?.trim('"', '„', '“', '”')?.trim()
                 ?.takeUnless { it.isEmpty() || it.equals("none", true) } ?: return@mapNotNull null
             n to nalada
@@ -999,6 +1044,9 @@ object SbFilmPrepis {
     fun sloucit(zCelku: String, zRadku: String): String {
         val a = repliky(zCelku)
         val b = repliky(zRadku)
+        // Řádek přečetl větu bez jména i uvozovek a celé čtení ji nemá vůbec
+        // (Příšera 1. 10. 2026) — dřív se zahodila a záběr šel jako němý.
+        if (b.isEmpty() && a.isEmpty() && zRadku.isNotBlank()) return SbFilmPlan.sMluvcim(zRadku, SbFilmPlan.VYCHOZI_MLUVCI)
         if (b.isEmpty()) return zCelku
         val spojene = if (a.size == b.size) a.zip(b).map { (x, y) -> x.first to y.second } else b
         return spojene.joinToString("; ") { (kdo, co) -> "$kdo: „${opravHacky(co)}“" }
