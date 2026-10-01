@@ -76,8 +76,6 @@ data class Ocekavani(val teply: Double, val studeny: Double)
 
 object OdhadAkce {
 
-    /** Teplý krok, který běží přes 1,5× teplé délky, byl nejspíš studený. */
-    const val PREPNOUT_NA_STUDENY = 1.5
     /** Bar se zastaví tady — do konce ho dotáhne až výsledek. */
     const val STROP_PODILU = 0.97f
 
@@ -115,15 +113,17 @@ object OdhadAkce {
         val tento: Double? = when {
             vKrokuS == null -> delka(ted)
             tokenZbyvaS != null -> tokenZbyvaS
-            else -> {
-                var e = delka(ted)
-                if (!ted.studeny && vKrokuS > o.teply * PREPNOUT_NA_STUDENY) e = maxOf(e, o.studeny)
-                // Přetáhl i studený odhad: číslo by stálo, ukáže se jen uběhlý čas.
-                if (vKrokuS > e) null else e - vKrokuS
-            }
+            // Krok, který se protáhl, dál nepřidává čas: zbývá jen to, co je po něm.
+            // Do 5.58 se teplý krok po 1,5× délky přepnul na studený odhad a čas
+            // skočil z nuly zpět na minuty — úsek 2 Příšery se psal 87 s místo 57 s,
+            // byl jen delší, ne studený (uživatel 1. 10. 2026). Studenost se určuje
+            // jen předem (co běželo na serveru), ne uprostřed kroku.
+            else -> maxOf(0.0, delka(ted) - vKrokuS)
         }
         if (tento == null) return Vysledek(null, predchoziPodil)
         val zbyva = tento + zbytek
+        // Poslední krok přetáhl: žádné číslo, jen uběhlý čas; bar stojí.
+        if (zbyva <= 0.0) return Vysledek(null, predchoziPodil)
         val podil = if (ubehloS + zbyva > 0) (ubehloS / (ubehloS + zbyva)).toFloat() else 0f
         return Vysledek(
             Math.round(zbyva),

@@ -51,14 +51,26 @@ class OdhadAkceTest {
     }
 
     @Test
-    fun `teply krok ktery pretahne se prepne na studeny a pak prestane odhadovat`() {
+    fun `protazeny krok cas neprida a odhad neskoci zpet`() {
         val tepla = listOf(KrokAkce(TypKroku.CTENI_CELE), KrokAkce(TypKroku.CTENI_RADEK))
-        // 30 s > 1,5 × 17 → počítá se studených 96 s: zbývá 66 + 8,5.
-        assertEquals(75L, OdhadAkce.spocitej(tepla, vychozi, 0, 30.0, 30.0).zbyvaS)
-        // Přetáhl i studený odhad: žádné číslo, bar stojí.
-        val r = OdhadAkce.spocitej(tepla, vychozi, 0, 120.0, 120.0, predchoziPodil = 0.6f)
+        // 30 s > 17: krok se protáhl, zbývá jen další řádek (8,5 s) — žádný skok na studený.
+        assertEquals(9L, OdhadAkce.spocitej(tepla, vychozi, 0, 30.0, 30.0).zbyvaS)
+        // Poslední krok přetáhl: žádné číslo, bar stojí.
+        val r = OdhadAkce.spocitej(tepla, vychozi, 1, 20.0, 50.0, predchoziPodil = 0.6f)
         assertNull(r.zbyvaS)
         assertEquals(0.6f, r.podil, 0f)
+    }
+
+    /** Příšera 1. 10. 2026: druhý úsek 87 s místo 57 s — zbývající čas se nesmí zvýšit. */
+    @Test
+    fun `zbyvajici cas po kroku jen klesa`() {
+        val kroky = listOf(KrokAkce(TypKroku.PREPIS_USEKU), KrokAkce(TypKroku.PREPIS_USEKU))
+        var minule = Long.MAX_VALUE
+        for (s in 0..87) {
+            val z = OdhadAkce.spocitej(kroky, vychozi, 1, s.toDouble(), 52.0 + s).zbyvaS ?: 0L
+            assertTrue("v ${s}. s zbývá $z, předtím $minule", z <= minule)
+            minule = z
+        }
     }
 
     @Test
