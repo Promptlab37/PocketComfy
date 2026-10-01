@@ -278,6 +278,36 @@ object SbFilmPlan {
             "panel with a line PANEL <number>, then one line for every printed line of the caption. " +
             "Do not translate or correct anything. No other text."
 
+    /**
+     * Hlas mluvčích, které celé čtení vynechalo (VOICES: none — Příšera 1. 10. 2026):
+     * bez pevného popisu si přepisovač v každém úseku vymyslel jiný hlas.
+     */
+    fun otazkaHlasu(jmena: List<String>): String =
+        "This image is a film storyboard. These characters speak in it: ${jmena.joinToString(", ")}. " +
+            "Answer one line per character, exactly as Name = age, gender and voice in plain English words " +
+            "(pitch, timbre), guessed from how they look, for example Anna = a woman in her 30s with a warm, " +
+            "low voice. No other text."
+
+    /** Odpověď [otazkaHlasu] → jméno → hlas (jen jména, na která se appka ptala). */
+    fun prectiHlasy(text: String, jmena: List<String>): Map<String, String> =
+        text.split(Regex("""\n|;|(?=\b(?:${jmena.joinToString("|") { Regex.escape(it) }})\s*=)""")).mapNotNull { r ->
+            val kdo = r.substringBefore("=").trim().trim('*', '-', '•').trim()
+            val jak = r.substringAfter("=", "").trim().trimEnd('.')
+            val jmeno = jmena.firstOrNull { it.equals(kdo, ignoreCase = true) } ?: return@mapNotNull null
+            if (jak.isBlank()) null else jmeno to jak
+        }.toMap()
+
+    /** Doplní hlasy do pole VOICES celého čtení (ostatní pole beze změny). */
+    fun doplnHlasy(cteni: String, hlasy: Map<String, String>): String {
+        if (hlasy.isEmpty()) return cteni
+        val nove = hlasy.entries.joinToString("; ") { "${it.key} = ${it.value}" }
+        val pole = Regex("""(?i)VOICES\s*:\s*([^|]*)""")
+        val m = pole.find(cteni) ?: return cteni
+        val stare = m.groupValues[1].trim()
+        val hodnota = if (stare.isEmpty() || stare.equals("none", true)) nove else "$stare; $nove"
+        return cteni.replaceRange(m.range, "VOICES: $hodnota ")
+    }
+
     private val STARY_TVAR = Regex("""(?i)PANEL\s*\d+\s*\|[^|\n]*\|\s*MOOD""")
     private val UVOZOVKY = Regex("""„[^“”"]*[“”"]|“[^”“]*[”“]|"[^"]*"|«[^»]*»|»[^«]*«""")
     private val ST_NALADA = setOf("emoce", "emotion", "emotions", "nálada", "nalada", "mood", "pocit", "pocity", "podání", "podani")
@@ -1375,6 +1405,29 @@ object SbFilmPrepis {
         }
     }
 
+    private val ZVUK_V_POPISU = Regex("""\s*Sound:\s*([^\n]+?)\s*$""")
+    private val OBECNE = listOf(
+        "old woman", "old man", "young woman", "young man", "little girl", "little boy",
+        "woman", "man", "girl", "boy", "lady", "guy", "person", "creature", "monster", "figure", "character",
+    )
+
+    /**
+     * Jediná postava filmu: (vzor obecného označení „the woman“, jméno). Jen když má film
+     * jediného mluvčího / jedinou pojmenovanou fotku a popisy všech panelů používají
+     * jediné obecné označení — jinak by se jménem přepsala i jiná osoba.
+     */
+    internal fun jedinaPostava(
+        popisy: List<String>, mluvci: Collection<String>, fotky: List<String>, vzhled: Collection<String>,
+    ): Pair<Regex, String>? {
+        val jmena = (mluvci + fotky).map { it.trim() }.filter { it.isNotBlank() }.distinctBy { it.lowercase() }
+        if (jmena.size != 1 || vzhled.any { v -> !v.equals(jmena[0], ignoreCase = true) }) return null
+        val jmeno = jmena[0]
+        val vzor = Regex("""\b[Tt]he (${OBECNE.joinToString("|")})\b""")
+        val pouzite = popisy.flatMap { p -> vzor.findAll(p).map { it.groupValues[1].lowercase() }.toList() }.toSet()
+        if (pouzite.size != 1) return null
+        return Regex("""\b[Tt]he ${Regex.escape(pouzite.first())}\b""") to jmeno
+    }
+
     fun hlidka(
         pocetObrazku: Int, usek: SbUsek, k: Int, n: Int, seStoryboardem: Boolean = true,
         idMluvcich: Map<String, String> = idMluvcich(usek.panely),
@@ -1400,7 +1453,19 @@ object SbFilmPrepis {
         jenTvarFotek: List<Boolean> = emptyList(),
         /** Scénář (5.31): v záběru jen ti, kdo v něm jednají; předměty doslovně (Dar mudrců 30. 9. 2026). */
         zeScenare: Boolean = false,
+        /** Popisy všech panelů filmu — podle nich se pozná, že je ve filmu jediná postava (5.56). */
+        popisyFilmu: List<String> = emptyList(),
     ): String {
+        // Storyboard s jedinou postavou: popis panelů říká „the woman“, repliky „Příšera“ —
+        // přepisovač z toho v úseku 2 udělal dvě postavy (1. 10. 2026). Obecné označení → jméno.
+        val jedina = if (zeScenare) null else jedinaPostava(popisyFilmu, idMluvcich.keys, jmenaFotek, vzhled.keys)
+        fun popisPanelu(p: SbPanel): Pair<String, String> {
+            val popis = jedina?.let { (obecne, jmeno) -> obecne.replace(p.popis, Regex.escapeReplacement(jmeno)) } ?: p.popis
+            // Zvuk ze storyboardu jako samostatný řádek: schovaný v popisu se v úseku 1 ztratil.
+            if (zeScenare || p.zvuk.isNotBlank()) return popis to p.zvuk
+            val z = ZVUK_V_POPISU.find(popis) ?: return popis to ""
+            return popis.removeRange(z.range).trim() to z.groupValues[1].trim()
+        }
         val sb = StringBuilder("\n\n[There are exactly $pocetObrazku reference images and nothing else: ")
         sb.append((1..pocetObrazku).joinToString(", ") { "<Picture $it>" }).append(". ")
         val prvniPostava = if (seStoryboardem) 2 else 1
@@ -1425,7 +1490,7 @@ object SbFilmPrepis {
         if (k > 0) {
             sb.append(" This part continues directly from the previous part: the first moment picks up ")
             sb.append("the motion of the previous shot before the first cut.")
-            predchozi?.popis?.takeIf { it.isNotBlank() }?.let {
+            predchozi?.let { popisPanelu(it).first }?.takeIf { it.isNotBlank() }?.let {
                 sb.append(" The previous part ended with: ").append(it.trim().trimEnd('.')).append(".")
             }
         }
@@ -1438,7 +1503,8 @@ object SbFilmPrepis {
             sb.append(if (seStoryboardem) " storyboard panel ${p.cislo}" else " shot ${p.cislo} of the film")
             if (p.typ.isNotBlank()) sb.append(", ${p.typ}")
             if (p.kamera.isNotBlank()) sb.append(", camera ${p.kamera}")
-            sb.append(": ${p.popis}")
+            val (popisP, zvukP) = popisPanelu(p)
+            sb.append(": $popisP")
             val repl = repliky(p.repliky)
             val podani = if (p.podani.isBlank()) emptyList() else p.podani.split(";").map { it.trim() }
             repl.forEachIndexed { r, (kdo, text) ->
@@ -1457,7 +1523,7 @@ object SbFilmPrepis {
                 }
             }
             // Zvuk záběru ze scénáře jako fyzická událost (5.14).
-            if (p.zvuk.isNotBlank()) sb.append("\n    sound in this shot: ").append(p.zvuk.trim().trimEnd('.')).append(".")
+            if (zvukP.isNotBlank()) sb.append("\n    sound in this shot: ").append(zvukP.trim().trimEnd('.')).append(".")
             // Displej telefonu: H3 na něm píše nesmyslná písmena — jen tvary a barvy (5.14, kritici).
             // Osoba na displeji je fotka, ne postava filmu („mladá maminka mrkne“ vs. 72letá maminka).
             if (p.obrazovka) {

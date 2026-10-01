@@ -5553,7 +5553,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val wf = cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
                         jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
                     )
-                    val prvni = spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP, krok = 0)
+                    var prvni = spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP, krok = 0)
                     // Repliky znovu po řádcích mřížky, v ostřejším výřezu.
                     val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(prvni)
                     val radku = cteni.radku ?: 0
@@ -5609,6 +5609,25 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             zvuky += cz.promptlab.h3video.data.SbFilmPlan.prectiZvuky(odpoved)
                         }
                     }
+                    // Hlas mluvčích, které celé čtení vynechalo — jinak každý úsek jiný hlas (5.56).
+                    val mluvci = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(cteni.panely, opravene)
+                        .flatMap { p -> cz.promptlab.h3video.data.SbFilmPrepis.repliky(p.repliky).map { it.first } }
+                        .distinctBy { it.lowercase() }
+                        .filter { m -> cteni.hlasy.keys.none { it.equals(m, ignoreCase = true) } }
+                    if (mluvci.isNotEmpty()) {
+                        val krokHlasu = 1 + skutecne
+                        upravPlan { it.copy(kroky = it.kroky.take(krokHlasu) + cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) + it.kroky.drop(krokHlasu)) }
+                        val odp = spustPrepisAPockej(
+                            client,
+                            cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
+                                jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
+                                otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaHlasu(mluvci),
+                            ),
+                            cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
+                            krok = krokHlasu,
+                        )
+                        prvni = cz.promptlab.h3video.data.SbFilmPlan.doplnHlasy(prvni, cz.promptlab.h3video.data.SbFilmPlan.prectiHlasy(odp, mluvci))
+                    }
                     Triple(prvni, opravene, nalady) to poRadcich
                 }
             }
@@ -5638,7 +5657,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
                             nalezy = nalezy, radku = cteni.radku ?: 0, sloupcu = cteni.sloupcu ?: 0)
                     }
-                    if (pokracovat) dopisPromptySb(1 + (if (poRadcich) (cteni.radku ?: 0) else 0))
+                    // Kolik kroků čtení opravdu proběhlo (řádky podle obrázku, dotaz na hlas).
+                    if (pokracovat) dopisPromptySb(_planAkce.value?.kroky?.count { it.typ != cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU }
+                        ?: (1 + (if (poRadcich) (cteni.radku ?: 0) else 0)))
                     else _rewriteState.value = RewriteState.Idle
                 }
             }.onFailure { e ->
@@ -5770,6 +5791,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 jmenaFotek = if (s.seStoryboardem && s.postavy.isNotEmpty() && s.postavy.all { s.jmenoFotky(it.soubor) != null })
                     s.postavy.map { s.jmenoFotky(it.soubor)!! } else emptyList(),
                 jenTvarFotek = s.postavy.map { it.soubor.absolutePath in s.jenTvar },
+                popisyFilmu = s.panely.map { it.popis },
             )
             suspend fun napis(): String {
                 val text = prepisSReferencemi(
