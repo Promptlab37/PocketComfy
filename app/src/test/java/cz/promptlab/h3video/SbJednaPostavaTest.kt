@@ -122,4 +122,35 @@ class SbJednaPostavaTest {
         // Jediná postava zůstane jediná, i když má vzhled pod svým jménem.
         assertTrue(SbFilmPrepis.jedinaPostava(listOf("The man dances."), listOf("Příšera"), emptyList(), c.vzhled.keys) != null)
     }
+
+    /** 5.61: přepisovač vynechal (S1) — přesné výstupy ze serveru (třetí Příšera, 1. 10. 2026). */
+    @Test
+    fun `id mluvciho se doplni u jedineho mluvciho`() {
+        for (f in listOf("prisera3_usek1.txt", "prisera3_usek2.txt")) {
+            val o = SbFilmPrepis.doplnIdMluvciho(java.io.File("src/test/resources/$f").readText(), mapOf("Příšera" to "S1"))
+            val d = Regex("""<d>""").findAll(o).count()
+            assertEquals(f, 2, d)
+            // Před každou <d> je (S1), nikde dvakrát.
+            assertEquals(f, d, Regex("""\(S1\)\s*<d>|\(S1\)[^<]{0,40}<d>""").findAll(o).count())
+            assertFalse(f, o.contains("(S1) (S1)"))
+        }
+        val o1 = SbFilmPrepis.doplnIdMluvciho(java.io.File("src/test/resources/prisera3_usek1.txt").readText(), mapOf("Příšera" to "S1"))
+        assertTrue(o1.contains("he says, (S1) <d>[Czech] Pro dnes bylo internetu dost.</d>"))
+        // Dva mluvčí: nic se nedoplňuje.
+        val dva = "A says <d>[Czech] Ahoj.</d> B says <d>[Czech] Čau.</d>"
+        assertEquals(dva, SbFilmPrepis.doplnIdMluvciho(dva, mapOf("A" to "S1", "B" to "S2")))
+        // Už tam je: beze změny.
+        val uz = "Příšera (S1) says <d>[Czech] Běž spát.</d>"
+        assertEquals(uz, SbFilmPrepis.doplnIdMluvciho(uz, mapOf("Příšera" to "S1")))
+    }
+
+    /** 5.61: emoce i zvuky do angličtiny jedním dotazem. */
+    @Test
+    fun `preklad zvuku i emoci`() {
+        val q = SbFilmPlan.otazkaPrekladu(mapOf(3 to "Nástup tanečního beatu."), mapOf(4 to "Nadšení.", 6 to "Komicky příšná."))
+        assertTrue(q.endsWith("SOUND 3: Nástup tanečního beatu.\nMOOD 4: Nadšení.\nMOOD 6: Komicky příšná."))
+        val odp = "SOUND 3 = Dance beat starts. MOOD 4 = Excited. MOOD 6 = Comically stern."
+        assertEquals(mapOf(3 to "Dance beat starts"), SbFilmPlan.prectiPreklad(odp, "SOUND", setOf(3)))
+        assertEquals(mapOf(4 to "Excited", 6 to "Comically stern"), SbFilmPlan.prectiPreklad(odp, "MOOD", setOf(4, 6)))
+    }
 }

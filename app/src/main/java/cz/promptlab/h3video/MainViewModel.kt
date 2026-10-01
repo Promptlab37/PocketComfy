@@ -5656,20 +5656,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         prvni = cz.promptlab.h3video.data.SbFilmPlan.doplnHlasy(prvni, cz.promptlab.h3video.data.SbFilmPlan.prectiHlasy(odp, bezHlasu))
                         prvni = cz.promptlab.h3video.data.SbFilmPlan.doplnVzhled(prvni, cz.promptlab.h3video.data.SbFilmPlan.prectiVzhled(odp, bezVzhledu))
                     }
-                    // Zvuky ze storyboardu do angličtiny — česky je přepisovač opsal doslova (5.57).
-                    if (zvuky.isNotEmpty()) {
+                    // Zvuky a emoce ze storyboardu do angličtiny — česky je přepisovač opsal doslova (5.57, 5.61).
+                    if (zvuky.isNotEmpty() || nalady.isNotEmpty()) {
                         val krokZvuku = _planAkce.value?.kroky?.count { it.typ != cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU } ?: (2 + skutecne)
                         upravPlan { it.copy(kroky = it.kroky.take(krokZvuku) + cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) + it.kroky.drop(krokZvuku)) }
                         val odp = spustPrepisAPockej(
                             client,
                             cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
                                 jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
-                                otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaZvuku(zvuky.toSortedMap()),
+                                otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaPrekladu(zvuky.toSortedMap(), nalady.toSortedMap()),
                             ),
                             cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
                             krok = krokZvuku,
                         )
-                        zvuky.putAll(cz.promptlab.h3video.data.SbFilmPlan.prectiPrekladZvuku(odp, zvuky.keys.toSet()))
+                        zvuky.putAll(cz.promptlab.h3video.data.SbFilmPlan.prectiPreklad(odp, "SOUND", zvuky.keys.toSet()))
+                        nalady.putAll(cz.promptlab.h3video.data.SbFilmPlan.prectiPreklad(odp, "MOOD", nalady.keys.toSet()))
                     }
                     Triple(prvni, opravene, nalady) to poRadcich
                 }
@@ -5852,7 +5853,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // Se scénářem i replika vždy na začátek záběru (5.32).
                 // Replika bez <d> se zabalí (5.60), pak uvozovky mimo <d> pryč — H3 by je vyslovil (5.57).
                 val upraveny = if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) sp.replikaNaZacatek(cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty)) else cisty
-                return sp.bezUvozovekMimoD(sp.doplnD(upraveny, u, sp.jazykFilmu(s), sp.idMluvcich(s.panely)))
+                return sp.doplnIdMluvciho(sp.bezUvozovekMimoD(sp.doplnD(upraveny, u, sp.jazykFilmu(s), sp.idMluvcich(s.panely))), sp.idMluvcich(s.panely))
             }
             var prompt = napis()
             // Se scénářem: každá replika úseku musí být v promptu v <d> (5.27). Chybí-li,

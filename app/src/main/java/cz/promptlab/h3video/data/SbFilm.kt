@@ -298,6 +298,29 @@ object SbFilmPlan {
             "English sound descriptions (what is heard), one line per panel, exactly as PANEL <number> = " +
             "<English>. No other text.\n" + zvuky.entries.joinToString("\n") { "PANEL ${it.key}: ${it.value}" }
 
+    /**
+     * Zvuky i emoce ze storyboardu do angličtiny jedním dotazem (5.61): česky je
+     * přepisovač opisoval mimo repliky („The mood is Nadšení“) a H3 je mohl vyslovit.
+     * Model vidí storyboard, takže přečte i překlep („Komicky příšná“).
+     */
+    fun otazkaPrekladu(zvuky: Map<Int, String>, nalady: Map<Int, String>): String =
+        "This image is a film storyboard. Translate these notes printed on its panels into short English: " +
+            "SOUND as a short description of what is heard, MOOD as a short emotion for the actor (read a " +
+            "misprinted word as it is printed on the storyboard). Answer one line per note, exactly as " +
+            "SOUND <number> = <English> or MOOD <number> = <English>. No other text.\n" +
+            (zvuky.toSortedMap().map { "SOUND ${it.key}: ${it.value}" } + nalady.toSortedMap().map { "MOOD ${it.key}: ${it.value}" })
+                .joinToString("\n")
+
+    /** Odpověď [otazkaPrekladu] → číslo panelu → anglický text pro [druh] (SOUND / MOOD). */
+    fun prectiPreklad(text: String, druh: String, panely: Set<Int>): Map<Int, String> =
+        text.replace(Regex("""(?i)\s*(?=\b(?:SOUND|MOOD)\s*\d)"""), "\n").lines().mapNotNull { r ->
+            val m = Regex("""(?i)^\s*(SOUND|MOOD)\s*(\d+)\s*[=:]\s*(.+)$""").find(r.trim()) ?: return@mapNotNull null
+            if (!m.groupValues[1].equals(druh, ignoreCase = true)) return@mapNotNull null
+            val n = m.groupValues[2].toInt()
+            val en = m.groupValues[3].trim().trim('"', '„', '“', '”').trim().trimEnd('.')
+            if (n in panely && en.isNotBlank()) n to en else null
+        }.toMap()
+
     /** Odpověď [otazkaZvuku] → číslo panelu → anglický zvuk (jen panely, na které se appka ptala). */
     fun prectiPrekladZvuku(text: String, panely: Set<Int>): Map<Int, String> =
         text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n").lines().mapNotNull { r ->
@@ -1423,6 +1446,25 @@ object SbFilmPrepis {
             out = out.replaceRange(nalez.range, "$id<d>[${jazyk ?: "Language"}] $cista</d>")
         }
         return out
+    }
+
+    /**
+     * ID mluvčího před každou `<d>` (5.61): přepisovač ho občas vynechá (druhá Příšera,
+     * úsek 1, 1. 10. 2026) a H3 jím drží stejný hlas. Doplní se jen s jediným mluvčím
+     * ve filmu — u víc mluvčích by se nedalo poznat, čí replika to je.
+     */
+    fun doplnIdMluvciho(text: String, idMluvcich: Map<String, String>): String {
+        val id = idMluvcich.values.distinct().singleOrNull() ?: return text
+        val sb = StringBuilder()
+        var od = 0
+        REPLIKA_D.findAll(text).forEach { m ->
+            val pred = text.substring(od, m.range.first)
+            sb.append(pred)
+            if (!text.substring(maxOf(0, m.range.first - 40), m.range.first).contains(Regex("""\(S\d+\)"""))) sb.append("($id) ")
+            sb.append(m.value)
+            od = m.range.last + 1
+        }
+        return sb.append(text.substring(od)).toString()
     }
 
     /** Jazyk všech replik filmu dohromady (null = nepoznaný, model ho určí sám). */

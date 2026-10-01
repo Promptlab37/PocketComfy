@@ -1,0 +1,21 @@
+subject_definitions:
+<Subject 1> is the man in <Picture 1>, with long curly brown hair, a wrinkled face, a muscular body, wearing a black tank top and black boots.
+
+summary:
+[reference generation] The target video consists of three timed shots that continue directly from the previous part, using <Picture 1> as a storyboard reference for viewpoint, subject placement, and visual style. <Subject 1> performs three distinct actions in sequence: dancing with hip sways and arm waves, leaning forward with a surprised expression while speaking, and stomping while pointing toward a door. All shots are static, filmed in an industrial warehouse under blue lighting. The only audio is dance music in the first shot, followed by spoken Czech lines from <Subject 1> (S1) in the second and third shots. No on-screen text appears.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the long curly brown hair, wrinkled face, muscular body, black tank top, and black boots are retained identically across all shots.
+<Picture 1>: weak_reference - it defines the visual style, lighting, and composition for each shot but is not directly reused as a frame.
+
+detailed_description:
+The target video is in a cinematic, high-energy dance-movie style with cool blue industrial lighting and a slightly gritty texture. The camera remains static throughout all shots.
+[Shot 1] The scene opens wide in an industrial warehouse under blue lighting, matching the visual tone of <Picture 1>. <Subject 1> dances energetically, swaying his hips and waving his arms in a fluid, rhythmic motion. His expression is one of pure enthusiasm. No dialogue or sound effects are spoken — only dance music plays throughout this silent shot.
+[Shot 2] At 00:04.000, the shot cuts to a close-up, static frame. <Subject 1> leans forward slightly with wide eyes and an open mouth, conveying genuine surprise. In the same deep, commanding voice as before, he says, <d>[Czech] Ty tu ještě jsi?</d> He closes his lips immediately after speaking, holding a brief pause before the next cut.
+[Shot 3] At 00:07.000, the shot cuts to a wide, static frame again. <Subject 1> stomps his right foot firmly on the floor and points decisively toward a door in the background with his left hand. His expression is comically stern. In the same deep, commanding voice as before, he says, <d>[Czech] Vypnout. A do postele!</d> He closes his lips immediately after speaking, holding a brief pause until the end of the video.
+
+overall_soundscape:
+Dance music plays throughout [Shot 1]. In [Shot 2] and [Shot 3], the dance music continues under the spoken Czech lines from <Subject 1> (S1).
+
+non_diegetic_music:
+N/A
