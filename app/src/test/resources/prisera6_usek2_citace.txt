@@ -1,0 +1,20 @@
+subject_definitions:
+<Subject 1> is the man in <Picture 1>, with long curly brown hair, a wrinkled face, a massive muscular body, wearing a black tank top and black boots.
+
+summary:
+[reference generation] The target video consists of two timed shots continuing directly from the previous part. Shot 1 shows <Subject 1> dancing with hips swaying and arms waving in an industrial warehouse lit with blue lighting, matching <Picture 1>’s Panel 4. Shot 2 begins at 00:04.000 with <Subject 1> stomping and pointing toward a door, matching <Picture 1>’s Panel 6, while he says <d>[Czech] Vypnout. A do postele!</d>. The entire video uses the visual style and composition defined by <Picture 1>, which serves as the storyboard reference for both shots.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved - the long curly brown hair, wrinkled face, massive muscular body, black tank top, and black boots are retained identically across both shots.
+<Picture 1> (storyboard reference for [Shot 1] and [Shot 2]): fully_preserved - the viewpoint, subject placement, and visual look of both shots are defined by <Picture 1>, including the industrial warehouse with blue lighting.
+
+detailed_description:
+The target video is in a cinematic, high-energy dance-movie style with saturated blue lighting and dynamic motion. The camera remains static throughout both shots.
+[Shot 1] The scene opens wide in an industrial warehouse lit with cool blue tones. <Subject 1>, the man with long curly brown hair, wrinkled face, massive muscular body, black tank top, and black boots, dances energetically — swaying his hips and waving his arms with exaggerated enthusiasm. His facial expression is one of pure, unbridled joy. He moves rhythmically to the beat without speaking. The sound in this shot is dance music.
+[Shot 2] At 00:04.000, the shot cuts to a wide static frame. <Subject 1> stomps his right foot firmly on the floor and points decisively toward a door with his left hand. His expression shifts to comically strict, eyebrows raised and lips pressed into a firm line. He says in the same deep, gravelly voice as before — “Vypnout. A do postele!” — and closes his lips immediately after, holding the pose until the cut.
+
+overall_soundscape:
+Dance music continues throughout the video, with no other ambient sounds or physical effects.
+
+non_diegetic_music:
+N/A

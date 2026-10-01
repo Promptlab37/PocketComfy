@@ -22,17 +22,39 @@ import java.io.File
  */
 object SbDialogy {
 
-    /** Replika začne tolik po začátku svého panelu. */
-    const val NASTUP_S = 0.15
-    /** Mezera mezi dvěma replikami téhož panelu. */
-    const val MEZERA_S = 0.3
-    /** Rezerva za poslední replikou panelu, než přijde střih. */
-    const val DOBEH_S = 1.0
+    // ---------- časování (5.66, rešerše dramaturg + scenárista + střihač)
+    // Přirozená mezera mezi mluvčími je ~0,2 s (Stivers 2009, Heldner & Edlund 2010); od ~0,7 s
+    // ji divák čte jako váhání, kolem 1 s je ticho „událost“ (Jefferson 1989). Střih krátce po
+    // konci myšlenky (Murch). Dřív se rezervy sčítaly (dozvuk 1 s + zaokrouhlení na 0,5 s +
+    // rezerva úseku) a za replikou bylo 1,3–2,5 s ticha (uživatel 1. 10. 2026: „nepřirozené“).
+
+    /** Vzduch před replikou: běžný záběr / rychlé podání / první panel úseku / celek nebo úvod filmu. */
+    const val NASTUP_S = 0.25
+    const val NASTUP_RYCHLE_S = 0.15
+    const val NASTUP_USEK_S = 0.40
+    const val NASTUP_CELEK_S = 0.75
+    const val NASTUP_VAHAVE_NAVIC_S = 0.3
+    const val NASTUP_MAX_S = 1.0
+    /** Mezera mezi replikami v panelu: jiný mluvčí / stejný mluvčí / pokračování souvětí / váhání. */
+    const val MEZERA_STRIDANI_S = 0.25
+    const val MEZERA_STEJNY_S = 0.40
+    const val MEZERA_SOUVETI_S = 0.25
+    const val MEZERA_VAHANI_S = 0.8
+    /** Vzduch za replikou: před další replikou / před tichým záběrem / po pointě. */
+    const val DOZVUK_NA_RECI_S = 0.25
+    const val DOZVUK_NA_TICHO_S = 0.5
+    const val DOZVUK_POINTA_S = 1.0
     /**
-     * Rezerva za replikou v posledním panelu filmu: s 0,1 s rezervy se konec repliky
-     * uřízl (Příšera 1. 10. 2026) — mluvený záběr vždy s velkou rezervou (~2 s).
+     * Konec úseku a filmu: [SbFilmPlan.rozdel] přidá k poslednímu mluvenému panelu úseku ještě
+     * [SbFilmPlan.REZERVA_KONCE_S] (0,5 s) → za replikou je celkem 1,0 s na konci úseku a 2,0 s
+     * na konci filmu (H3 umí repliku posunout; s 0,1 s rezervy se konec uřízl).
      */
-    const val DOBEH_KONEC_S = 2.0
+    const val DOZVUK_USEK_S = 0.5
+    const val DOZVUK_FILM_S = 1.5
+    const val MIN_ZABER_S = 1.5
+    /** Mluvený panel delší o víc než tohle se zkrátí na řeč a vzduch kolem ní. */
+    const val TOLERANCE_ZKRACENI_S = 0.4
+    const val SNIMEK_S = 1.0 / 24
     const val MAX_NA_USEK = 3
     const val MAX_NA_FILM = 9
     const val VZORKOVANI = 44100
@@ -57,18 +79,21 @@ object SbDialogy {
         }
     }.getOrNull()
 
-    /** Nahrávka repliky: platí jen pro stejný text a stejný hlas. */
-    data class Nahravka(val soubor: File, val text: String, val hlas: String, val delkaS: Double)
+    /**
+     * Nahrávka repliky: platí jen pro stejný text a stejný hlas. [delkaS] = délka řeči,
+     * [odS] = kde v souboru řeč začíná (ořez nechává 30 ms před řečí, 5.66).
+     */
+    data class Nahravka(val soubor: File, val text: String, val hlas: String, val delkaS: Double, val odS: Double = 0.0)
 
     fun klic(cislo: Int, index: Int) = "$cislo:$index"
 
     fun nahravkaZ(s: String?): Nahravka? = runCatching {
         val j = JSONObject(s ?: return null)
-        Nahravka(File(j.getString("soubor")), j.getString("text"), j.getString("hlas"), j.getDouble("delka"))
+        Nahravka(File(j.getString("soubor")), j.getString("text"), j.getString("hlas"), j.getDouble("delka"), j.optDouble("od", 0.0))
     }.getOrNull()
 
     fun zakoduj(n: Nahravka): String = JSONObject().put("soubor", n.soubor.absolutePath)
-        .put("text", n.text).put("hlas", n.hlas).put("delka", n.delkaS).toString()
+        .put("text", n.text).put("hlas", n.hlas).put("delka", n.delkaS).put("od", n.odS).toString()
 
     private fun norm(s: String) = s.lowercase().replace(Regex("""[^\p{L}\p{N}]"""), "")
 
@@ -98,18 +123,82 @@ object SbDialogy {
     fun bezHlasu(s: SbFilmScene, existuje: (File) -> Boolean = { it.exists() }): List<String> =
         chybejici(s, existuje).map { it.kdo }.distinctBy { it.lowercase() }.filter { hlasMluvciho(s, it) == null }
 
-    /**
-     * Panely prodloužené tak, aby se jejich nahrané repliky vešly (nástup + repliky
-     * + mezery + doběh). Jen prodlužuje — kratší nahrávka panel nezkrátí.
-     */
-    fun prodluzPanely(s: SbFilmScene, existuje: (File) -> Boolean = { it.exists() }): List<SbPanel> = s.panely.mapIndexed { k, p ->
+    private fun obsahuje(p: SbPanel, vzor: Regex) = vzor.containsMatchIn((p.popis + " " + p.podani).lowercase())
+    private val RYCHLE = Regex("""rychl|naštvan|křič|zařv|skočí do řeči|angry|shout|fast|snap""")
+    private val VAHAVE = Regex("""váhav|smut|zaražen|nejist|hesitant|sad|unsure""")
+    private val CELEK = Regex("""wide|establish|long shot|celek|úvodní""")
+    // Celá slova — „points his finger“ (ukazuje) není pointa (test na emulátoru 1. 10. 2026).
+    private val POINTA = Regex("""(?<![\p{L}])(pointa|pointou|pointě|vtip|reakce|reakcí|punchline|reaction)(?![\p{L}])""")
+    private val DRZ_DELKU = Regex("""(?<![\p{L}])(pauz\p{L}*|ticho|mlčí|mlčky|zírá|reakce|reakcí|pointa|pointou|dlouze|váhá|silence|silent|stares?|staring|reaction|pause|punchline)(?![\p{L}])""")
+
+    fun puvodniDelka(s: SbFilmScene, p: SbPanel): Double = s.delkyStoryboardu[p.cislo] ?: p.sekundy
+
+    private data class Pozice(val prvniVeFilmu: Boolean, val prvniVUseku: Boolean, val posledniVUseku: Boolean, val posledniVeFilmu: Boolean)
+
+    private fun pozice(panely: List<SbPanel>): Map<Int, Pozice> {
+        val useky = SbFilmPlan.rozdel(panely)
+        val prvni = useky.mapNotNull { it.panely.firstOrNull()?.cislo }.toSet()
+        val posledni = useky.mapNotNull { it.panely.lastOrNull()?.cislo }.toSet()
+        return panely.mapIndexed { i, p ->
+            p.cislo to Pozice(i == 0, p.cislo in prvni, p.cislo in posledni, i == panely.lastIndex)
+        }.toMap()
+    }
+
+    private fun nastup(p: SbPanel, poz: Pozice): Double = when {
+        poz.prvniVeFilmu || obsahuje(p, CELEK) || CELEK.containsMatchIn(p.typ.lowercase()) -> NASTUP_CELEK_S
+        poz.prvniVUseku -> NASTUP_USEK_S
+        obsahuje(p, RYCHLE) -> NASTUP_RYCHLE_S
+        else -> NASTUP_S
+    } + if (obsahuje(p, VAHAVE)) NASTUP_VAHAVE_NAVIC_S else 0.0
+
+    private fun mezera(a: Pair<String, String>, b: Pair<String, String>, p: SbPanel): Double = when {
+        obsahuje(p, VAHAVE) || a.second.trimEnd().endsWith("…") || a.second.trimEnd().endsWith("...") -> MEZERA_VAHANI_S
+        !a.first.trim().equals(b.first.trim(), ignoreCase = true) -> MEZERA_STRIDANI_S
+        a.second.trimEnd().endsWith(",") -> MEZERA_SOUVETI_S
+        else -> MEZERA_STEJNY_S
+    }
+
+    private fun dozvuk(p: SbPanel, dalsi: SbPanel?, poz: Pozice): Double = when {
+        poz.posledniVeFilmu -> DOZVUK_FILM_S
+        poz.posledniVUseku -> DOZVUK_USEK_S
+        obsahuje(p, POINTA) -> DOZVUK_POINTA_S
+        dalsi != null && SbFilmPrepis.repliky(dalsi.repliky).isNotEmpty() -> DOZVUK_NA_RECI_S
+        else -> DOZVUK_NA_TICHO_S
+    }
+
+    private fun snap(t: Double) = Math.ceil(t / SNIMEK_S - 1e-6) * SNIMEK_S
+
+    /** Řeč panelu (repliky + mezery mezi nimi); null = panel bez replik, nebo nějaká nenamluvená. */
+    private fun recPanelu(s: SbFilmScene, p: SbPanel, existuje: (File) -> Boolean): Double? {
         val repl = SbFilmPrepis.repliky(p.repliky)
-        if (repl.isEmpty()) return@mapIndexed p
-        val delky = repl.mapIndexed { i, (kdo, text) -> platna(s, p, i, kdo, text, existuje)?.delkaS }
-        if (delky.any { it == null }) return@mapIndexed p
-        val dobeh = if (k == s.panely.lastIndex) DOBEH_KONEC_S else DOBEH_S
-        val potreba = NASTUP_S + delky.sumOf { it!! } + MEZERA_S * (repl.size - 1) + dobeh
-        if (potreba > p.sekundy) p.copy(sekundy = Math.ceil(potreba * 2) / 2) else p
+        if (repl.isEmpty()) return null
+        val n = repl.mapIndexed { i, (kdo, text) -> platna(s, p, i, kdo, text, existuje) ?: return null }
+        return n.sumOf { it.delkaS } + repl.zipWithNext { a, b -> mezera(a, b, p) }.sum()
+    }
+
+    /**
+     * Délky panelů podle nahrávek (5.66): mluvený panel = nástup + řeč + dozvuk (prodlouží se,
+     * nebo zkrátí, když je delší o víc než [TOLERANCE_ZKRACENI_S] a nemá v popisu pauzu/reakci);
+     * panely bez řeči zůstanou přesně podle storyboardu. Počítá se vždy od délek ze storyboardu.
+     */
+    fun upravPanely(s: SbFilmScene, existuje: (File) -> Boolean = { it.exists() }): List<SbPanel> {
+        var panely = s.panely.map { it.copy(sekundy = puvodniDelka(s, it)) }
+        repeat(2) {   // poloha v úseku závisí na délkách — dva průchody stačí
+            val poz = pozice(panely)
+            panely = panely.mapIndexed { i, p ->
+                val sb = puvodniDelka(s, p)
+                val rec = recPanelu(s, p, existuje) ?: return@mapIndexed p.copy(sekundy = sb)
+                val po = poz.getValue(p.cislo)
+                val potreba = maxOf(MIN_ZABER_S, nastup(p, po) + rec + dozvuk(p, panely.getOrNull(i + 1), po))
+                val nova = when {
+                    potreba > sb -> snap(potreba)
+                    obsahuje(p, DRZ_DELKU) || sb - potreba <= TOLERANCE_ZKRACENI_S -> sb
+                    else -> snap(potreba)
+                }
+                p.copy(sekundy = nova)
+            }
+        }
+        return panely
     }
 
     // ---------- plán stop
@@ -119,19 +208,34 @@ object SbDialogy {
     /** Stopa jednoho mluvčího v jednom úseku; [cislo] = `<Audio N>` v celém filmu. */
     data class Stopa(val usek: Int, val mluvci: String, val cislo: Int, val delkaUsekuS: Double, val umisteni: List<Umisteni>)
 
+    /**
+     * Stopy filmu: řeč každé repliky začne po nástupu svého panelu (přebytek délky panelu jde
+     * z poloviny před repliku — pohled, pak řeč — nejvýš na [NASTUP_MAX_S]), další repliky
+     * po přirozené mezeře. [Umisteni.startS] je začátek souboru, ne řeči.
+     */
     fun planuj(s: SbFilmScene, useky: List<SbUsek> = s.useky, existuje: (File) -> Boolean = { it.exists() }): List<Stopa> {
         if (!s.dialogyHiggs) return emptyList()
+        val poz = pozice(s.panely)
         val stopy = mutableListOf<Stopa>()
         var cislo = 0
         useky.forEachIndexed { k, u ->
             val poMluvcich = linkedMapOf<String, MutableList<Umisteni>>()
             var zacatekPanelu = 0.0
             u.panely.forEach { p ->
-                var t = zacatekPanelu + NASTUP_S
-                SbFilmPrepis.repliky(p.repliky).forEachIndexed { i, (kdo, text) ->
-                    val n = platna(s, p, i, kdo, text, existuje) ?: return@forEachIndexed
-                    poMluvcich.getOrPut(kdo.trim()) { mutableListOf() } += Umisteni(n.soubor, t, n.delkaS, text)
-                    t += n.delkaS + MEZERA_S
+                val vScene = s.panely.firstOrNull { it.cislo == p.cislo } ?: p
+                val i = s.panely.indexOf(vScene)
+                val po = poz[p.cislo] ?: Pozice(i == 0, true, true, i == s.panely.lastIndex)
+                val repl = SbFilmPrepis.repliky(p.repliky)
+                val rec = recPanelu(s, p, existuje)
+                val zaklad = nastup(p, po)
+                val navic = if (rec == null) 0.0
+                else vScene.sekundy - (zaklad + rec + dozvuk(p, s.panely.getOrNull(i + 1), po))
+                var t = zacatekPanelu + minOf(NASTUP_MAX_S, zaklad + maxOf(0.0, navic) * 0.5)
+                repl.forEachIndexed { r, (kdo, text) ->
+                    val n = platna(s, p, r, kdo, text, existuje) ?: return@forEachIndexed
+                    if (r > 0) t += mezera(repl[r - 1], repl[r], p)
+                    poMluvcich.getOrPut(kdo.trim()) { mutableListOf() } += Umisteni(n.soubor, maxOf(0.0, t - n.odS), n.delkaS + n.odS, text)
+                    t += n.delkaS
                 }
                 zacatekPanelu += p.sekundy
             }
@@ -229,12 +333,9 @@ object SbDialogy {
             idx++
         }
         wf.remove(nMedia)
-        // Zvuková reference + navazování „latent_guide“ v ComfyUI 0.37.4 / balíku 1.2.0 spadne
-        // od 2. úseku („shape mismatch … [680, 32] vs [754, 32]“): model počítá i se zvukem
-        // navazovacího kontextu, který mu nepřijde (ověřeno pokusem 1. 10. 2026: chybí vždy
-        // přesně 74 řádků, ať je stopa jakkoli dlouhá). „guide“ zvuk kontextu nebere a prošel —
-        // 147 snímků na 6 s, žádné přehrané snímky na švu, replika ve 2. úseku zazní.
-        if (stopy.isNotEmpty() && kontext.optString("segment_seconds").contains(",")) kontext.put("continuity_mode", "guide")
+        // Navazování zůstává latent_guide. Pád od 2. úseku („shape mismatch … 74 řádků“) dělal
+        // balík ComfyUI-H3-Multishot (h3_avbank_probe.py zahazoval zvuk kontextu); opraveno na
+        // serveru 1. 10. 2026, nahlášeno autorovi (issue #23). Ověřeno během 2 × 3 s.
 
         var id = 700
         fun uzel(trida: String, nazev: String, vstupy: JSONObject): String {

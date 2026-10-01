@@ -886,6 +886,8 @@ data class SbFilmScene(
     val hlasyMluvcich: Map<String, String> = emptyMap(),
     /** „panel:replika“ → nahrávka ([SbDialogy.zakoduj]); platí jen pro stejný text a hlas. */
     val nahravky: Map<String, String> = emptyMap(),
+    /** Číslo panelu → délka ze storyboardu, než ji upravily nahrávky (5.66, [SbDialogy.upravPanely]). */
+    val delkyStoryboardu: Map<Int, Double> = emptyMap(),
 ) {
     /** Kroky, se kterými se opravdu vzorkuje. */
     val kroky: Int
@@ -1078,6 +1080,7 @@ class SbFilmStore(private val ctx: Context) {
             .put("dialogyHiggs", s.dialogyHiggs)
             .put("hlasyMluvcich", org.json.JSONObject().also { j -> s.hlasyMluvcich.forEach { (k, v) -> j.put(k, v) } })
             .put("nahravky", org.json.JSONObject().also { j -> s.nahravky.forEach { (k, v) -> j.put(k, v) } })
+            .put("delkyStoryboardu", org.json.JSONObject().also { j -> s.delkyStoryboardu.forEach { (k, v) -> j.put(k.toString(), v) } })
             .put("strih", org.json.JSONArray().also { a ->
                 s.strih.forEach { a.put(org.json.JSONObject().put("cislo", it.cislo).put("text", it.text).put("druh", it.druh.name)) }
             })
@@ -1145,6 +1148,9 @@ class SbFilmStore(private val ctx: Context) {
             dialogyHiggs = j.optBoolean("dialogyHiggs"),
             hlasyMluvcich = j.optJSONObject("hlasyMluvcich")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }.orEmpty(),
             nahravky = j.optJSONObject("nahravky")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }.orEmpty(),
+            delkyStoryboardu = j.optJSONObject("delkyStoryboardu")?.let { h ->
+                h.keys().asSequence().mapNotNull { k -> k.toIntOrNull()?.let { it to h.optDouble(k) } }.toMap()
+            }.orEmpty(),
             panelyObrazku = j.optInt("panelyObrazku"),
             strih = (0 until (j.optJSONArray("strih")?.length() ?: 0)).mapNotNull {
                 val r = j.getJSONArray("strih").getJSONObject(it)
@@ -1415,7 +1421,10 @@ object SbFilmPrepis {
      */
     fun chybejiciRepliky(prompt: String, usek: SbUsek): List<String> {
         fun n(t: String) = t.lowercase().replace(Regex("""[„“”"«».,!?…:;–—\-]"""), " ").replace(Regex("""\s+"""), " ").trim()
-        val d = Regex("""<d>(.*?)</d>""", RegexOption.DOT_MATCHES_ALL).findAll(prompt)
+        // Replika patří do popisu záběrů — v <d> jen ve shrnutí by ji video neřeklo ve správném záběru (5.66).
+        val i = prompt.indexOf("detailed_description:")
+        val zabery = if (i >= 0) prompt.substring(i) else prompt
+        val d = Regex("""<d>(.*?)</d>""", RegexOption.DOT_MATCHES_ALL).findAll(zabery)
             .map { n(it.groupValues[1].replace(Regex("""^\s*\[[^\]]*]\s*"""), "")) }.toList()
         val spojene = d.indices.flatMap { i -> (i until minOf(d.size, i + 3)).map { j -> d.subList(i, j + 1).joinToString(" ") } }
         fun je(r: String): Boolean {

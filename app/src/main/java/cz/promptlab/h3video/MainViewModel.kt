@@ -5267,7 +5267,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     )
                 } else {
                     updateSbFilm {
-                        it.copy(panely = plan.panely,
+                        it.copy(panely = plan.panely, delkyStoryboardu = emptyMap(),
                             nazev = cz.promptlab.h3video.data.SbFilmPlan.precti(text).nazev.orEmpty(),
                             casyZeStoryboardu = false, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
                             hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl, nalezy = emptyList())
@@ -5284,7 +5284,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun setSbPanelSekundy(index: Int, sekundy: Double) = updateSbFilm { s ->
+        val cislo = s.panely.getOrNull(index)?.cislo
         s.copy(
+            // Ruční délka je nová výchozí délka panelu i pro dialogy přes Higgs (5.66).
+            delkyStoryboardu = if (cislo != null && s.delkyStoryboardu.containsKey(cislo))
+                s.delkyStoryboardu + (cislo to sekundy.coerceIn(
+                    cz.promptlab.h3video.data.SbFilmPlan.MIN_PANEL_S, cz.promptlab.h3video.data.SbFilmPlan.MAX_USEK_S,
+                )) else s.delkyStoryboardu,
             panely = s.panely.mapIndexed { i, p ->
                 if (i == index) p.copy(sekundy = sekundy.coerceIn(
                     cz.promptlab.h3video.data.SbFilmPlan.MIN_PANEL_S,
@@ -5479,6 +5485,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         updateSbFilm {
             it.copy(
                 panely = cz.promptlab.h3video.data.SbScenar.doplnPanely(plan.panely, scenar),
+                delkyStoryboardu = emptyMap(),
                 // Vzhled ze scénáře, mluvčím bez popisu z obrázku (Young Man → Syn) — SbScenar.cteni.
                 vzhled = plan.vzhled,
                 nazev = scenar.nazev.ifBlank { obrazek.nazev.orEmpty() },
@@ -5708,7 +5715,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         cz.promptlab.h3video.data.SbFilmPlan.precti(text).panely, repliky, cteni.radku, cteni.sloupcu, poRadcich, plan.panely,
                     )
                     updateSbFilm {
-                        it.copy(panely = plan.panely, nazev = cteni.nazev.orEmpty(),
+                        it.copy(panely = plan.panely, delkyStoryboardu = emptyMap(), nazev = cteni.nazev.orEmpty(),
                             casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
                             hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
                             nalezy = nalezy, radku = cteni.radku ?: 0, sloupcu = cteni.sloupcu ?: 0,
@@ -5826,7 +5833,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Zapnout dialogy přes Higgs — zadání se pak musí napsat znovu. */
     fun setSbDialogyHiggs(zapnuto: Boolean) {
-        updateSbFilm { it.copy(dialogyHiggs = zapnuto, zadaniUseku = emptyList()) }
+        updateSbFilm { s ->
+            val s2 = zapamatujDelky(s).copy(dialogyHiggs = zapnuto, zadaniUseku = emptyList())
+            // Bez dialogů platí délky ze storyboardu, s nimi délky podle nahrávek.
+            s2.copy(panely = if (zapnuto) cz.promptlab.h3video.data.SbDialogy.upravPanely(s2) else s2.panely.map { p -> p.copy(sekundy = cz.promptlab.h3video.data.SbDialogy.puvodniDelka(s2, p)) })
+        }
         if (zapnuto && _voices.value.isEmpty()) loadVoices()
     }
 
@@ -5860,7 +5871,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun smazSbNahravku(cislo: Int, index: Int) = updateSbFilm { s ->
-        s.copy(nahravky = s.nahravky - cz.promptlab.h3video.data.SbDialogy.klic(cislo, index), zadaniUseku = emptyList())
+        val s2 = zapamatujDelky(s).copy(nahravky = s.nahravky - cz.promptlab.h3video.data.SbDialogy.klic(cislo, index), zadaniUseku = emptyList())
+        s2.copy(panely = cz.promptlab.h3video.data.SbDialogy.upravPanely(s2))
     }
 
     private fun kopirujZvuk(uri: Uri, nazev: String): File? = runCatching {
@@ -5874,17 +5886,26 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }.getOrNull()
 
     private suspend fun ulozNahravku(cislo: Int, index: Int, soubor: File, text: String, hlas: String) {
-        val delka = withContext(Dispatchers.IO) { audioSeconds(soubor) }.toDouble()
-        val n = cz.promptlab.h3video.data.SbDialogy.Nahravka(soubor, text, hlas, delka)
+        // Ticho a šum na krajích nahrávky pryč, délka řeči na setiny (5.66). Originál zůstane;
+        // co nejde změřit (jiný formát než WAV), jde celé.
+        val n = withContext(Dispatchers.IO) {
+            val orez = cz.promptlab.h3video.util.ReplikaZvuk.orez(soubor, File(soubor.parentFile, soubor.nameWithoutExtension + "_rec.wav"))
+            if (orez != null) cz.promptlab.h3video.data.SbDialogy.Nahravka(orez.soubor, text, hlas, orez.recDelkaS, orez.recOdS)
+            else cz.promptlab.h3video.data.SbDialogy.Nahravka(soubor, text, hlas, audioSeconds(soubor).toDouble())
+        }
         updateSbFilm {
-            val s2 = it.copy(
+            val s2 = zapamatujDelky(it).copy(
                 nahravky = it.nahravky + (cz.promptlab.h3video.data.SbDialogy.klic(cislo, index) to cz.promptlab.h3video.data.SbDialogy.zakoduj(n)),
                 zadaniUseku = emptyList(),
             )
-            // Panel, do kterého se nahrávka nevejde, se prodlouží — s rezervou na konci (5.65).
-            s2.copy(panely = cz.promptlab.h3video.data.SbDialogy.prodluzPanely(s2))
+            // Délky mluvených panelů podle řeči — přirozené pauzy (5.66, rešerše dramaturg + střihač).
+            s2.copy(panely = cz.promptlab.h3video.data.SbDialogy.upravPanely(s2))
         }
     }
+
+    /** Délky panelů ze storyboardu se zapamatují, než je poprvé upraví nahrávky. */
+    private fun zapamatujDelky(s: cz.promptlab.h3video.data.SbFilmScene) =
+        s.copy(delkyStoryboardu = s.panely.associate { it.cislo to it.sekundy } + s.delkyStoryboardu)
 
     /** Namluví jednu repliku ([index] v panelu [cislo]), nebo všechny chybějící (null). */
     fun namluvSbRepliky(cislo: Int? = null, index: Int? = null) {
@@ -6006,7 +6027,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
                 // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
                 // Holé „Subject N“ → <Subject N>, pozadí studiové fotky pryč (5.64).
-                val cisty = sp.opravObrazky(sp.ocistiPrepis(sp.opravZnackyAPozadi(text), u.panely.size), s.uploadImages.size)
+                // Holá replika v záběru do <d> dřív, než úklid smaže „citace“ replik (5.66: replika byla
+                // v <d> jen ve shrnutí a úklid ji ze záběru 2 smazal).
+                val zabalene = sp.doplnD(sp.opravZnackyAPozadi(text), u, sp.jazykFilmu(s), sp.idMluvcich(s.panely))
+                val cisty = sp.opravObrazky(sp.ocistiPrepis(zabalene, u.panely.size), s.uploadImages.size)
                 // Se scénářem i vymyšlené značky (<Product>) → <Subject K> (5.22).
                 // Se scénářem i replika vždy na začátek záběru (5.32).
                 // Replika bez <d> se zabalí (5.60), pak uvozovky mimo <d> pryč — H3 by je vyslovil (5.57).

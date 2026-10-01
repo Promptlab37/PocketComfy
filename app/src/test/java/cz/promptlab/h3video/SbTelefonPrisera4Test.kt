@@ -18,7 +18,8 @@ class SbTelefonPrisera4Test {
 
     private fun hotovy(soubor: String, usek: SbUsek): String {
         val sp = SbFilmPrepis
-        val cisty = sp.opravObrazky(sp.ocistiPrepis(java.io.File("src/test/resources/$soubor").readText(), usek.panely.size), 1)
+        val zabalene = sp.doplnD(sp.opravZnackyAPozadi(java.io.File("src/test/resources/$soubor").readText()), usek, "Czech", id)
+        val cisty = sp.opravObrazky(sp.ocistiPrepis(zabalene, usek.panely.size), 1)
         return sp.doplnIdMluvciho(sp.bezDuplicitD(sp.bezUvozovekMimoD(sp.doplnD(cisty, usek, "Czech", id))), id)
     }
 
@@ -64,5 +65,20 @@ class SbTelefonPrisera4Test {
         val z = hotovy("prisera5_usek2_dup.txt", u)
         zkontroluj(z, listOf("Vypnout. A do postele!"))
         assertTrue(z.contains("in Czech as the line, voiced"))
+    }
+
+    /** 5.66: replika v záběru jen v uvozovkách + v <d> ve shrnutí — úklid ji dřív ze záběru smazal. */
+    @Test
+    fun `replika v zaberu i kdyz je ve shrnuti`() {
+        val u = SbUsek(listOf(
+            SbPanel(4, "a", "wide", "static", 4.0),
+            SbPanel(6, "c", "wide", "static", 4.0, repliky = "Příšera: „Vypnout. A do postele!“"),
+        ))
+        val z = hotovy("prisera6_usek2_citace.txt", u)
+        val zabery = z.substring(z.indexOf("detailed_description:"))
+        assertTrue(zabery.contains("<d>[Czech] Vypnout. A do postele!</d>"))
+        assertEquals(emptyList<String>(), SbFilmPrepis.chybejiciRepliky(z, u))
+        // Ve shrnutí už značka není (jen jednou ve videu).
+        assertEquals(1, Regex("""<d>""").findAll(z).count())
     }
 }

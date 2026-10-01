@@ -39,16 +39,18 @@ class SbDialogyTest {
 
     @Test
     fun `plan stop po mluvcich a casech panelu`() {
-        val s = scena()
+        val s0 = scena()
+        val s = s0.copy(panely = SbDialogy.upravPanely(s0, vse))
         val stopy = SbDialogy.planuj(s, existuje = vse)
         assertEquals(1, s.useky.size)
         assertEquals(listOf("Anna" to 1, "Pavel" to 2), stopy.map { it.mluvci to it.cislo })
         val anna = stopy[0].umisteni
-        assertEquals(0.15, anna[0].startS, 1e-9)
-        // Panel 3 začíná po 4 + 3 s.
-        assertEquals(7.15, anna[1].startS, 1e-9)
-        // Pavel až po Annině replice a mezeře: 0,15 + 0,8 + 0,3.
-        assertEquals(1.25, stopy[1].umisteni[0].startS, 1e-9)
+        // Úvodní záběr filmu: 0,75 s vzduchu (+ polovina zbytku do celého snímku).
+        assertEquals(0.758, anna[0].startS, 0.01)
+        // Pavel po Anně a mezeře při střídání mluvčích 0,25 s.
+        assertEquals(0.758 + 0.8 + 0.25, stopy[1].umisteni[0].startS, 0.01)
+        // Panel 3 začíná po zkráceném panelu 1 (2,92 s) a tichém panelu 2 (3 s), nástup 0,25 s.
+        assertEquals(2.9167 + 3.0 + 0.25, anna[1].startS, 0.01)
         assertTrue(SbDialogy.problemy(stopy).isEmpty())
     }
 
@@ -145,9 +147,9 @@ class SbDialogyTest {
         assertEquals("[x]", SbFilmPrepis.hlidkaSNahravkami("[x]", emptyList()))
     }
 
-    /** Víc úseků s nahrávkami → navazování „guide“ (latent_guide se zvukovou referencí padá). */
+    /** Víc úseků s nahrávkami navazuje latent_guide (oprava balíku na serveru 1. 10. 2026). */
     @Test
-    fun `vic useku s nahravkami navazuje guide`() {
+    fun `vic useku s nahravkami navazuje latent_guide`() {
         val s = scena().let { it.copy(panely = it.panely.map { p -> p.copy(sekundy = 8.0) }) }
         assertTrue(s.useky.size >= 2)
         val stopy = SbDialogy.planuj(s, existuje = vse)
@@ -155,23 +157,56 @@ class SbDialogyTest {
         val wf = SbFilmBuilder.buildFilm(s, s.useky, s.useky.map { "p" }, listOf("h3app/sb.png"), "16:9", 1L)
         assertEquals("latent_guide", wf.getJSONObject(SbFilmBuilder.N_KONTEXT).getJSONObject("inputs").getString("continuity_mode"))
         val g = SbDialogy.doplnGraf(wf, stopy, nazvy, SbFilmBuilder.N_KONTEXT, SbFilmBuilder.N_MEDIA)
-        assertEquals("guide", g.getJSONObject(SbFilmBuilder.N_KONTEXT).getJSONObject("inputs").getString("continuity_mode"))
+        assertEquals("latent_guide", g.getJSONObject(SbFilmBuilder.N_KONTEXT).getJSONObject("inputs").getString("continuity_mode"))
     }
 
-    /** 5.65: konec repliky se uřízl (0,1 s rezervy) — panel se prodlouží, poslední s rezervou 2 s. */
+    /** 5.66: délky panelů podle řeči — žádné dlouhé pauzy, tichý panel beze změny, konec filmu s rezervou. */
     @Test
-    fun `panely se prodlouzi s rezervou`() {
+    fun `delky panelu podle reci`() {
         val s = scena()
-        val p = SbDialogy.prodluzPanely(s, vse)
-        // Panel 1: 0,15 + 0,8 + 0,3 + 0,6 + 1,0 = 2,85 → vejde se do 4 s.
-        assertEquals(4.0, p[0].sekundy, 0.0)
-        // Poslední panel: 0,15 + 1,0 + 2,0 = 3,15 → vejde se do 4 s; s delší replikou se prodlouží.
-        assertEquals(4.0, p[2].sekundy, 0.0)
+        val p = SbDialogy.upravPanely(s, vse)
+        // Panel 1: 0,75 + 0,8 + 0,25 + 0,6 + 0,5 (před tichým záběrem) = 2,90 → 70 snímků.
+        assertEquals(70 / 24.0, p[0].sekundy, 1e-9)
+        // Tichý panel 2 přesně podle storyboardu.
+        assertEquals(3.0, p[1].sekundy, 0.0)
+        // Poslední panel filmu: 0,25 + 1,0 + 1,5 (+0,5 z rozdělení na úseky) = 2,75.
+        assertEquals(2.75, p[2].sekundy, 1e-9)
+        // Delší replika na konci: 0,25 + 4,24 + 1,5 = 5,99 → 144 snímků = 6,0 s.
         val dlouha = s.copy(nahravky = s.nahravky + (SbDialogy.klic(3, 0) to
             SbDialogy.zakoduj(SbDialogy.Nahravka(File("/x/3-0.wav"), "Jdeme.", anna.klic, 4.24))))
-        // 0,15 + 4,24 + 2,0 = 6,39 → 6,5 s.
-        assertEquals(6.5, SbDialogy.prodluzPanely(dlouha, vse)[2].sekundy, 0.0)
-        // Panel bez replik se nemění.
-        assertEquals(3.0, p[1].sekundy, 0.0)
+        assertEquals(6.0, SbDialogy.upravPanely(dlouha, vse)[2].sekundy, 1e-9)
+    }
+
+    @Test
+    fun `panel s pauzou nebo pohledem drzi delku a cas jde pred repliku`() {
+        val s0 = scena().let { it.copy(panely = it.panely.map { p -> if (p.cislo == 1) p.copy(popis = "The man stares at the camera.") else p }) }
+        val p = SbDialogy.upravPanely(s0, vse)
+        assertEquals(4.0, p[0].sekundy, 0.0)
+        val stopy = SbDialogy.planuj(s0.copy(panely = p), existuje = vse)
+        // Pohled, pak řeč: nástup až 1,0 s.
+        assertEquals(1.0, stopy[0].umisteni[0].startS, 1e-9)
+    }
+
+    @Test
+    fun `delky se pocitaji od storyboardu a orez posune soubor`() {
+        val s = scena().copy(delkyStoryboardu = mapOf(1 to 4.0, 2 to 3.0, 3 to 4.0))
+        // I když byl panel dřív prodloužený (třeba 6 s), počítá se od délky ze storyboardu.
+        val prodlouzena = s.copy(panely = s.panely.map { if (it.cislo == 3) it.copy(sekundy = 6.0) else it })
+        assertEquals(2.75, SbDialogy.upravPanely(prodlouzena, vse)[2].sekundy, 1e-9)
+        // Ořezaná nahrávka: řeč začíná 0,03 s po začátku souboru → soubor se položí o 0,03 s dřív.
+        val orez = s.copy(nahravky = s.nahravky + (SbDialogy.klic(1, 0) to
+            SbDialogy.zakoduj(SbDialogy.Nahravka(File("/x/1-0r.wav"), "Ahoj.", anna.klic, 0.8, 0.03))))
+        val bez = SbDialogy.planuj(s, existuje = vse)[0].umisteni[0].startS
+        val sOrez = SbDialogy.planuj(orez, existuje = vse)[0].umisteni[0]
+        assertEquals(bez - 0.03, sOrez.startS, 1e-9)
+        assertEquals(0.83, sOrez.delkaS, 1e-9)
+    }
+
+    /** „points his finger“ není pointa ani důvod držet délku (test na emulátoru 1. 10. 2026). */
+    @Test
+    fun `points neni pointa`() {
+        val s0 = scena().let { it.copy(panely = it.panely.map { p -> if (p.cislo == 1) p.copy(popis = "The man points his finger at the viewer.") else p }) }
+        // Jako panel bez klíčových slov: zkrácení na 2,90 s → 70 snímků.
+        assertEquals(70 / 24.0, SbDialogy.upravPanely(s0, vse)[0].sekundy, 1e-9)
     }
 }
