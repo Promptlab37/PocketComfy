@@ -64,6 +64,8 @@ fun UpdateDialog(
     // klepnutí nemá smysl – uživatel právě řekl, že aktualizovat chce.
     LaunchedEffect(state) {
         val ready = state as? UpdateState.Ready ?: return@LaunchedEffect
+        // Staženo samo na pozadí: instalace až po klepnutí, ne uprostřed práce.
+        if (ready.tiche) return@LaunchedEffect
         if (UpdateChecker.canInstall(ctx)) {
             ctx.startActivity(UpdateChecker.installIntent(ctx, ready.apk))
         }
@@ -85,7 +87,7 @@ fun UpdateDialog(
                     when (state) {
                         is UpdateState.Available -> t("Je tu %s").format(state.info.versionName)
                         is UpdateState.Downloading -> t("Stahuji %s").format(state.info.versionName)
-                        is UpdateState.Ready -> t("Staženo")
+                        is UpdateState.Ready -> if (state.tiche) t("Je tu %s").format(state.info.versionName) else t("Staženo")
                         else -> t("Aktualizace")
                     },
                     style = MaterialTheme.typography.titleMedium,
@@ -140,13 +142,26 @@ fun UpdateDialog(
                 }
 
                 is UpdateState.Ready -> {
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        if (UpdateChecker.canInstall(ctx))
-                            t("Android se teď zeptá na potvrzení instalace.")
-                        else t("Android potřebuje povolit instalaci z této aplikace."),
-                        style = MaterialTheme.typography.bodySmall, color = TextMid
-                    )
+                    if (state.tiche && state.info.notes.isNotBlank()) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            state.info.notes,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMid,
+                            modifier = Modifier
+                                .heightIn(max = 260.dp)
+                                .verticalScroll(rememberScrollState())
+                        )
+                    }
+                    if (!state.tiche || !UpdateChecker.canInstall(ctx)) {
+                        Spacer(Modifier.height(12.dp))
+                        Text(
+                            if (UpdateChecker.canInstall(ctx))
+                                t("Android se teď zeptá na potvrzení instalace.")
+                            else t("Android potřebuje povolit instalaci z této aplikace."),
+                            style = MaterialTheme.typography.bodySmall, color = TextMid
+                        )
+                    }
                     Spacer(Modifier.height(18.dp))
                     GradientButton(t("Nainstalovat %s").format(state.info.versionName)) {
                         if (UpdateChecker.canInstall(ctx)) {
@@ -157,7 +172,7 @@ fun UpdateDialog(
                         }
                     }
                     Spacer(Modifier.height(8.dp))
-                    OutlineButton(t("Zavřít"), modifier = Modifier.fillMaxWidth(), onClick = onLater)
+                    OutlineButton(if (state.tiche) t("Později") else t("Zavřít"), modifier = Modifier.fillMaxWidth(), onClick = onLater)
                 }
 
                 is UpdateState.Failed -> {

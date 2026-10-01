@@ -265,10 +265,11 @@ private fun Root(vm: MainViewModel = viewModel()) {
     // okno se ozve znovu, jen „Později" u stejné verze se neopakuje.
     var updateDialogClosedFor by rememberSaveable { mutableStateOf("") }
     val updateOffer = updateState.takeIf {
-        it is UpdateState.Available || it is UpdateState.Downloading ||
+        it is UpdateState.Available || (it is UpdateState.Downloading && !it.tiche) ||
             it is UpdateState.Ready
     }
-    val offerVersion = (updateOffer as? UpdateState.Available)?.info?.versionName ?: "~"
+    val offerVersion = (updateOffer as? UpdateState.Available)?.info?.versionName
+        ?: (updateOffer as? UpdateState.Ready)?.takeIf { it.tiche }?.info?.versionName?.let { "ready $it" } ?: "~"
     if (updateOffer != null && updateDialogClosedFor != offerVersion && running == null) {
         UpdateDialog(
             state = updateOffer,

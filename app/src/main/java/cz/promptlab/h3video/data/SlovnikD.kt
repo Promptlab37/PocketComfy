@@ -252,4 +252,5 @@ internal val SLOVNIK_D: Map<String, String> = mapOf(
     "Appka byla mezitím ukončena, úlohy z fronty se ztratily: %s" to "The app was closed in the meantime, the queued jobs were lost: %s",
     "Další LoRA" to "Another LoRA",
     "Z fotky jen tvář" to "Face only from the photo",
+    "Aktualizace připravena" to "Update ready",
 )

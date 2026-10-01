@@ -152,8 +152,10 @@ sealed interface UpdateState {
     data object Checking : UpdateState
     data object UpToDate : UpdateState
     data class Available(val info: UpdateInfo) : UpdateState
-    data class Downloading(val info: UpdateInfo, val progress: Float) : UpdateState
-    data class Ready(val info: UpdateInfo, val apk: File) : UpdateState
+    /** [tiche] = stahuje se samo na pozadí (Wi-Fi), okno se neukazuje (5.58). */
+    data class Downloading(val info: UpdateInfo, val progress: Float, val tiche: Boolean = false) : UpdateState
+    /** [tiche] = staženo samo; instalace až po klepnutí, ne hned (5.58). */
+    data class Ready(val info: UpdateInfo, val apk: File, val tiche: Boolean = false) : UpdateState
     data class Failed(val message: String) : UpdateState
 }
 
@@ -639,6 +641,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         silent -> UpdateState.Idle
                         else -> UpdateState.UpToDate
                     }
+                    // Na Wi-Fi se nová verze stáhne sama — zbude jen klepnout na
+                    // Nainstalovat (uživatel 1. 10. 2026). Na datech se jako dřív zeptá.
+                    if (info != null && silent && !UpdateChecker.meritkovaSit(getApplication())) downloadUpdate(info, tiche = true)
                 },
                 // I tichá kontrola musí chybu někam odložit. Dřív skončila jako
                 // Idle a v Nastavení to pak vypadalo úplně stejně jako „nic
@@ -653,9 +658,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun downloadUpdate(info: UpdateInfo) {
-        updateCheckJob?.cancel()
-        _update.value = UpdateState.Downloading(info, 0f)
+    fun downloadUpdate(info: UpdateInfo, tiche: Boolean = false) {
+        if (!tiche) updateCheckJob?.cancel()
+        // Tiché stahování už běží a uživatel klepl na Stáhnout — jen ukázat průběh.
+        (_update.value as? UpdateState.Downloading)?.let { d ->
+            if (d.tiche && !tiche) _update.value = d.copy(tiche = false)
+            return
+        }
+        // Už stažená a ověřená verze se znovu nestahuje.
+        UpdateChecker.stazeno(getApplication(), info)?.let { apk ->
+            _update.value = UpdateState.Ready(info, apk, tiche)
+            if (tiche) UpdateChecker.oznamPripraveno(getApplication(), info, apk)
+            return
+        }
+        _update.value = UpdateState.Downloading(info, 0f, tiche)
         viewModelScope.launch { drzNazivu("aktualizace") {
             // Vždy stáhnout NEJNOVĚJŠÍ vydání, ne to, které appka našla při
             // poslední kontrole — mezitím mohlo vyjít několik dalších. Když se
@@ -664,9 +680,11 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 runCatching { UpdateChecker.check(getApplication(), settings.githubToken) }
                     .getOrNull()
             } ?: info
-            _update.value = UpdateState.Downloading(nejnovejsi, 0f)
+            // Tiché zůstane tiché, dokud uživatel neklepne na Stáhnout.
+            fun jeTiche() = (_update.value as? UpdateState.Downloading)?.tiche ?: tiche
+            _update.value = UpdateState.Downloading(nejnovejsi, 0f, jeTiche())
             val result = withContext(Dispatchers.IO) {
-                val postup: (Float) -> Unit = { p -> _update.value = UpdateState.Downloading(nejnovejsi, p) }
+                val postup: (Float) -> Unit = { p -> _update.value = UpdateState.Downloading(nejnovejsi, p, jeTiche()) }
                 // Systémový správce stahování — doběhne i po odchodu z appky (5.39);
                 // když na telefonu nejde, stáhne appka sama jako dřív.
                 runCatching { UpdateChecker.downloadSystemem(getApplication(), nejnovejsi, settings.githubToken, postup) }
@@ -675,10 +693,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         UpdateChecker.download(getApplication(), nejnovejsi, settings.githubToken, postup)
                     }
             }
+            val bylTiche = jeTiche()
             _update.value = result.fold(
-                onSuccess = { UpdateState.Ready(nejnovejsi, it) },
-                onFailure = { UpdateState.Failed(t("Stažení se nepovedlo: %s").format(it.message)) }
+                onSuccess = { UpdateState.Ready(nejnovejsi, it, bylTiche) },
+                // Tiché stažení, které nevyšlo, nikoho neruší — nabídne se jako dřív.
+                onFailure = {
+                    if (bylTiche) UpdateState.Available(nejnovejsi)
+                    else UpdateState.Failed(t("Stažení se nepovedlo: %s").format(it.message))
+                }
             )
+            result.getOrNull()?.let { if (bylTiche) UpdateChecker.oznamPripraveno(getApplication(), nejnovejsi, it) }
         }
 }
     }

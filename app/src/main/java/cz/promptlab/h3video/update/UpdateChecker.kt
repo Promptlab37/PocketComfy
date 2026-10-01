@@ -343,6 +343,57 @@ object UpdateChecker {
         return target
     }
 
+    /** Placená / omezená síť (mobilní data) — tam se aktualizace sama nestahuje. */
+    fun meritkovaSit(ctx: Context): Boolean = runCatching {
+        ctx.getSystemService(android.net.ConnectivityManager::class.java)?.isActiveNetworkMetered ?: true
+    }.getOrDefault(true)
+
+    /** Už stažená verze v cache s platným kontrolním součtem, jinak null. */
+    fun stazeno(ctx: Context, info: UpdateInfo): File? {
+        val f = File(ctx.cacheDir, "update-" + info.znacka.filter { it.isLetterOrDigit() || it == '.' } + ".apk")
+        if (!f.exists() || f.length() == 0L) return null
+        if (info.sizeBytes > 0 && f.length() != info.sizeBytes) return null
+        val ok = info.sha256?.let { runCatching { sha256Souboru(f).equals(it, ignoreCase = true) }.getOrDefault(false) } ?: true
+        return if (ok) f else null
+    }
+
+    /** Starší stažené verze z cache pryč — každá má desítky MB. */
+    fun uklidStare(ctx: Context, nechat: File) {
+        ctx.cacheDir.listFiles()?.filter { it.name.startsWith("update-") && it.name.endsWith(".apk") && it.name != nechat.name }
+            ?.forEach { runCatching { it.delete() } }
+    }
+
+    private const val KANAL = "aktualizace"
+    private const val ID_OZNAMENI = 4207
+
+    /**
+     * Oznámení „Aktualizace připravena“ — klepnutí rovnou otevře instalaci (5.58).
+     * Bez povolení instalovat z appky otevře appku, kde okno vede k povolení.
+     */
+    fun oznamPripraveno(ctx: Context, info: UpdateInfo, apk: File) {
+        uklidStare(ctx, apk)
+        runCatching {
+            val nm = ctx.getSystemService(android.app.NotificationManager::class.java) ?: return
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) nm.createNotificationChannel(
+                android.app.NotificationChannel(KANAL, t("Aktualizace"), android.app.NotificationManager.IMPORTANCE_DEFAULT)
+            )
+            val cil = if (canInstall(ctx)) installIntent(ctx, apk)
+            else (ctx.packageManager.getLaunchIntentForPackage(ctx.packageName) ?: return)
+            val pi = android.app.PendingIntent.getActivity(
+                ctx, ID_OZNAMENI, cil,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE,
+            )
+            val n = androidx.core.app.NotificationCompat.Builder(ctx, KANAL)
+                .setSmallIcon(android.R.drawable.stat_sys_download_done)
+                .setContentTitle(t("Aktualizace připravena"))
+                .setContentText(t("Nainstalovat %s").format(info.versionName))
+                .setContentIntent(pi)
+                .setAutoCancel(true)
+                .build()
+            nm.notify(ID_OZNAMENI, n)
+        }
+    }
+
     /** SHA-256 z poznámek vydání: `SHA-256: <64 hex>`, `sha256=…` i v backticku. */
     internal fun sha256ZPoznamek(notes: String): String? =
         Regex("""(?i)sha-?256[^0-9a-f]{0,8}([0-9a-f]{64})""")
