@@ -67,15 +67,21 @@ fun LtxLoraSection(vm: MainViewModel, scene: LtxScene) {
     val catalog by vm.editLoras.collectAsStateWithLifecycle()
     val server by vm.server.collectAsStateWithLifecycle()
     LaunchedEffect(server) { vm.refreshEditLoras() }
-    ModelLoraSection(
-        "LTX 2.5", scene.lora, catalog,
-        compatibility = { LtxLoras.compatibility(it) },
-        serad = { LtxLoras.serad(it) },
-        poznamka = { LtxLoras.poznamka(it) },
-        refresh = { vm.refreshEditLoras(force = true) },
-        select = { name, confirmed -> vm.setLtxLora(name, confirmed) },
-        strength = { vm.setLtxLoraStrength(it) },
-    )
+    // Vybrané LoRA + jedno volné místo (nejvýš LtxScene.MAX_LOR).
+    for (slot in 0 until scene.mistLor) key(slot) {
+        val jinde = scene.vsechnyLory.map { it.name } - scene.loraNa(slot).name
+        ModelLoraSection(
+            "LTX 2.5", scene.loraNa(slot),
+            catalog.copy(files = catalog.files.filter { it.name !in jinde }),
+            compatibility = { LtxLoras.compatibility(it) },
+            serad = { LtxLoras.serad(it) },
+            poznamka = { LtxLoras.poznamka(it) },
+            refresh = { vm.refreshEditLoras(force = true) },
+            select = { name, confirmed -> vm.setLtxLora(slot, name, confirmed) },
+            strength = { vm.setLtxLoraStrength(slot, it) },
+            title = if (slot == 0) t("LoRA pro %s").format("LTX 2.5") else t("Další LoRA"),
+        )
+    }
 }
 
 @Composable

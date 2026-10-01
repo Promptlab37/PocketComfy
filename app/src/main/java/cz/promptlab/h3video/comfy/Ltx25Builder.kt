@@ -96,7 +96,7 @@ object Ltx25Builder {
         wf.inputs(N_ROZLISENI).put("aspect_ratio", scene.pomer.hodnota)
         wf.inputs(N_FPS).put("value", LtxScene.FPS)
 
-        zapojLoru(wf, scene.lora)
+        zapojLory(wf, scene.vsechnyLory)
 
         wf.inputs(N_NOISE_1).put("noise_seed", seed)
         // Druhý průchod má vlastní šum. Odvozený, ne náhodný — jinak by se
@@ -124,28 +124,38 @@ object Ltx25Builder {
      * odkazu, ne podle seznamu čísel — kdyby předloha někdy dostala třetí
      * průchod, zapojí se sám.
      */
-    fun zapojLoru(wf: JSONObject, lora: cz.promptlab.h3video.data.EditLora) {
-        if (lora.name.isBlank()) return
-        wf.put(
-            N_LORA,
-            JSONObject()
-                .put("class_type", "LoraLoaderModelOnly")
-                .put("_meta", JSONObject().put("title", "LoRA ${lora.name}"))
-                .put(
-                    "inputs",
-                    JSONObject()
-                        .put("model", org.json.JSONArray().put(N_UNET).put(0))
-                        .put("lora_name", lora.name)
-                        .put("strength_model", lora.strength.toDouble()),
-                ),
-        )
-        val naLoru = org.json.JSONArray().put(N_LORA).put(0)
-        wf.keys().asSequence().toList().forEach { id ->
-            if (id == N_LORA) return@forEach
-            val inputs = wf.getJSONObject(id).getJSONObject("inputs")
-            val odkaz = inputs.optJSONArray("model") ?: return@forEach
-            if (odkaz.optString(0) == N_UNET) inputs.put("model", naLoru)
+    fun zapojLoru(wf: JSONObject, lora: cz.promptlab.h3video.data.EditLora) = zapojLory(wf, listOf(lora))
+
+    /**
+     * Víc LoRA za sebou: 990 → 991 → … ; první bere model z [N_UNET], každá další
+     * z předchozí a oba vodiče dostanou poslední článek řetězu.
+     */
+    fun zapojLory(wf: JSONObject, lory: List<cz.promptlab.h3video.data.EditLora>) {
+        val vybrane = lory.filter { it.name.isNotBlank() }
+        if (vybrane.isEmpty()) return
+        val spotrebitele = wf.keys().asSequence().toList().filter { id ->
+            wf.getJSONObject(id).getJSONObject("inputs").optJSONArray("model")?.optString(0) == N_UNET
         }
+        var predchozi = N_UNET
+        vybrane.forEachIndexed { i, lora ->
+            val id = (N_LORA.toInt() + i).toString()
+            wf.put(
+                id,
+                JSONObject()
+                    .put("class_type", "LoraLoaderModelOnly")
+                    .put("_meta", JSONObject().put("title", "LoRA ${lora.name}"))
+                    .put(
+                        "inputs",
+                        JSONObject()
+                            .put("model", org.json.JSONArray().put(predchozi).put(0))
+                            .put("lora_name", lora.name)
+                            .put("strength_model", lora.strength.toDouble()),
+                    ),
+            )
+            predchozi = id
+        }
+        val naKonec = org.json.JSONArray().put(predchozi).put(0)
+        spotrebitele.forEach { id -> wf.getJSONObject(id).getJSONObject("inputs").put("model", naKonec) }
     }
 
     /** Jméno enkodéru z předlohy karty — vstup pro oficiální přepisovač promptu. */

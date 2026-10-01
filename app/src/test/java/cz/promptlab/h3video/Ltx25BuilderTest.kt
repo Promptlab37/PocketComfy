@@ -274,6 +274,31 @@ class Ltx25BuilderTest {
         }
     }
 
+    /** 5.50: víc LoRA najednou — řetěz 990 → 991 → 992, oba vodiče na posledním článku (jako `_wLora` předlohy Lightricks: LoRA do obou průchodů). */
+    @Test
+    fun `vic lor se zretezi a oba vodice visi na posledni`() {
+        val wf = Ltx25Builder.build(
+            sablona,
+            LtxScene(rezim = LtxRezim.ZVUK, popis = "x",
+                lora = EditLora("LTX2.3_Crisp_Enhance.safetensors", 0.6f),
+                dalsiLory = listOf(
+                    EditLora("ltx-2-19b-lora-camera-control-static.safetensors", 1.0f),
+                    EditLora("LTX-2cestina.safetensors", 0.8f),
+                )),
+            1L, "a.png", "b.wav",
+        )
+        assertEquals(Ltx25Builder.N_UNET, wf.inputs("990").getJSONArray("model").getString(0))
+        assertEquals("990", wf.inputs("991").getJSONArray("model").getString(0))
+        assertEquals("991", wf.inputs("992").getJSONArray("model").getString(0))
+        assertEquals("LTX-2cestina.safetensors", wf.inputs("992").getString("lora_name"))
+        assertEquals(0.6, wf.inputs("990").getDouble("strength_model"), 1e-6)
+        val vodice = wf.keys().asSequence().filter { wf.getJSONObject(it).getString("class_type") == "LTXVDualCFGGuider" }.toList()
+        assertEquals(2, vodice.size)
+        vodice.forEach { assertEquals("992", wf.inputs(it).getJSONArray("model").getString(0)) }
+        // Na načítač modelu odkazuje jen první LoRA.
+        assertEquals(listOf("990"), wf.keys().asSequence().filter { wf.inputs(it).optJSONArray("model")?.optString(0) == Ltx25Builder.N_UNET }.toList())
+    }
+
     @Test
     fun `bez vybrane lory graf zustava beze zmeny`() {
         val wf = Ltx25Builder.build(

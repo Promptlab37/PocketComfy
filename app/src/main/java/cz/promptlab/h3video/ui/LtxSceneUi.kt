@@ -194,13 +194,11 @@ fun LtxSection(vm: MainViewModel) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 OutlineButton(
-                    if (bezi) t("Přepisuji…") else t("✨ Vylepšit (LTX)"),
-                    color = Cyan,
-                ) { if (!bezi) vm.vylepsiLtxPopis() }
-                OutlineButton(
-                    if (bezi) t("Přepisuji…") else t("✨ Vylepšit (odvázaně)"),
+                    if (bezi) t("Přepisuji…") else t("✨ Vylepšit prompt"),
                     color = Amber,
                 ) { if (!bezi) vm.vylepsiLtxPopisOdvazane() }
+                val puvodni = vm.puvodniPrompty.collectAsStateWithLifecycle().value[MainViewModel.PromptPole.LTX]
+                if (!bezi && puvodni != null) VratitPuvodniTlacitko { vm.vratPuvodni(MainViewModel.PromptPole.LTX) }
             }
             PrubehPrepisu(vm)
             (stavPrepisu as? MainViewModel.RewriteState.Fail)

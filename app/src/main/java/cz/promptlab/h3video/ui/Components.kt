@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -615,3 +616,20 @@ fun KrizekOdebrat(
         }
     }
 }
+
+/**
+ * „↩ Vrátit původní“ — vrátí zadání před vylepšením nebo překladem. Jedno tlačítko
+ * pro všechny karty (uživatel 1. 10. 2026: tlačítko se šipkou zpět, ne šedý text).
+ */
+@Composable
+fun VratitPuvodniTlacitko(onClick: () -> Unit) = OutlineButton(
+    t("Vrátit původní"),
+    color = TextHi,
+    icon = {
+        Icon(
+            androidx.compose.material.icons.Icons.AutoMirrored.Filled.Undo, null,
+            Modifier.size(18.dp), tint = TextHi,
+        )
+    },
+    onClick = onClick,
+)

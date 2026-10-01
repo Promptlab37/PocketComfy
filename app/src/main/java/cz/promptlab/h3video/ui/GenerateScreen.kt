@@ -906,7 +906,7 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
             )
             // Necenzurovaný vylepšovač: přepisovač H3 na odblokovaném základu.
             val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
-            val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
+            val puvodni = vm.puvodniPrompty.collectAsStateWithLifecycle().value[MainViewModel.PromptPole.OBRAZEK]
             val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
                 MainViewModel.PraceNaPromptu.VYLEPSENI
             val beziPreklad = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
@@ -932,14 +932,7 @@ private fun ThreeStepSection(vm: MainViewModel, params: cz.promptlab.h3video.dat
             if (!bezi && !beziPreklad && puvodni != null) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     run {
-                        Text(
-                            t("Vrátit původní"),
-                            style = MaterialTheme.typography.bodySmall, color = TextMid,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { vm.vratPuvodniPromptObrazku() }
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                        )
+                        VratitPuvodniTlacitko { vm.vratPuvodniPromptObrazku() }
                     }
                 }
             }
@@ -1052,7 +1045,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                 //    (viz ImagePromptBuilder.vyberModel) a nepřepisuje nic.
                 // Jedno tlačítko by tu volbu schovalo, proto jsou vidět obě.
                 val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
-                val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
+                val puvodni = vm.puvodniPrompty.collectAsStateWithLifecycle().value[MainViewModel.PromptPole.OBRAZEK]
                 val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
                     MainViewModel.PraceNaPromptu.VYLEPSENI
                 // Vlastní příznak, ať překladové tlačítko nesvítí při vylepšování.
@@ -1100,14 +1093,7 @@ private fun TxtImageSection(vm: MainViewModel, params: cz.promptlab.h3video.data
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         run {
-                            Text(
-                                t("Vrátit původní"),
-                                style = MaterialTheme.typography.bodySmall, color = TextMid,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable { vm.vratPuvodniPromptObrazku() }
-                                    .padding(horizontal = 6.dp, vertical = 4.dp)
-                            )
+                            VratitPuvodniTlacitko { vm.vratPuvodniPromptObrazku() }
                         }
                     }
                 }

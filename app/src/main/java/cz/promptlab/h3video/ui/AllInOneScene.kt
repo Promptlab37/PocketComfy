@@ -163,7 +163,7 @@ fun AllInOneSection(vm: MainViewModel) {
                 // doby, kdy přepisovač reference neuměl.
                 if (scene.mode != AioMode.CHARSHEET && scene.mode != AioMode.UPSCALE) {
                     val stavPrepisu by vm.rewriteState.collectAsStateWithLifecycle()
-                    val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
+                    val puvodni = vm.puvodniPrompty.collectAsStateWithLifecycle().value[MainViewModel.PromptPole.AIO]
                     val bezi = (stavPrepisu as? MainViewModel.RewriteState.Busy)?.druh ==
                         MainViewModel.PraceNaPromptu.VYLEPSENI
                     Spacer(Modifier.height(10.dp))
@@ -187,14 +187,7 @@ fun AllInOneSection(vm: MainViewModel) {
                             color = cz.promptlab.h3video.ui.theme.Violet,
                         ) { if (!bezi) vm.prelozPrompt(MainViewModel.PromptPole.AIO) }
                         if (!bezi && puvodni != null) {
-                            Text(
-                                t("Vrátit původní"),
-                                style = MaterialTheme.typography.bodySmall, color = TextMid,
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable { vm.vratPuvodniPrompt() }
-                                    .padding(horizontal = 6.dp, vertical = 4.dp)
-                            )
+                            VratitPuvodniTlacitko { vm.vratPuvodniPrompt() }
                         }
                     }
                     PrubehPrepisu(vm, barva = cz.promptlab.h3video.ui.theme.Amber)

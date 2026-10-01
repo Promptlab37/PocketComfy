@@ -103,7 +103,18 @@ data class LtxScene(
      * i pro 2.5 mají stejný tvar (48 bloků, šířka 4096), viz [LtxLoras].
      */
     val lora: EditLora = EditLora(),
+    /** Další LoRA za první (uživatel 1. 10. 2026: „víc lor najednou“), zřetězené v grafu. */
+    val dalsiLory: List<EditLora> = emptyList(),
 ) {
+    /** Všechny vybrané LoRA v pořadí, v jakém se zřetězí. */
+    val vsechnyLory: List<EditLora> get() = (listOf(lora) + dalsiLory).filter { it.name.isNotBlank() }
+
+    /** LoRA na místě [slot] (0 = první), prázdná když tam žádná není. */
+    fun loraNa(slot: Int): EditLora = if (slot == 0) lora else dalsiLory.getOrElse(slot - 1) { EditLora() }
+
+    /** Kolik míst pro LoRA karta ukáže: vybrané + jedno volné, nejvýš [MAX_LOR]. */
+    val mistLor: Int get() = minOf(MAX_LOR, vsechnyLory.size + 1)
+
     /**
      * Kolik snímků z toho vyjde při 25 fps — jen pro popisek v kartě.
      * Zaokrouhluje se: 8,4 s je v plovoucí čárce o kousek míň než 210 snímků
@@ -115,6 +126,8 @@ data class LtxScene(
     }
 
     companion object {
+        /** Nejvíc LoRA najednou — víc by na 16 GB přidávalo hlavně čas a ztrátu kontroly nad obrazem. */
+        const val MAX_LOR = 4
         /** Snímková frekvence předlohy; graf z ní počítá délku latentu. */
         const val FPS = 25
 
@@ -182,6 +195,11 @@ class LtxStore(ctx: Context) {
                 name = j.optString("lora"),
                 strength = j.optDouble("loraSila", 0.8).toFloat().coerceIn(0f, 2f),
             ),
+            dalsiLory = j.optJSONArray("dalsiLory")?.let { a ->
+                (0 until a.length()).mapNotNull { i -> a.optJSONObject(i) }.map { o ->
+                    EditLora(name = o.optString("name"), strength = o.optDouble("sila", 0.8).toFloat().coerceIn(0f, 2f))
+                }.filter { it.name.isNotBlank() }
+            }.orEmpty(),
         )
     }.getOrDefault(LtxScene())
 
@@ -198,6 +216,9 @@ class LtxStore(ctx: Context) {
                 .put("pomer", s.pomer.name)
                 .put("lora", s.lora.name)
                 .put("loraSila", s.lora.strength.toDouble())
+                .put("dalsiLory", org.json.JSONArray().apply {
+                    s.dalsiLory.forEach { put(JSONObject().put("name", it.name).put("sila", it.strength.toDouble())) }
+                })
                 .toString()
         ).apply()
     }

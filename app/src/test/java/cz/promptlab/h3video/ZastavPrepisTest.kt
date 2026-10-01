@@ -23,9 +23,20 @@ class ZastavPrepisTest {
     }
 
     @Test
-    fun `zastaveni jen maze z fronty a neprerusuje`() {
+    fun `zastaveni maze z fronty a preruseni hlida pravidlo`() {
         val telo = teloFunkce()
         assertTrue(telo.contains("deleteFromQueue("))
-        assertFalse(telo.contains("interrupt("))
+        // interrupt jen za podmínkou PrerusitPrepis.bezpecne (llama-cpp v procesu nikdy).
+        val i = telo.indexOf("interrupt(")
+        assertTrue(i < 0 || telo.substring(0, i).contains("PrerusitPrepis.bezpecne("))
+    }
+
+    @Test
+    fun `llama v procesu se neprerusuje, ostatni ano`() {
+        assertFalse(cz.promptlab.h3video.data.PrerusitPrepis.bezpecne(setOf("llama_cpp_model_loader", "llama_cpp_instruct_adv", "PreviewAny")))
+        assertFalse(cz.promptlab.h3video.data.PrerusitPrepis.bezpecne(setOf("MiniMaxH3PromptWriter8B", "PreviewAny")))
+        assertTrue(cz.promptlab.h3video.data.PrerusitPrepis.bezpecne(setOf("MiniMaxH3UniversalWriter", "LoadImage", "PreviewAny")))
+        assertTrue(cz.promptlab.h3video.data.PrerusitPrepis.bezpecne(setOf("TextGenerateLTX2Prompt", "CLIPLoader", "PreviewAny")))
+        assertFalse(cz.promptlab.h3video.data.PrerusitPrepis.bezpecne(emptySet()))
     }
 }

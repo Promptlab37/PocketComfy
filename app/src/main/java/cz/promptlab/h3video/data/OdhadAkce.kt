@@ -40,6 +40,14 @@ enum class TypKroku(
     ODVAZANY_FOTO(28.0, 77.0, false),
     /** Vylepšovač MiniMax (Universal Writer): při psaní taky mlčí, ~50 s / 117 s studený. */
     VYLEPSENI_H3(57.0, 117.0, false),
+    /**
+     * Vylepšovač MiniMax PromptWriter 8B (All in One, 3 kroky, Long MM) — llama.cpp
+     * ~35 s, studený až ~90 s (paměť „prepisovac-pomaly-fast-disk“). Dřív bez typu,
+     * takže karta ukázala jen kolečko bez odhadu (uživatel 1. 10. 2026).
+     */
+    VYLEPSENI_MINIMAX(35.0, 90.0, false),
+    /** Qwen 2.1 PE (`TextGenerate`, karta Obrázek): ~3,5 tokenu/s, změřeno 118–150 s. */
+    QWEN_PE(120.0, 150.0, false),
     ;
 
     companion object {
@@ -53,6 +61,8 @@ enum class TypKroku(
             return when {
                 "llama_cpp_instruct_adv" in tridy -> if (sFotkou) ODVAZANY_FOTO else ODVAZANY
                 "MiniMaxH3UniversalWriter" in tridy -> VYLEPSENI_H3
+                "MiniMaxH3PromptWriter8B" in tridy -> VYLEPSENI_MINIMAX
+                "TextGenerate" in tridy || "TextGenerateLTX2Prompt" in tridy -> QWEN_PE
                 else -> null
             }
         }

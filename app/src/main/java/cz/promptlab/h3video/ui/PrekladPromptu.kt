@@ -52,7 +52,7 @@ fun PrekladPromptu(
     vylepseni: (@Composable () -> Unit)? = null,
 ) {
     val stav by vm.rewriteState.collectAsStateWithLifecycle()
-    val puvodni by vm.rewriteOriginal.collectAsStateWithLifecycle()
+    val puvodni = vm.puvodniPrompty.collectAsStateWithLifecycle().value[pole]
     // Jen překlad — jinak by tlačítko svítilo i při vylepšování promptu.
     val bezi = (stav as? MainViewModel.RewriteState.Busy)?.druh ==
         MainViewModel.PraceNaPromptu.PREKLAD
@@ -72,14 +72,7 @@ fun PrekladPromptu(
             color = Violet,
         ) { if (!bezi) vm.prelozPrompt(pole) }
         if (!bezi && puvodni != null) {
-            Text(
-                t("Vrátit původní"),
-                style = MaterialTheme.typography.bodySmall, color = TextMid,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable { vm.vratPuvodni(pole) }
-                    .padding(horizontal = 6.dp, vertical = 4.dp)
-            )
+            VratitPuvodniTlacitko { vm.vratPuvodni(pole) }
         }
     }
     PrubehPrepisu(vm, MainViewModel.PraceNaPromptu.PREKLAD, Violet)

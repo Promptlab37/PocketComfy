@@ -2719,12 +2719,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** Původní zadání před přepsáním — na jedno ťuknutí se dá vrátit. */
-    private val _rewriteOriginal = MutableStateFlow<String?>(null)
-    val rewriteOriginal: StateFlow<String?> = _rewriteOriginal.asStateFlow()
+    /** Zadání před vylepšením nebo překladem — pro každé pole zvlášť (1. 10. 2026). */
+    private val _puvodniPrompty = MutableStateFlow<Map<PromptPole, String>>(emptyMap())
+    val puvodniPrompty: StateFlow<Map<PromptPole, String>> = _puvodniPrompty.asStateFlow()
+
+    private fun ulozPuvodni(pole: PromptPole, text: String) {
+        _puvodniPrompty.value = _puvodniPrompty.value + (pole to text)
+    }
 
     fun vratPuvodniPrompt() {
-        _rewriteOriginal.value?.let { setAioPrompt(it) }
-        _rewriteOriginal.value = null
+        vratPuvodni(PromptPole.AIO)
     }
 
     /**
@@ -2785,6 +2789,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     fun zastavPrepis() {
         if (_rewriteState.value !is RewriteState.Busy) return
         val naServeru = prepisNaServeru
+        val tridy = prepisTridy
         prepisNaServeru = null
         prepisJob?.cancel()
         prepisJob = null
@@ -2792,8 +2797,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _rewriteProgress.value = null
         if (naServeru != null) viewModelScope.launch(Dispatchers.IO) {
             naServeru.first.deleteFromQueue(naServeru.second)
+            // Běžící úlohu přerušit jen tam, kde to model v grafice nezablokuje.
+            if (cz.promptlab.h3video.data.PrerusitPrepis.bezpecne(tridy)) runCatching {
+                naServeru.first.interrupt(naServeru.second)
+                naServeru.first.freeMemory()
+            }
         }
     }
+
+    /** Třídy uzlů právě běžícího přepisu — rozhodují, jestli ho Zastavit smí přerušit. */
+    @Volatile private var prepisTridy: Set<String> = emptySet()
 
     /** Hláška z `execution_error` v historii: uzel a první řádky výjimky. */
     private fun chybaPrepisu(status: org.json.JSONObject): String {
@@ -2912,6 +2925,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }.getOrNull()
         try {
             prepisNaServeru = client to promptId
+            prepisTridy = wf.keys().asSequence().mapNotNull { wf.optJSONObject(it)?.optString("class_type") }.toSet()
             val odeslano = System.currentTimeMillis()
             zaradPrepis(client, wf, clientId, promptId, extra)
             // Rozhoduje server, ne hodiny. Do 4.50 tu byla mez „pět minut bez
@@ -3029,7 +3043,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     // ------------------------------------------------ 🌐 překlad promptu (AI)
 
     /** Pole se zadáním, které umí překladač obsloužit. */
-    enum class PromptPole { OBRAZEK, AIO, UPRAVA, DOMALOVAT, LONGMM }
+    enum class PromptPole { OBRAZEK, AIO, UPRAVA, DOMALOVAT, LONGMM, LTX }
 
     private fun textPole(pole: PromptPole): String = when (pole) {
         PromptPole.OBRAZEK -> _params.value.prompt
@@ -3037,6 +3051,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         PromptPole.UPRAVA -> _edit.value.prompt
         PromptPole.DOMALOVAT -> _inpaint.value.prompt
         PromptPole.LONGMM -> _longMm.value.prompt
+        PromptPole.LTX -> _ltx.value.popis
     }
 
     private fun zapisPole(pole: PromptPole, text: String) = when (pole) {
@@ -3045,12 +3060,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         PromptPole.UPRAVA -> setEditPrompt(text)
         PromptPole.DOMALOVAT -> setInpaintPrompt(text)
         PromptPole.LONGMM -> setLongMmPrompt(text)
+        PromptPole.LTX -> updateLtx { it.copy(popis = text) }
     }
 
     /** Vrátí zadání, jak vypadalo před přepisem nebo překladem. */
     fun vratPuvodni(pole: PromptPole) {
-        _rewriteOriginal.value?.let { zapisPole(pole, it) }
-        _rewriteOriginal.value = null
+        _puvodniPrompty.value[pole]?.let { zapisPole(pole, it) }
+        _puvodniPrompty.value = _puvodniPrompty.value - pole
     }
 
     /**
@@ -3099,7 +3115,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             vysledek.onSuccess { text ->
-                _rewriteOriginal.value = zadani
+                ulozPuvodni(pole, zadani)
                 zapisPole(pole, ImagePromptBuilder.ocisti(text))
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
@@ -3113,8 +3129,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Vrátí původní zadání na kartě Obrázek. */
     fun vratPuvodniPromptObrazku() {
-        _rewriteOriginal.value?.let { puvodni -> update { it.copy(prompt = puvodni) } }
-        _rewriteOriginal.value = null
+        vratPuvodni(PromptPole.OBRAZEK)
     }
 
     /**
@@ -3163,7 +3178,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             vysledek.onSuccess { text ->
-                _rewriteOriginal.value = zadani
+                ulozPuvodni(PromptPole.OBRAZEK, zadani)
                 update { it.copy(prompt = ImagePromptBuilder.ocisti(text)) }
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
@@ -3241,7 +3256,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             vysledek.onSuccess { text ->
-                _rewriteOriginal.value = zadani
+                ulozPuvodni(PromptPole.UPRAVA, zadani)
                 _edit.value = _edit.value.copy(prompt = ImagePromptBuilder.ocisti(text))
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
@@ -3322,7 +3337,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             vysledek.onSuccess { v ->
-                _rewriteOriginal.value = zadani
+                ulozPuvodni(if (proUpravu) PromptPole.UPRAVA else PromptPole.OBRAZEK, zadani)
                 if (proUpravu) {
                     _edit.value = _edit.value.copy(prompt = v.prompt)
                 } else {
@@ -3515,7 +3530,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             vysledek.onSuccess { text ->
-                _rewriteOriginal.value = zadani
+                ulozPuvodni(PromptPole.OBRAZEK, zadani)
                 val hotovy = if (_params.value.rewriteHudba) text.trim()
                 else PromptRewriteBuilder.bezPodkresoveHudby(text.trim())
                 update { it.copy(prompt = hotovy) }
@@ -3616,7 +3631,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             vysledek.onSuccess { text ->
-                _rewriteOriginal.value = zadani
+                ulozPuvodni(PromptPole.AIO, zadani)
                 // Přepisovač do promptu vždy dopíše podkresovou hudbu, i když
                 // o ni nikdo nestál — bez zapnuté volby se vyhazuje.
                 val hotovy = if (_params.value.rewriteHudba) text.trim()
@@ -4421,7 +4436,35 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * potvrdit stejně jako u ostatních karet. Spouštěcí slovo se dosadí do
      * popisu sámo, jinak se natrénovaný styl neprojeví.
      */
-    fun setLtxLora(name: String, confirmedUnknown: Boolean = false) {
+    fun setLtxLora(name: String, confirmedUnknown: Boolean = false) = setLtxLora(0, name, confirmedUnknown)
+
+    /** LoRA na místě [slot] (0 = první); prázdné jméno místo uvolní. */
+    fun setLtxLora(slot: Int, name: String, confirmedUnknown: Boolean = false) {
+        if (slot > 0) {
+            if (name.isNotBlank()) {
+                val file = _editLoras.value.files.firstOrNull { it.name == name } ?: return
+                when (cz.promptlab.h3video.data.LtxLoras.compatibility(file)) {
+                    LoraCompatibility.MATCH -> Unit
+                    LoraCompatibility.UNKNOWN -> if (!confirmedUnknown) return
+                    else -> return
+                }
+            }
+            updateLtx {
+                val puvodni = it.loraNa(slot).name
+                val dalsi = it.dalsiLory.toMutableList()
+                val i = slot - 1
+                when {
+                    name.isBlank() -> if (i < dalsi.size) dalsi.removeAt(i)
+                    i < dalsi.size -> dalsi[i] = dalsi[i].copy(name = name)
+                    dalsi.size < cz.promptlab.h3video.data.LtxScene.MAX_LOR - 1 -> dalsi += cz.promptlab.h3video.data.EditLora(name = name)
+                }
+                it.copy(
+                    dalsiLory = dalsi,
+                    popis = cz.promptlab.h3video.data.LoraTrigger.dosad(it.popis, spoustec(puvodni), spoustec(name)),
+                )
+            }
+            return
+        }
         if (name.isNotBlank()) {
             val file = _editLoras.value.files.firstOrNull { it.name == name } ?: return
             when (cz.promptlab.h3video.data.LtxLoras.compatibility(file)) {
@@ -6400,7 +6443,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             vysledek.onSuccess { text ->
-                _rewriteOriginal.value = zadani
+                ulozPuvodni(PromptPole.LONGMM, zadani)
                 updateLongMm { it.copy(prompt = ImagePromptBuilder.ocisti(text)) }
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
@@ -6412,8 +6455,15 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    fun setLtxLoraStrength(value: Float) {
-        if (value.isFinite()) updateLtx { it.copy(lora = it.lora.copy(strength = value.coerceIn(0f, 2f))) }
+    fun setLtxLoraStrength(value: Float) = setLtxLoraStrength(0, value)
+
+    fun setLtxLoraStrength(slot: Int, value: Float) {
+        if (!value.isFinite()) return
+        val v = value.coerceIn(0f, 2f)
+        updateLtx {
+            if (slot == 0) it.copy(lora = it.lora.copy(strength = v))
+            else it.copy(dalsiLory = it.dalsiLory.mapIndexed { i, l -> if (i == slot - 1) l.copy(strength = v) else l })
+        }
     }
 
     /**
@@ -6424,7 +6474,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      * `TextGenerateLTX2Prompt` si podle přítomnosti fotky sám vybere pravidla
      * pro i2v nebo t2v — proto se fotka posílá, kdykoli ji karta má.
      */
-    fun vylepsiLtxPopis() = vylepsiLtx(odvazane = false)
+    // 1. 10. 2026: oficiální přepisovač (TextGenerateLTX2Prompt) píše enkodérem gemma4-12b
+    // (14,6 GB) — na 16 GB s rezervou se nevejde, token za 5–14 s, prompt přes hodinu.
+    // Vylepšuje se proto vždy rychlým 8B modelem s pravidly LTX 2.5 (~30 s).
+    fun vylepsiLtxPopis() = vylepsiLtx(odvazane = true)
 
     /**
      * ✨ Vylepšit popis **odvázaně** — odblokovaný Qwen3-VL přes llama.cpp.
@@ -6462,7 +6515,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 }
             }
             vysledek.onSuccess { text ->
-                _rewriteOriginal.value = zadani
+                ulozPuvodni(PromptPole.LTX, zadani)
                 updateLtx { it.copy(popis = ImagePromptBuilder.ocisti(text)) }
                 _rewriteState.value = RewriteState.Idle
             }.onFailure { e ->
