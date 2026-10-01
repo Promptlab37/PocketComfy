@@ -5877,10 +5877,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val delka = withContext(Dispatchers.IO) { audioSeconds(soubor) }.toDouble()
         val n = cz.promptlab.h3video.data.SbDialogy.Nahravka(soubor, text, hlas, delka)
         updateSbFilm {
-            it.copy(
+            val s2 = it.copy(
                 nahravky = it.nahravky + (cz.promptlab.h3video.data.SbDialogy.klic(cislo, index) to cz.promptlab.h3video.data.SbDialogy.zakoduj(n)),
                 zadaniUseku = emptyList(),
             )
+            // Panel, do kterého se nahrávka nevejde, se prodlouží — s rezervou na konci (5.65).
+            s2.copy(panely = cz.promptlab.h3video.data.SbDialogy.prodluzPanely(s2))
         }
     }
 

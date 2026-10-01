@@ -27,7 +27,12 @@ object SbDialogy {
     /** Mezera mezi dvěma replikami téhož panelu. */
     const val MEZERA_S = 0.3
     /** Rezerva za poslední replikou panelu, než přijde střih. */
-    const val DOBEH_S = 0.5
+    const val DOBEH_S = 1.0
+    /**
+     * Rezerva za replikou v posledním panelu filmu: s 0,1 s rezervy se konec repliky
+     * uřízl (Příšera 1. 10. 2026) — mluvený záběr vždy s velkou rezervou (~2 s).
+     */
+    const val DOBEH_KONEC_S = 2.0
     const val MAX_NA_USEK = 3
     const val MAX_NA_FILM = 9
     const val VZORKOVANI = 44100
@@ -97,12 +102,13 @@ object SbDialogy {
      * Panely prodloužené tak, aby se jejich nahrané repliky vešly (nástup + repliky
      * + mezery + doběh). Jen prodlužuje — kratší nahrávka panel nezkrátí.
      */
-    fun prodluzPanely(s: SbFilmScene): List<SbPanel> = s.panely.map { p ->
+    fun prodluzPanely(s: SbFilmScene, existuje: (File) -> Boolean = { it.exists() }): List<SbPanel> = s.panely.mapIndexed { k, p ->
         val repl = SbFilmPrepis.repliky(p.repliky)
-        if (repl.isEmpty()) return@map p
-        val delky = repl.mapIndexed { i, (kdo, text) -> platna(s, p, i, kdo, text)?.delkaS }
-        if (delky.any { it == null }) return@map p
-        val potreba = NASTUP_S + delky.sumOf { it!! } + MEZERA_S * (repl.size - 1) + DOBEH_S
+        if (repl.isEmpty()) return@mapIndexed p
+        val delky = repl.mapIndexed { i, (kdo, text) -> platna(s, p, i, kdo, text, existuje)?.delkaS }
+        if (delky.any { it == null }) return@mapIndexed p
+        val dobeh = if (k == s.panely.lastIndex) DOBEH_KONEC_S else DOBEH_S
+        val potreba = NASTUP_S + delky.sumOf { it!! } + MEZERA_S * (repl.size - 1) + dobeh
         if (potreba > p.sekundy) p.copy(sekundy = Math.ceil(potreba * 2) / 2) else p
     }
 

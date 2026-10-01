@@ -157,4 +157,21 @@ class SbDialogyTest {
         val g = SbDialogy.doplnGraf(wf, stopy, nazvy, SbFilmBuilder.N_KONTEXT, SbFilmBuilder.N_MEDIA)
         assertEquals("guide", g.getJSONObject(SbFilmBuilder.N_KONTEXT).getJSONObject("inputs").getString("continuity_mode"))
     }
+
+    /** 5.65: konec repliky se uřízl (0,1 s rezervy) — panel se prodlouží, poslední s rezervou 2 s. */
+    @Test
+    fun `panely se prodlouzi s rezervou`() {
+        val s = scena()
+        val p = SbDialogy.prodluzPanely(s, vse)
+        // Panel 1: 0,15 + 0,8 + 0,3 + 0,6 + 1,0 = 2,85 → vejde se do 4 s.
+        assertEquals(4.0, p[0].sekundy, 0.0)
+        // Poslední panel: 0,15 + 1,0 + 2,0 = 3,15 → vejde se do 4 s; s delší replikou se prodlouží.
+        assertEquals(4.0, p[2].sekundy, 0.0)
+        val dlouha = s.copy(nahravky = s.nahravky + (SbDialogy.klic(3, 0) to
+            SbDialogy.zakoduj(SbDialogy.Nahravka(File("/x/3-0.wav"), "Jdeme.", anna.klic, 4.24))))
+        // 0,15 + 4,24 + 2,0 = 6,39 → 6,5 s.
+        assertEquals(6.5, SbDialogy.prodluzPanely(dlouha, vse)[2].sekundy, 0.0)
+        // Panel bez replik se nemění.
+        assertEquals(3.0, p[1].sekundy, 0.0)
+    }
 }
