@@ -161,4 +161,13 @@ class SbJednaPostavaTest {
         assertEquals(1f, SbFilmPlan.zvetseniRadku(2048), 0f)
         assertEquals(3f, SbFilmPlan.zvetseniRadku(300), 0f)
     }
+
+    /** 5.62: smazaný panel neposune výřezy ostatních — počet panelů obrázku se nemění. */
+    @Test
+    fun `pocet panelu obrazku po smazani`() {
+        val panely = (1..6).map { SbPanel(it, "p", "wide", "static", 3.0) }
+        val s = cz.promptlab.h3video.data.SbFilmScene(panely = panely.filter { it.cislo != 5 })
+        assertEquals(6, SbFilmPlan.panelyObrazku(s))
+        assertEquals(6, SbFilmPlan.panelyObrazku(s.copy(panelyObrazku = 6, panely = panely.filter { it.cislo != 6 })))
+    }
 }

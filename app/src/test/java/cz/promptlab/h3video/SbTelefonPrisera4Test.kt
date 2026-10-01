@@ -19,7 +19,7 @@ class SbTelefonPrisera4Test {
     private fun hotovy(soubor: String, usek: SbUsek): String {
         val sp = SbFilmPrepis
         val cisty = sp.opravObrazky(sp.ocistiPrepis(java.io.File("src/test/resources/$soubor").readText(), usek.panely.size), 1)
-        return sp.doplnIdMluvciho(sp.bezUvozovekMimoD(sp.doplnD(cisty, usek, "Czech", id)), id)
+        return sp.doplnIdMluvciho(sp.bezDuplicitD(sp.bezUvozovekMimoD(sp.doplnD(cisty, usek, "Czech", id))), id)
     }
 
     private fun zkontroluj(z: String, repliky: List<String>) {
@@ -52,5 +52,17 @@ class SbTelefonPrisera4Test {
             SbPanel(6, "c", "wide", "static", 4.0, repliky = "Příšera: „Vypnout. A do postele!“"),
         ))
         zkontroluj(hotovy("prisera4_usek2.txt", u), listOf("Ty tu ještě jsi?", "Vypnout. A do postele!"))
+    }
+
+    /** 5.62: panel 5 smazaný, přepisovač dal repliku v <d> i do shrnutí (přesný výstup ze serveru). */
+    @Test
+    fun `replika ve shrnuti jen jednou`() {
+        val u = SbUsek(listOf(
+            SbPanel(4, "a", "wide", "static", 4.0),
+            SbPanel(6, "c", "wide", "static", 4.0, repliky = "Příšera: „Vypnout. A do postele!“"),
+        ))
+        val z = hotovy("prisera5_usek2_dup.txt", u)
+        zkontroluj(z, listOf("Vypnout. A do postele!"))
+        assertTrue(z.contains("in Czech as the line, voiced"))
     }
 }

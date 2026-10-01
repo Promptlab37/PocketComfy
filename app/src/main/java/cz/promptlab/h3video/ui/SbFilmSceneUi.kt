@@ -474,7 +474,7 @@ private fun Kontrola(
                             if (sb != null && scene.seStoryboardem) {
                                 // Počet panelů podle čtení obrázku — skutečné hranice se použijí, jen když souhlasí (5.38).
                                 VyrezPanelu(sb, scene.radku, scene.sloupcu, p.cislo - 1,
-                                    scene.panelyObrazku.takeIf { it > 0 } ?: scene.panely.size)
+                                    cz.promptlab.h3video.data.SbFilmPlan.panelyObrazku(scene))
                             }
                             scene.nalezy.filter { it.cislo == p.cislo }.forEach { n ->
                                 Text(n.text, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)

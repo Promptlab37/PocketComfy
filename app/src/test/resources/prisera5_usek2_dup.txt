@@ -1,0 +1,20 @@
+subject_definitions:
+<Subject 1> is the man in <Picture 1>, with long curly brown hair, a wrinkled face, a massive muscular body, wearing a black tank top and black boots.
+
+summary:
+[reference generation] The target video consists of two timed shots continuing directly from the previous part. Shot 1 shows <Subject 1> dancing with hips swaying and arms waving in an industrial warehouse lit with blue lighting, matching <Picture 1>’s Panel 4. Shot 2 begins at 00:04.000 with <Subject 1> stomping and pointing toward a door, also matching Panel 6. The only spoken line is delivered by <Subject 1> (S1) in Czech as <d>[Czech] Vypnout. A do postele!</d>, voiced in his deep, gravelly tone. No on-screen text appears. The mood transitions from enthusiastic dancing to comically strict instruction.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2]): fully_preserved - the long curly brown hair, wrinkled face, massive muscular body, black tank top, and black boots are retained identically across both shots.
+<Picture 1> (storyboard reference for [Shot 1] and [Shot 2]): fully_preserved - the viewpoint, subject placement, and visual style of the warehouse with blue lighting are preserved as defined by the storyboard panels.
+
+detailed_description:
+The target video is in a cinematic, high-energy dance-film style with saturated blue industrial lighting and dynamic motion. The camera remains static throughout both shots.
+[Shot 1] The scene opens wide in an industrial warehouse lit with cool blue tones. <Subject 1>, the man with long curly brown hair, wrinkled face, massive muscular body, black tank top, and black boots, dances energetically with hips swaying and arms waving. His expression is one of enthusiastic pride. No dialogue or sound effects are present — only rhythmic dance music plays throughout the shot.
+[Shot 2] At 00:04.000, the shot cuts to a wide static frame as <Subject 1> stomps his foot firmly and points toward a door with a comically strict expression. He speaks immediately in his deep, gravelly voice at a lively, natural pace: <d>[Czech] Vypnout. A do postele!</d>. After delivering the line, he closes his lips briefly with a firm, satisfied nod before the cut.
+
+overall_soundscape:
+Dance music continues throughout the video — loud, rhythmic, and driving — matching the energetic mood of the dance in Shot 1 and the abrupt transition into the strict command in Shot 2.
+
+non_diegetic_music:
+N/A

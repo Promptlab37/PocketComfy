@@ -5705,7 +5705,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         it.copy(panely = plan.panely, nazev = cteni.nazev.orEmpty(),
                             casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
                             hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
-                            nalezy = nalezy, radku = cteni.radku ?: 0, sloupcu = cteni.sloupcu ?: 0)
+                            nalezy = nalezy, radku = cteni.radku ?: 0, sloupcu = cteni.sloupcu ?: 0,
+                            // Počet panelů obrázku zůstane i po smazání panelu — výřezy se podle něj počítají (5.62).
+                            panelyObrazku = cteni.panely.size)
                     }
                     // Kolik kroků čtení opravdu proběhlo (řádky podle obrázku, dotaz na hlas).
                     if (pokracovat) dopisPromptySb(_planAkce.value?.kroky?.count { it.typ != cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU }
@@ -5859,7 +5861,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // Se scénářem i replika vždy na začátek záběru (5.32).
                 // Replika bez <d> se zabalí (5.60), pak uvozovky mimo <d> pryč — H3 by je vyslovil (5.57).
                 val upraveny = if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) sp.replikaNaZacatek(cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty)) else cisty
-                return sp.doplnIdMluvciho(sp.bezUvozovekMimoD(sp.doplnD(upraveny, u, sp.jazykFilmu(s), sp.idMluvcich(s.panely))), sp.idMluvcich(s.panely))
+                return sp.doplnIdMluvciho(sp.bezDuplicitD(sp.bezUvozovekMimoD(sp.doplnD(upraveny, u, sp.jazykFilmu(s), sp.idMluvcich(s.panely)))), sp.idMluvcich(s.panely))
             }
             var prompt = napis()
             // Se scénářem: každá replika úseku musí být v promptu v <d> (5.27). Chybí-li,

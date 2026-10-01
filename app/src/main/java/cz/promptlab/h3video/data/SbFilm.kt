@@ -445,6 +445,14 @@ object SbFilmPlan {
             " | MOOD: " + nalada.ifEmpty { "none" } + " | SOUND: " + zvuk.ifEmpty { "none" }
     }
 
+    /**
+     * Kolik panelů má obrázek storyboardu — podle něj se počítají výřezy panelů v kontrole.
+     * Ne podle panelů v kartě: po smazání panelu se výřezy všech ostatních posunuly
+     * (uživatel 1. 10. 2026). Starší uložené čtení počet nemá → nejvyšší číslo panelu.
+     */
+    fun panelyObrazku(s: SbFilmScene): Int =
+        s.panelyObrazku.takeIf { it > 0 } ?: maxOf(s.panely.maxOfOrNull { it.cislo } ?: 0, s.panely.size)
+
     /** Zvětšení řádku před čtením: na šířku aspoň 1400 px, nejvýš 3×, velký řádek beze změny. */
     fun zvetseniRadku(sirka: Int): Float = if (sirka <= 0) 1f else (1400f / sirka).coerceIn(1f, 3f)
 
@@ -1468,6 +1476,20 @@ object SbFilmPrepis {
             od = m.range.last + 1
         }
         return sb.append(text.substring(od)).toString()
+    }
+
+    /**
+     * Replika v `<d>` mimo popis záběrů (shrnutí, retence) se značky zbaví, když stejná
+     * replika je v záběru (5.62): přepisovač ji 1. 10. 2026 napsal v `<d>` i do shrnutí
+     * a H3 by ji řekl dvakrát. Replika, která je jen mimo záběry, zůstane.
+     */
+    fun bezDuplicitD(text: String): String {
+        val i = text.indexOf("detailed_description:")
+        if (i < 0) return text
+        fun obsah(d: String) = d.removePrefix("<d>").removeSuffix("</d>").replace(Regex("""^\s*\[[^\]]*]\s*"""), "").trim()
+        val vZaberech = REPLIKA_D.findAll(text.substring(i)).map { obsah(it.value) }.toSet()
+        val hlava = REPLIKA_D.replace(text.substring(0, i)) { m -> if (obsah(m.value) in vZaberech) "the line" else m.value }
+        return hlava + text.substring(i)
     }
 
     /** Jazyk všech replik filmu dohromady (null = nepoznaný, model ho určí sám). */

@@ -2,20 +2,20 @@ subject_definitions:
 <Subject 1> is the man in <Picture 1>, with long curly brown hair, a wrinkled face, a muscular body, wearing a black tank top and black boots.
 
 summary:
-[reference generation] The target video consists of three timed shots that continue directly from the previous part, using <Picture 1> as a storyboard reference for viewpoint, subject placement, and visual style. Each shot corresponds to one panel from <Picture 1>: [Shot 1] matches Panel 4, [Shot 2] matches Panel 5, and [Shot 3] matches Panel 6. The man, <Subject 1>, performs the exact actions described in each panel without changing his appearance or clothing. The only audio is generated dance music in Shot 1 and spoken Czech lines from <Subject 1> (S1) in Shots 2 and 3, delivered in a deep, commanding voice at a lively, natural pace.
+[reference generation] The target video consists of three timed shots that continue directly from the previous part, using <Picture 1> as a storyboard reference for viewpoint, subject placement, and visual style. Each shot corresponds to one panel from <Picture 1>: [Shot 1] matches Panel 4, [Shot 2] matches Panel 5, and [Shot 3] matches Panel 6. The man, identified as <Subject 1>, performs the exact actions described in each panel without change in appearance or setting. The only audio is generated dance music in Shot 1 and spoken Czech lines from <Subject 1> (S1) in Shots 2 and 3, delivered in his deep, commanding voice at a lively, natural pace. No on-screen text appears.
 
 retention_analysis:
 <Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the long curly brown hair, wrinkled face, muscular body, black tank top, and black boots are retained identically across all shots.
-<Picture 1> (storyboard reference for [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the viewpoint, subject placement, and visual style of each shot are defined by the corresponding panel from <Picture 1>.
+<Picture 1> (storyboard reference for [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the viewpoint, subject placement, and visual style of each shot are defined by its corresponding panel in <Picture 1>.
 
 detailed_description:
 The target video is in a cinematic, high-energy dance-movie style with dramatic blue industrial lighting and a warehouse setting. The camera remains static throughout all shots.
-[Shot 1] The scene opens with a wide, static shot matching Panel 4 of <Picture 1>. <Subject 1> dances energetically, swaying his hips and waving his arms in a rhythmic, enthusiastic motion. He maintains a joyful, confident expression. The only sound is upbeat dance music that fills the space without cutting out or changing.
-[Shot 2] At 00:04.000, the shot cuts to a close-up matching Panel 5 of <Picture 1>. <Subject 1> leans forward with wide eyes and an open mouth, his expression shifting to shocked surprise. In the same deep, commanding voice, he says, <d>[Czech] Ty tu ještě jsi?</d> He closes his lips immediately after speaking, holding a brief pause before the next cut.
-[Shot 3] At 00:07.000, the shot cuts to a wide, static frame matching Panel 6 of <Picture 1>. <Subject 1> stomps his right foot firmly on the floor and points decisively toward a door with his left hand. His expression is comically exaggerated, as if scaring someone away. In the same deep, commanding voice, he says, <d>[Czech] Vypnout. A do postele!</d> He closes his lips immediately after speaking, holding still until the end of the shot.
+[Shot 1] The scene opens with a wide static shot matching Panel 4 of <Picture 1>. <Subject 1> dances energetically, swaying his hips and waving his arms in a rhythmic, enthusiastic motion. He maintains a joyful expression as he moves. The ambient sound is dance music — upbeat, driving, and full of bass — playing continuously without interruption. No dialogue or voice occurs.
+[Shot 2] At 00:04.000, the shot cuts to a close-up matching Panel 5 of <Picture 1>. <Subject 1> leans forward slightly, eyes wide with shocked surprise, eyebrows raised, mouth slightly open as if gasping. In the same deep, commanding voice, he says, <d>[Czech] Ty tu ještě jsi?</d> He closes his lips immediately after speaking, holding a brief moment of stunned silence before the next cut.
+[Shot 3] At 00:07.000, the shot cuts to a wide static frame matching Panel 6 of <Picture 1>. <Subject 1> stomps his right foot firmly on the floor and points decisively toward a door with his left hand. His expression is comically stern, eyebrows slightly furrowed, lips set in a firm line. In the same deep, commanding voice, he says, <d>[Czech] Vypnout. A do postele!</d> He closes his lips immediately after speaking, holding still until the end of the shot.
 
 overall_soundscape:
-Dance music plays continuously in [Shot 1]. In [Shot 2] and [Shot 3], the dance music fades slightly under the spoken Czech lines, which are delivered clearly and without echo. No other ambient sounds or physical noises appear.
+Dance music continues throughout Shot 1. In Shots 2 and 3, the dance music fades slightly under the spoken Czech lines, which are delivered clearly and without echo. No other physical sounds or ambience appear.
 
 non_diegetic_music:
 N/A
