@@ -716,6 +716,11 @@ data class SbFilmScene(
      * storyboardem musí mít každá fotka jméno — jinak přepisovač hádá (5.17, kritici).
      */
     val jmenaFotek: Map<String, String> = emptyMap(),
+    /**
+     * Fotky, ze kterých se bere jen tvář (cesty) — tělo, kůže, vlasy, chlupy a oblečení
+     * zůstanou podle storyboardu (uživatel 1. 10. 2026: skutečná tvář na příšeru).
+     */
+    val jenTvar: Set<String> = emptySet(),
 ) {
     /** Kroky, se kterými se opravdu vzorkuje. */
     val kroky: Int
@@ -904,6 +909,7 @@ class SbFilmStore(private val ctx: Context) {
             .put("sloupcu", s.sloupcu)
             .put("nalezy", org.json.JSONArray().also { a -> s.nalezy.forEach { a.put(org.json.JSONObject().put("cislo", it.cislo).put("text", it.text)) } })
             .put("jmenaFotek", org.json.JSONObject().also { j -> s.jmenaFotek.forEach { (k, v) -> j.put(k, v) } })
+            .put("jenTvar", org.json.JSONArray().also { a -> s.jenTvar.forEach { a.put(it) } })
             .put("strih", org.json.JSONArray().also { a ->
                 s.strih.forEach { a.put(org.json.JSONObject().put("cislo", it.cislo).put("text", it.text).put("druh", it.druh.name)) }
             })
@@ -967,6 +973,7 @@ class SbFilmStore(private val ctx: Context) {
             },
             jmenaFotek = j.optJSONObject("jmenaFotek")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }
                 .orEmpty().filterValues { it.isNotBlank() },
+            jenTvar = j.optJSONArray("jenTvar")?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() }.toSet() }.orEmpty(),
             panelyObrazku = j.optInt("panelyObrazku"),
             strih = (0 until (j.optJSONArray("strih")?.length() ?: 0)).mapNotNull {
                 val r = j.getJSONArray("strih").getJSONObject(it)
@@ -1262,6 +1269,21 @@ object SbFilmPrepis {
      * Dovětek: přesný seznam záběrů úseku s časy (délky počítá appka, ne
      * model), role obrázků a navázání na předchozí úsek.
      */
+    /**
+     * Fotky „jen tvář“: z obrázku jen rysy obličeje, tělo/kůže/vlasy/chlupy/oblečení
+     * podle storyboardu. Prázdné, když žádná taková fotka není (zadání se nemění).
+     */
+    internal fun jenTvar(jenTvarFotek: List<Boolean>, prvniPostava: Int, jmena: List<String>): String {
+        val obr = jenTvarFotek.withIndex().filter { it.value }.map { it.index }
+        if (obr.isEmpty()) return ""
+        return obr.joinToString("") { i ->
+            val kdo = jmena.getOrNull(i) ?: "this character"
+            " Exception for <Picture ${prvniPostava + i}>: take only the face from it (face shape, eyes, nose, mouth, " +
+                "eyebrows and expression) and put that face on $kdo as drawn in the storyboard in <Picture 1>; " +
+                "$kdo's body, build, skin and its texture, hair, fur and clothing look exactly as in the storyboard."
+        }
+    }
+
     fun hlidka(
         pocetObrazku: Int, usek: SbUsek, k: Int, n: Int, seStoryboardem: Boolean = true,
         idMluvcich: Map<String, String> = idMluvcich(usek.panely),
@@ -1283,6 +1305,8 @@ object SbFilmPrepis {
         jmenaFotek: List<String> = emptyList(),
         /** Popis vzhledu uvádí změnu podle oken (5.26, Dar mudrců: vlasy do okna 4 dlouhé, pak krátké). */
         vzhledSeMeni: Boolean = false,
+        /** U každé fotky postavy (pořadí nahrání): bere se z ní jen tvář (5.52). */
+        jenTvarFotek: List<Boolean> = emptyList(),
         /** Scénář (5.31): v záběru jen ti, kdo v něm jednají; předměty doslovně (Dar mudrců 30. 9. 2026). */
         zeScenare: Boolean = false,
     ): String {
@@ -1301,6 +1325,7 @@ object SbFilmPrepis {
             // (lékařka nesla žebřík z fotky a stála u cihlové zdi, film 30. 9. 2026).
             if (seStoryboardem) sb.append(" Their pictures give only the person; the setting, props, poses and ")
                 .append("framing of every shot come from the storyboard in <Picture 1>.")
+            sb.append(jenTvar(jenTvarFotek, prvniPostava, jmenaFotek))
         } else if (pocetObrazku >= prvniPostava) {
             sb.append(" ").append((prvniPostava..pocetObrazku).joinToString(", ") { "<Picture $it>" })
             sb.append(" show the characters: define each one in subject_definitions as a <Subject K> ")

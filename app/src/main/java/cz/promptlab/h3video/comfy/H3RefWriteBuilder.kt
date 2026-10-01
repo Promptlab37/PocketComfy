@@ -125,12 +125,12 @@ object H3RefWriteBuilder {
      * ně je potřeba jako na Subject — jinak přijde popis kompozice místo
      * podoby.
      */
-    fun otazky(pocet: Int, storyboard: Boolean): String {
+    fun otazky(pocet: Int, storyboard: Boolean, jenTvar: Set<Int> = emptySet()): String {
         val o = JSONObject()
         if (!storyboard || pocet == 0) return o.toString()
         o.put("ref_0", JSONObject().put("text", OTAZKA_STORYBOARD).put("add", false))
         for (i in 1 until pocet) {
-            o.put("ref_$i", JSONObject().put("text", OTAZKA_POSTAVA).put("add", false))
+            o.put("ref_$i", JSONObject().put("text", if (i in jenTvar) OTAZKA_TVAR else OTAZKA_POSTAVA).put("add", false))
         }
         return o.toString()
     }
@@ -153,6 +153,12 @@ object H3RefWriteBuilder {
      * lékařky s žebříkem se žebřík dostal do popisu postavy a model ho nesl do
      * každého záběru místo stolu ze storyboardu (film uživatele 30. 9. 2026).
      */
+    /** Fotka „jen tvář“ (5.52): popsat jen obličej — tělo, vlasy a oblečení dává storyboard. */
+    const val OTAZKA_TVAR =
+        "Describe only the face of the person so it can be recognised again: face shape, eyes, nose, " +
+            "mouth, eyebrows, skin tone of the face and approximate age. Leave out hair, body and clothing. " +
+            "Answer in two sentences."
+
     const val OTAZKA_POSTAVA =
         "Describe only the person so they can be recognised again in another shot: gender, " +
             "age and build, face, hair, and the clothing they wear with its colours. Describe " +
@@ -176,6 +182,8 @@ object H3RefWriteBuilder {
         storyboard: Boolean = false,
         /** Vlastní dovětek místo [hlidkaStitku] (úseky filmu ze storyboardu). */
         hlidka: String? = null,
+        /** Indexy obrázků (0 = první), ze kterých se popisuje jen tvář. */
+        jenTvar: Set<Int> = emptySet(),
     ): JSONObject {
         val wf = JSONObject()
 
@@ -205,7 +213,7 @@ object H3RefWriteBuilder {
 
         val vstupy = JSONObject()
             .put("reference_layout", layout(obrazky.size, storyboard))
-            .put("reference_instructions", otazky(obrazky.size, storyboard))
+            .put("reference_instructions", otazky(obrazky.size, storyboard, jenTvar))
             .put("task", TASK)
             .put("resolution", pomer)
             .put("duration", sekundy)

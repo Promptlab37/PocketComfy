@@ -3408,6 +3408,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         hlidatDialogy: Boolean = true,
         /** Index kroku v [planAkce] (příprava promptů filmu). */
         krok: Int? = null,
+        /** Indexy fotek (v [fotky]), ze kterých se popisuje jen tvář. */
+        jenTvar: Set<Int> = emptySet(),
     ): String {
         val spec = client.objectInfo(H3RefWriteBuilder.NODE_CLASS)
             ?: throw ComfyException(
@@ -3449,6 +3451,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             seed = kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
             storyboard = storyboard,
             hlidka = hlidka,
+            jenTvar = jenTvar,
         )
         return spustPrepisAPockej(client, wf, H3RefWriteBuilder.N_PREVIEW, krok = krok)
     }
@@ -5054,7 +5057,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         val f = it.postavy.getOrNull(index)?.soubor
         f?.delete()
         it.copy(postavy = it.postavy.filterIndexed { i, _ -> i != index }, zadaniUseku = emptyList(),
-            jmenaFotek = it.jmenaFotek - (f?.absolutePath ?: ""))
+            jmenaFotek = it.jmenaFotek - (f?.absolutePath ?: ""), jenTvar = it.jenTvar - (f?.absolutePath ?: ""))
     }
 
     fun setSbDej(text: String) = updateSbFilm { it.copy(dej = text, zadaniUseku = emptyList()) }
@@ -5733,6 +5736,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private fun odhadUseku() = trvaniPrepisu.getInt("odhad_posledni_useky", 2).coerceIn(1, 4)
 
     /** Kdo je na fotce (5.17). Prázdné jméno = nepřiřazená. */
+    /** Z fotky postavy jen tvář (5.52) — zadání se pak musí napsat znovu. */
+    fun setSbJenTvar(index: Int, zapnuto: Boolean) = updateSbFilm { s ->
+        val f = s.postavy.getOrNull(index)?.soubor?.absolutePath ?: return@updateSbFilm s
+        s.copy(jenTvar = if (zapnuto) s.jenTvar + f else s.jenTvar - f, zadaniUseku = emptyList())
+    }
+
     fun setSbFotkaJmeno(index: Int, jmeno: String) = updateSbFilm { s ->
         val f = s.postavy.getOrNull(index)?.soubor ?: return@updateSbFilm s
         val jmena = s.jmenaFotek.toMutableMap()
@@ -5760,12 +5769,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 // Fotky se jmény postav (5.17); bez fotek prázdné → prompt beze změny.
                 jmenaFotek = if (s.seStoryboardem && s.postavy.isNotEmpty() && s.postavy.all { s.jmenoFotky(it.soubor) != null })
                     s.postavy.map { s.jmenoFotky(it.soubor)!! } else emptyList(),
+                jenTvarFotek = s.postavy.map { it.soubor.absolutePath in s.jenTvar },
             )
             suspend fun napis(): String {
                 val text = prepisSReferencemi(
                     client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),
                     storyboard = s.seStoryboardem, hlidka = hlidka,
                     hlidatDialogy = false, pomer = s.pomer.kod, krok = krokOd + k,
+                    // Storyboard je první obrázek, fotky postav za ním.
+                    jenTvar = s.postavy.withIndex().filter { it.value.soubor.absolutePath in s.jenTvar }
+                        .map { it.index + (if (s.seStoryboardem) 1 else 0) }.toSet(),
                 )
                 // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
                 // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.

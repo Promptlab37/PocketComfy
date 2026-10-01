@@ -266,13 +266,22 @@ private fun FotkyPostav(vm: MainViewModel, scene: SbFilmScene) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RefDlazdicka(thumb = p.nahled, onPick = { }, onRemove = { vm.removeSbPostava(i) })
                 Spacer(Modifier.width(12.dp))
-                Box(Modifier.weight(1f)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     if (jmena.isNotEmpty()) PillRow(
                         items = jmena,
                         selected = jmeno.orEmpty(),
                         label = { it },
                         onSelect = { vm.setSbFotkaJmeno(i, if (it.equals(jmeno, ignoreCase = true)) "" else it) },
                     )
+                    // Skutečná tvář na postavu ze storyboardu: tělo, chlupy a oblečení zůstanou (5.52).
+                    if (scene.seStoryboardem) Row(verticalAlignment = Alignment.CenterVertically) {
+                        androidx.compose.material3.Switch(
+                            checked = p.soubor.absolutePath in scene.jenTvar,
+                            onCheckedChange = { vm.setSbJenTvar(i, it) },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(t("Z fotky jen tvář"), style = MaterialTheme.typography.bodyMedium, color = TextMid)
+                    }
                 }
             }
         }
