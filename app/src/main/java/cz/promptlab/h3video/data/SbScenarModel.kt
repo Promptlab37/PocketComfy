@@ -124,61 +124,79 @@ object SbScenarModel {
     fun zadani(j: List<Jednotka>): String = j.joinToString("\n") { "U${it.id}: ${it.text}" }
 
     /**
-     * Zadání pro ChatGPT (tlačítko „Zadání pro ChatGPT“, 5.27): scénář pak přijde
-     * v tvaru, který appka rozebere hned a jistě. Ostatní zápisy fungují taky.
+     * Zadání pro ChatGPT (tlačítko „Zadání pro ChatGPT“, 5.27; 5.68 přepis místo psaní):
+     * uživatel vloží do ChatGPT celý obrázek storyboardu a tohle zadání, odpověď vloží
+     * do volby Storyboard + scénář a appka ji rozebere ([SbScenar.rozeber]) a napíše prompty.
+     * Text natištěný ve storyboardu se opisuje doslova (repliky, mluvčí, časy, emoce,
+     * patička Kontinuita), jen panel bez textu se krátce popíše. Tvar bloku čte rozbor jistě;
+     * ChatGPT nemá vynucený výstup, proto na konci kontrola v pěti bodech.
      */
     val ZADANI_CHATGPT_CS = """
-        Napiš scénář k mému obrázkovému storyboardu přesně v tomto tvaru a nic jiného nepiš:
+        Přepiš můj obrázkový storyboard z přílohy do textu přesně v tomto tvaru. Odpověz jen tímto textem v jednom bloku kódu, nic před ním ani za ním:
 
-        STORYBOARD – <název>
-        Formát: <9:16 nebo 16:9>, přibližně <počet> sekund.
+        STORYBOARD – <název ze storyboardu, jinak krátký název>
+        Formát: <9:16 nebo 16:9 podle obrázku>
         Postavy:
-        <Jméno>: <věk> let, <vzhled: vlasy, oblečení a jeho barvy>
-        Rekvizity:
-        <Název>: <jak vypadá>
-        Kontinuita: <co musí zůstat v celém filmu stejné>
+        <Jméno>: <věk> let, <vzhled od hlavy k patě: vlasy, vousy, brýle, oblečení a jeho barvy, kalhoty nebo sukně, obuv>
+        Kontinuita: <text patičky „Kontinuita:“ ze storyboardu doslova>
 
-        [OKNO 1 | 0–4 s] <krátký název okna>
-        Obraz: <co je vidět a co se děje, jedna až dvě věty>
-        Emoce: <nálada>
-        <Jméno> (<jak to říká>): „<replika přesně tak, jak se má říct>“
+        [OKNO 1 | 0–4 s] <název panelu, když ho storyboard má>
+        Obraz: <co je vidět>
+        Děj: <co se děje>
+        Emoce: <emoce a nálada>
+        <Jméno> (<jak to říká>): „<replika>“
         Zvuk: <zvuky>
-        Text na videu: „<text, jen když má být>“
+        Text na videu: „<nápis, který má být na videu>“
 
         Pravidla:
-        - Jedno okno = jeden panel storyboardu, ve stejném pořadí a se stejným číslem.
-        - Repliky jen na vlastním řádku se jménem mluvčího a v uvozovkách „…“, nikdy v popisu obrazu.
-        - Texty na obrazovku jen na řádku „Text na videu“, nikdy v popisu obrazu.
-        - Časy na sebe navazují; okno trvá 2–8 s, okno s replikou tak dlouho, aby se stihla říct.
-        - Když se vzhled postavy během filmu mění, napiš to u postavy, např. „od okna 5 krátké vlasy“.
-        - Řádky, které okno nemá, vynech.
+        1. Jedno okno = jeden panel, v pořadí čtení (zleva doprava, shora dolů); číslo okna = číslo panelu.
+        2. Repliky opiš písmeno po písmenu, jak jsou natištěné, včetně hovorových a nespisovných tvarů (např. „celej“, „Rozsviť“) a interpunkce. Nic neopravuj, nezkracuj ani nepřeformuluj. Uvozovky uvnitř repliky ponech; dvojité uvnitř změň na jednoduché ‚…‘.
+        3. Jméno mluvčího piš přesně jako u repliky ve storyboardu (i VELKÝMI písmeny), stejně i v Postavách. Jmenovky a cedulky uvnitř kresby a emoji vynech.
+        4. Natištěný čas panelu opiš přesně do hlavičky okna. Když storyboard časy nemá, napiš jen „[OKNO 1]“.
+        5. Natištěný děj, obraz, emoce a zvuk opiš na řádek se stejným štítkem; emoce v závorce u repliky patří do závorky za jméno. Panel bez textu popiš jednou krátkou větou na řádku „Obraz:“.
+        6. Patičku „Kontinuita:“ opiš doslova; když ji storyboard nemá, napiš, co musí zůstat v celém filmu stejné.
+        7. Repliky jen ty natištěné, každá na vlastním řádku se jménem. Řádky, které okno nemá, vynech.
+
+        Než odpovíš, zkontroluj:
+        1. Oken je stejně jako panelů na obrázku.
+        2. Každá replika je znak po znaku stejná jako na obrázku.
+        3. Každá replika je ve svém okně u správného mluvčího.
+        4. Časy oken jsou přesně ty natištěné, nebo žádné.
+        5. Odpověď je jen blok v tvaru výše.
     """.trimIndent()
 
     val ZADANI_CHATGPT_EN = """
-        Write a screenplay for my picture storyboard in exactly this layout and nothing else:
+        Transcribe my picture storyboard from the attachment into text in exactly this layout. Answer only with this text in one code block, nothing before or after it:
 
-        STORYBOARD – <title>
-        Format: <9:16 or 16:9>, about <number> seconds.
+        STORYBOARD – <title from the storyboard, otherwise a short title>
+        Format: <9:16 or 16:9 according to the picture>
         Characters:
-        <Name>: <age> years, <look: hair, clothes and their colours>
-        Props:
-        <Name>: <what it looks like>
-        Continuity: <what must stay the same in the whole film>
+        <Name>: <age> years, <look from head to toe: hair, beard, glasses, clothes and their colours, trousers or skirt, shoes>
+        Continuity: <the "Continuity:" footer of the storyboard word for word>
 
-        [WINDOW 1 | 0–4 s] <short window name>
-        Visual: <what we see and what happens, one or two sentences>
-        Emotion: <mood>
-        <Name> (<how they say it>): "<the line exactly as it should be spoken>"
+        [WINDOW 1 | 0–4 s] <panel title, when the storyboard has one>
+        Visual: <what we see>
+        Action: <what happens>
+        Emotion: <emotions and mood>
+        <Name> (<how they say it>): "<line>"
         Sound: <sounds>
-        On-screen text: "<text, only when there is one>"
+        On-screen text: "<text that should appear on the video>"
 
         Rules:
-        - One window = one storyboard panel, in the same order and with the same number.
-        - Spoken lines only on their own line with the speaker's name and in quotes, never in the visual description.
-        - On-screen texts only on the "On-screen text" line, never in the visual description.
-        - Times follow each other; a window lasts 2–8 s, a window with a line long enough to say it.
-        - When a character's look changes during the film, say so with the character, e.g. "short hair from window 5".
-        - Leave out lines a window doesn't have.
+        1. One window = one panel, in reading order (left to right, top to bottom); window number = panel number.
+        2. Copy the lines letter by letter as printed, including colloquial and non-standard forms and punctuation. Never correct, shorten or rephrase them. Keep quotes inside a line; change inner double quotes to single ones '…'.
+        3. Write the speaker's name exactly as printed with the line (also in CAPITALS), the same in Characters. Leave out name badges inside the drawings and emoji.
+        4. Copy a printed panel time exactly into the window heading. When the storyboard has no times, write only "[WINDOW 1]".
+        5. Copy printed action, visual, emotion and sound onto the line with the same label; an emotion in brackets with a line goes into the brackets after the name. Describe a panel without text in one short sentence on the "Visual:" line.
+        6. Copy the "Continuity:" footer word for word; when the storyboard has none, write what must stay the same in the whole film.
+        7. Only the printed lines, each on its own line with the name. Leave out lines a window doesn't have.
+
+        Before answering, check:
+        1. There are as many windows as panels in the picture.
+        2. Every line is character for character the same as in the picture.
+        3. Every line is in its own window with the right speaker.
+        4. The window times are exactly the printed ones, or none.
+        5. The answer is only the block in the layout above.
     """.trimIndent()
 
     /** Odpověď → štítky podle čísla věty. Null, když chybí věta nebo je odpověď nečitelná. */

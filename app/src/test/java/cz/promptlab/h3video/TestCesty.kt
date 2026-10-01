@@ -23,17 +23,28 @@ object TestCesty {
         cesta?.let { File(it) }?.takeIf { it.isDirectory }
     }
 
+    /**
+     * Regresní sada storyboardů (5.67): `<jmeno>/list.png` + `pravda.json`. Obrázky jsou osobní,
+     * do repozitáře nepatří — proměnná `SB_KORPUS` nebo klíč `sbKorpusDir` v `local.properties`.
+     */
+    val sbKorpus: File? by lazy {
+        (System.getenv("SB_KORPUS")?.takeIf { it.isNotBlank() } ?: vlastnost("sbKorpusDir"))
+            ?.let { File(it) }?.takeIf { it.isDirectory }
+    }
+
     /** Složka s nainstalovanými custom nody, nebo `null`, když ComfyUI neznáme. */
     fun customNodes(podsloz: String): File? =
         comfyRoot?.let { File(it, "custom_nodes/$podsloz") }
 
-    private fun zLocalProperties(): String? {
+    private fun zLocalProperties(): String? = vlastnost("comfyDir")
+
+    private fun vlastnost(klic: String): String? {
         // Unit testy běží se spuštěcí složkou modulu `app/`, soubor je o patro výš.
         for (kandidat in listOf(File("../local.properties"), File("local.properties"))) {
             if (!kandidat.isFile) continue
             val p = Properties()
             kandidat.inputStream().use { p.load(it) }
-            p.getProperty("comfyDir")?.takeIf { it.isNotBlank() }?.let { return it }
+            p.getProperty(klic)?.takeIf { it.isNotBlank() }?.let { return it }
         }
         return null
     }

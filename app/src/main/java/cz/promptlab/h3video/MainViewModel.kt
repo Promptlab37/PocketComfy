@@ -5066,9 +5066,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun bezPlanuScenare2(s: cz.promptlab.h3video.data.SbFilmScene) =
-        if (s.zdroj != cz.promptlab.h3video.data.SbZdroj.SCENAR) s
-        else s.copy(hlasy = emptyMap(), vzhled = emptyMap(), kontinuita = "", strih = emptyList(),
-            scenarOdhadem = false, panelyObrazku = 0, oknaScenare = 0, scenarPlanu = 0)
+        cz.promptlab.h3video.data.sbBezPlanuScenare(s)
+
+    /** Přechod zdroje z čisté funkce; VM jen dočistí čtení obrázku v paměti (5.69). */
+    private fun prepniSbZdroj(
+        s: cz.promptlab.h3video.data.SbFilmScene,
+        n: cz.promptlab.h3video.data.SbFilmScene,
+    ): cz.promptlab.h3video.data.SbFilmScene {
+        if (cz.promptlab.h3video.data.sbPrechodSeScenarem(s.zdroj, n.zdroj)) {
+            sbObrazekCteni = null
+            _sbNeshoda.value = false
+        }
+        return n
+    }
 
     fun addSbPostava(uri: Uri?) {
         if (uri == null || _sbFilm.value.postavy.size >= cz.promptlab.h3video.data.SbFilmScene.MAX_POSTAV) return
@@ -5092,11 +5102,28 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSbDej(text: String) = updateSbFilm { it.copy(dej = text, zadaniUseku = emptyList()) }
 
-    /** Storyboard + scénář: text scénáře. Plán platí dál, dokud se nepřečte znovu. */
+    /**
+     * Přepis z ChatGPT u „Mám storyboard“. Prázdné ↔ neprázdné pole přepne cestu
+     * (čtení obrázku ↔ přepis, 5.69); úprava textu plán nemaže, hlídá ho otisk.
+     */
     fun setSbScenar(text: String) = updateSbFilm {
         // Plátno řídí jen uživatel (5.29): „Formát: 9:16“ ve scénáři ho dřív při každém
         // novém vložení přepnul na výšku, i když měl uživatel nastaveno na šířku.
-        it.copy(scenar = text)
+        prepniSbZdroj(it, cz.promptlab.h3video.data.sbNastavScenar(it, text))
+    }
+
+    /** „Vložit“: přepis ze schránky do pole (5.69). */
+    fun vlozSbScenarZeSchranky() {
+        val app = getApplication<Application>()
+        val text = runCatching {
+            app.getSystemService(android.content.ClipboardManager::class.java)?.primaryClip
+                ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(app)?.toString()
+        }.getOrNull()
+        if (text.isNullOrBlank()) {
+            android.widget.Toast.makeText(app, t("Ve schránce není text."), android.widget.Toast.LENGTH_SHORT).show()
+        } else {
+            setSbScenar(text)
+        }
     }
 
     /** Scénář ze souboru .txt / .md / .docx / .pdf (5.20) — text jde do pole, jde upravit. */
@@ -5200,13 +5227,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
 
     /** Přepnutí zdroje plánu — plán z druhé cesty neplatí. */
     fun setSbZdroj(v: cz.promptlab.h3video.data.SbZdroj) = updateSbFilm {
-        if (it.zdroj == v) it
-        else it.copy(zdroj = v, panely = emptyList(), nazev = "", casyZeStoryboardu = false, zadaniUseku = emptyList()).let { n ->
-            // Hlasy, vzhled a kontinuita ze scénáře nepatří do jiné volby a naopak (5.14).
-            if (v != cz.promptlab.h3video.data.SbZdroj.SCENAR && it.zdroj != cz.promptlab.h3video.data.SbZdroj.SCENAR) n
-            else bezPlanuScenare(n.copy(zdroj = cz.promptlab.h3video.data.SbZdroj.SCENAR))
-                .copy(zdroj = v, hlasy = emptyMap(), vzhled = emptyMap(), kontinuita = "", strih = emptyList())
-        }
+        // „Mám storyboard“ se řídí polem přepisu (5.69); reset je v [cz.promptlab.h3video.data.sbPrepniZdroj].
+        prepniSbZdroj(it, cz.promptlab.h3video.data.sbVyberVolbu(it, v))
     }
 
     fun setSbCil(sekundy: Int) = updateSbFilm { it.copy(cilSekund = sekundy) }
@@ -5270,7 +5292,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                         it.copy(panely = plan.panely, delkyStoryboardu = emptyMap(),
                             nazev = cz.promptlab.h3video.data.SbFilmPlan.precti(text).nazev.orEmpty(),
                             casyZeStoryboardu = false, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
-                            hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl, nalezy = emptyList())
+                            hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl, nalezy = emptyList(),
+                            // Kontinuita z patičky dřív čteného storyboardu do filmu z děje nepatří (5.67).
+                            kontinuita = "")
                     }
                     if (pokracovat) dopisPromptySb(1) else _rewriteState.value = RewriteState.Idle
                 }
@@ -5569,8 +5593,6 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             listOf(cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_CELE)) + List(minuleRadku) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) } + prompty,
         )
         viewModelScope.launch { try {
-            // Zvuk z čtení po řádcích (ZVUK/HUDBA) — do popisu panelu (1. 10. 2026).
-            val zvuky = java.util.concurrent.ConcurrentHashMap<Int, String>()
             val vysledek = withContext(Dispatchers.IO) {
                 odolne {
                     val client = ComfyClient(settings.serverUrl).also { zajistiComfy(it) }
@@ -5586,137 +5608,58 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             "zadny captioner",
                             t("Přepisovač nemá čím obrázek přečíst — chybí vidoucí GGUF s projektorem."),
                         )
-                    val jmeno = client.uploadImage(obr.readBytes(), "sbfilm_storyboard.png")
-                    val wf = cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
-                        jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
-                    )
-                    var prvni = spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP, krok = 0)
-                    // Repliky znovu po řádcích mřížky, v ostřejším výřezu.
-                    val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(prvni)
-                    val radku = cteni.radku ?: 0
-                    val sloupcu = cteni.sloupcu ?: 0
-                    val opravene = mutableMapOf<Int, String>()
-                    val nalady = mutableMapOf<Int, String>()
-                    // Po řádcích i bez replik: čte se tam i nálada (EMOCE), kterou
-                    // celé čtení vynechává (29. 9. 2026).
-                    // Skutečné řádky panelů z obrázku (5.38): různě velké panely, prázdné
-                    // políčko. Použijí se, jen když počet panelů souhlasí se čtením modelu.
-                    val radkyObrazu = cz.promptlab.h3video.util.PanelyStoryboardu.podlePoctu(obr, cteni.panely.size)
-                        ?.let { cz.promptlab.h3video.data.SbPanelyObrazu.radky(it) }
-                        ?.takeIf { it.size >= 2 }
-                    val poRadcich = radkyObrazu != null || (radku >= 2 && sloupcu >= 1 && radku * sloupcu >= cteni.panely.size)
-                    // Teď už je známý skutečný počet řádků.
-                    val skutecne = radkyObrazu?.size ?: if (poRadcich) radku else 0
-                    trvaniPrepisu.edit().putInt("odhad_posledni_radky", skutecne).apply()
-                    upravPlan { it.copy(kroky = it.kroky.take(1) + List(skutecne) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) } + prompty) }
-                    if (poRadcich) {
-                        val bmp = android.graphics.BitmapFactory.decodeFile(obr.absolutePath)
-                        // Souřadnice panelů jsou v rozměrech souboru — bitmapa může být zmenšená.
-                        val vyskaSouboru = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                            .also { android.graphics.BitmapFactory.decodeFile(obr.absolutePath, it) }.outHeight
-                        var prvniVRadku = 1
-                        if (bmp != null) for (r in 0 until skutecne) {
-                            val v = bmp.height / skutecne
-                            val presah = v / 20
-                            // Pruh podle skutečného řádku panelů (s popisky), jinak rovnoměrně.
-                            val radekObr = radkyObrazu?.get(r)
-                            val sy = if (vyskaSouboru > 0) bmp.height.toDouble() / vyskaSouboru else 1.0
-                            val y0 = if (radekObr != null) ((radekObr.minOf { it.y0 } * sy).toInt() - presah / 2).coerceAtLeast(0)
-                                else (r * v - presah).coerceAtLeast(0)
-                            val y1 = if (radekObr != null) ((radekObr.maxOf { it.y1 } * sy).toInt() + presah / 2).coerceAtMost(bmp.height)
-                                else ((r + 1) * v + presah).coerceAtMost(bmp.height)
-                            val odPanelu = if (radekObr != null) prvniVRadku else r * sloupcu + 1
-                            val doPanelu = if (radekObr != null) prvniVRadku + radekObr.size - 1 else (r + 1) * sloupcu
-                            prvniVRadku += radekObr?.size ?: 0
-                            val vyrez = android.graphics.Bitmap.createBitmap(bmp, 0, y0, bmp.width, y1 - y0)
-                            // Malý řádek se zvětší: v 683 px model četl „příšná“ místo „přísná“,
-                            // zvětšený 2× i 3× správně (4 ze 4 čtení, 1. 10. 2026).
-                            val zvetseni = cz.promptlab.h3video.data.SbFilmPlan.zvetseniRadku(vyrez.width)
-                            val pruh = if (zvetseni > 1f) android.graphics.Bitmap.createScaledBitmap(
-                                vyrez, (vyrez.width * zvetseni).toInt(), (vyrez.height * zvetseni).toInt(), true,
-                            ) else vyrez
-                            val out = java.io.ByteArrayOutputStream()
-                            pruh.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
-                            val jm = client.uploadImage(out.toByteArray(), "sbfilm_radek${r + 1}.png")
-                            val odpoved = cz.promptlab.h3video.data.SbFilmPlan.prevedPrepis(spustPrepisAPockej(
-                                client,
-                                cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
-                                    jm, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
-                                    otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaRadku(odPanelu, doPanelu),
-                                ),
-                                cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
-                                krok = 1 + r,
-                            ))
-                            opravene += cz.promptlab.h3video.data.SbFilmPlan.prectiRepliky(odpoved)
-                            nalady += cz.promptlab.h3video.data.SbFilmPlan.prectiNalady(odpoved)
-                            zvuky += cz.promptlab.h3video.data.SbFilmPlan.prectiZvuky(odpoved)
+                    // Celý tok čtení je v SbCteniTok (5.67) — stejný kód pouští i test proti serveru.
+                    val tok = object : cz.promptlab.h3video.data.SbCteniTok.Model {
+                        override suspend fun nahraj(png: ByteArray, nazev: String) = client.uploadImage(png, nazev)
+                        override suspend fun ocr(
+                            jmeno: String, oblasti: List<cz.promptlab.h3video.data.SbPanelyObrazu.Obdelnik>, krok: Int,
+                        ): List<String>? {
+                            // Bez uzlu OCR (starší server) se jede jako dřív — nic se nehlásí.
+                            if (client.objectInfo(cz.promptlab.h3video.comfy.SbFilmBuilder.OCR_CLASS) == null) return null
+                            val wf = cz.promptlab.h3video.comfy.SbFilmBuilder.buildOcr(
+                                jmeno, cz.promptlab.h3video.comfy.SbFilmBuilder.oblastiJson(oblasti),
+                            )
+                            return cz.promptlab.h3video.comfy.SbFilmBuilder.textyOcr(
+                                spustPrepisAPockej(client, wf, cz.promptlab.h3video.comfy.SbFilmBuilder.N_OCR_VYSTUP, krok = krok),
+                            )
+                        }
+                        override suspend fun precti(jmeno: String, otazka: String, krok: Int) = spustPrepisAPockej(
+                            client,
+                            cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
+                                jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL), otazka = otazka,
+                            ),
+                            cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
+                            krok = krok,
+                        )
+                    }
+                    val prubeh = object : cz.promptlab.h3video.data.SbCteniTok.Prubeh {
+                        override fun radku(pocet: Int) {
+                            trvaniPrepisu.edit().putInt("odhad_posledni_radky", pocet).apply()
+                            upravPlan { it.copy(kroky = it.kroky.take(1) + List(pocet) { cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) } + prompty) }
+                        }
+                        override fun krokNavic(): Int {
+                            val k = _planAkce.value?.kroky?.count { it.typ != cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU } ?: 0
+                            upravPlan { it.copy(kroky = it.kroky.take(k) + cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) + it.kroky.drop(k)) }
+                            return k
                         }
                     }
-                    // Hlas mluvčích, které celé čtení vynechalo — jinak každý úsek jiný hlas (5.56).
-                    val mluvci = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(cteni.panely, opravene)
-                        .flatMap { p -> cz.promptlab.h3video.data.SbFilmPrepis.repliky(p.repliky).map { it.first } }
-                        .distinctBy { it.lowercase() }
-                        // Chybí hlas, nebo vzhled (5.60) — jeden dotaz na oboje.
-                        .filter { m -> cteni.hlasy.keys.none { it.equals(m, ignoreCase = true) } || cteni.vzhled.keys.none { it.equals(m, ignoreCase = true) } }
-                    if (mluvci.isNotEmpty()) {
-                        val krokHlasu = 1 + skutecne
-                        upravPlan { it.copy(kroky = it.kroky.take(krokHlasu) + cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) + it.kroky.drop(krokHlasu)) }
-                        val odp = spustPrepisAPockej(
-                            client,
-                            cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
-                                jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
-                                otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaHlasu(mluvci),
-                            ),
-                            cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
-                            krok = krokHlasu,
-                        )
-                        val bezHlasu = mluvci.filter { m -> cteni.hlasy.keys.none { it.equals(m, ignoreCase = true) } }
-                        val bezVzhledu = mluvci.filter { m -> cteni.vzhled.keys.none { it.equals(m, ignoreCase = true) } }
-                        prvni = cz.promptlab.h3video.data.SbFilmPlan.doplnHlasy(prvni, cz.promptlab.h3video.data.SbFilmPlan.prectiHlasy(odp, bezHlasu))
-                        prvni = cz.promptlab.h3video.data.SbFilmPlan.doplnVzhled(prvni, cz.promptlab.h3video.data.SbFilmPlan.prectiVzhled(odp, bezVzhledu))
-                    }
-                    // Zvuky a emoce ze storyboardu do angličtiny — česky je přepisovač opsal doslova (5.57, 5.61).
-                    if (zvuky.isNotEmpty() || nalady.isNotEmpty()) {
-                        val krokZvuku = _planAkce.value?.kroky?.count { it.typ != cz.promptlab.h3video.data.TypKroku.PREPIS_USEKU } ?: (2 + skutecne)
-                        upravPlan { it.copy(kroky = it.kroky.take(krokZvuku) + cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) + it.kroky.drop(krokZvuku)) }
-                        val odp = spustPrepisAPockej(
-                            client,
-                            cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
-                                jmeno, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
-                                otazka = cz.promptlab.h3video.data.SbFilmPlan.otazkaPrekladu(zvuky.toSortedMap(), nalady.toSortedMap()),
-                            ),
-                            cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
-                            krok = krokZvuku,
-                        )
-                        zvuky.putAll(cz.promptlab.h3video.data.SbFilmPlan.prectiPreklad(odp, "SOUND", zvuky.keys.toSet()))
-                        nalady.putAll(cz.promptlab.h3video.data.SbFilmPlan.prectiPreklad(odp, "MOOD", nalady.keys.toSet()))
-                    }
-                    Triple(prvni, opravene, nalady) to poRadcich
+                    cz.promptlab.h3video.data.SbCteniTok.precti(cz.promptlab.h3video.util.ObrazStoryboardu(obr), tok, prubeh)
                 }
             }
-            vysledek.onSuccess { (trojice, poRadcich) ->
-                val (text, repliky, nalady) = trojice
-                val cteni = cz.promptlab.h3video.data.SbFilmPlan.precti(text).let { c ->
-                    // Repliky z ostřejšího čtení po řádcích mají přednost.
-                    c.copy(panely = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(c.panely, repliky).map { p ->
-                        // Nálada z řádků do popisu záběru → herecké podání.
-                        p.copy(popis = cz.promptlab.h3video.data.SbFilmPlan.doplnZvuk(
-                            cz.promptlab.h3video.data.SbFilmPlan.doplnNaladu(p.popis, nalady[p.cislo]), zvuky[p.cislo]))
-                    })
-                }
-                val plan = cz.promptlab.h3video.data.SbFilmPlan.naplanuj(cteni)
+            vysledek.onSuccess { v ->
+                val (cteni, plan, nalezy) = cz.promptlab.h3video.data.SbCteniTok.sestav(v)
+                val poRadcich = v.poRadcich
                 if (plan.panely.isEmpty()) {
                     _rewriteState.value = RewriteState.Fail(
                         t("Storyboard se nepodařilo přečíst. Zkus to znovu."), PraceNaPromptu.VYLEPSENI,
                     )
                 } else {
-                    // Kontrola čtení v telefonu (5.17): při podezření se před prompty zastaví.
-                    val nalezy = cz.promptlab.h3video.data.SbFilmKontrola.storyboard(
-                        cz.promptlab.h3video.data.SbFilmPlan.precti(text).panely, repliky, cteni.radku, cteni.sloupcu, poRadcich, plan.panely,
-                    )
+                    // Kontrola čtení (5.17): při podezření se před prompty zastaví — nalezy ze SbCteniTok.sestav.
                     updateSbFilm {
                         it.copy(panely = plan.panely, delkyStoryboardu = emptyMap(), nazev = cteni.nazev.orEmpty(),
                             casyZeStoryboardu = plan.zeStoryboardu, zadaniUseku = emptyList(), hlasy = plan.hlasy, vzhled = plan.vzhled,
+                            // Kontinuita vytištěná na storyboardu (5.67); scénář si ji nese sám.
+                            kontinuita = cteni.kontinuita.orEmpty(),
                             hudbaStyl = plan.hudbaStyl ?: it.hudbaStyl,
                             nalezy = nalezy, radku = cteni.radku ?: 0, sloupcu = cteni.sloupcu ?: 0,
                             // Počet panelů obrázku zůstane i po smazání panelu — výřezy se podle něj počítají (5.62).
@@ -6000,58 +5943,16 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             withContext(Dispatchers.IO) { runCatching { higgsLauncher().stop() } }
             st
         } else emptyList()
-        return useky.mapIndexed { k, u ->
-            val stopyUseku = stopy.filter { it.usek == k }
-            val hlidka = sp.hlidka(
-                s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
-                sp.idMluvcich(s.panely), sp.jazykFilmu(s), s.hlasy,
-                predchozi = useky.getOrNull(k - 1)?.panely?.lastOrNull(),
-                vzhled = s.vzhled, kontinuita = s.kontinuita,
-                vzhledSeMeni = s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR && cz.promptlab.h3video.data.SbScenar.vzhledSeMeni(s.vzhled),
-                zeScenare = s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR,
-                // Fotky se jmény postav (5.17); bez fotek prázdné → prompt beze změny.
-                jmenaFotek = if (s.seStoryboardem && s.postavy.isNotEmpty() && s.postavy.all { s.jmenoFotky(it.soubor) != null })
-                    s.postavy.map { s.jmenoFotky(it.soubor)!! } else emptyList(),
-                jenTvarFotek = s.postavy.map { it.soubor.absolutePath in s.jenTvar },
-                popisyFilmu = s.panely.map { it.popis },
-            ).let { sp.hlidkaSNahravkami(it, stopyUseku.map { st -> st.mluvci }.distinct()) }
-            suspend fun napis(): String {
-                val text = prepisSReferencemi(
-                    client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),
-                    storyboard = s.seStoryboardem, hlidka = hlidka,
-                    hlidatDialogy = false, pomer = s.pomer.kod, krok = krokOd + k,
-                    // Storyboard je první obrázek, fotky postav za ním.
-                    jenTvar = s.postavy.withIndex().filter { it.value.soubor.absolutePath in s.jenTvar }
-                        .map { it.index + (if (s.seStoryboardem) 1 else 0) }.toSet(),
-                )
-                // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
-                // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
-                // Holé „Subject N“ → <Subject N>, pozadí studiové fotky pryč (5.64).
-                // Holá replika v záběru do <d> dřív, než úklid smaže „citace“ replik (5.66: replika byla
-                // v <d> jen ve shrnutí a úklid ji ze záběru 2 smazal).
-                val zabalene = sp.doplnD(sp.opravZnackyAPozadi(text), u, sp.jazykFilmu(s), sp.idMluvcich(s.panely))
-                val cisty = sp.opravObrazky(sp.ocistiPrepis(zabalene, u.panely.size), s.uploadImages.size)
-                // Se scénářem i vymyšlené značky (<Product>) → <Subject K> (5.22).
-                // Se scénářem i replika vždy na začátek záběru (5.32).
-                // Replika bez <d> se zabalí (5.60), pak uvozovky mimo <d> pryč — H3 by je vyslovil (5.57).
-                val upraveny = if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) sp.replikaNaZacatek(cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty)) else cisty
-                return sp.doplnIdMluvciho(sp.bezDuplicitD(sp.bezUvozovekMimoD(sp.doplnD(upraveny, u, sp.jazykFilmu(s), sp.idMluvcich(s.panely)))), sp.idMluvcich(s.panely))
-            }
-            var prompt = napis()
-            // Se scénářem: každá replika úseku musí být v promptu v <d> (5.27). Chybí-li,
-            // jeden nový pokus; pak se to ukáže jako nález, nic se nevynechá potichu.
-            if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR && sp.chybejiciRepliky(prompt, u).isNotEmpty()) {
-                val druhy = napis()
-                if (sp.chybejiciRepliky(druhy, u).size < sp.chybejiciRepliky(prompt, u).size) prompt = druhy
-            }
-            // Každá replika musí být v <d> — i u storyboardu (5.60: úsek 1 Příšery
-            // měl obě repliky jen v uvozovkách a kontrola tu dřív nebyla).
-            sp.chybejiciRepliky(prompt, u).forEach { r ->
-                nalezyPrepisu += cz.promptlab.h3video.data.SbNalez(0, t("Úsek %d: v promptu chybí replika „%s“").format(k + 1, r))
-            }
-            // Nahrané repliky: <Audio N>, audio reuse, partially_copy a hlas z nahrávky (5.64).
-            dlg.doplnPrompt(prompt, stopyUseku, sp.idMluvcich(s.panely))
-        }
+        // Hlídka, přepis, úklid a kontrola replik jsou v SbPromptyTok (5.67) — stejný kód pouští test proti serveru.
+        val v = cz.promptlab.h3video.data.SbPromptyTok.napis(s, { sekundy, zadani, hlidka, jenTvar, krok ->
+            prepisSReferencemi(
+                client, s.uploadImages, sekundy, zadani,
+                storyboard = s.seStoryboardem, hlidka = hlidka,
+                hlidatDialogy = false, pomer = s.pomer.kod, krok = krok, jenTvar = jenTvar,
+            )
+        }, stopy, krokOd)
+        nalezyPrepisu += v.nalezy
+        return v.zadani
     }
 
     /** Co našla kontrola promptů po přepisovači (chybějící repliky) — připíše se k nálezům. */

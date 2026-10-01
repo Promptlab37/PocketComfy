@@ -58,6 +58,17 @@ class SbScenarZamekTest {
         }
     }
 
+    /** 5.67: schválené výstupy (Dar mudrců) musí projít přísnou kontrolou zadání. */
+    @Test
+    fun `schvalene vystupy projdou kontrolou zadani`() {
+        val s = scena()
+        val chyby = s.useky.flatMapIndexed { k, u ->
+            val hotovy = cz.promptlab.h3video.data.SbPromptyTok.dokonci(File(dir, "vystup_$k.txt").cti(), s, u)
+            cz.promptlab.h3video.data.SbKontrolaPromptu.zkontroluj(hotovy, u).map { "úsek ${k + 1}: $it" }
+        }
+        assertEquals(emptyList<String>(), chyby)
+    }
+
     @Test
     fun `uprava vystupu prepisovace se nemeni`() {
         val s = scena()

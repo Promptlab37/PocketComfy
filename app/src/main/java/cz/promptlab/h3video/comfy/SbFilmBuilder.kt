@@ -51,6 +51,31 @@ object SbFilmBuilder {
     const val N_CTENI_VYSTUP = "3"
     const val N_CTENI_MOZNOSTI = "4"
 
+    /** OCR popisků (5.67): uzel H3TesseractOCR_v1, výstup 1 = JSON se slovy a řádky každé oblasti. */
+    const val OCR_CLASS = "H3TesseractOCR_v1"
+    const val N_OCR_VYSTUP = "3"
+
+    fun buildOcr(obrazek: String, oblastiJson: String): JSONObject = JSONObject()
+        .put("1", uzel("LoadImage", "Storyboard", JSONObject().put("image", obrazek)))
+        .put("2", uzel(OCR_CLASS, "OCR popisků", JSONObject()
+            .put("image", odkaz("1")).put("jazyk", "ces").put("zvetseni", 2).put("psm", 6)
+            .put("oblasti", oblastiJson).put("timeout_s", 120)))
+        .put(N_OCR_VYSTUP, uzel("PreviewAny", "OCR", JSONObject().put("source", odkaz("2", 1))))
+
+    /** JSON výstupu uzlu → text každé oblasti (řádky spojené mezerou). */
+    fun textyOcr(json: String): List<String> {
+        val strany = org.json.JSONArray(json)
+        if (strany.length() == 0) return emptyList()
+        val obl = strany.getJSONObject(0).getJSONArray("oblasti")
+        return (0 until obl.length()).map { i ->
+            val r = obl.getJSONObject(i).getJSONArray("radky")
+            (0 until r.length()).joinToString(" ") { r.getString(it) }
+        }
+    }
+
+    fun oblastiJson(oblasti: List<cz.promptlab.h3video.data.SbPanelyObrazu.Obdelnik>): String =
+        JSONArray().also { a -> oblasti.forEach { o -> a.put(JSONArray().put(o.x0).put(o.y0).put(o.sirka).put(o.vyska)) } }.toString()
+
     /**
      * Strop odpovědi čtení (5.64): bez nastavení uzel končí kolem 2048 tokenů a storyboard
      * se sedmi panely se uřízl na šesti, aniž by to appka poznala. Strop uzlu je 16384.

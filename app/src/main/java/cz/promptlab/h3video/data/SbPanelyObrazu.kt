@@ -126,6 +126,94 @@ object SbPanelyObrazu {
     }
 
     /** Řádky panelů (pro čtení replik po řádcích); v každém zleva doprava. */
+    /**
+     * Výška řádku tištěného textu v popiscích panelů (px originálu), null = nejde změřit
+     * (světlé písmo na tmavém, málo textu). Řádek textu = souvislý pruh řádků pixelů se světlým
+     * pozadím a tmavým inkoustem; háčky a čárky oddělené mezerou se nepočítají (min. 6 px).
+     * Podle ní se volí zvětšení výřezu ke čtení (5.67): model čte dobře při ~30 px, při ~20 px
+     * ztrácí háčky, při ~40 px „opravuje“ tvary slov (sada storyboardů 1. 10. 2026).
+     */
+    fun vyskaPisma(argb: IntArray, w: Int, h: Int, bunky: List<Obdelnik>): Float? {
+        val behy = mutableListOf<Int>()
+        for (b in bunky) {
+            val x0 = (b.x0 + b.sirka * 0.03).toInt().coerceIn(0, w - 1)
+            val x1 = (b.x1 - b.sirka * 0.03).toInt().coerceIn(x0 + 1, w)
+            val ys = b.y0.coerceAtLeast(0) until b.y1.coerceAtMost(h)
+            if (ys.isEmpty()) continue
+            val svetly = BooleanArray(ys.count())
+            val ink = BooleanArray(ys.count())
+            for ((i, y) in ys.withIndex()) {
+                var svetle = 0
+                var inkoust = 0
+                for (x in x0 until x1) {
+                    val c = argb[y * w + x]
+                    val l = ((c shr 16 and 0xFF) * 299 + (c shr 8 and 0xFF) * 587 + (c and 0xFF) * 114) / 1000
+                    if (l > 170) svetle++
+                    if (l < 110) inkoust++
+                }
+                // Světlé pozadí = většina pixelů světlá (průměr nestačí: tučné písmo ho stáhne pod práh).
+                svetly[i] = svetle * 2 > (x1 - x0)
+                ink[i] = inkoust > 0
+            }
+            // Pás popisku = nejdelší souvislý světlý úsek políčka (obrázek nad ním světlý není;
+            // jinak by se počítaly i světlé kousky obrázku).
+            var nejOd = 0; var nejDo = -1; var od = -1
+            for (i in 0..svetly.size) {
+                val sv = i < svetly.size && svetly[i]
+                if (sv && od < 0) od = i
+                if (!sv && od >= 0) { if (i - od > nejDo - nejOd + 1) { nejOd = od; nejDo = i - 1 }; od = -1 }
+            }
+            var beh = 0
+            for (i in nejOd..nejDo) {
+                if (ink[i]) beh++ else { if (beh in 6..80) behy += beh; beh = 0 }
+            }
+            if (beh in 6..80) behy += beh
+        }
+        if (behy.size < 4) return null
+        return behy.sorted()[behy.size / 2].toFloat()
+    }
+
+    /**
+     * Pás popisku políčka (nejdelší souvislý světlý úsek) v souřadnicích vstupu, null = není.
+     * Výřez jen s popiskem čte repliky věrněji než s obrázkem panelu — okolní scéna svádí model
+     * k „opravám“ textu (rešerše 1. 10. 2026); druhé čtení řádku je proto bez obrázků.
+     */
+    fun pasPopisku(argb: IntArray, w: Int, h: Int, b: Obdelnik): Obdelnik? {
+        val x0 = (b.x0 + b.sirka * 0.03).toInt().coerceIn(0, w - 1)
+        val x1 = (b.x1 - b.sirka * 0.03).toInt().coerceIn(x0 + 1, w)
+        val y0 = b.y0.coerceAtLeast(0)
+        val y1 = b.y1.coerceAtMost(h)
+        if (y1 - y0 < 10) return null
+        // Světlé úseky; úseky oddělené jen pár řádky (tenká čára, tučný řádek) patří k jednomu popisku —
+        // jinak pás popisku Pepy 12 skončil před replikami (OCR 1. 10. 2026).
+        val useky = mutableListOf<IntArray>()
+        var od = -1
+        for (y in y0..y1) {
+            val svetly = y < y1 && run {
+                var svetle = 0
+                for (x in x0 until x1) {
+                    val c = argb[y * w + x]
+                    if (((c shr 16 and 0xFF) * 299 + (c shr 8 and 0xFF) * 587 + (c and 0xFF) * 114) / 1000 > 170) svetle++
+                }
+                svetle * 2 > (x1 - x0)
+            }
+            if (svetly && od < 0) od = y
+            if (!svetly && od >= 0) { useky += intArrayOf(od, y); od = -1 }
+        }
+        val mezera = maxOf(4, b.vyska / 50)
+        val slite = mutableListOf<IntArray>()
+        for (u in useky) {
+            val posl = slite.lastOrNull()
+            if (posl != null && u[0] - posl[1] <= mezera) posl[1] = u[1] else slite += u.copyOf()
+        }
+        val nej = slite.maxByOrNull { it[1] - it[0] }
+        val nejOd = nej?.get(0) ?: -1
+        val nejDo = nej?.get(1) ?: -1
+        // Pás musí být aspoň osmina políčka a ne celé políčko (to je světlý obrázek, ne popisek).
+        if (nejOd < 0 || nejDo - nejOd < b.vyska / 8 || nejDo - nejOd > b.vyska * 0.9) return null
+        return Obdelnik(b.x0, nejOd, b.x1, nejDo)
+    }
+
     fun radky(panely: List<Obdelnik>): List<List<Obdelnik>> {
         val out = mutableListOf<MutableList<Obdelnik>>()
         var y0 = 0; var y1 = -1

@@ -107,9 +107,10 @@ fun SbFilmSection(vm: MainViewModel) {
     }
 
     SectionCard(title = t("Plán")) {
+        // Přepis z ChatGPT je součást „Mám storyboard“ (5.69) — volba „Storyboard + scénář“ zmizela.
         PillRow(
-            items = SbZdroj.entries.toList(),
-            selected = scene.zdroj,
+            items = cz.promptlab.h3video.data.sbZdrojVolby,
+            selected = cz.promptlab.h3video.data.sbZdrojVolba(scene),
             label = { it.title },
             onSelect = { vm.setSbZdroj(it) },
         )
@@ -120,12 +121,11 @@ fun SbFilmSection(vm: MainViewModel) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (scene.zdroj != SbZdroj.DEJ) {
                 StoryboardPole(scene, onPick = { vm.pickSbStoryboard(it) }, onClear = { vm.clearSbStoryboard() })
-            }
-            if (scene.zdroj == SbZdroj.SCENAR) {
+                // Přepis z ChatGPT (5.69): prázdné pole = čtení obrázku, vložený přepis = cesta scénáře.
                 DarkTextField(
                     value = scene.scenar,
                     onValueChange = { vm.setSbScenar(it) },
-                    placeholder = t("Vlož scénář"),
+                    placeholder = t("Přepis z ChatGPT"),
                     minHeight = 160.dp,
                     onClear = { vm.setSbScenar("") },
                     rostouci = true,
@@ -134,18 +134,25 @@ fun SbFilmSection(vm: MainViewModel) {
                 val vyberSouboru = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { vm.nactiSbScenar(it) }
                 // Zadání pro ChatGPT do schránky — scénář pak přijde v tvaru, který appka čte jistě (5.27).
                 val kontext = androidx.compose.ui.platform.LocalContext.current
-                OutlineButton(t("Zadání pro ChatGPT"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
-                    copyResultText(
-                        kontext,
-                        if (cz.promptlab.h3video.data.Jazyk.anglicky) cz.promptlab.h3video.data.SbScenarModel.ZADANI_CHATGPT_EN
-                        else cz.promptlab.h3video.data.SbScenarModel.ZADANI_CHATGPT_CS,
-                    )
-                }
-                OutlineButton(t("Načíst ze souboru"), color = TextMid, modifier = Modifier.fillMaxWidth()) {
-                    vyberSouboru.launch(arrayOf(
-                        "text/plain", "text/markdown", "text/x-markdown", "application/pdf",
-                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    ))
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlineButton(t("Zadání pro ChatGPT"), color = TextMid) {
+                        copyResultText(
+                            kontext,
+                            if (cz.promptlab.h3video.data.Jazyk.anglicky) cz.promptlab.h3video.data.SbScenarModel.ZADANI_CHATGPT_EN
+                            else cz.promptlab.h3video.data.SbScenarModel.ZADANI_CHATGPT_CS,
+                        )
+                    }
+                    OutlineButton(t("Vložit"), color = TextMid) { vm.vlozSbScenarZeSchranky() }
+                    OutlineButton(t("Načíst ze souboru"), color = TextMid) {
+                        vyberSouboru.launch(arrayOf(
+                            "text/plain", "text/markdown", "text/x-markdown", "application/pdf",
+                            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        ))
+                    }
                 }
             }
             if (scene.zdroj == SbZdroj.DEJ) {

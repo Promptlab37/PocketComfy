@@ -111,6 +111,8 @@ data class SbCteni(
     val vzhled: Map<String, String> = emptyMap(),
     /** Styl podkresové hudby podle děje (anglicky, pro YuE2). */
     val hudbaStyl: String? = null,
+    /** Kontinuita vytištěná na storyboardu („Kontinuita: tři stejné karikatury…“), anglicky (5.67). */
+    val kontinuita: String? = null,
 )
 
 data class SbPrecteny(
@@ -163,15 +165,18 @@ object SbFilmPlan {
             "timbre), for example Anna = a woman in her 30s with a warm, low voice; separated by ;. Always " +
             "give a voice for every speaker, guessed from how they look> | LOOKS: <for every person and " +
             "animal who appears in more than one panel: Name = how they look in the panel where they first " +
-            "appear (hair, clothing and its colours for people; breed and fur colour for animals), for " +
-            "example Anna = long red hair, green raincoat; Dog = golden retriever with golden fur; separated " +
+            "appear (hair, face, body, clothing and footwear with colours for people, including glasses, beard " +
+            "and unusual proportions; breed and fur colour for animals), for " +
+            "example Anna = long red hair, green raincoat, black boots; Dog = golden retriever with golden fur; separated " +
             "by ;. Use the printed speaker names where there are any> | MUSIC: <a short style for " +
             "instrumental background music that fits this story: genre, mood, instruments and tempo, for " +
-            "example cinematic, tense, low strings and piano, 80 BPM>\n" +
+            "example cinematic, tense, low strings and piano, 80 BPM> | CONTINUITY: <the continuity note " +
+            "printed on the sheet outside the panels (for example Kontinuita: … or Continuity: …), translated " +
+            "into English, or none>\n" +
             "Then one line per numbered shot panel, in the panel order: PANEL <number> | <the time " +
             "range exactly as printed on that panel, for example 00-04s, or none> | <shot size: " +
             "wide, medium, close-up, extreme close-up, insert or detail> | <camera movement, or " +
-            "static> | <what happens in the panel, one short sentence> | <every spoken line " +
+            "static> | <what happens in the panel, at most 10 words> | <every spoken line " +
             "printed with that panel, copied word for word in its original language, as " +
             "Speaker: \"line\", separated by ; — or none>\n" +
             "Text labelled as action, plot, description, emotion, mood or a note (for example DĚJ, AKCE, " +
@@ -194,6 +199,7 @@ object SbFilmPlan {
         val hlasy = linkedMapOf<String, String>()
         val vzhled = linkedMapOf<String, String>()
         var hudbaStyl: String? = null
+        var kontinuita: String? = null
         val panely = mutableListOf<SbPrecteny>()
         // Přepisovač slučuje řádky do jednoho (`" ".join(caption.split())`) —
         // před každý PANEL/TITLE se proto zalomení vrátí.
@@ -223,6 +229,7 @@ object SbFilmPlan {
                                     hlasy[SbFilmPrepis.opravMluvciho(kdo)] = jak
                             }
                             "MUSIC" -> hudbaStyl = v.trim().trimEnd('.')
+                            "CONTINUITY" -> kontinuita = v.trim().trimEnd('.')
                             "LOOKS" -> v.split(";").forEach { h ->
                                 val (kdo, jak) = h.split("=", limit = 2).let {
                                     it[0].trim() to it.getOrElse(1) { "" }.trim().trimEnd('.')
@@ -256,7 +263,7 @@ object SbFilmPlan {
                 }
             }
         }
-        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu, hlasy, vzhled, hudbaStyl)
+        return SbCteni(nazev, celkem, zaberu, panely, radku, sloupcu, hlasy, vzhled, hudbaStyl, kontinuita)
     }
 
     /**
@@ -276,7 +283,9 @@ object SbFilmPlan {
             "printed, letter by letter, in its original language, keeping every label before a colon " +
             "(for example a speaker's name, EMOCE, ZVUK, MOOD or SOUND) and every quotation mark. Start each " +
             "panel with a line PANEL <number>, then one line for every printed line of the caption. " +
-            "Do not translate or correct anything. No other text."
+            "Do not translate or correct anything: copy the printed characters exactly as they appear, even where " +
+            "a word looks colloquial, misspelled or ungrammatical — never change a word ending, never add or remove " +
+            "a letter or a diacritic mark. No other text."
 
     /**
      * Hlas mluvčích, které celé čtení vynechalo (VOICES: none — Příšera 1. 10. 2026):
@@ -294,22 +303,32 @@ object SbFilmPlan {
      * přepisovač opisoval mimo repliky („The mood is Nadšení“) a H3 je mohl vyslovit.
      * Model vidí storyboard, takže přečte i překlep („Komicky příšná“).
      */
-    fun otazkaPrekladu(zvuky: Map<Int, String>, nalady: Map<Int, String>): String =
+    fun otazkaPrekladu(zvuky: Map<Int, String>, nalady: Map<Int, String>, deje: Map<Int, String> = emptyMap()): String =
         "This image is a film storyboard. Translate these notes printed on its panels into short English: " +
             "SOUND as a short description of what is heard, MOOD as a short emotion for the actor (read a " +
-            "misprinted word as it is printed on the storyboard). Answer one line per note, exactly as " +
-            "SOUND <number> = <English> or MOOD <number> = <English>. No other text.\n" +
-            (zvuky.toSortedMap().map { "SOUND ${it.key}: ${it.value}" } + nalady.toSortedMap().map { "MOOD ${it.key}: ${it.value}" })
+            "misprinted word as it is printed on the storyboard)" +
+            (if (deje.isEmpty()) "" else ", ACTION as one faithful English sentence of what happens, translated " +
+                "word for word without adding anything from the picture (Czech film terms: odjezd kamery = the camera " +
+                "pulls back, nájezd or příjezd kamery = the camera pushes in, švenk = pan, jízda = tracking shot, " +
+                "detail = close-up, celek = wide shot)") +
+            ". Answer one line per note, exactly as SOUND <number> = <English>, MOOD <number> = <English>" +
+            (if (deje.isEmpty()) "" else " or ACTION <number> = <English>; after every ACTION add CAMERA <number> = " +
+                "<the camera movement that ACTION note names, for example pull back, push in, pan left, tilt up, " +
+                "orbit or handheld, or none when it names no camera movement>") +
+            ". No other text.\n" +
+            (zvuky.toSortedMap().map { "SOUND ${it.key}: ${it.value}" } + nalady.toSortedMap().map { "MOOD ${it.key}: ${it.value}" } +
+                deje.toSortedMap().map { "ACTION ${it.key}: ${it.value}" })
                 .joinToString("\n")
 
-    /** Odpověď [otazkaPrekladu] → číslo panelu → anglický text pro [druh] (SOUND / MOOD). */
+    /** Odpověď [otazkaPrekladu] → číslo panelu → anglický text pro [druh] (SOUND / MOOD / ACTION / CAMERA). */
     fun prectiPreklad(text: String, druh: String, panely: Set<Int>): Map<Int, String> =
-        text.replace(Regex("""(?i)\s*(?=\b(?:SOUND|MOOD)\s*\d)"""), "\n").lines().mapNotNull { r ->
-            val m = Regex("""(?i)^\s*(SOUND|MOOD)\s*(\d+)\s*[=:]\s*(.+)$""").find(r.trim()) ?: return@mapNotNull null
+        text.replace(Regex("""(?i)\s*(?=\b(?:SOUND|MOOD|ACTION|CAMERA)\s*\d)"""), "\n").lines().mapNotNull { r ->
+            val m = Regex("""(?i)^\s*(SOUND|MOOD|ACTION|CAMERA)\s*(\d+)\s*[=:]\s*(.+)$""").find(r.trim()) ?: return@mapNotNull null
             if (!m.groupValues[1].equals(druh, ignoreCase = true)) return@mapNotNull null
             val n = m.groupValues[2].toInt()
             val en = m.groupValues[3].trim().trim('"', '„', '“', '”').trim().trimEnd('.')
-            if (n in panely && en.isNotBlank()) n to en else null
+            // CAMERA none = text pohyb kamery nejmenuje → zůstane, co přečetlo celé čtení.
+            if (n in panely && en.isNotBlank() && !en.equals("none", true)) n to en else null
         }.toMap()
 
     /**
@@ -365,6 +384,12 @@ object SbFilmPlan {
         "direction", "stage direction", "pohyb", "movement", "framing", "angle", "úhel", "uhel",
     )
 
+    /** Štítky, za kterými je děj záběru (5.67) — přeloží se a nahradí popis z celého čtení. */
+    private val ST_DEJ = setOf(
+        "obraz", "image", "picture", "visual", "vizuál", "vizual", "děj", "dej", "akce", "popis", "scéna", "scena",
+        "záběr", "zaber", "kamera", "action", "plot", "description", "scene", "shot", "camera", "pohyb", "movement",
+    )
+
     /**
      * Přepis řádku ([otazkaRadku]) → `PANEL n | Kdo: "…" | MOOD: … | SOUND: …`, se kterým
      * pracuje [prectiRepliky], [prectiNalady] a [prectiZvuky]. Štítek je slovo (nejvýš tři)
@@ -384,6 +409,20 @@ object SbFilmPlan {
 
     private fun bezUvozovek(t: String) = t.replace(Regex("""\s+"""), " ").trim().trim('"', '„', '“', '”', '«', '»').trim()
 
+    /** Emoji a obrázkové symboly z repliky pryč („Tebe. ❤️“ — Wellness, 1. 10. 2026); H3 by je nevyslovil. */
+    internal fun bezSymbolu(t: String): String {
+        val sb = StringBuilder()
+        var i = 0
+        while (i < t.length) {
+            val cp = t.codePointAt(i)
+            val typ = Character.getType(cp)
+            val symbol = typ == Character.OTHER_SYMBOL.toInt() || cp == 0xFE0F || cp == 0x200D || cp in 0x1F000..0x1FFFF
+            if (!symbol) sb.appendCodePoint(cp)
+            i += Character.charCount(cp)
+        }
+        return sb.toString().replace(Regex("""\s+"""), " ").trim()
+    }
+
     private fun roztrid(usek: String): String {
         val vUvozovkach = UVOZOVKY.findAll(usek).map { it.range }.toList()
         // Štítky: (začátek štítku, za dvojtečkou, štítek)
@@ -401,9 +440,16 @@ object SbFilmPlan {
         val repliky = mutableListOf<String>()
         var nalada = ""
         var zvuk = ""
-        // Před prvním štítkem jen věty v uvozovkách (repliky bez jména), číslo a čas panelu ne.
+        var dej = ""
+        val maUvozovky = vUvozovkach.isNotEmpty()
+        // Před prvním štítkem věty v uvozovkách (repliky bez jména); číslo, čas a jmenovka panelu ne.
+        // Delší text bez štítku je děj („12. Pepa sedí potmě…“ — Pepa, 5.67).
         val predPrvnim = usek.substring(0, stitky.firstOrNull()?.first ?: usek.length)
         UVOZOVKY.findAll(predPrvnim).forEach { repliky += "\"" + bezUvozovek(it.value) + "\"" }
+        val uvod = UVOZOVKY.replace(predPrvnim, " ").replace(Regex("""\([^()]*\)"""), " ")
+            .replace(Regex("""\d+(?:[.,]\d+)?\s*s?\s*[-–—]\s*\d+(?:[.,]\d+)?\s*s\b"""), " ")
+            .replace(Regex("""(?<![\p{L}])\d+(?![\p{L}])"""), " ").replace("|", " ").trim().trimStart('.', ' ').trim()
+        if (uvod.split(Regex("""\s+""")).count { it.any(Char::isLetter) } >= 3) dej = uvod
         stitky.forEachIndexed { i, (_, od, stitek) ->
             val cela = usek.substring(od, stitky.getOrNull(i + 1)?.first ?: usek.length).trim()
             val klic = stitek.lowercase()
@@ -415,16 +461,24 @@ object SbFilmPlan {
             when {
                 klic in ST_NALADA -> nalada = (nalada + " " + bezUvozovek(hodnota)).trim()
                 klic in ST_ZVUK -> zvuk = (zvuk + " " + bezUvozovek(hodnota)).trim()
+                klic in ST_DEJ -> dej = (dej + " " + bezUvozovek(hodnota).replace("|", " ")).trim()
                 klic in ST_POPIS -> Unit
+                // Štítek bez uvozovek tam, kde jsou repliky v uvozovkách, není mluvčí, ale popis
+                // („Finální pointa: oba sedí potmě…“ — Pepa, 5.67: posunul repliky o mluvčího).
+                maUvozovky && UVOZOVKY.findAll(hodnota).none() -> dej = (dej + " " + stitek + ": " + bezUvozovek(hodnota).replace("|", " ")).trim()
                 hodnota.isNotBlank() && !hodnota.equals("none", true) -> {
                     val vety = UVOZOVKY.findAll(hodnota).map { bezUvozovek(it.value) }.filter { it.isNotBlank() }.toList()
                         .ifEmpty { listOf(bezUvozovek(hodnota)) }
-                    vety.forEach { repliky += "$stitek: \"" + it.replace("\"", "") + "\"" }
+                    vety.map { bezSymbolu(it) }.filter { it.isNotBlank() }.forEach { repliky += "$stitek: \"" + it.replace("\"", "") + "\"" }
                 }
             }
         }
+        // Nálada v závorce bez štítku („(nadšená, radostná)“ — Wellness, 5.67).
+        if (nalada.isEmpty()) nalada = Regex("""\(([^()]{2,})\)""").findAll(usek)
+            .filter { m -> vUvozovkach.none { m.range.first in it } }.map { it.groupValues[1].trim() }.joinToString("; ")
         return repliky.joinToString("; ").ifEmpty { "none" } +
-            " | MOOD: " + nalada.ifEmpty { "none" } + " | SOUND: " + zvuk.ifEmpty { "none" }
+            " | MOOD: " + nalada.ifEmpty { "none" } + " | SOUND: " + zvuk.ifEmpty { "none" } +
+            (if (dej.isNotEmpty()) " | ACTION: $dej" else "")
     }
 
     /**
@@ -435,8 +489,21 @@ object SbFilmPlan {
     fun panelyObrazku(s: SbFilmScene): Int =
         s.panelyObrazku.takeIf { it > 0 } ?: maxOf(s.panely.maxOfOrNull { it.cislo } ?: 0, s.panely.size)
 
-    /** Zvětšení řádku před čtením: na šířku aspoň 1400 px, nejvýš 3×, velký řádek beze změny. */
-    fun zvetseniRadku(sirka: Int): Float = if (sirka <= 0) 1f else (1400f / sirka).coerceIn(1f, 3f)
+    /**
+     * Zvětšení řádku před čtením: každý panel aspoň 700 px na šířku, řádek nejvýš [MAX_SIRKA_RADKU],
+     * nejvýš 3×, velký řádek beze změny. Do 5.66 podle šířky celého řádku (1400 px) — mřížka 4×2
+     * (Sněmovna, 1. 10. 2026) tak měla panely po 330 px a model četl „Děsivé příšny“ místo
+     * „Děsivě přísný“. Řádek 2800 px zase „opravil“ repliku „vyřešte“ na „vyřešíte“ (7 ze 7 čtení,
+     * při každé teplotě); 1840 i 2300 px četly obojí správně (pokus 1. 10. 2026).
+     */
+    fun zvetseniRadku(sirka: Int, panelu: Int = 2, panelPx: Float = 700f): Float =
+        if (sirka <= 0) 1f
+        else minOf(panelPx * panelu.coerceAtLeast(1) / sirka, MAX_SIRKA_RADKU / sirka).coerceIn(1f, 3f)
+
+    /** Zvětšení výřezu jednoho panelu na šířku [panelPx], nejvýš 3×. */
+    fun zvetseniPanelu(sirka: Int, panelPx: Float): Float = if (sirka <= 0) 1f else (panelPx / sirka).coerceIn(1f, 3f)
+
+    const val MAX_SIRKA_RADKU = 2300f
 
     /** Odpověď [otazkaRadku] → číslo panelu → repliky. */
     fun prectiRepliky(text: String): Map<Int, String> {
@@ -478,6 +545,20 @@ object SbFilmPlan {
     const val VYCHOZI_MLUVCI = "Mluvčí"
 
     private val ZVUK_POLE = Regex("""(?i)^\s*(SOUND|ZVUK|SFX)\s*:""")
+    private val DEJ_POLE = Regex("""(?i)^\s*ACTION\s*:""")
+
+    /** Odpověď [otazkaRadku] po [prevedPrepis] → číslo panelu → děj vytištěný pod panelem (5.67). */
+    fun prectiDeje(text: String): Map<Int, String> {
+        val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
+        return radky.lines().mapNotNull { r ->
+            val casti = r.trim().split("|").map { it.trim() }
+            if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
+            val dej = casti.drop(1).firstOrNull { DEJ_POLE.containsMatchIn(it) }?.substringAfter(":")
+                ?.trim()?.takeUnless { it.isEmpty() || it.equals("none", true) } ?: return@mapNotNull null
+            n to dej
+        }.toMap()
+    }
 
     /** Odpověď [otazkaRadku] → číslo panelu → zvuk (text za ZVUK / SOUND / SFX / HUDBA). */
     fun prectiZvuky(text: String): Map<Int, String> {
@@ -1043,6 +1124,63 @@ private fun scenarProblem(s: SbFilmScene): String? = when {
     else -> null
 }
 
+/**
+ * Volby plánu na kartě (5.69): „Mám storyboard“ a „Vytvořit z děje“. Vnitřní
+ * [SbZdroj.SCENAR] se nevybírá — nastane sám, když je u storyboardu vložený přepis.
+ */
+val sbZdrojVolby: List<SbZdroj> = listOf(SbZdroj.STORYBOARD, SbZdroj.DEJ)
+
+/** Která volba plánu svítí: přepis je pořád „Mám storyboard“. */
+fun sbZdrojVolba(s: SbFilmScene): SbZdroj = if (s.zdroj == SbZdroj.SCENAR) SbZdroj.STORYBOARD else s.zdroj
+
+/** Zdroj u „Mám storyboard“ podle pole přepisu: prázdné = čtení obrázku, jinak přepis. */
+fun sbZdrojProText(text: String): SbZdroj = if (text.isBlank()) SbZdroj.STORYBOARD else SbZdroj.SCENAR
+
+/** Mění přechod mezi zdroji i čtení obrázku v paměti VM (`sbObrazekCteni`, neshoda)? */
+fun sbPrechodSeScenarem(z: SbZdroj, v: SbZdroj): Boolean =
+    z != v && (z == SbZdroj.SCENAR || v == SbZdroj.SCENAR)
+
+/** Storyboard + scénář: co se přečetlo ze scénáře, s jiným obrázkem nebo volbou neplatí (5.14). */
+fun sbBezPlanuScenare(s: SbFilmScene): SbFilmScene =
+    if (s.zdroj != SbZdroj.SCENAR) s
+    else s.copy(hlasy = emptyMap(), vzhled = emptyMap(), kontinuita = "", strih = emptyList(),
+        scenarOdhadem = false, panelyObrazku = 0, oknaScenare = 0, scenarPlanu = 0)
+
+/**
+ * Přepnutí zdroje plánu — plán z druhé cesty neplatí. Obrázek, text scénáře,
+ * děj, fotky a jejich jména zůstávají. Stejný zdroj = beze změny.
+ */
+fun sbPrepniZdroj(s: SbFilmScene, v: SbZdroj): SbFilmScene =
+    if (s.zdroj == v) s
+    else s.copy(zdroj = v, panely = emptyList(), nazev = "", casyZeStoryboardu = false, zadaniUseku = emptyList()).let { n ->
+        // Hlasy, vzhled a kontinuita ze scénáře nepatří do jiné volby a naopak (5.14).
+        if (!sbPrechodSeScenarem(s.zdroj, v)) n
+        else sbBezPlanuScenare(n.copy(zdroj = SbZdroj.SCENAR, nalezy = emptyList()))
+            .copy(zdroj = v, hlasy = emptyMap(), vzhled = emptyMap(), kontinuita = "", strih = emptyList())
+    }
+
+/** Klepnutí na volbu plánu: „Mám storyboard“ se řídí tím, jestli je vložený přepis. */
+fun sbVyberVolbu(s: SbFilmScene, v: SbZdroj): SbFilmScene =
+    sbPrepniZdroj(s, if (v == SbZdroj.DEJ) SbZdroj.DEJ else sbZdrojProText(s.scenar))
+
+/**
+ * Nový text přepisu. Zdroj se mění jen při přechodu prázdné ↔ neprázdné;
+ * úprava neprázdného textu plán nemaže (hlídá ho [otiskScenare]). U „z děje“
+ * je pole schované — text se jen uloží.
+ */
+fun sbNastavScenar(s: SbFilmScene, text: String): SbFilmScene =
+    (if (s.zdroj == SbZdroj.DEJ) s else sbPrepniZdroj(s, sbZdrojProText(text))).copy(scenar = text)
+
+/** Po načtení: „Mám storyboard“ s vloženým přepisem je cesta přepisu (5.69). */
+fun sbNormalizujZdroj(s: SbFilmScene): SbFilmScene = when {
+    s.zdroj == SbZdroj.DEJ -> s
+    // Starý stav „Mám storyboard“ se zbytkem textu z dřívější volby „Storyboard + scénář“: text je
+    // pozůstatek, ne přepis k tomuto obrázku — smaže se, cesta i plán zůstanou (emulátor 1. 10. 2026:
+    // v poli se objevilo staré „OKNO 1 0-2 s“ a Připravit by jelo přes nesmyslný přepis).
+    s.zdroj == SbZdroj.STORYBOARD && s.scenar.isNotBlank() -> s.copy(scenar = "")
+    else -> sbPrepniZdroj(s, sbZdrojProText(s.scenar))
+}
+
 class SbFilmStore(private val ctx: Context) {
     private val sp = ctx.getSharedPreferences("h3video", Context.MODE_PRIVATE)
     private fun dir(): File = File(ctx.filesDir, "sbfilm").apply { mkdirs() }
@@ -1157,7 +1295,7 @@ class SbFilmStore(private val ctx: Context) {
                 val druh = runCatching { SbTextStrihu.Druh.valueOf(r.optString("druh")) }.getOrNull() ?: return@mapNotNull null
                 SbTextStrihu(r.optInt("cislo"), r.optString("text"), druh)
             },
-        )
+        ).let { sbNormalizujZdroj(it) }
     }.getOrDefault(SbFilmScene())
 
     companion object {
