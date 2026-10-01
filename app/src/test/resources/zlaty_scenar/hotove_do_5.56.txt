@@ -42,7 +42,7 @@ summary:
 [reference generation] The target video is a silent, 12-second cinematic sequence continuing directly from the previous part, set in a modest New York apartment and shops around 1905 during Christmas Eve. It follows <Subject 1> as she gets her hair cut in a barbershop, walks to a jewelry store, and selects a simple metal necklace for Jim’s pocket watch. The shots are storyboarded from <Picture 1>, with no dialogue or on-screen text. The only sound is the scissors’ snip and ambient environment tones.
 
 retention_analysis:
-<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - her long dark hair in [Shot 1] and short brown curls in [Shot 2] and [Shot 3] are retained as defined. Her posture, clothing, and emotional state remain consistent with the narrative tone of pity followed by determination.
+<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - her long dark hair in [Shot 1] and short brown curls in [Shot 2] and [Shot 3] are retained as defined. Her posture, clothing, and emotional state remain consistent with the narrative tone of “pity” followed by “determination.”
 
 <Subject 2> (appears in [Shot 3]): fully_preserved - the shopkeeper or passer-by’s appearance is retained as a generic man in a worn dark coat.
 
@@ -52,14 +52,14 @@ retention_analysis:
 detailed_description:
 The target video is a silent, cinematic short film in a realistic New York setting around Christmas Eve, 1905, with muted lighting and a slightly grainy texture to evoke early 20th-century realism. The camera remains static throughout all shots, matching the storyboard panels exactly.
 
-[Shot 1] The scene opens in a barbershop, as defined by <Picture 1> Panel 4. <Subject 1>, the young woman with long dark hair, sits motionless in a barber’s chair, her hands clasped tightly in her lap. A woman barber stands beside her, holding scissors and cutting her hair. The shop has a window showing snow outside. The only sound is the single sharp snip of scissors as the first cut is made — no dialogue or voice. The camera remains static, medium shot, framing both subjects.
+[Shot 1] The scene opens in a barbershop, as defined by <Picture 1> Panel 4. <Subject 1>, the young woman with long dark hair, sits motionless in a barber’s chair, her hands clasped tightly in her lap. A woman barber stands beside her, holding scissors and cutting her hair. The shop has a window showing snow outside. The only sound is the single sharp “snip” of scissors as the first cut is made — no dialogue or voice. The camera remains static, medium shot, framing both subjects.
 
 [Shot 2] At 00:04.000, the scene cuts to an outdoor snowy street, as defined by <Picture 1> Panel 5. <Subject 1>, now with short brown curls, walks purposefully toward a jewelry store. She holds money in her hand and moves directly toward the shop’s window display. The camera remains static, medium shot, capturing her from the side as she walks. No dialogue or voice is present. The ambient sound of snow crunching underfoot and distant city noise continues.
 
 [Shot 3] At 00:08.000, the scene cuts to a close-up inside the jewelry store, as defined by <Picture 1> Panel 6. <Subject 1> stands before a counter, holding a simple metal necklace in her open palm. She gazes at it thoughtfully, then imagines it on Jim’s pocket watch — though Jim does not appear. The camera remains static, close-up, focused on her hand and the necklace. No dialogue or voice is present. The ambient sound of the store fades slightly, replaced by the soft clink of glass cases and a faint hum of the city outside.
 
 overall_soundscape:
-Ambient urban sounds — snow crunching underfoot, distant street lamps, faint city noise — continue throughout. In [Shot 1], a single sharp snip of scissors is audible. In [Shot 3], the sound of glass cases and soft store hum are present.
+Ambient urban sounds — snow crunching underfoot, distant street lamps, faint city noise — continue throughout. In [Shot 1], a single sharp “snip” of scissors is audible. In [Shot 3], the sound of glass cases and soft store hum are present.
 
 non_diegetic_music:
 N/A

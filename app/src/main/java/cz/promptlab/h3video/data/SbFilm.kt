@@ -288,6 +288,24 @@ object SbFilmPlan {
             "(pitch, timbre), guessed from how they look, for example Anna = a woman in her 30s with a warm, " +
             "low voice. No other text."
 
+    /**
+     * Zvuky ze storyboardu do angličtiny (5.57): česky je přepisovač opsal doslova
+     * („Nástup tanečního beatu“), i když měl pokyn napsat je anglicky — a H3 je mohl vyslovit.
+     */
+    fun otazkaZvuku(zvuky: Map<Int, String>): String =
+        "This image is a film storyboard. Translate these sound notes printed on its panels into short " +
+            "English sound descriptions (what is heard), one line per panel, exactly as PANEL <number> = " +
+            "<English>. No other text.\n" + zvuky.entries.joinToString("\n") { "PANEL ${it.key}: ${it.value}" }
+
+    /** Odpověď [otazkaZvuku] → číslo panelu → anglický zvuk (jen panely, na které se appka ptala). */
+    fun prectiPrekladZvuku(text: String, panely: Set<Int>): Map<Int, String> =
+        text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n").lines().mapNotNull { r ->
+            val m = Regex("""(?i)^\s*PANEL\s*(\d+)\s*[=:]\s*(.+)$""").find(r.trim()) ?: return@mapNotNull null
+            val n = m.groupValues[1].toInt()
+            val en = m.groupValues[2].trim().trim('"', '„', '“', '”').trim().trimEnd('.')
+            if (n in panely && en.isNotBlank()) n to en else null
+        }.toMap()
+
     /** Odpověď [otazkaHlasu] → jméno → hlas (jen jména, na která se appka ptala). */
     fun prectiHlasy(text: String, jmena: List<String>): Map<String, String> =
         text.split(Regex("""\n|;|(?=\b(?:${jmena.joinToString("|") { Regex.escape(it) }})\s*=)""")).mapNotNull { r ->
@@ -1232,6 +1250,22 @@ object SbFilmPrepis {
         return out.toString()
     }
 
+    /**
+     * Uvozovky mimo `<d>` pryč (5.57): H3 vysloví, co je v uvozovkách — přepisovač tak
+     * 1. 10. 2026 opsal zvuk ze storyboardu („“Nástup tanečního beatu” begins“).
+     */
+    fun bezUvozovekMimoD(text: String): String {
+        val vUv = Regex("""[“„"«]([^“”"„«»<>\n]{1,120})[”“"»]""")
+        val out = StringBuilder()
+        var od = 0
+        REPLIKA_D.findAll(text).forEach { m ->
+            out.append(vUv.replace(text.substring(od, m.range.first)) { it.groupValues[1] }).append(m.value)
+            od = m.range.last + 1
+        }
+        out.append(vUv.replace(text.substring(od)) { it.groupValues[1] })
+        return out.toString()
+    }
+
     /** Věty textu; tečka nebo vykřičník uvnitř `<d>…</d>` větu nekončí. */
     private fun vety(t: String): List<String> {
         val chranene = REPLIKA_D.findAll(t).map { it.range }.toList()
@@ -1523,7 +1557,13 @@ object SbFilmPrepis {
                 }
             }
             // Zvuk záběru ze scénáře jako fyzická událost (5.14).
-            if (zvukP.isNotBlank()) sb.append("\n    sound in this shot: ").append(zvukP.trim().trimEnd('.')).append(".")
+            if (zvukP.isNotBlank()) {
+                // Storyboard: zvuk je česky z tisku — přepisovač ho 1. 10. 2026 opsal v uvozovkách
+                // („A sound cue “Nástup tanečního beatu” begins“) a H3 by ho mohl vyslovit.
+                if (zeScenare || p.zvuk.isNotBlank()) sb.append("\n    sound in this shot: ")
+                else sb.append("\n    sound in this shot (write it in English in your own words, in this shot and in overall_soundscape, without quotation marks): ")
+                sb.append(zvukP.trim().trimEnd('.')).append(".")
+            }
             // Displej telefonu: H3 na něm píše nesmyslná písmena — jen tvary a barvy (5.14, kritici).
             // Osoba na displeji je fotka, ne postava filmu („mladá maminka mrkne“ vs. 72letá maminka).
             if (p.obrazovka) {

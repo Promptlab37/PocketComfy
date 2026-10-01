@@ -65,7 +65,7 @@ class SbScenarZamekTest {
         val out = StringBuilder()
         s.useky.forEachIndexed { k, u ->
             val surovy = File(dir, "vystup_$k.txt").cti()
-            val hotovy = sp.replikaNaZacatek(SbScenar.opravZnacky(sp.opravObrazky(sp.ocistiPrepis(surovy, u.panely.size), s.uploadImages.size)))
+            val hotovy = sp.bezUvozovekMimoD(sp.replikaNaZacatek(SbScenar.opravZnacky(sp.opravObrazky(sp.ocistiPrepis(surovy, u.panely.size), s.uploadImages.size))))
             out.append("===== $k\n").append(hotovy).append("\n")
         }
         val vzor = File(dir, "hotove.txt")

@@ -43,7 +43,7 @@ class SbJednaPostavaTest {
     @Test
     fun `zvuk je samostatny radek`() {
         val h = hlidka()
-        assertTrue(h.contains("Mood: Nadšení.\n    sound in this shot: Taneční hudba."))
+        assertTrue(h.contains("Mood: Nadšení.\n    sound in this shot (write it in English in your own words, in this shot and in overall_soundscape, without quotation marks): Taneční hudba."))
         assertFalse(h.contains("Sound: Taneční hudba"))
     }
 
@@ -65,5 +65,24 @@ class SbJednaPostavaTest {
         assertEquals("dance", c.hudbaStyl)
         assertEquals(1, c.panely.size)
         assertTrue(SbFilmPlan.otazkaHlasu(listOf("Příšera")).contains("Příšera"))
+    }
+
+    /** 5.57: přesný výstup přepisovače z 1. 10. 2026 — zvuk v uvozovkách mimo <d>. */
+    @Test
+    fun `uvozovky mimo repliku pryc`() {
+        val v = "[Shot 3] At 00:06.000, wide shot. No dialogue or speech occurs. A sound cue “Nástup tanečního beatu” begins as the shot starts.\n" +
+            "[Shot 1] She says, <d>[Czech] Tak, pro dnešek už bylo „internetu“ dost.</d> She closes her lips."
+        val o = SbFilmPrepis.bezUvozovekMimoD(v)
+        assertTrue(o.contains("A sound cue Nástup tanečního beatu begins"))
+        assertTrue(o.contains("<d>[Czech] Tak, pro dnešek už bylo „internetu“ dost.</d>"))
+    }
+
+    /** 5.57: zvuk ze storyboardu se přeloží při čtení — přesná odpověď ze serveru. */
+    @Test
+    fun `preklad zvuku`() {
+        val o = SbFilmPlan.prectiPrekladZvuku("PANEL 3 = Dance beat starts. PANEL 4 = Dance music.", setOf(3, 4))
+        assertEquals(mapOf(3 to "Dance beat starts", 4 to "Dance music"), o)
+        assertEquals(emptyMap<Int, String>(), SbFilmPlan.prectiPrekladZvuku("PANEL 9 = Rain.", setOf(3)))
+        assertTrue(SbFilmPlan.otazkaZvuku(mapOf(3 to "Nástup tanečního beatu.")).endsWith("PANEL 3: Nástup tanečního beatu."))
     }
 }
