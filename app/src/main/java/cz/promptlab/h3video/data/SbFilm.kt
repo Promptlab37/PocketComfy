@@ -445,6 +445,9 @@ object SbFilmPlan {
             " | MOOD: " + nalada.ifEmpty { "none" } + " | SOUND: " + zvuk.ifEmpty { "none" }
     }
 
+    /** Zvětšení řádku před čtením: na šířku aspoň 1400 px, nejvýš 3×, velký řádek beze změny. */
+    fun zvetseniRadku(sirka: Int): Float = if (sirka <= 0) 1f else (1400f / sirka).coerceIn(1f, 3f)
+
     /** Odpověď [otazkaRadku] → číslo panelu → repliky. */
     fun prectiRepliky(text: String): Map<Int, String> {
         val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")

@@ -153,4 +153,12 @@ class SbJednaPostavaTest {
         assertEquals(mapOf(3 to "Dance beat starts"), SbFilmPlan.prectiPreklad(odp, "SOUND", setOf(3)))
         assertEquals(mapOf(4 to "Excited", 6 to "Comically stern"), SbFilmPlan.prectiPreklad(odp, "MOOD", setOf(4, 6)))
     }
+
+    /** 5.62: řádek 683 px se čte zvětšený (≈2×), velký zůstane. */
+    @Test
+    fun `zvetseni radku`() {
+        assertEquals(1400f / 683, SbFilmPlan.zvetseniRadku(683), 0.001f)
+        assertEquals(1f, SbFilmPlan.zvetseniRadku(2048), 0f)
+        assertEquals(3f, SbFilmPlan.zvetseniRadku(300), 0f)
+    }
 }

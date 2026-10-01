@@ -5615,7 +5615,13 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             val odPanelu = if (radekObr != null) prvniVRadku else r * sloupcu + 1
                             val doPanelu = if (radekObr != null) prvniVRadku + radekObr.size - 1 else (r + 1) * sloupcu
                             prvniVRadku += radekObr?.size ?: 0
-                            val pruh = android.graphics.Bitmap.createBitmap(bmp, 0, y0, bmp.width, y1 - y0)
+                            val vyrez = android.graphics.Bitmap.createBitmap(bmp, 0, y0, bmp.width, y1 - y0)
+                            // Malý řádek se zvětší: v 683 px model četl „příšná“ místo „přísná“,
+                            // zvětšený 2× i 3× správně (4 ze 4 čtení, 1. 10. 2026).
+                            val zvetseni = cz.promptlab.h3video.data.SbFilmPlan.zvetseniRadku(vyrez.width)
+                            val pruh = if (zvetseni > 1f) android.graphics.Bitmap.createScaledBitmap(
+                                vyrez, (vyrez.width * zvetseni).toInt(), (vyrez.height * zvetseni).toInt(), true,
+                            ) else vyrez
                             val out = java.io.ByteArrayOutputStream()
                             pruh.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
                             val jm = client.uploadImage(out.toByteArray(), "sbfilm_radek${r + 1}.png")

@@ -1,0 +1,21 @@
+subject_definitions:
+<Subject 1> is the man in <Picture 1>, with long curly brown hair, a wrinkled face, a muscular body, wearing a black tank top and black boots.
+
+summary:
+[reference generation] The target video consists of three timed shots based on storyboard panels from <Picture 1>. Each shot features <Subject 1> performing a specific action in an industrial warehouse lit with blue lighting. The first shot is a close-up where he stares intensely at the camera, delivering the line “Pro dnes bylo internetu dost.” The second shot is a medium frame where he points directly at the viewer, saying “Běž spát.” The third shot is a wide view of him striking a dance pose with hands on hips and legs apart, while a dance beat begins. No on-screen text or captions are added. The voice of <Subject 1> (S1) is an older man with a deep, commanding voice speaking at a lively, natural pace.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the long curly brown hair, wrinkled face, muscular body, black tank top, and black boots are retained identically across all shots.
+<Picture 1> (storyboard reference for [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the viewpoint, subject placement, and visual look of each shot are defined by its corresponding panel from <Picture 1>.
+
+detailed_description:
+The target video is in a cinematic, stylized documentary style with high-contrast blue lighting and an industrial warehouse setting. The mood shifts subtly with each shot: anger in the first, authority in the second, and proud self-assurance in the third.
+[Shot 1] The camera holds static on a medium close-up of <Subject 1>, centered and staring intensely at the viewer. His expression is serious and angry. In the same deep, commanding voice, he says with sharp emphasis, <d>[Czech] Pro dnes bylo internetu dost.</d> He closes his lips immediately after speaking, holding a brief, tense stillness before the cut.
+[Shot 2] At 00:04.000, the shot cuts to a medium frame, slightly low angle, as <Subject 1> points his finger directly at the viewer with a firm, authoritative gaze. In the same deep, commanding voice, he says with decisive tone, <d>[Czech] Běž spát.</d> He closes his lips immediately after speaking, holding a brief, controlled stillness before the cut.
+[Shot 3] At 00:06.000, the shot cuts to a wide, eye-level view as <Subject 1> strikes a dance pose — one hand on hip, legs apart — with a proud, self-assured expression. A dance beat begins and continues throughout this silent shot. No dialogue is spoken. He holds the pose with subtle body sway and arm movement, maintaining his confident stance until the end of the 9-second duration.
+
+overall_soundscape:
+A steady, driving dance beat begins at 00:06.000 and continues through [Shot 3]. No other physical sounds are present.
+
+non_diegetic_music:
+N/A
