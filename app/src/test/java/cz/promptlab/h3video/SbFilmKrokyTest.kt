@@ -38,7 +38,7 @@ class SbFilmKrokyTest {
         assertFalse(n.containsKey(4))
         // Starý tvar odpovědi (bez MOOD) funguje dál.
         assertEquals(mapOf(5 to "", 6 to "MUŽ: „Ahoj.“"), SbFilmPlan.prectiRepliky("PANEL 5 | none PANEL 6 | MUŽ: „Ahoj.“"))
-        assertTrue(SbFilmPlan.otazkaRadku(1, 4).contains("MOOD:"))
+        assertTrue(SbFilmPlan.otazkaRadku(1, 4).contains("EMOCE"))
     }
 
     @Test

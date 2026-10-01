@@ -265,19 +265,93 @@ object SbFilmPlan {
      * „k vypínání“ místo „k vypínači“, „celý“ místo „celej“). Pruh s jedním
      * řádkem panelů dostane stejný počet obrazových tokenů na třetinu plochy.
      */
+    /**
+     * Otázka pro jeden řádek storyboardu (5.55): model text pod panely jen opíše, roztřídí ho
+     * appka ([prevedPrepis]). Když měl repliky rovnou třídit do polí, jméno „Příšera:“ vynechal
+     * nebo si vymyslel „TY“/„VY“ z první věty (1. 10. 2026); prostý přepis ho přečetl správně.
+     */
     fun otazkaRadku(prvni: Int, posledni: Int): String =
         "This image is one row of a film storyboard: the shot panels numbered $prvni to $posledni, " +
-            "left to right. Answer in plain lines only, one line per panel, exactly in this form: " +
-            "PANEL <number> | <every spoken line printed with that panel, starting with the " +
-            "speaker's name only when a name is printed before it, copied letter by letter exactly as printed, in its " +
-            "original language, as Speaker: \"line\", or just \"line\" when no name is printed, separated by ; — or none> | MOOD: <the text " +
-            "printed after EMOCE, NÁLADA, EMOTION or MOOD on that panel, copied exactly, or none> | " +
-            "SOUND: <the text printed after ZVUK, SOUND, SFX or HUDBA on that panel, copied exactly, or none>\n" +
-            "For example: PANEL 3 | ANNA: \"Kde je?\" | MOOD: Anna je netrpělivá. | SOUND: none\n" +
-            "Keep the exact spelling, including colloquial words and punctuation. Do not translate or " +
-            "correct anything. Text labelled as action, plot, description, emotion, mood or a note (for " +
-            "example DĚJ, AKCE, POPIS, EMOCE) is not a spoken line — never put it among the lines. A " +
-            "panel with no printed line gets none."
+            "left to right. Transcribe all the text printed in the caption under each panel, exactly as " +
+            "printed, letter by letter, in its original language, keeping every label before a colon " +
+            "(for example a speaker's name, EMOCE, ZVUK, MOOD or SOUND) and every quotation mark. Start each " +
+            "panel with a line PANEL <number>, then one line for every printed line of the caption. " +
+            "Do not translate or correct anything. No other text."
+
+    private val STARY_TVAR = Regex("""(?i)PANEL\s*\d+\s*\|[^|\n]*\|\s*MOOD""")
+    private val UVOZOVKY = Regex("""„[^“”"]*[“”"]|“[^”“]*[”“]|"[^"]*"|«[^»]*»|»[^«]*«""")
+    private val ST_NALADA = setOf("emoce", "emotion", "emotions", "nálada", "nalada", "mood", "pocit", "pocity", "podání", "podani")
+    private val ST_ZVUK = setOf("zvuk", "zvuky", "sound", "sounds", "sfx", "hudba", "music", "ruch", "ruchy")
+    private val ST_POPIS = setOf(
+        "obraz", "image", "picture", "visual", "vizuál", "vizual", "děj", "dej", "akce", "popis", "poznámka",
+        "poznamka", "scéna", "scena", "záběr", "zaber", "kamera", "titulek", "text", "nápis", "napis", "střih",
+        "strih", "čas", "cas", "time", "délka", "delka", "duration", "action", "plot", "description", "note",
+        "notes", "scene", "shot", "camera", "caption", "panel", "lokace", "location", "místo", "misto",
+        "prostředí", "prostredi", "světlo", "svetlo", "light", "lighting", "přechod", "prechod", "transition",
+        "direction", "stage direction", "pohyb", "movement", "framing", "angle", "úhel", "uhel",
+    )
+
+    /**
+     * Přepis řádku ([otazkaRadku]) → `PANEL n | Kdo: "…" | MOOD: … | SOUND: …`, se kterým
+     * pracuje [prectiRepliky], [prectiNalady] a [prectiZvuky]. Štítek je slovo (nejvýš tři)
+     * s velkým písmenem před dvojtečkou mimo uvozovky; obraz/děj/popis se zahodí, emoce jde
+     * do nálady, zvuk do zvuku, ostatní je mluvčí. Věta v uvozovkách bez štítku je replika
+     * bez jména. Odpověď ve starém tvaru vrátí beze změny.
+     */
+    fun prevedPrepis(text: String): String {
+        if (STARY_TVAR.containsMatchIn(text)) return text
+        val znacky = Regex("""(?i)\bPANEL\s*(\d+)""").findAll(text).toList()
+        if (znacky.isEmpty()) return text
+        return znacky.mapIndexed { i, m ->
+            val usek = text.substring(m.range.last + 1, znacky.getOrNull(i + 1)?.range?.first ?: text.length)
+            "PANEL ${m.groupValues[1]} | " + roztrid(usek)
+        }.joinToString("\n")
+    }
+
+    private fun bezUvozovek(t: String) = t.replace(Regex("""\s+"""), " ").trim().trim('"', '„', '“', '”', '«', '»').trim()
+
+    private fun roztrid(usek: String): String {
+        val vUvozovkach = UVOZOVKY.findAll(usek).map { it.range }.toList()
+        // Štítky: (začátek štítku, za dvojtečkou, štítek)
+        val stitky = Regex(""":(?=\s|[„“"«»]|$)""").findAll(usek).mapNotNull { d ->
+            val k = d.range.first
+            if (vUvozovkach.any { k in it }) return@mapNotNull null
+            val pred = usek.substring(0, k)
+            val hranice = pred.lastIndexOfAny(charArrayOf('.', '!', '?', '|', '\n', '“', '”', '"', '»', '«', ':', ';'))
+            var slova = pred.substring(hranice + 1).trim().split(Regex("""\s+""")).filter { it.isNotBlank() }.takeLast(3)
+            while (slova.isNotEmpty() && !slova.first().first().isUpperCase()) slova = slova.drop(1)
+            if (slova.isEmpty()) return@mapNotNull null
+            val stitek = slova.joinToString(" ")
+            Triple(pred.lastIndexOf(stitek), k + 1, stitek)
+        }.toList()
+        val repliky = mutableListOf<String>()
+        var nalada = ""
+        var zvuk = ""
+        // Před prvním štítkem jen věty v uvozovkách (repliky bez jména), číslo a čas panelu ne.
+        val predPrvnim = usek.substring(0, stitky.firstOrNull()?.first ?: usek.length)
+        UVOZOVKY.findAll(predPrvnim).forEach { repliky += "\"" + bezUvozovek(it.value) + "\"" }
+        stitky.forEachIndexed { i, (_, od, stitek) ->
+            val cela = usek.substring(od, stitky.getOrNull(i + 1)?.first ?: usek.length).trim()
+            val klic = stitek.lowercase()
+            // Věta v uvozovkách na vlastním řádku za popisem/emocí/zvukem je replika bez jména.
+            val zlom = if (klic in ST_NALADA || klic in ST_ZVUK || klic in ST_POPIS)
+                Regex("""\n\s*[„“"«»]""").find(cela)?.range?.first else null
+            val hodnota = if (zlom != null) cela.substring(0, zlom).trim() else cela
+            if (zlom != null) UVOZOVKY.findAll(cela.substring(zlom)).forEach { repliky += "\"" + bezUvozovek(it.value) + "\"" }
+            when {
+                klic in ST_NALADA -> nalada = (nalada + " " + bezUvozovek(hodnota)).trim()
+                klic in ST_ZVUK -> zvuk = (zvuk + " " + bezUvozovek(hodnota)).trim()
+                klic in ST_POPIS -> Unit
+                hodnota.isNotBlank() && !hodnota.equals("none", true) -> {
+                    val vety = UVOZOVKY.findAll(hodnota).map { bezUvozovek(it.value) }.filter { it.isNotBlank() }.toList()
+                        .ifEmpty { listOf(bezUvozovek(hodnota)) }
+                    vety.forEach { repliky += "$stitek: \"" + it.replace("\"", "") + "\"" }
+                }
+            }
+        }
+        return repliky.joinToString("; ").ifEmpty { "none" } +
+            " | MOOD: " + nalada.ifEmpty { "none" } + " | SOUND: " + zvuk.ifEmpty { "none" }
+    }
 
     /** Odpověď [otazkaRadku] → číslo panelu → repliky. */
     fun prectiRepliky(text: String): Map<Int, String> {

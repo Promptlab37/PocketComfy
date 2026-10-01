@@ -55,7 +55,7 @@ class SbFilmPriseraTest {
     @Test
     fun `replika se jmenem zustane, jak je`() {
         assertEquals(mapOf(1 to "Příšera: \"Běž spát.\""), SbFilmPlan.prectiRepliky("PANEL 1 | Příšera: \"Běž spát.\" | MOOD: none | SOUND: none"))
-        assertTrue(SbFilmPlan.otazkaRadku(1, 2).contains("SOUND:"))
+        assertTrue(SbFilmPlan.otazkaRadku(1, 2).contains("Transcribe"))
     }
 
     /** 5.54: bez vytištěného jména si model vymyslel „TY“ a „VY“ z první věty (odpověď ze serveru). */
@@ -68,6 +68,70 @@ class SbFilmPriseraTest {
         assertEquals(listOf("Mluvčí" to "Vypnout. A do postele!"), SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", r.getValue(6))))
         assertEquals(listOf("Anna" to "Kde je?", "Mluvčí" to "Tady."),
             SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", "Anna: \"Kde je?\"; \"Tady.\"")))
-        assertTrue(SbFilmPlan.otazkaRadku(5, 6).contains("only when a name is printed"))
+    }
+
+    /** 5.55: řádek se jen opíše a roztřídí appka — přesná odpověď ze serveru (jméno přečteno). */
+    @Test
+    fun `prepis radku se roztridi`() {
+        val prepis = "PANEL 5 5 | 13–16 s Obraz: Ztuhne a zírá do kamery. Emoce: Pobouřený údiv. Příšera: „Ty tu ještě jsi?“ " +
+            "PANEL 6 6 | 16–20 s Obraz: Dupne a ukáže ke dveřím. Emoce: Komicky příšná. Příšera: „Vypnout. A do postele!“"
+        val o = SbFilmPlan.prevedPrepis(prepis)
+        val r = SbFilmPlan.prectiRepliky(o)
+        assertEquals(listOf("Příšera" to "Ty tu ještě jsi?"), SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", r.getValue(5))))
+        assertEquals(listOf("Příšera" to "Vypnout. A do postele!"), SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", r.getValue(6))))
+        assertEquals("Pobouřený údiv.", SbFilmPlan.prectiNalady(o)[5])
+        assertEquals(emptyMap<Int, String>(), SbFilmPlan.prectiZvuky(o))
+    }
+
+    @Test
+    fun `prepis po radcich se zvukem a bez repliky`() {
+        val prepis = "PANEL 3\n3 | 6–9 s\nObraz: Celá postava v taneční póze.\nEmoce: Drzé sebevědomí.\nZvuk: Nástup tanečního beatu.\n" +
+            "PANEL 4\n4 | 9–13 s\nObraz: Pohupuje boky a mává rukama.\nEmoce: Nadšení.\nZvuk: Taneční hudba."
+        val o = SbFilmPlan.prevedPrepis(prepis)
+        assertEquals(mapOf(3 to "", 4 to ""), SbFilmPlan.prectiRepliky(o))
+        assertEquals(mapOf(3 to "Nástup tanečního beatu.", 4 to "Taneční hudba."), SbFilmPlan.prectiZvuky(o))
+        assertEquals("Nadšení.", SbFilmPlan.prectiNalady(o)[4])
+    }
+
+    @Test
+    fun `prepis jine formy titulku`() {
+        // Dva mluvčí, víceslovné jméno, anglické štítky, replika přes dva řádky, věta bez jména.
+        val o = SbFilmPlan.prevedPrepis(
+            "PANEL 1\n00-04s\nAKCE: Anna vejde do kuchyně.\nANNA: \"Kde je?\"\nStarý pán: „No přece tady,\nza dveřmi.“\n" +
+                "PANEL 2\nACTION: He shrugs.\nMOOD: tired\nSFX: rain\n\"Who cares?\""
+        )
+        val r = SbFilmPlan.prectiRepliky(o)
+        assertEquals(listOf("ANNA" to "Kde je?", "Starý pán" to "No přece tady, za dveřmi."),
+            SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", r.getValue(1))))
+        assertEquals(listOf("Mluvčí" to "Who cares?"), SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", r.getValue(2))))
+        assertEquals("tired", SbFilmPlan.prectiNalady(o)[2])
+        assertEquals("rain", SbFilmPlan.prectiZvuky(o)[2])
+    }
+
+    @Test
+    fun `stara odpoved projde beze zmeny`() {
+        val stara = "PANEL 1 | Anna: \"Ahoj.\" | MOOD: none | SOUND: none"
+        assertEquals(stara, SbFilmPlan.prevedPrepis(stara))
+    }
+
+    /** 5.55: celý storyboard s novou otázkou — tři přesné odpovědi ze serveru (1. 10. 2026). */
+    @Test
+    fun `cely storyboard z prepisu ma jmeno prisery`() {
+        val prepisy = listOf(
+            "PANEL 1 1 | 0-4 s Obraz: Přísný pohled do kamery. Emoce: Rozhořčení. Příšera: „Tak, pro dnešek už bylo internetu dost.“ PANEL 2 2 | 4-6 s Obraz: Nakloní se a ukáže na diváka. Emoce: Autoritativní. Příšera: „Běž spát.“",
+            "PANEL 3 3 | 6-9 s Obraz: Celá postava v taneční póze. Emoce: Drží sebevědomí. Zvuk: Nástup tanečního beatu. PANEL 4 4 | 9-13 s Obraz: Pohupuje boky a mává rukama. Emoce: Nadšení. Zvuk: Taneční hudba.",
+            "PANEL 5 5 | 13–16 s Obraz: Ztuhne a zírá do kamery. Emoce: Pobouřený údiv. Příšera: „Ty tu ještě jsi?“ PANEL 6 6 | 16–20 s Obraz: Dupne a ukáže ke dveřím. Emoce: Komicky příšná. Příšera: „Vypnout. A do postele!“",
+        ).map { SbFilmPlan.prevedPrepis(it) }
+        val repliky = prepisy.fold(mapOf<Int, String>()) { acc, r -> acc + SbFilmPlan.prectiRepliky(r) }
+        val panely = SbFilmPrepis.slucCteni(SbFilmPlan.precti(cele).panely, repliky)
+        val r = panely.associate { it.cislo to SbFilmPrepis.repliky(it.repliky) }
+        assertEquals(listOf("Příšera" to "Tak, pro dnešek už bylo internetu dost."), r[1])
+        assertEquals(listOf("Příšera" to "Běž spát."), r[2])
+        assertEquals(emptyList<Pair<String, String>>(), r[3])
+        assertEquals(emptyList<Pair<String, String>>(), r[4])
+        assertEquals(listOf("Příšera" to "Ty tu ještě jsi?"), r[5])
+        assertEquals(listOf("Příšera" to "Vypnout. A do postele!"), r[6])
+        val zvuky = prepisy.fold(mapOf<Int, String>()) { acc, x -> acc + SbFilmPlan.prectiZvuky(x) }
+        assertEquals(mapOf(3 to "Nástup tanečního beatu.", 4 to "Taneční hudba."), zvuky)
     }
 }

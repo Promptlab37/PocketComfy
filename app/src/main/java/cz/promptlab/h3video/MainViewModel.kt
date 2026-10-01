@@ -5595,7 +5595,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             val out = java.io.ByteArrayOutputStream()
                             pruh.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, out)
                             val jm = client.uploadImage(out.toByteArray(), "sbfilm_radek${r + 1}.png")
-                            val odpoved = spustPrepisAPockej(
+                            val odpoved = cz.promptlab.h3video.data.SbFilmPlan.prevedPrepis(spustPrepisAPockej(
                                 client,
                                 cz.promptlab.h3video.comfy.SbFilmBuilder.buildCteni(
                                     jm, model, kotlin.random.Random.nextLong(1, 0xFFFFFFFFL),
@@ -5603,7 +5603,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                                 ),
                                 cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
                                 krok = 1 + r,
-                            )
+                            ))
                             opravene += cz.promptlab.h3video.data.SbFilmPlan.prectiRepliky(odpoved)
                             nalady += cz.promptlab.h3video.data.SbFilmPlan.prectiNalady(odpoved)
                             zvuky += cz.promptlab.h3video.data.SbFilmPlan.prectiZvuky(odpoved)
