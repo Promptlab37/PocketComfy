@@ -1052,6 +1052,10 @@ object GenerationEngine {
         val talkNames = talkAudios.mapIndexed { i, f ->
             uploadMediaWithRetry(client, f, 0.05f + 0.005f * i)
         }
+        // Film ze storyboardu s dialogy přes Higgs (5.64): nahrávky replik na server.
+        val sbStopy = sbFilmScene?.let { cz.promptlab.h3video.data.SbDialogy.planuj(it) }.orEmpty()
+        val sbNahravky = sbStopy.flatMap { it.umisteni }.map { it.soubor }.distinct()
+            .associateWith { uploadMediaWithRetry(client, it, 0.05f) }
 
         // --- 3. zařazení do fronty pod vlastním prompt_id (kvůli bezpečnému opakování)
         val seed = if (params.randomSeed) Random.nextLong(1, 999_999_999_999_999L) else params.seed
@@ -1132,10 +1136,14 @@ object GenerationEngine {
 
             // Film ze storyboardu: úseky s hotovým zadáním v jednom běhu.
             sbFilmScene != null ->
-                cz.promptlab.h3video.comfy.SbFilmBuilder.buildFilm(
-                    sbFilmScene, sbFilmScene.useky, sbFilmScene.zadaniUseku, names,
-                    sbFilmScene.pomer.kod, seed,
-                    pozornost = effective.pozornost, shiftZvuk = effective.shiftAudio.toDouble(),
+                cz.promptlab.h3video.data.SbDialogy.doplnGraf(
+                    cz.promptlab.h3video.comfy.SbFilmBuilder.buildFilm(
+                        sbFilmScene, sbFilmScene.useky, sbFilmScene.zadaniUseku, names,
+                        sbFilmScene.pomer.kod, seed,
+                        pozornost = effective.pozornost, shiftZvuk = effective.shiftAudio.toDouble(),
+                    ),
+                    sbStopy, sbNahravky,
+                    cz.promptlab.h3video.comfy.SbFilmBuilder.N_KONTEXT, cz.promptlab.h3video.comfy.SbFilmBuilder.N_MEDIA,
                 )
 
             // Long MiniMax: jeden záběr na běh. První zakládá řetěz a uloží

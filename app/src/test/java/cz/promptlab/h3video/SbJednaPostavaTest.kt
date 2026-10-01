@@ -77,16 +77,6 @@ class SbJednaPostavaTest {
         assertTrue(o.contains("<d>[Czech] Tak, pro dnešek už bylo „internetu“ dost.</d>"))
     }
 
-    /** 5.57: zvuk ze storyboardu se přeloží při čtení — přesná odpověď ze serveru. */
-    @Test
-    fun `preklad zvuku`() {
-        val o = SbFilmPlan.prectiPrekladZvuku("PANEL 3 = Dance beat starts. PANEL 4 = Dance music.", setOf(3, 4))
-        assertEquals(mapOf(3 to "Dance beat starts", 4 to "Dance music"), o)
-        assertEquals(emptyMap<Int, String>(), SbFilmPlan.prectiPrekladZvuku("PANEL 9 = Rain.", setOf(3)))
-        assertTrue(SbFilmPlan.otazkaZvuku(mapOf(3 to "Nástup tanečního beatu.")).endsWith("PANEL 3: Nástup tanečního beatu."))
-    }
-
-    /** 5.60: úsek 1 druhé Příšery — přepisovač dal obě repliky jen do uvozovek (přesný výstup ze serveru). */
     @Test
     fun `replika bez d se zabali`() {
         val surovy = java.io.File("src/test/resources/prisera2_usek1_bez_d.txt").readText()

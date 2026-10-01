@@ -1869,6 +1869,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
      */
     fun loadVoices(startIfNeeded: Boolean = true) {
         viewModelScope.launch { drzNazivu("hlasy") {
+            // Higgs startovat jen s volnou grafikou — jinak zůstane viset v „loading“ (5.64).
+            if (startIfNeeded && !higgsClient().isAlive()) withContext(Dispatchers.IO) {
+                runCatching { uklidPredPrepisem(ComfyClient(settings.serverUrl)) }
+            }
             val ok = if (startIfNeeded) ensureHiggs(needModel = false) else higgsClient().isAlive()
             if (!ok) return@launch
             val list = withContext(Dispatchers.IO) {
@@ -3476,6 +3480,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             storyboard = storyboard,
             hlidka = hlidka,
             jenTvar = jenTvar,
+            // Film: šest polí s doslovnými replikami všech záběrů potřebuje víc místa (5.64).
+            maxTokenu = if (hlidka != null) H3RefWriteBuilder.MAX_TOKENU_STORYBOARD else H3RefWriteBuilder.MAX_TOKENU,
         )
         return spustPrepisAPockej(client, wf, H3RefWriteBuilder.N_PREVIEW, krok = krok)
     }
@@ -5808,6 +5814,135 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     /** Odhad počtu úseků pro plán akce, než je plán známý (minule, jinak 2). */
     private fun odhadUseku() = trvaniPrepisu.getInt("odhad_posledni_useky", 2).coerceIn(1, 4)
 
+    // ------------------------------------------------- dialogy přes Higgs (5.64)
+
+    /** Stav namlouvání repliky: „panel:replika“ → text stavu (průběh nebo chyba). */
+    private val _sbNamlouvani = MutableStateFlow<Map<String, String>>(emptyMap())
+    val sbNamlouvani: StateFlow<Map<String, String>> = _sbNamlouvani.asStateFlow()
+
+    private fun stavRepliky(klic: String, text: String?) {
+        _sbNamlouvani.value = if (text == null) _sbNamlouvani.value - klic else _sbNamlouvani.value + (klic to text)
+    }
+
+    /** Zapnout dialogy přes Higgs — zadání se pak musí napsat znovu. */
+    fun setSbDialogyHiggs(zapnuto: Boolean) {
+        updateSbFilm { it.copy(dialogyHiggs = zapnuto, zadaniUseku = emptyList()) }
+        if (zapnuto && _voices.value.isEmpty()) loadVoices()
+    }
+
+    fun setSbHlasMluvciho(kdo: String, hlas: VoiceSource?) = updateSbFilm { s ->
+        val h = s.hlasyMluvcich.filterKeys { !it.equals(kdo, ignoreCase = true) }
+        s.copy(
+            hlasyMluvcich = if (hlas == null) h else h + (kdo to cz.promptlab.h3video.data.SbDialogy.zakoduj(hlas)),
+            zadaniUseku = emptyList(),
+        )
+    }
+
+    /** Vlastní vzorek hlasu postavy ze souboru (klon). */
+    fun setSbVzorekMluvciho(kdo: String, uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val soubor = withContext(Dispatchers.IO) { kopirujZvuk(uri, "hlas") } ?: return@launch
+            setSbHlasMluvciho(kdo, VoiceSource.Sample(soubor, t("vlastní vzorek")))
+        }
+    }
+
+    /** Hotový zvuk k replice místo namluvení. */
+    fun setSbZvukRepliky(cislo: Int, index: Int, uri: Uri?) {
+        if (uri == null) return
+        viewModelScope.launch {
+            val soubor = withContext(Dispatchers.IO) { kopirujZvuk(uri, "replika_${cislo}_$index") } ?: return@launch
+            val s = _sbFilm.value
+            val p = s.panely.firstOrNull { it.cislo == cislo } ?: return@launch
+            val (_, text) = cz.promptlab.h3video.data.SbFilmPrepis.repliky(p.repliky).getOrNull(index) ?: return@launch
+            ulozNahravku(cislo, index, soubor, text, cz.promptlab.h3video.data.VLASTNI_ZVUK)
+        }
+    }
+
+    fun smazSbNahravku(cislo: Int, index: Int) = updateSbFilm { s ->
+        s.copy(nahravky = s.nahravky - cz.promptlab.h3video.data.SbDialogy.klic(cislo, index), zadaniUseku = emptyList())
+    }
+
+    private fun kopirujZvuk(uri: Uri, nazev: String): File? = runCatching {
+        val ctx = getApplication<Application>()
+        val pripona = ctx.contentResolver.getType(uri)?.substringAfter('/')?.let {
+            when (it) { "mpeg" -> "mp3"; "x-wav", "wave", "vnd.wave" -> "wav"; "mp4", "x-m4a" -> "m4a"; else -> it }
+        } ?: "wav"
+        val cil = File(File(ctx.filesDir, "sbfilm").apply { mkdirs() }, "${nazev}_${System.currentTimeMillis()}.$pripona")
+        ctx.contentResolver.openInputStream(uri)!!.use { i -> cil.outputStream().use { i.copyTo(it) } }
+        cil.takeIf { it.length() > 0 }
+    }.getOrNull()
+
+    private suspend fun ulozNahravku(cislo: Int, index: Int, soubor: File, text: String, hlas: String) {
+        val delka = withContext(Dispatchers.IO) { audioSeconds(soubor) }.toDouble()
+        val n = cz.promptlab.h3video.data.SbDialogy.Nahravka(soubor, text, hlas, delka)
+        updateSbFilm {
+            it.copy(
+                nahravky = it.nahravky + (cz.promptlab.h3video.data.SbDialogy.klic(cislo, index) to cz.promptlab.h3video.data.SbDialogy.zakoduj(n)),
+                zadaniUseku = emptyList(),
+            )
+        }
+    }
+
+    /** Namluví jednu repliku ([index] v panelu [cislo]), nebo všechny chybějící (null). */
+    fun namluvSbRepliky(cislo: Int? = null, index: Int? = null) {
+        val s = _sbFilm.value
+        val dlg = cz.promptlab.h3video.data.SbDialogy
+        val fronta = dlg.chybejici(s).filter { cislo == null || (it.panel == cislo && it.index == index) }
+            .ifEmpty {
+                // Jedna konkrétní replika jde namluvit znovu, i když nahrávku už má.
+                if (cislo == null || index == null) emptyList()
+                else s.panely.firstOrNull { it.cislo == cislo }?.let { p ->
+                    cz.promptlab.h3video.data.SbFilmPrepis.repliky(p.repliky).getOrNull(index)
+                        ?.let { (kdo, text) -> listOf(cz.promptlab.h3video.data.SbDialogy.Replika(cislo, index, kdo.trim(), text)) }
+                }.orEmpty()
+            }
+        if (fronta.isEmpty()) return
+        fronta.forEach { stavRepliky(dlg.klic(it.panel, it.index), t("Čeká…")) }
+        viewModelScope.launch { drzNazivu("namlouvani") {
+            // Higgs startovat jen s volnou grafikou — jinak zůstane viset v „loading“.
+            withContext(Dispatchers.IO) { runCatching { uklidPredPrepisem(ComfyClient(settings.serverUrl)) } }
+            if (!ensureHiggs()) {
+                val chyba = _higgsNote.value.ifBlank { t("Higgs se nepodařilo spustit.") }
+                fronta.forEach { stavRepliky(dlg.klic(it.panel, it.index), chyba) }
+                return@launch
+            }
+            val client = higgsClient()
+            for (r in fronta) {
+                val klic = dlg.klic(r.panel, r.index)
+                val hlas = dlg.hlasMluvciho(_sbFilm.value, r.kdo)
+                if (hlas == null) { stavRepliky(klic, t("Vyber hlas pro %s.").format(r.kdo)); continue }
+                stavRepliky(klic, t("Namlouvám…"))
+                val vysledek = withContext(Dispatchers.IO) {
+                    runCatching {
+                        val id = when (hlas) {
+                            is VoiceSource.Library -> client.speak(r.text, hlas.voiceId)
+                            is VoiceSource.Sample -> client.clone(r.text, hlas.file)
+                        }
+                        repeat(450) {
+                            val j = client.job(id)
+                            if (j.failed) throw IllegalStateException(j.error.ifBlank { t("Namluvení se nepovedlo.") })
+                            if (j.done) {
+                                val cil = File(File(getApplication<Application>().filesDir, "sbfilm").apply { mkdirs() },
+                                    "higgs_${r.panel}_${r.index}_${System.currentTimeMillis()}.wav")
+                                client.downloadAudio(id, cil)
+                                return@runCatching cil
+                            }
+                            stavRepliky(klic, t("Namlouvám… %d %%").format((j.progress * 100).toInt().coerceIn(0, 99)))
+                            Thread.sleep(1_000)
+                        }
+                        throw IllegalStateException(t("Namlouvání trvá neúměrně dlouho, zkus kratší text."))
+                    }
+                }
+                vysledek.fold(
+                    onSuccess = { f -> ulozNahravku(r.panel, r.index, f, r.text, hlas.klic); stavRepliky(klic, null) },
+                    onFailure = { e -> stavRepliky(klic, (e as? ComfyException)?.userMessage ?: (e.message ?: t("Namluvení se nepovedlo."))) },
+                )
+            }
+        }
+}
+    }
+
     /** Kdo je na fotce (5.17). Prázdné jméno = nepřiřazená. */
     /** Z fotky postavy jen tvář (5.52) — zadání se pak musí napsat znovu. */
     fun setSbJenTvar(index: Int, zapnuto: Boolean) = updateSbFilm { s ->
@@ -5831,7 +5966,19 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
     private suspend fun napisPromptySb(client: ComfyClient, s: cz.promptlab.h3video.data.SbFilmScene, krokOd: Int): List<String> {
         val useky = s.useky
         val sp = cz.promptlab.h3video.data.SbFilmPrepis
+        // Dialogy přes Higgs (5.64): všechny repliky namluvené, stopy v mezích H3.
+        val dlg = cz.promptlab.h3video.data.SbDialogy
+        val stopy = if (s.dialogyHiggs) {
+            dlg.bezHlasu(s).firstOrNull()?.let { throw ComfyException("dialogy hlas", t("Vyber hlas pro %s.").format(it)) }
+            dlg.chybejici(s).firstOrNull()?.let { throw ComfyException("dialogy nahravka", t("Namluv repliku „%s“.").format(it.text.take(40))) }
+            val st = dlg.planuj(s, useky)
+            dlg.problemy(st).firstOrNull()?.let { throw ComfyException("dialogy meze", it) }
+            // Higgs drží grafiku — přepisovač na ComfyUI ji potřebuje celou.
+            withContext(Dispatchers.IO) { runCatching { higgsLauncher().stop() } }
+            st
+        } else emptyList()
         return useky.mapIndexed { k, u ->
+            val stopyUseku = stopy.filter { it.usek == k }
             val hlidka = sp.hlidka(
                 s.uploadImages.size, u, k, useky.size, s.seStoryboardem,
                 sp.idMluvcich(s.panely), sp.jazykFilmu(s), s.hlasy,
@@ -5844,7 +5991,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     s.postavy.map { s.jmenoFotky(it.soubor)!! } else emptyList(),
                 jenTvarFotek = s.postavy.map { it.soubor.absolutePath in s.jenTvar },
                 popisyFilmu = s.panely.map { it.popis },
-            )
+            ).let { sp.hlidkaSNahravkami(it, stopyUseku.map { st -> st.mluvci }.distinct()) }
             suspend fun napis(): String {
                 val text = prepisSReferencemi(
                     client, s.uploadImages, u.sekundy, sp.zadani(s, k, useky.size),
@@ -5856,7 +6003,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 )
                 // Vymyšlené <Audio>/<Video> a cizí záběry se odstraní hned —
                 // opakovaný přepis je nespolehlivě opravoval a trvá dvakrát.
-                val cisty = sp.opravObrazky(sp.ocistiPrepis(text, u.panely.size), s.uploadImages.size)
+                // Holé „Subject N“ → <Subject N>, pozadí studiové fotky pryč (5.64).
+                val cisty = sp.opravObrazky(sp.ocistiPrepis(sp.opravZnackyAPozadi(text), u.panely.size), s.uploadImages.size)
                 // Se scénářem i vymyšlené značky (<Product>) → <Subject K> (5.22).
                 // Se scénářem i replika vždy na začátek záběru (5.32).
                 // Replika bez <d> se zabalí (5.60), pak uvozovky mimo <d> pryč — H3 by je vyslovil (5.57).
@@ -5875,7 +6023,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             sp.chybejiciRepliky(prompt, u).forEach { r ->
                 nalezyPrepisu += cz.promptlab.h3video.data.SbNalez(0, t("Úsek %d: v promptu chybí replika „%s“").format(k + 1, r))
             }
-            prompt
+            // Nahrané repliky: <Audio N>, audio reuse, partially_copy a hlas z nahrávky (5.64).
+            dlg.doplnPrompt(prompt, stopyUseku, sp.idMluvcich(s.panely))
         }
     }
 

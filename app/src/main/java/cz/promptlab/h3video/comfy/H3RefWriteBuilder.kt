@@ -288,6 +288,12 @@ object H3RefWriteBuilder {
      */
     const val MAX_TOKENU = 2048
 
+    /**
+     * Film ze storyboardu (5.64): šest polí s doslovnými replikami všech záběrů — se
+     * stropem 2048 přepisovač u dlouhého scénáře repliku zkrátil na poslední větu.
+     */
+    const val MAX_TOKENU_STORYBOARD = 8192
+
     private fun uzel(cls: String, titulek: String, vstupy: JSONObject) = JSONObject()
         .put("class_type", cls)
         .put("inputs", vstupy)

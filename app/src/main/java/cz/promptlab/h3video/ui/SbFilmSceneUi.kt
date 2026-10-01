@@ -493,6 +493,8 @@ private fun Kontrola(
                     }
                 }
             }
+            // Dialogy přes Higgs (5.64): hlas postav a nahrávky replik.
+            SbDialogySekce(vm, scene)
             if (scene.strih.isNotEmpty()) SkladaciSekce(
                 title = t("Texty do střihu"),
                 souhrn = "${scene.strih.size}",

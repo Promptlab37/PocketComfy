@@ -49,6 +49,13 @@ object SbFilmBuilder {
     const val N_CTENI_OBRAZEK = "1"
     const val N_CTENI = "2"
     const val N_CTENI_VYSTUP = "3"
+    const val N_CTENI_MOZNOSTI = "4"
+
+    /**
+     * Strop odpovědi čtení (5.64): bez nastavení uzel končí kolem 2048 tokenů a storyboard
+     * se sedmi panely se uřízl na šesti, aniž by to appka poznala. Strop uzlu je 16384.
+     */
+    const val CTENI_MAX_TOKENU = 8192
     const val CTENI_CLASS = "MiniMaxH3ReferenceCaption"
 
     fun buildCteni(
@@ -65,9 +72,14 @@ object SbFilmBuilder {
                     .put("length", "detailed")
                     .put("seed", seed)
                     .put("image", odkaz(N_CTENI_OBRAZEK))
-                    .put("instruction", otazka),
+                    .put("instruction", otazka)
+                    .put("options", odkaz(N_CTENI_MOZNOSTI)),
             ),
         )
+        .put(N_CTENI_MOZNOSTI, uzel("MiniMaxH3RewriterOptions", "Nastavení čtení", JSONObject()
+            .put("max_new_tokens", CTENI_MAX_TOKENU).put("temperature", 0.7).put("top_p", 0.9).put("top_k", 40)
+            .put("repetition_penalty", 1.05).put("attn_implementation", "sdpa")
+            .put("auto_download", true).put("use_lora", false)))
         // Výstup 1 = samotný popis; 0 je řádek bloku referencí s „Picture 1:".
         .put(N_CTENI_VYSTUP, uzel("PreviewAny", "Panely", JSONObject().put("source", odkaz(N_CTENI, 1))))
 

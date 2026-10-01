@@ -290,15 +290,6 @@ object SbFilmPlan {
             "low voice and LOOK Anna = long red hair, green raincoat, black boots. No other text."
 
     /**
-     * Zvuky ze storyboardu do angličtiny (5.57): česky je přepisovač opsal doslova
-     * („Nástup tanečního beatu“), i když měl pokyn napsat je anglicky — a H3 je mohl vyslovit.
-     */
-    fun otazkaZvuku(zvuky: Map<Int, String>): String =
-        "This image is a film storyboard. Translate these sound notes printed on its panels into short " +
-            "English sound descriptions (what is heard), one line per panel, exactly as PANEL <number> = " +
-            "<English>. No other text.\n" + zvuky.entries.joinToString("\n") { "PANEL ${it.key}: ${it.value}" }
-
-    /**
      * Zvuky i emoce ze storyboardu do angličtiny jedním dotazem (5.61): česky je
      * přepisovač opisoval mimo repliky („The mood is Nadšení“) a H3 je mohl vyslovit.
      * Model vidí storyboard, takže přečte i překlep („Komicky příšná“).
@@ -318,15 +309,6 @@ object SbFilmPlan {
             if (!m.groupValues[1].equals(druh, ignoreCase = true)) return@mapNotNull null
             val n = m.groupValues[2].toInt()
             val en = m.groupValues[3].trim().trim('"', '„', '“', '”').trim().trimEnd('.')
-            if (n in panely && en.isNotBlank()) n to en else null
-        }.toMap()
-
-    /** Odpověď [otazkaZvuku] → číslo panelu → anglický zvuk (jen panely, na které se appka ptala). */
-    fun prectiPrekladZvuku(text: String, panely: Set<Int>): Map<Int, String> =
-        text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n").lines().mapNotNull { r ->
-            val m = Regex("""(?i)^\s*PANEL\s*(\d+)\s*[=:]\s*(.+)$""").find(r.trim()) ?: return@mapNotNull null
-            val n = m.groupValues[1].toInt()
-            val en = m.groupValues[2].trim().trim('"', '„', '“', '”').trim().trimEnd('.')
             if (n in panely && en.isNotBlank()) n to en else null
         }.toMap()
 
@@ -898,6 +880,12 @@ data class SbFilmScene(
      * zůstanou podle storyboardu (uživatel 1. 10. 2026: skutečná tvář na příšeru).
      */
     val jenTvar: Set<String> = emptySet(),
+    /** Repliky namluví Higgs a jdou do H3 jako `<Audio N>` (5.64, [SbDialogy]). */
+    val dialogyHiggs: Boolean = false,
+    /** Mluvčí → hlas ([SbDialogy.zakoduj]): knihovna Higgse, nebo vlastní vzorek. */
+    val hlasyMluvcich: Map<String, String> = emptyMap(),
+    /** „panel:replika“ → nahrávka ([SbDialogy.zakoduj]); platí jen pro stejný text a hlas. */
+    val nahravky: Map<String, String> = emptyMap(),
 ) {
     /** Kroky, se kterými se opravdu vzorkuje. */
     val kroky: Int
@@ -1087,6 +1075,9 @@ class SbFilmStore(private val ctx: Context) {
             .put("nalezy", org.json.JSONArray().also { a -> s.nalezy.forEach { a.put(org.json.JSONObject().put("cislo", it.cislo).put("text", it.text)) } })
             .put("jmenaFotek", org.json.JSONObject().also { j -> s.jmenaFotek.forEach { (k, v) -> j.put(k, v) } })
             .put("jenTvar", org.json.JSONArray().also { a -> s.jenTvar.forEach { a.put(it) } })
+            .put("dialogyHiggs", s.dialogyHiggs)
+            .put("hlasyMluvcich", org.json.JSONObject().also { j -> s.hlasyMluvcich.forEach { (k, v) -> j.put(k, v) } })
+            .put("nahravky", org.json.JSONObject().also { j -> s.nahravky.forEach { (k, v) -> j.put(k, v) } })
             .put("strih", org.json.JSONArray().also { a ->
                 s.strih.forEach { a.put(org.json.JSONObject().put("cislo", it.cislo).put("text", it.text).put("druh", it.druh.name)) }
             })
@@ -1151,6 +1142,9 @@ class SbFilmStore(private val ctx: Context) {
             jmenaFotek = j.optJSONObject("jmenaFotek")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }
                 .orEmpty().filterValues { it.isNotBlank() },
             jenTvar = j.optJSONArray("jenTvar")?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() }.toSet() }.orEmpty(),
+            dialogyHiggs = j.optBoolean("dialogyHiggs"),
+            hlasyMluvcich = j.optJSONObject("hlasyMluvcich")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }.orEmpty(),
+            nahravky = j.optJSONObject("nahravky")?.let { h -> h.keys().asSequence().associateWith { h.optString(it) } }.orEmpty(),
             panelyObrazku = j.optInt("panelyObrazku"),
             strih = (0 until (j.optJSONArray("strih")?.length() ?: 0)).mapNotNull {
                 val r = j.getJSONArray("strih").getJSONObject(it)
@@ -1490,6 +1484,48 @@ object SbFilmPrepis {
         val vZaberech = REPLIKA_D.findAll(text.substring(i)).map { obsah(it.value) }.toSet()
         val hlava = REPLIKA_D.replace(text.substring(0, i)) { m -> if (obsah(m.value) in vZaberech) "the line" else m.value }
         return hlava + text.substring(i)
+    }
+
+    /** `Subject 3` bez ostrých závorek (ne už `<Subject 3>`). */
+    private val HOLA_ZNACKA = Regex("""(?<![<\w])Subject\s+(\d+)(?!\s*>)""")
+
+    /** Pozadí referenční fotky: „against a gray background“, „on a plain white backdrop“… */
+    private val POZADI_FOTKY = Regex(
+        """,?\s*(?:(?:standing|sitting|posed|shown|photographed)\s+(?:in\s+profile\s+)?)?""" +
+            """(?:against|on|in\s+front\s+of|before)\s+(?:a|an|the)\s+""" +
+            """(?:[\w-]+\s+){0,4}(?:background|backdrop)\b""",
+        RegexOption.IGNORE_CASE,
+    )
+
+    /**
+     * Dvě opravy výstupu přepisovače (5.64, ověřené na natočených filmech 29. 9. 2026):
+     * holé `Subject 3` → `<Subject 3>` (H3 přiřazuje postavu k obrázku jen podle značky
+     * v ostrých závorkách — bez ní držel předmět jiný tvor) a z řádků postav pryč pozadí
+     * ze studiové fotky („against a gray background“). Repliky v `<d>` se nemění.
+     */
+    fun opravZnackyAPozadi(text: String): String {
+        fun oprav(kus: String) = HOLA_ZNACKA.replace(kus) { "<Subject ${it.groupValues[1]}>" }.split("\n").joinToString("\n") { r ->
+            if (r.trimStart().startsWith("<Subject")) POZADI_FOTKY.replace(r, "").replace(Regex("""\s+([,.])"""), "$1") else r
+        }
+        val sb = StringBuilder()
+        var od = 0
+        REPLIKA_D.findAll(text).forEach { m ->
+            sb.append(oprav(text.substring(od, m.range.first))).append(m.value)
+            od = m.range.last + 1
+        }
+        return sb.append(oprav(text.substring(od))).toString()
+    }
+
+    /**
+     * Pokyn do hlídky úseku s nahranými replikami (5.64): hlas se nepopisuje — vlastní
+     * popis hlasu v promptu ho od nahrávky odtáhne. Vkládá se před konec hlídky.
+     */
+    fun hlidkaSNahravkami(hlidka: String, mluvci: List<String>): String {
+        if (mluvci.isEmpty()) return hlidka
+        val pokyn = "The spoken lines of ${mluvci.joinToString(", ")} come with recorded voices supplied separately: " +
+            "never describe their voice, pitch or tone — write only the facial expression and delivery before each line."
+        val konec = hlidka.lastIndexOf(']')
+        return if (konec < 0) "$hlidka $pokyn" else hlidka.substring(0, konec).trimEnd() + "\n$pokyn\n" + hlidka.substring(konec)
     }
 
     /** Jazyk všech replik filmu dohromady (null = nepoznaný, model ho určí sám). */
