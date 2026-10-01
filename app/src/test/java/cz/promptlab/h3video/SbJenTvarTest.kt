@@ -13,8 +13,9 @@ class SbJenTvarTest {
     @Test
     fun `jen tvar prida vyjimku jen pro zvolenou fotku`() {
         val v = SbFilmPrepis.jenTvar(listOf(false, true), 2, listOf("Táta", "Příšera"))
-        assertTrue(v.contains("Exception for <Picture 3>: take only the face"))
-        assertTrue(v.contains("Příšera's body, build, skin and its texture, hair, fur and clothing look exactly as in the storyboard"))
+        assertTrue(v.contains("Exception for <Picture 3>: define Příšera in subject_definitions"))
+        assertTrue(v.contains("whose face (face shape, eyes, nose, mouth and eyebrows) comes from <Picture 3>"))
+        assertTrue(v.contains("mark <Picture 3> as attribute_transfer"))
         assertTrue(!v.contains("<Picture 2>"))
     }
 

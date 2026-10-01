@@ -1278,9 +1278,13 @@ object SbFilmPrepis {
         if (obr.isEmpty()) return ""
         return obr.joinToString("") { i ->
             val kdo = jmena.getOrNull(i) ?: "this character"
-            " Exception for <Picture ${prvniPostava + i}>: take only the face from it (face shape, eyes, nose, mouth, " +
-                "eyebrows and expression) and put that face on $kdo as drawn in the storyboard in <Picture 1>; " +
-                "$kdo's body, build, skin and its texture, hair, fur and clothing look exactly as in the storyboard."
+            // Tvar podle oficiální příručky MiniMaxu (oddíl 2.1/4.1): jeden Subject složený z víc
+            // referencí, u každé co dodává; přenos rysu = attribute_transfer (rešerše 1. 10. 2026).
+            " Exception for <Picture ${prvniPostava + i}>: define $kdo in subject_definitions as the character whose " +
+                "body, build, skin and its texture, hair, fur and clothing come from the storyboard in <Picture 1> and " +
+                "whose face (face shape, eyes, nose, mouth and eyebrows) comes from <Picture ${prvniPostava + i}>; in " +
+                "retention_analysis mark <Picture ${prvniPostava + i}> as attribute_transfer - the facial identity is " +
+                "transferred onto $kdo."
         }
     }
 
