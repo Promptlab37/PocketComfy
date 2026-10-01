@@ -5637,7 +5637,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                     val mluvci = cz.promptlab.h3video.data.SbFilmPrepis.slucCteni(cteni.panely, opravene)
                         .flatMap { p -> cz.promptlab.h3video.data.SbFilmPrepis.repliky(p.repliky).map { it.first } }
                         .distinctBy { it.lowercase() }
-                        .filter { m -> cteni.hlasy.keys.none { it.equals(m, ignoreCase = true) } }
+                        // Chybí hlas, nebo vzhled (5.60) — jeden dotaz na oboje.
+                        .filter { m -> cteni.hlasy.keys.none { it.equals(m, ignoreCase = true) } || cteni.vzhled.keys.none { it.equals(m, ignoreCase = true) } }
                     if (mluvci.isNotEmpty()) {
                         val krokHlasu = 1 + skutecne
                         upravPlan { it.copy(kroky = it.kroky.take(krokHlasu) + cz.promptlab.h3video.data.KrokAkce(cz.promptlab.h3video.data.TypKroku.CTENI_RADEK) + it.kroky.drop(krokHlasu)) }
@@ -5650,7 +5651,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                             cz.promptlab.h3video.comfy.SbFilmBuilder.N_CTENI_VYSTUP,
                             krok = krokHlasu,
                         )
-                        prvni = cz.promptlab.h3video.data.SbFilmPlan.doplnHlasy(prvni, cz.promptlab.h3video.data.SbFilmPlan.prectiHlasy(odp, mluvci))
+                        val bezHlasu = mluvci.filter { m -> cteni.hlasy.keys.none { it.equals(m, ignoreCase = true) } }
+                        val bezVzhledu = mluvci.filter { m -> cteni.vzhled.keys.none { it.equals(m, ignoreCase = true) } }
+                        prvni = cz.promptlab.h3video.data.SbFilmPlan.doplnHlasy(prvni, cz.promptlab.h3video.data.SbFilmPlan.prectiHlasy(odp, bezHlasu))
+                        prvni = cz.promptlab.h3video.data.SbFilmPlan.doplnVzhled(prvni, cz.promptlab.h3video.data.SbFilmPlan.prectiVzhled(odp, bezVzhledu))
                     }
                     // Zvuky ze storyboardu do angličtiny — česky je přepisovač opsal doslova (5.57).
                     if (zvuky.isNotEmpty()) {
@@ -5846,20 +5850,21 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val cisty = sp.opravObrazky(sp.ocistiPrepis(text, u.panely.size), s.uploadImages.size)
                 // Se scénářem i vymyšlené značky (<Product>) → <Subject K> (5.22).
                 // Se scénářem i replika vždy na začátek záběru (5.32).
-                // Uvozovky mimo <d> pryč — H3 by je vyslovil (5.57, se souhlasem i pro scénář).
-                return sp.bezUvozovekMimoD(if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) sp.replikaNaZacatek(cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty)) else cisty)
+                // Replika bez <d> se zabalí (5.60), pak uvozovky mimo <d> pryč — H3 by je vyslovil (5.57).
+                val upraveny = if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) sp.replikaNaZacatek(cz.promptlab.h3video.data.SbScenar.opravZnacky(cisty)) else cisty
+                return sp.bezUvozovekMimoD(sp.doplnD(upraveny, u, sp.jazykFilmu(s), sp.idMluvcich(s.panely)))
             }
             var prompt = napis()
             // Se scénářem: každá replika úseku musí být v promptu v <d> (5.27). Chybí-li,
             // jeden nový pokus; pak se to ukáže jako nález, nic se nevynechá potichu.
-            if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR) {
-                if (sp.chybejiciRepliky(prompt, u).isNotEmpty()) {
-                    val druhy = napis()
-                    if (sp.chybejiciRepliky(druhy, u).size < sp.chybejiciRepliky(prompt, u).size) prompt = druhy
-                }
-                sp.chybejiciRepliky(prompt, u).forEach { r ->
-                    nalezyPrepisu += cz.promptlab.h3video.data.SbNalez(0, t("Úsek %d: v promptu chybí replika „%s“").format(k + 1, r))
-                }
+            if (s.zdroj == cz.promptlab.h3video.data.SbZdroj.SCENAR && sp.chybejiciRepliky(prompt, u).isNotEmpty()) {
+                val druhy = napis()
+                if (sp.chybejiciRepliky(druhy, u).size < sp.chybejiciRepliky(prompt, u).size) prompt = druhy
+            }
+            // Každá replika musí být v <d> — i u storyboardu (5.60: úsek 1 Příšery
+            // měl obě repliky jen v uvozovkách a kontrola tu dřív nebyla).
+            sp.chybejiciRepliky(prompt, u).forEach { r ->
+                nalezyPrepisu += cz.promptlab.h3video.data.SbNalez(0, t("Úsek %d: v promptu chybí replika „%s“").format(k + 1, r))
             }
             prompt
         }

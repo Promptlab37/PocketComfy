@@ -85,4 +85,41 @@ class SbJednaPostavaTest {
         assertEquals(emptyMap<Int, String>(), SbFilmPlan.prectiPrekladZvuku("PANEL 9 = Rain.", setOf(3)))
         assertTrue(SbFilmPlan.otazkaZvuku(mapOf(3 to "Nástup tanečního beatu.")).endsWith("PANEL 3: Nástup tanečního beatu."))
     }
+
+    /** 5.60: úsek 1 druhé Příšery — přepisovač dal obě repliky jen do uvozovek (přesný výstup ze serveru). */
+    @Test
+    fun `replika bez d se zabali`() {
+        val surovy = java.io.File("src/test/resources/prisera2_usek1_bez_d.txt").readText()
+        val usek = SbUsek(listOf(
+            SbPanel(1, "Příšera stares.", "close-up", "static", 4.0, repliky = "Příšera: „Pro dnes bylo internetu dost.“"),
+            SbPanel(2, "Příšera points.", "medium", "static", 2.0, repliky = "Příšera: „Běž spát.“"),
+            SbPanel(3, "Příšera dances.", "wide", "static", 3.0),
+        ))
+        assertEquals(2, SbFilmPrepis.chybejiciRepliky(surovy, usek).size)
+        val o = SbFilmPrepis.bezUvozovekMimoD(SbFilmPrepis.doplnD(surovy, usek, "Czech", mapOf("Příšera" to "S1")))
+        assertEquals(emptyList<String>(), SbFilmPrepis.chybejiciRepliky(o, usek))
+        assertTrue(o.contains("as described: (S1) <d>[Czech] Pro dnes bylo internetu dost.</d> His lips"))
+        assertTrue(o.contains("gravelly voice: (S1) <d>[Czech] Běž spát.</d> His lips"))
+        assertFalse(o.contains("“"))
+        // Hotový prompt se nezmění.
+        val hotovy = "[Shot 1] She says (S1) <d>[Czech] Běž spát.</d>"
+        assertEquals(hotovy, SbFilmPrepis.doplnD(hotovy, SbUsek(listOf(usek.panely[1])), "Czech", mapOf("Příšera" to "S1")))
+    }
+
+    /** 5.60: hlas i vzhled jedním dotazem — přesná odpověď ze serveru (druhá Příšera). */
+    @Test
+    fun `hlas a vzhled z jedne odpovedi`() {
+        val odp = "VOICE Příšera = an older man with a deep, commanding voice LOOK Příšera = long curly brown hair, wrinkled face, muscular body, black tank top, black boots"
+        assertEquals(mapOf("Příšera" to "an older man with a deep, commanding voice"), SbFilmPlan.prectiHlasy(odp, listOf("Příšera")))
+        assertEquals(mapOf("Příšera" to "long curly brown hair, wrinkled face, muscular body, black tank top, black boots"),
+            SbFilmPlan.prectiVzhled(odp, listOf("Příšera")))
+        val cele = "TITLE: X | TOTAL: 20s | SHOTS: 6 | GRID: 2x3 | VOICES: none | LOOKS: none | MUSIC: dance PANEL 1 | 0-4s | close-up | static | A. | none"
+        val c = SbFilmPlan.precti(SbFilmPlan.doplnVzhled(SbFilmPlan.doplnHlasy(cele, SbFilmPlan.prectiHlasy(odp, listOf("Příšera"))),
+            SbFilmPlan.prectiVzhled(odp, listOf("Příšera"))))
+        assertEquals("an older man with a deep, commanding voice", c.hlasy["Příšera"])
+        assertEquals("long curly brown hair, wrinkled face, muscular body, black tank top, black boots", c.vzhled["Příšera"])
+        assertEquals("dance", c.hudbaStyl)
+        // Jediná postava zůstane jediná, i když má vzhled pod svým jménem.
+        assertTrue(SbFilmPrepis.jedinaPostava(listOf("The man dances."), listOf("Příšera"), emptyList(), c.vzhled.keys) != null)
+    }
 }

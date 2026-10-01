@@ -284,9 +284,10 @@ object SbFilmPlan {
      */
     fun otazkaHlasu(jmena: List<String>): String =
         "This image is a film storyboard. These characters speak in it: ${jmena.joinToString(", ")}. " +
-            "Answer one line per character, exactly as Name = age, gender and voice in plain English words " +
-            "(pitch, timbre), guessed from how they look, for example Anna = a woman in her 30s with a warm, " +
-            "low voice. No other text."
+            "Answer two lines per character, exactly as VOICE Name = age, gender and voice in plain English words " +
+            "(pitch, timbre), guessed from how they look, and LOOK Name = how they look where they first appear " +
+            "(hair, face, body, clothing and footwear with colours), for example VOICE Anna = a woman in her 30s with a warm, " +
+            "low voice and LOOK Anna = long red hair, green raincoat, black boots. No other text."
 
     /**
      * Zvuky ze storyboardu do angličtiny (5.57): česky je přepisovač opsal doslova
@@ -306,24 +307,44 @@ object SbFilmPlan {
             if (n in panely && en.isNotBlank()) n to en else null
         }.toMap()
 
-    /** Odpověď [otazkaHlasu] → jméno → hlas (jen jména, na která se appka ptala). */
-    fun prectiHlasy(text: String, jmena: List<String>): Map<String, String> =
-        text.split(Regex("""\n|;|(?=\b(?:${jmena.joinToString("|") { Regex.escape(it) }})\s*=)""")).mapNotNull { r ->
-            val kdo = r.substringBefore("=").trim().trim('*', '-', '•').trim()
-            val jak = r.substringAfter("=", "").trim().trimEnd('.')
-            val jmeno = jmena.firstOrNull { it.equals(kdo, ignoreCase = true) } ?: return@mapNotNull null
-            if (jak.isBlank()) null else jmeno to jak
+    /**
+     * Odpověď [otazkaHlasu] → jméno → text pole [pole] (VOICE / LOOK). Bez předpony
+     * („Anna = …“) se bere jako hlas. Jen jména, na která se appka ptala.
+     * Vzhled (5.60): bez něj si přepisovač u druhé Příšery vymyslel „casual attire“
+     * místo černého body a lesklých bot ze storyboardu.
+     */
+    private fun prectiPole(text: String, jmena: List<String>, pole: String): Map<String, String> {
+        val jm = jmena.joinToString("|") { Regex.escape(it) }
+        val vzor = Regex("""(?i)(?:\b(VOICE|LOOK)\s+)?($jm)\s*=\s*(.+?)(?=\s*(?:\n|;|\b(?:VOICE|LOOK)\s+(?:$jm)\s*=|$))""")
+        return vzor.findAll(text).mapNotNull { m ->
+            val druh = m.groupValues[1].uppercase().ifEmpty { "VOICE" }
+            if (druh != pole) return@mapNotNull null
+            val jmeno = jmena.firstOrNull { it.equals(m.groupValues[2], ignoreCase = true) } ?: return@mapNotNull null
+            val co = m.groupValues[3].trim().trimEnd('.').trim()
+            if (co.isBlank()) null else jmeno to co
         }.toMap()
+    }
+
+    /** Odpověď [otazkaHlasu] → jméno → hlas. */
+    fun prectiHlasy(text: String, jmena: List<String>): Map<String, String> = prectiPole(text, jmena, "VOICE")
+
+    /** Odpověď [otazkaHlasu] → jméno → vzhled. */
+    fun prectiVzhled(text: String, jmena: List<String>): Map<String, String> = prectiPole(text, jmena, "LOOK")
+
+    /** Doplní vzhled do pole LOOKS celého čtení (ostatní pole beze změny). */
+    fun doplnVzhled(cteni: String, vzhled: Map<String, String>): String = doplnPole(cteni, "LOOKS", vzhled)
 
     /** Doplní hlasy do pole VOICES celého čtení (ostatní pole beze změny). */
-    fun doplnHlasy(cteni: String, hlasy: Map<String, String>): String {
-        if (hlasy.isEmpty()) return cteni
-        val nove = hlasy.entries.joinToString("; ") { "${it.key} = ${it.value}" }
-        val pole = Regex("""(?i)VOICES\s*:\s*([^|]*)""")
+    fun doplnHlasy(cteni: String, hlasy: Map<String, String>): String = doplnPole(cteni, "VOICES", hlasy)
+
+    private fun doplnPole(cteni: String, nazev: String, co: Map<String, String>): String {
+        if (co.isEmpty()) return cteni
+        val nove = co.entries.joinToString("; ") { "${it.key} = ${it.value}" }
+        val pole = Regex("""(?i)$nazev\s*:\s*([^|]*)""")
         val m = pole.find(cteni) ?: return cteni
         val stare = m.groupValues[1].trim()
         val hodnota = if (stare.isEmpty() || stare.equals("none", true)) nove else "$stare; $nove"
-        return cteni.replaceRange(m.range, "VOICES: $hodnota ")
+        return cteni.replaceRange(m.range, "$nazev: $hodnota ")
     }
 
     private val STARY_TVAR = Regex("""(?i)PANEL\s*\d+\s*\|[^|\n]*\|\s*MOOD""")
@@ -1375,6 +1396,33 @@ object SbFilmPrepis {
             return spojene.any { it == x || Regex("""(?<![\p{L}])""" + Regex.escape(x) + """(?![\p{L}])""").containsMatchIn(it) }
         }
         return usek.panely.flatMap { repliky(it.repliky) }.map { it.second }.filterNot { je(it) }
+    }
+
+    /**
+     * Replika, kterou přepisovač napsal bez `<d>` (jen v uvozovkách nebo holou — Příšera,
+     * úsek 1, 1. 10. 2026), se zabalí do `<d>[Jazyk] …</d>`. Hledá se nejdřív
+     * v detailed_description, kde patří do záběru; před `<d>` se doplní ID mluvčího.
+     */
+    fun doplnD(text: String, usek: SbUsek, jazyk: String?, idMluvcich: Map<String, String>): String {
+        var out = text
+        val chybi = chybejiciRepliky(out, usek).toSet()
+        if (chybi.isEmpty()) return out
+        usek.panely.flatMap { repliky(it.repliky) }.filter { it.second in chybi }.forEach { (kdo, r) ->
+            val cista = r.trim()
+            val vD = REPLIKA_D.findAll(out).map { it.range }.toList()
+            val od = out.indexOf("detailed_description:").takeIf { it >= 0 } ?: 0
+            val kandidati = listOf(cista, cista.trimEnd('.', '!', '?', '…').trim()).filter { it.length >= 2 }.distinct()
+            val nalez = kandidati.firstNotNullOfOrNull { k ->
+                Regex("""[“„"«»]?""" + Regex.escape(k) + """[.!?…]*[”“"»]?""").findAll(out)
+                    .filter { m -> vD.none { m.range.first in it } }
+                    .sortedBy { if (it.range.first >= od) 0 else 1 }
+                    .firstOrNull()
+            } ?: return@forEach
+            val pred = out.substring(maxOf(0, nalez.range.first - 24), nalez.range.first)
+            val id = idMluvcich[kdo]?.takeIf { !pred.contains("($it)") }?.let { "($it) " }.orEmpty()
+            out = out.replaceRange(nalez.range, "$id<d>[${jazyk ?: "Language"}] $cista</d>")
+        }
+        return out
     }
 
     /** Jazyk všech replik filmu dohromady (null = nepoznaný, model ho určí sám). */

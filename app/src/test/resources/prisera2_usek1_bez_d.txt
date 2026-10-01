@@ -1,0 +1,21 @@
+subject_definitions:
+<Subject 1> is the man in <Picture 1>, with a serious expression, staring intensely at the camera, wearing casual attire suitable for an industrial warehouse setting.
+
+summary:
+[reference generation] The target video consists of three timed shots based on storyboard panels from <Picture 1>. Each shot features <Subject 1> performing a specific action and delivering a line in Czech. The first shot is a close-up with static camera; the second is a medium shot with static camera; the third is a wide shot with static camera and no dialogue, only a dance beat. The entire sequence is set in an industrial warehouse with blue lighting.
+
+retention_analysis:
+<Subject 1> (appears in [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the man’s appearance, posture, and environment remain consistent across all shots as defined by <Picture 1>.
+<Picture 1> (storyboard reference for [Shot 1], [Shot 2], [Shot 3]): fully_preserved - the viewpoint, subject placement, and visual style are retained exactly as defined in the storyboard panels.
+
+detailed_description:
+The target video is a cinematic short sequence with high-contrast blue lighting and an industrial warehouse aesthetic. The camera remains static throughout all shots.
+[Shot 1] A medium close-up shows <Subject 1>, a man in his 60s with a deep, gravelly voice, staring intensely at the camera with a serious expression. He speaks in the same lively, natural pace as described: “Pro dnes bylo internetu dost.” His lips close briefly after finishing the line before the cut.
+[Shot 2] At 00:04.000, the shot cuts to a medium frame where <Subject 1> points his finger directly at the viewer with an authoritative demeanor. He says in the same deep, gravelly voice: “Běž spát.” His lips close briefly after finishing the line before the cut.
+[Shot 3] At 00:06.000, the shot cuts to a wide frame where <Subject 1> strikes a dance pose with hands on hips and legs apart, exuding bold self-confidence. A dance beat starts — no dialogue is spoken in this shot. The man holds the pose silently until the end of the 9-second duration.
+
+overall_soundscape:
+A steady, rhythmic dance beat begins at 00:06.000 and continues through the final frame. No other physical sounds are present.
+
+non_diegetic_music:
+N/A
