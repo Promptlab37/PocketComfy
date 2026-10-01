@@ -57,4 +57,17 @@ class SbFilmPriseraTest {
         assertEquals(mapOf(1 to "Příšera: \"Běž spát.\""), SbFilmPlan.prectiRepliky("PANEL 1 | Příšera: \"Běž spát.\" | MOOD: none | SOUND: none"))
         assertTrue(SbFilmPlan.otazkaRadku(1, 2).contains("SOUND:"))
     }
+
+    /** 5.54: bez vytištěného jména si model vymyslel „TY“ a „VY“ z první věty (odpověď ze serveru). */
+    @Test
+    fun `zajmeno neni mluvci`() {
+        val odpoved = "PANEL 5 | TY: \"Ty tu ještě jsi?\" | MOOD: Pobouřený údiv. | SOUND: none " +
+            "PANEL 6 | VY: \"Vypnout. A do postele!\" | MOOD: Komicky přísná. | SOUND: none"
+        val r = SbFilmPlan.prectiRepliky(odpoved)
+        assertEquals(listOf("Mluvčí" to "Ty tu ještě jsi?"), SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", r.getValue(5))))
+        assertEquals(listOf("Mluvčí" to "Vypnout. A do postele!"), SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", r.getValue(6))))
+        assertEquals(listOf("Anna" to "Kde je?", "Mluvčí" to "Tady."),
+            SbFilmPrepis.repliky(SbFilmPrepis.sloucit("", "Anna: \"Kde je?\"; \"Tady.\"")))
+        assertTrue(SbFilmPlan.otazkaRadku(5, 6).contains("only when a name is printed"))
+    }
 }

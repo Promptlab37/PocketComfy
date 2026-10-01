@@ -268,9 +268,9 @@ object SbFilmPlan {
     fun otazkaRadku(prvni: Int, posledni: Int): String =
         "This image is one row of a film storyboard: the shot panels numbered $prvni to $posledni, " +
             "left to right. Answer in plain lines only, one line per panel, exactly in this form: " +
-            "PANEL <number> | <every spoken line printed with that panel, always starting with the " +
-            "speaker's name printed before it, copied letter by letter exactly as printed, in its " +
-            "original language, as Speaker: \"line\", separated by ; — or none> | MOOD: <the text " +
+            "PANEL <number> | <every spoken line printed with that panel, starting with the " +
+            "speaker's name only when a name is printed before it, copied letter by letter exactly as printed, in its " +
+            "original language, as Speaker: \"line\", or just \"line\" when no name is printed, separated by ; — or none> | MOOD: <the text " +
             "printed after EMOCE, NÁLADA, EMOTION or MOOD on that panel, copied exactly, or none> | " +
             "SOUND: <the text printed after ZVUK, SOUND, SFX or HUDBA on that panel, copied exactly, or none>\n" +
             "For example: PANEL 3 | ANNA: \"Kde je?\" | MOOD: Anna je netrpělivá. | SOUND: none\n" +
@@ -1050,7 +1050,9 @@ object SbFilmPrepis {
      */
     fun sloucit(zCelku: String, zRadku: String): String {
         val a = repliky(zCelku)
-        val b = repliky(zRadku)
+        val b0 = repliky(zRadku)
+        // Kus bez jména vedle pojmenovaných by se ztratil — dostane výchozího mluvčího.
+        val b = if (b0.isNotEmpty()) repliky(SbFilmPlan.sMluvcim(zRadku, SbFilmPlan.VYCHOZI_MLUVCI)) else b0
         // Řádek přečetl větu bez jména i uvozovek a celé čtení ji nemá vůbec
         // (Příšera 1. 10. 2026) — dřív se zahodila a záběr šel jako němý.
         if (b.isEmpty() && a.isEmpty() && zRadku.isNotBlank()) return SbFilmPlan.sMluvcim(zRadku, SbFilmPlan.VYCHOZI_MLUVCI)
@@ -1207,7 +1209,18 @@ object SbFilmPrepis {
         text.replace(Regex("""t[’'ʼ´`](?=\s|[.,!?…]|$)"""), "ť").replace(Regex("""d[’'ʼ´`](?=\s|[.,!?…]|$)"""), "ď")
 
     /** Mluvčí „Al“ je v tištěném písmu „AI“ (malé L a velké I vypadají stejně). */
-    fun opravMluvciho(jmeno: String): String = if (jmeno == "Al") "AI" else jmeno
+    fun opravMluvciho(jmeno: String): String = when {
+        jmeno == "Al" -> "AI"
+        // Bez vytištěného jména si model vzal první slovo věty („TY: Ty tu ještě jsi?“,
+        // „VY: Vypnout…“, Příšera 1. 10. 2026) — zájmeno postava není.
+        jmeno.trim().lowercase() in ZAJMENA -> SbFilmPlan.VYCHOZI_MLUVCI
+        else -> jmeno
+    }
+
+    private val ZAJMENA = setOf(
+        "já", "ja", "ty", "on", "ona", "ono", "my", "vy", "oni", "ony", "mluvčí",
+        "i", "you", "he", "she", "it", "we", "they", "speaker", "unknown", "?",
+    )
 
     /**
      * Repliky úseku, které v hotovém promptu nejsou uvnitř `<d>…</d>` (5.27):
