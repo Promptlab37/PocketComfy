@@ -148,7 +148,11 @@ object SbFilmPlan {
     const val MAX_USEK_S = 14.0
     const val MIN_PANEL_S = 2.0
     const val MAX_PANEL_S = 8.0
-    /** Strop celého filmu: 3–4 úseky, běh kolem půl hodiny. */
+    /**
+     * Strop celého filmu, když se délky odhadují (bez vytištěných časů, návrh z děje):
+     * 3–4 úseky, běh kolem půl hodiny. Rozpočet, ne mez modelu (ta je [MAX_USEK_S] na úsek) —
+     * vytištěné časy se jím od 5.69 nekrátí.
+     */
     const val MAX_CELKEM_S = 45.0
     const val MAX_PANELU = 12
 
@@ -303,7 +307,11 @@ object SbFilmPlan {
      * přepisovač opisoval mimo repliky („The mood is Nadšení“) a H3 je mohl vyslovit.
      * Model vidí storyboard, takže přečte i překlep („Komicky příšná“).
      */
-    fun otazkaPrekladu(zvuky: Map<Int, String>, nalady: Map<Int, String>, deje: Map<Int, String> = emptyMap()): String =
+    fun otazkaPrekladu(
+        zvuky: Map<Int, String>, nalady: Map<Int, String>, deje: Map<Int, String> = emptyMap(),
+        /** Nadpisy panelů (5.69, BYTY). Prázdné = otázka znak po znaku jako do 5.68 (uložená čtení sady). */
+        nadpisy: Map<Int, String> = emptyMap(),
+    ): String =
         "This image is a film storyboard. Translate these notes printed on its panels into short English: " +
             "SOUND as a short description of what is heard, MOOD as a short emotion for the actor (read a " +
             "misprinted word as it is printed on the storyboard)" +
@@ -311,19 +319,21 @@ object SbFilmPlan {
                 "word for word without adding anything from the picture (Czech film terms: odjezd kamery = the camera " +
                 "pulls back, nájezd or příjezd kamery = the camera pushes in, švenk = pan, jízda = tracking shot, " +
                 "detail = close-up, celek = wide shot)") +
+            (if (nadpisy.isEmpty()) "" else ", TITLE as the short English title of the panel, word for word") +
             ". Answer one line per note, exactly as SOUND <number> = <English>, MOOD <number> = <English>" +
             (if (deje.isEmpty()) "" else " or ACTION <number> = <English>; after every ACTION add CAMERA <number> = " +
                 "<the camera movement that ACTION note names, for example pull back, push in, pan left, tilt up, " +
                 "orbit or handheld, or none when it names no camera movement>") +
+            (if (nadpisy.isEmpty()) "" else "; TITLE <number> = <English>") +
             ". No other text.\n" +
             (zvuky.toSortedMap().map { "SOUND ${it.key}: ${it.value}" } + nalady.toSortedMap().map { "MOOD ${it.key}: ${it.value}" } +
-                deje.toSortedMap().map { "ACTION ${it.key}: ${it.value}" })
+                deje.toSortedMap().map { "ACTION ${it.key}: ${it.value}" } + nadpisy.toSortedMap().map { "TITLE ${it.key}: ${it.value}" })
                 .joinToString("\n")
 
-    /** Odpověď [otazkaPrekladu] → číslo panelu → anglický text pro [druh] (SOUND / MOOD / ACTION / CAMERA). */
+    /** Odpověď [otazkaPrekladu] → číslo panelu → anglický text pro [druh] (SOUND / MOOD / ACTION / CAMERA / TITLE). */
     fun prectiPreklad(text: String, druh: String, panely: Set<Int>): Map<Int, String> =
-        text.replace(Regex("""(?i)\s*(?=\b(?:SOUND|MOOD|ACTION|CAMERA)\s*\d)"""), "\n").lines().mapNotNull { r ->
-            val m = Regex("""(?i)^\s*(SOUND|MOOD|ACTION|CAMERA)\s*(\d+)\s*[=:]\s*(.+)$""").find(r.trim()) ?: return@mapNotNull null
+        text.replace(Regex("""(?i)\s*(?=\b(?:SOUND|MOOD|ACTION|CAMERA|TITLE)\s*\d)"""), "\n").lines().mapNotNull { r ->
+            val m = Regex("""(?i)^\s*(SOUND|MOOD|ACTION|CAMERA|TITLE)\s*(\d+)\s*[=:]\s*(.+)$""").find(r.trim()) ?: return@mapNotNull null
             if (!m.groupValues[1].equals(druh, ignoreCase = true)) return@mapNotNull null
             val n = m.groupValues[2].toInt()
             val en = m.groupValues[3].trim().trim('"', '„', '“', '”').trim().trimEnd('.')
@@ -360,6 +370,28 @@ object SbFilmPlan {
 
     /** Doplní hlasy do pole VOICES celého čtení (ostatní pole beze změny). */
     fun doplnHlasy(cteni: String, hlasy: Map<String, String>): String = doplnPole(cteni, "VOICES", hlasy)
+
+    /**
+     * Celé čtení s hlasy a vzhledem vymyšlených jmen [jmena] přejmenovanými na [na] (5.69): jediná
+     * postava bez vytištěného jména ([SbCteniTok.jedenMluvciBezJmena]). Z několika vymyšlených jmen
+     * zůstane první záznam, ostatní pole beze změny.
+     */
+    fun prejmenujMluvciho(cteni: String, jmena: Set<String>, na: String): String {
+        val male = jmena.map { SbFilmPrepis.opravMluvciho(it).trim().lowercase() }.toSet()
+        if (male.isEmpty()) return cteni
+        return Regex("""(?i)\b(VOICES|LOOKS)\s*:\s*([^|\n]*)""").replace(cteni) { m ->
+            var ma = false
+            val polozky = m.groupValues[2].split(";").map { it.trim() }.filter { it.isNotEmpty() }.mapNotNull { h ->
+                val kdo = h.substringBefore("=").trim()
+                when {
+                    !h.contains("=") || SbFilmPrepis.opravMluvciho(kdo).trim().lowercase() !in male && !kdo.equals(na, true) -> h
+                    ma -> null
+                    else -> { ma = true; "$na = " + h.substringAfter("=").trim() }
+                }
+            }
+            "${m.groupValues[1]}: ${polozky.joinToString("; ").ifEmpty { "none" }} "
+        }
+    }
 
     private fun doplnPole(cteni: String, nazev: String, co: Map<String, String>): String {
         if (co.isEmpty()) return cteni
@@ -441,18 +473,29 @@ object SbFilmPlan {
         var nalada = ""
         var zvuk = ""
         var dej = ""
+        var zaber = ""
         val maUvozovky = vUvozovkach.isNotEmpty()
         // Před prvním štítkem věty v uvozovkách (repliky bez jména); číslo, čas a jmenovka panelu ne.
         // Delší text bez štítku je děj („12. Pepa sedí potmě…“ — Pepa, 5.67).
-        val predPrvnim = usek.substring(0, stitky.firstOrNull()?.first ?: usek.length)
-        UVOZOVKY.findAll(predPrvnim).forEach { repliky += "\"" + bezUvozovek(it.value) + "\"" }
+        val predPrvnim0 = usek.substring(0, stitky.firstOrNull()?.first ?: usek.length)
+        UVOZOVKY.findAll(predPrvnim0).forEach { repliky += "\"" + bezUvozovek(it.value) + "\"" }
+        // Nadpis panelu za časem a svislítkem („1. 0–2 s | Úvodní záběr“ — BYTY, 5.69) je název
+        // záběru, ne děj: jde přepisovači jako nápověda (TITLE), do děje ani do replik ne.
+        val mNadpis = NADPIS.find(predPrvnim0)?.takeIf { m -> vUvozovkach.none { m.range.first in it } }
+        val nadpis = mNadpis?.groupValues?.get(1)?.trim()?.trimEnd(',', ';', '–', '—', '-')?.trim()
+            ?.takeIf { n -> n.any(Char::isLetter) && n.split(Regex("""\s+""")).size <= 5 && !n.endsWith(".") }.orEmpty()
+        val predPrvnim = if (nadpis.isEmpty()) predPrvnim0 else predPrvnim0.replaceRange(mNadpis!!.groups[1]!!.range, " ")
         val uvod = UVOZOVKY.replace(predPrvnim, " ").replace(Regex("""\([^()]*\)"""), " ")
             .replace(Regex("""\d+(?:[.,]\d+)?\s*s?\s*[-–—]\s*\d+(?:[.,]\d+)?\s*s\b"""), " ")
             .replace(Regex("""(?<![\p{L}])\d+(?![\p{L}])"""), " ").replace("|", " ").trim().trimStart('.', ' ').trim()
         if (uvod.split(Regex("""\s+""")).count { it.any(Char::isLetter) } >= 3) dej = uvod
+        // Úseky textu za štítky popisu/emocí/zvuku: závorky v nich už patří tam (níž se netřídí znovu).
+        val zaStitkemPopisu = mutableListOf<IntRange>()
         stitky.forEachIndexed { i, (_, od, stitek) ->
             val cela = usek.substring(od, stitky.getOrNull(i + 1)?.first ?: usek.length).trim()
-            val klic = stitek.lowercase()
+            val klic = klicStitku(stitek)
+            if (klic in ST_NALADA || klic in ST_ZVUK || klic in ST_POPIS || klic in ST_DEJ)
+                zaStitkemPopisu += od until (stitky.getOrNull(i + 1)?.first ?: usek.length)
             // Věta v uvozovkách na vlastním řádku za popisem/emocí/zvukem je replika bez jména.
             val zlom = if (klic in ST_NALADA || klic in ST_ZVUK || klic in ST_POPIS)
                 Regex("""\n\s*[„“"«»]""").find(cela)?.range?.first else null
@@ -461,6 +504,10 @@ object SbFilmPlan {
             when {
                 klic in ST_NALADA -> nalada = (nalada + " " + bezUvozovek(hodnota)).trim()
                 klic in ST_ZVUK -> zvuk = (zvuk + " " + bezUvozovek(hodnota)).trim()
+                // „Kamera: Detail.“ je velikost záběru, ne děj (5.69, sada 20: „… na zastávce. Detail.“
+                // v ději 12 listů). Pohyb kamery („Kamera: pomalý nájezd“) zůstává v ději jako dřív —
+                // z něj ho překlad vytáhne do CAMERA.
+                klic in ST_KAMERA && velikostZaberu(hodnota) != null -> zaber = velikostZaberu(hodnota)!!
                 klic in ST_DEJ -> dej = (dej + " " + bezUvozovek(hodnota).replace("|", " ")).trim()
                 klic in ST_POPIS -> Unit
                 // Štítek bez uvozovek tam, kde jsou repliky v uvozovkách, není mluvčí, ale popis
@@ -473,13 +520,93 @@ object SbFilmPlan {
                 }
             }
         }
-        // Nálada v závorce bez štítku („(nadšená, radostná)“ — Wellness, 5.67).
-        if (nalada.isEmpty()) nalada = Regex("""\(([^()]{2,})\)""").findAll(usek)
-            .filter { m -> vUvozovkach.none { m.range.first in it } }.map { it.groupValues[1].trim() }.joinToString("; ")
+        // Závorka bez štítku (5.69) se třídí podle místa, ne podle slov:
+        //  - hned za replikou nebo mezi jménem a replikou = jak ji postava řekne → nálada
+        //    („ŽENA: „Podívej…“ (nadšená, radostná, široký úsměv)“ — Wellness, 5.67);
+        //  - samostatně v panelu = scénická poznámka → děj („(ukazuje po šipce nahoru)“,
+        //    „(vítězný postoj, tleskání třídy)“ v panelu bez repliky — BYTY). Do 5.68 šla každá
+        //    závorka do nálady a přepisovač pak „hrál“ náladu ukazuje po šipce nahoru;
+        //  - „(společně)“, „(všichni)“ … = repliku říká víc lidí najednou → TOGETHER.
+        // Výslovná Emoce:/Nálada: má přednost, závorky u replik se pak do nálady nepřidávají.
+        val naladaZavorky = mutableListOf<String>()
+        var sbor = false
+        Regex("""\(([^()]{2,})\)""").findAll(usek)
+            .filter { m -> vUvozovkach.none { m.range.first in it } && zaStitkemPopisu.none { m.range.first in it } }.forEach { m ->
+            val obsah = m.groupValues[1].trim()
+            if (SBOR.matches(obsah.trim('.', '!', ',', ' '))) { sbor = true; return@forEach }
+            val pred = vUvozovkach.lastOrNull { it.last < m.range.first }
+            val zaReplikou = pred != null && Regex("""^[\s,.;:–—-]*$""").matches(usek.substring(pred.last + 1, m.range.first))
+            val dalsi = vUvozovkach.firstOrNull { it.first > m.range.last }
+            val predReplikou = dalsi != null && Regex("""^\s*:?\s*$""").matches(usek.substring(m.range.last + 1, dalsi.first))
+            if (zaReplikou || predReplikou) naladaZavorky += obsah
+            else dej = (dej + " " + bezUvozovek(obsah)).trim()
+        }
+        if (nalada.isEmpty()) nalada = naladaZavorky.joinToString("; ")
         return repliky.joinToString("; ").ifEmpty { "none" } +
             " | MOOD: " + nalada.ifEmpty { "none" } + " | SOUND: " + zvuk.ifEmpty { "none" } +
-            (if (dej.isNotEmpty()) " | ACTION: $dej" else "")
+            (if (dej.isNotEmpty()) " | ACTION: $dej" else "") +
+            (if (nadpis.isNotEmpty()) " | TITLE: $nadpis" else "") +
+            (if (sbor) " | TOGETHER: yes" else "") +
+            (if (zaber.isNotEmpty()) " | SHOT: $zaber" else "")
     }
+
+    private val ST_KAMERA = setOf("kamera", "camera", "záběr", "zaber", "shot", "velikost záběru", "velikost zaberu")
+
+    /**
+     * Štítek pro porovnání: malými písmeny; neznámý štítek ještě bez diakritiky — model občas
+     * přidá čárku navíc („Obráz:“ — Soused z Marsu, 5.69) a štítek pak skončil v ději i se jménem.
+     */
+    private fun klicStitku(stitek: String): String {
+        val k = stitek.lowercase()
+        val vse = ST_NALADA + ST_ZVUK + ST_POPIS + ST_DEJ + ST_KAMERA
+        if (k in vse) return k
+        val bez = java.text.Normalizer.normalize(k, java.text.Normalizer.Form.NFD).replace(Regex("""\p{M}"""), "")
+        return if (bez in vse) bez else k
+    }
+
+    /**
+     * Velikost záběru vytištěná za „Kamera:“ → anglický typ záběru, null = není to velikost
+     * (pohyb kamery). Podle začátku slova, ať projdou i přepisy „Pololek“, „Polocelk“, „Celé“.
+     */
+    fun velikostZaberu(text: String): String? {
+        val t = java.text.Normalizer.normalize(text.lowercase(), java.text.Normalizer.Form.NFD)
+            .replace(Regex("""\p{M}"""), "").replace(Regex("""[^a-z ]"""), " ").trim().replace(Regex("""\s+"""), " ")
+        if (t.isEmpty() || t.split(' ').size > 3) return null
+        return when {
+            t.startsWith("velky detail") || t.startsWith("extreme close") -> "extreme close-up"
+            t.startsWith("polodetail") || t.startsWith("medium close") -> "medium close-up"
+            t.startsWith("detail") || t.startsWith("close") -> "close-up"
+            t.startsWith("americk") -> "medium long shot"
+            t.startsWith("polo") || t.startsWith("medium") -> "medium shot"
+            t.startsWith("velky cel") || t.startsWith("extreme wide") -> "extreme wide shot"
+            t.startsWith("cel") || t.startsWith("wide") -> "wide shot"
+            else -> null
+        }
+    }
+
+    private val ZABER_POLE = Regex("""(?i)^\s*SHOT\s*:""")
+
+    /** Odpověď [otazkaRadku] po [prevedPrepis] → číslo panelu → vytištěná velikost záběru anglicky (5.69). */
+    fun prectiZabery(text: String): Map<Int, String> {
+        val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
+        return radky.lines().mapNotNull { r ->
+            val casti = r.trim().split("|").map { it.trim() }
+            if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
+            val z = casti.drop(1).firstOrNull { ZABER_POLE.containsMatchIn(it) }?.substringAfter(":")
+                ?.trim()?.takeUnless { it.isEmpty() || it.equals("none", true) } ?: return@mapNotNull null
+            n to z
+        }.toMap()
+    }
+
+    /** „1. 0–2 s | Úvodní záběr“: čas, svislítko a krátký nadpis (bez uvozovek a závorek). */
+    private val NADPIS = Regex("""\d+(?:[.,]\d+)?\s*s?\s*[-–—]\s*\d+(?:[.,]\d+)?\s*s\b\s*\|\s*([^|„“"«»()\n]+)""")
+
+    /** Poznámka, že repliku říká víc lidí najednou (sbor, říkanka celé třídy). */
+    private val SBOR = Regex(
+        """(?iu)společně|všichni|všichni společně|všichni najednou|sborově|sborem|unisono|spolu|dohromady|""" +
+            """together|all together|everyone|in unison|chorus""",
+    )
 
     /**
      * Kolik panelů má obrázek storyboardu — podle něj se počítají výřezy panelů v kontrole.
@@ -560,6 +687,45 @@ object SbFilmPlan {
         }.toMap()
     }
 
+    private val NADPIS_POLE = Regex("""(?i)^\s*TITLE\s*:""")
+    private val SBOR_POLE = Regex("""(?i)^\s*TOGETHER\s*:\s*yes""")
+
+    /** Odpověď [otazkaRadku] po [prevedPrepis] → číslo panelu → nadpis panelu (5.69, BYTY). */
+    fun prectiNadpisy(text: String): Map<Int, String> {
+        val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
+        return radky.lines().mapNotNull { r ->
+            val casti = r.trim().split("|").map { it.trim() }
+            if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
+            val nadpis = casti.drop(1).firstOrNull { NADPIS_POLE.containsMatchIn(it) }?.substringAfter(":")
+                ?.trim()?.takeUnless { it.isEmpty() || it.equals("none", true) } ?: return@mapNotNull null
+            n to nadpis
+        }.toMap()
+    }
+
+    /** Odpověď [otazkaRadku] po [prevedPrepis] → panely, jejichž repliky říká víc lidí najednou (5.69). */
+    fun prectiSbor(text: String): Set<Int> {
+        val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
+        return radky.lines().mapNotNull { r ->
+            val casti = r.trim().split("|").map { it.trim() }
+            if (!casti[0].uppercase().startsWith("PANEL")) return@mapNotNull null
+            val n = CISLO.find(casti[0])?.value?.toIntOrNull() ?: return@mapNotNull null
+            n.takeIf { casti.drop(1).any { SBOR_POLE.containsMatchIn(it) } }
+        }.toSet()
+    }
+
+    /**
+     * Podání repliky, kterou říká víc lidí najednou (5.69): anglicky a mimo `<d>`. Replika zůstává
+     * doslova v jednom `<d>` u mluvčího panelu, přepisovač se jen dozví, že se přidají ostatní.
+     */
+    const val PODANI_SBOR = "together with the others in the shot, all in unison"
+
+    /** Nadpis panelu do popisu jako „Title: …“ (nápověda pro přepisovač, ne děj; jen když tam ještě není). */
+    fun doplnNadpis(popis: String, nadpis: String?): String {
+        if (nadpis.isNullOrBlank() || popis.contains("Title:", ignoreCase = true)) return popis
+        return popis.trimEnd() + " Title: " + nadpis.trim().trimEnd('.') + "."
+    }
+
     /** Odpověď [otazkaRadku] → číslo panelu → zvuk (text za ZVUK / SOUND / SFX / HUDBA). */
     fun prectiZvuky(text: String): Map<Int, String> {
         val radky = text.replace(Regex("""(?i)\s*(?=\bPANEL\s*\d)"""), "\n")
@@ -627,7 +793,8 @@ object SbFilmPlan {
      * „TOTAL“ (±1 s) a počet s „SHOTS“. Jinak se zahodí — model snadno splete
      * 0 a 8 a špatný plán je horší než odhad.
      * (b) Bez časů odhad podle typu záběru ([odhad]), meze 2–8 s na panel.
-     * Celek nad [MAX_CELKEM_S] se poměrně zkrátí.
+     * Odhadnutý celek nad [MAX_CELKEM_S] se poměrně zkrátí; vytištěné časy ne.
+     * Vytištěný čas se prodlouží jen tam, kde se replika do něj nevejde ([delkaReci]).
      */
     fun naplanuj(cteni: SbCteni): SbPlan {
         val zdroj = cteni.panely.sortedBy { it.cislo }.take(MAX_PANELU)
@@ -640,7 +807,11 @@ object SbFilmPlan {
         val reci = zdroj.map { delkaReci(it.repliky)?.coerceAtMost(MAX_PANEL_S) }
         var delky = vepsane?.mapIndexed { i, d -> maxOf(d, reci[i] ?: 0.0) }
             ?: zdroj.mapIndexed { i, p -> reci[i] ?: odhadTicha(p.typ, p.kamera) }
-        if (delky.sum() > MAX_CELKEM_S) {
+        // Strop celku jen pro odhad (5.69). Vytištěné časy se nekrátí: strop 45 s je rozpočet
+        // běhu (3–4 úseky, viz [MAX_CELKEM_S]), ne mez modelu — tu hlídá [MAX_USEK_S] a film
+        // se dělí na úseky ([rozdel]). Listy s 12 × 4 s = 48 s dřív zkrátily tiché panely
+        // na 2,5 s (sada 20: Start za minutu, Hlas ve sněhu).
+        if (vepsane == null && delky.sum() > MAX_CELKEM_S) {
             // Nejdřív ubrat ticho, řeč až nakonec; když to nestačí, poměrně.
             delky = rozlozCas(delky, reci, MAX_CELKEM_S)
             if (delky.sum() > MAX_CELKEM_S + 1e-9) {
@@ -1328,12 +1499,19 @@ object SbFilmPrepis {
     /** Je to jméno postavy (a ne štítek popisu)? */
     fun jeMluvci(jmeno: String): Boolean = jmeno.trim().lowercase() !in NE_MLUVCI
 
+    /** Úsek v uvozovkách (i nezavřený do konce textu) — dvojtečka v něm štítek mluvčího není. */
+    private val CITACE = Regex("""[„“"«»][^„“”"«»]*(?:[“”"«»]|$)""")
+
     /** Všechny dvojice (štítek, text) včetně popisných štítků. */
     private fun vsechnyRepliky(text: String): List<Pair<String, String>> {
         val vUvozovkach = REPLIKA_V_UVOZOVKACH.findAll(text)
             .map { it.groupValues[1].trim() to it.groupValues[2].trim() }.toList()
+        // Záloha bez uvozovek: dvojtečka uvnitř citace štítkem není (5.69, BYTY: „A teď všichni: Kdo byty
+        // kupuje…“ bez jména — dřív z „A teď všichni“ vznikl mluvčí a replika přišla o začátek).
+        val citace = CITACE.findAll(text).map { it.range }.toList()
         val vysledek = vUvozovkach.ifEmpty {
-            REPLIKA.findAll(text).map { it.groupValues[1].trim() to it.groupValues[2].trim() }.toList()
+            REPLIKA.findAll(text).filter { m -> citace.none { m.groups[1]!!.range.first in it } }
+                .map { it.groupValues[1].trim() to it.groupValues[2].trim() }.toList()
         }
         return vysledek.filter { it.second.isNotBlank() }.map { (kdo, co) -> opravMluvciho(kdo) to co }
     }
@@ -1365,12 +1543,12 @@ object SbFilmPrepis {
      */
     fun sloucit(zCelku: String, zRadku: String): String {
         val a = repliky(zCelku)
-        val b0 = repliky(zRadku)
-        // Kus bez jména vedle pojmenovaných by se ztratil — dostane výchozího mluvčího.
-        val b = if (b0.isNotEmpty()) repliky(SbFilmPlan.sMluvcim(zRadku, SbFilmPlan.VYCHOZI_MLUVCI)) else b0
+        // Kus bez jména (i když jméno nemá žádná replika řádku) dostane výchozího mluvčího a čtení
+        // řádku platí dál (5.69). Do 5.68 se řádek bez jediného jména zahodil, když celé čtení
+        // repliku mělo — a s ní i text z celého čtení, který je u drobného písma horší (BYTY).
         // Řádek přečetl větu bez jména i uvozovek a celé čtení ji nemá vůbec
         // (Příšera 1. 10. 2026) — dřív se zahodila a záběr šel jako němý.
-        if (b.isEmpty() && a.isEmpty() && zRadku.isNotBlank()) return SbFilmPlan.sMluvcim(zRadku, SbFilmPlan.VYCHOZI_MLUVCI)
+        val b = if (zRadku.isBlank()) emptyList() else repliky(SbFilmPlan.sMluvcim(zRadku, SbFilmPlan.VYCHOZI_MLUVCI))
         if (b.isEmpty()) return zCelku
         val spojene = if (a.size == b.size) a.zip(b).map { (x, y) -> x.first to y.second } else b
         return spojene.joinToString("; ") { (kdo, co) -> "$kdo: „${opravHacky(co)}“" }
@@ -1382,15 +1560,16 @@ object SbFilmPrepis {
 
     /**
      * Repliky z celku + ostřejší čtení po řádcích. Když řádek panel vypsal bez
-     * repliky a tutéž větu přisoudil sousednímu panelu, je replika v celku
-     * zdvojená a panel ji ztratí. Dvě skutečně stejné repliky vedle sebe řádek
-     * vypíše u obou panelů, takže se nesmažou.
+     * repliky a tutéž větu přisoudil jinému panelu, je replika v celku
+     * zdvojená a panel ji ztratí. Dvě skutečně stejné repliky řádek
+     * vypíše u obou panelů, takže se nesmažou. Do 5.68 jen u souseda — Recepce pro
+     * duchy (5.69) zkopírovala repliku panelu 7 do tichého panelu 5.
      */
     fun slucCteni(panely: List<SbPrecteny>, radky: Map<Int, String>): List<SbPrecteny> = panely.map { p ->
         val r = radky[p.cislo] ?: return@map p
         if (r.isNotBlank()) return@map p.copy(repliky = sloucit(p.repliky, r))
         val celek = repliky(p.repliky).map { normalizuj(it.second) }
-        val uSouseda = listOf(p.cislo - 1, p.cislo + 1).mapNotNull { radky[it] }
+        val uSouseda = radky.filterKeys { it != p.cislo }.values
             .flatMap { repliky(it) }.map { normalizuj(it.second) }
         if (celek.isNotEmpty() && celek.all { it in uSouseda }) p.copy(repliky = "") else p
     }

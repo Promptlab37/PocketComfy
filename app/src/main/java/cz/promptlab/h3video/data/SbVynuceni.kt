@@ -114,5 +114,6 @@ object SbVynuceni {
         return (x intersect y).size.toDouble() / (x union y).size
     }
 
-    private fun bezPoznamek(popis: String) = popis.replace(Regex("""\s*(Mood|Sound):[^.]*\.?"""), "").trim()
+    // Title: nadpis panelu (5.69) je nápověda pro přepisovač, do záběru nepatří.
+    private fun bezPoznamek(popis: String) = popis.replace(Regex("""\s*(Mood|Sound|Title):[^.]*\.?"""), "").trim()
 }

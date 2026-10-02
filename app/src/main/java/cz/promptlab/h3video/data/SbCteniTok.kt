@@ -64,6 +64,18 @@ object SbCteniTok {
         val sporne: Map<Int, String> = emptyMap(),
         /** Slova replik opravená podle OCR (číslo panelu → „z → na“). */
         val ocrOpravy: Map<Int, String> = emptyMap(),
+        /** Nadpisy panelů anglicky (5.69, „1. 0–2 s | Úvodní záběr“) — nápověda pro přepisovač, ne děj. */
+        val nadpisy: Map<Int, String> = emptyMap(),
+        /** Nadpisy, jak je opsalo čtení řádků (česky). */
+        val nadpisyOpis: Map<Int, String> = emptyMap(),
+        /** Panely, jejichž repliku říká víc lidí najednou („(společně)“, 5.69). */
+        val sbor: Set<Int> = emptySet(),
+        /** Jméno mluvčího není nikde vytištěné a postava je jediná → všude [SbFilmPlan.VYCHOZI_MLUVCI] (5.69). */
+        val jedenMluvci: Boolean = false,
+        /** Vytištěná velikost záběru anglicky („Kamera: Detail.“ → close-up, 5.69) — přebije odhad celého čtení. */
+        val zabery: Map<Int, String> = emptyMap(),
+        /** Panely, kde celé čtení repliku vymyslelo nebo zdvojilo (5.69) — z plánu pryč. */
+        val bezReplik: Set<Int> = emptySet(),
     )
 
     /** Panely z pixelů, když jejich počet sedí na [pocet] přečtený modelem (jako [cz.promptlab.h3video.util.PanelyStoryboardu.podlePoctu]). */
@@ -97,11 +109,50 @@ object SbCteniTok {
         val nalady: Map<Int, String>,
         val zvuky: Map<Int, String>,
         val deje: Map<Int, String>,
+        val nadpisy: Map<Int, String>,
+        val sbor: Set<Int>,
+        val zabery: Map<Int, String>,
     ) {
         companion object {
-            fun z(t: String) = Opis(SbFilmPlan.prectiRepliky(t), SbFilmPlan.prectiNalady(t), SbFilmPlan.prectiZvuky(t), SbFilmPlan.prectiDeje(t))
+            fun z(t: String) = Opis(
+                SbFilmPlan.prectiRepliky(t), SbFilmPlan.prectiNalady(t), SbFilmPlan.prectiZvuky(t), SbFilmPlan.prectiDeje(t),
+                SbFilmPlan.prectiNadpisy(t), SbFilmPlan.prectiSbor(t), SbFilmPlan.prectiZabery(t),
+            )
         }
     }
+
+    /**
+     * Jméno mluvčího není vytištěné nikde na listu a postava je jediná (5.69, BYTY): čtení řádků
+     * má repliky, ale žádnou se jménem. Celé čtení si pak jméno vymyslí — a u každého panelu
+     * může jiné („Muž“, „Učitel“), takže by jedna postava mluvila několika hlasy. Jediná postava =
+     * celé čtení dalo nejvýš jedno jméno, nebo jediný hlas či jediný vzhled. Víc postav bez jmen
+     * (komiks Praotec: Čech, Lech, ženy) si jména z celého čtení nechá — jinak by mluvili jedním hlasem.
+     */
+    internal fun jedenMluvciBezJmena(cteni: SbCteni, radky: Map<Int, String>): Boolean {
+        val vRadcich = radky.values.filter { it.isNotBlank() }
+        if (vRadcich.isEmpty() || vRadcich.any { SbFilmPrepis.repliky(it).isNotEmpty() }) return false
+        val jmena = cteni.panely.flatMap { SbFilmPrepis.repliky(it.repliky).map { r -> r.first.lowercase() } }.distinct()
+        return jmena.size <= 1 || cteni.hlasy.size == 1 || cteni.vzhled.size == 1
+    }
+
+    /**
+     * Zvukový efekt nakreslený v obraze („HAPČÍ!“ — Drak na pohovoru, 5.69), který celé čtení přisoudilo
+     * postavě: jedno nebo dvě slova celá verzálkami s vykřičníkem, bez jména a bez uvozovek v popisku
+     * (čtení řádku ho nemá). Patří do zvuku záběru — jako replika by ho postava řekla nahlas.
+     */
+    internal fun zvukovyEfekt(text: String): Boolean {
+        val t = text.trim()
+        val pismena = t.filter { it.isLetter() }
+        return t.endsWith("!") && pismena.length >= 3 && pismena.all { it.isUpperCase() } &&
+            t.split(Regex("""\s+""")).count { s -> s.any { it.isLetter() } } <= 2
+    }
+
+    /** Repliky z celého čtení a z řádků ([SbFilmPrepis.slucCteni]); u [jedenMluvci] všechny jedním mluvčím. */
+    private fun sloucene(cteni: SbCteni, radky: Map<Int, String>, jedenMluvci: Boolean, bezReplik: Set<Int> = emptySet()): List<SbPrecteny> =
+        SbFilmPrepis.slucCteni(cteni.panely.map { if (it.cislo in bezReplik) it.copy(repliky = "") else it }, radky).map { p ->
+            if (!jedenMluvci) p
+            else p.copy(repliky = SbFilmPrepis.repliky(p.repliky).joinToString("; ") { (_, co) -> "${SbFilmPlan.VYCHOZI_MLUVCI}: „$co“" })
+        }
 
     suspend fun precti(obraz: Obraz, model: Model, prubeh: Prubeh, nastaveni: Nastaveni = Nastaveni()): Vysledek {
         val jmeno = model.nahraj(obraz.original(), "sbfilm_storyboard.png")
@@ -114,6 +165,9 @@ object SbCteniTok {
         val zvuky = mutableMapOf<Int, String>()
         val deje = mutableMapOf<Int, String>()
         val kamery = mutableMapOf<Int, String>()
+        val nadpisy = mutableMapOf<Int, String>()
+        val sbor = mutableSetOf<Int>()
+        val zabery = mutableMapOf<Int, String>()
         // Skutečné řádky panelů z obrázku (5.38): různě velké panely, prázdné políčko.
         // Použijí se, jen když počet panelů souhlasí se čtením modelu.
         val radkyObrazu = podlePoctu(obraz.bunky(), cteni.panely.size)
@@ -186,12 +240,17 @@ object SbCteniTok {
                     (SbShoda.vyber(listOfNotNull(a.nalady[n], b?.nalady?.get(n))) ?: a.nalady[n] ?: b?.nalady?.get(n))?.let { nalady[n] = it }
                     (SbShoda.vyber(listOfNotNull(a.zvuky[n], b?.zvuky?.get(n))) ?: a.zvuky[n] ?: b?.zvuky?.get(n))?.let { zvuky[n] = it }
                     (SbShoda.vyber(listOfNotNull(a.deje[n], b?.deje?.get(n))) ?: a.deje[n] ?: b?.deje?.get(n))?.let { deje[n] = it }
+                    (SbShoda.vyber(listOfNotNull(a.nadpisy[n], b?.nadpisy?.get(n))) ?: a.nadpisy[n] ?: b?.nadpisy?.get(n))?.let { nadpisy[n] = it }
+                    if (n in a.sbor || b?.sbor?.contains(n) == true) sbor += n
+                    (a.zabery[n] ?: b?.zabery?.get(n))?.let { zabery[n] = it }
                 }
             }
         }
         // OCR jako nezávislý hlas pro tvar slov (5.67): vidoucí model krátká a nespisovná slova „opravuje“
         // ve všech čteních stejně (celej → celý, překlep nabiječku → nabíječku), Tesseract opisuje znak po znaku.
         val ocrOpravy = mutableMapOf<Int, String>()
+        // OCR pásu popisku každého panelu (pro děj a pro ověření bublin níž).
+        val ocrPopisku = mutableMapOf<Int, String>()
         if (radkyObrazu != null) {
             val panely = radkyObrazu.flatten()
             val pasy = obraz.pasyPopisku(panely)
@@ -199,6 +258,10 @@ object SbCteniTok {
             val texty = runCatching { model.ocr(jmeno, oblasti, prubeh.krokNavic()) }.getOrNull()
             if (texty != null && texty.size == panely.size) texty.forEachIndexed { i, ocrText ->
                 val n = i + 1
+                ocrPopisku[n] = ocrText
+                // Děj pod panelem (5.69): jen diakritika podle OCR — děj se pak překládá, jiné rozdíly
+                // (koncovky, písmena) OCR nerozhoduje.
+                deje[n]?.let { d -> if (SbOcrShoda.podilVOcr(d, ocrText) >= 0.5) deje[n] = SbOcrShoda.porovnej(d, ocrText, jenDiakritika = true).text }
                 val repl = opravene[n] ?: return@forEachIndexed
                 val (nove, opravy) = SbOcrShoda.opravRepliky(repl, ocrText)
                 if (opravy.isNotEmpty()) {
@@ -211,24 +274,96 @@ object SbCteniTok {
                     normDiakritika(ocrText).contains(normDiakritika(text))) sporne.remove(n)
             }
         }
+        // Repliky, které má jen celé čtení — v popisku pod panelem nejsou (bubliny v obraze, 5.69).
+        // Celé čtení je nejméně přesné: zkopíruje repliku do tichého panelu (Čtyři přání 6 ← 7), přečte
+        // „chrnění“ místo „chrlení“ a nakreslené „HAPČÍ!“ dá postavě. Každá taková replika se ověří.
+        val bezReplik = mutableSetOf<Int>()
+        val jenZCelku = cteni.panely.filter { p -> SbFilmPrepis.repliky(p.repliky).isNotEmpty() && opravene[p.cislo].isNullOrBlank() }
+        // 1) Zvukový efekt v obraze → zvuk záběru (přeloží se s ostatními zvuky).
+        val overit = mutableMapOf<Int, List<Pair<String, String>>>()
+        for (p in jenZCelku) {
+            val (efekty, repl) = SbFilmPrepis.repliky(p.repliky).partition { zvukovyEfekt(it.second) }
+            efekty.forEach { (_, co) -> zvuky[p.cislo] = listOfNotNull(zvuky[p.cislo], co).joinToString(" ") }
+            if (repl.isEmpty()) bezReplik += p.cislo else overit[p.cislo] = repl
+            if (efekty.isNotEmpty() && repl.isNotEmpty()) opravene[p.cislo] = repl.joinToString("; ") { (k, c) -> "$k: „$c“" }
+        }
+        // 2) OCR celého panelu, jen kde je potřeba: bublina je v obraze, ne v pásu popisku; a děj, který
+        //    OCR pásu nepokrylo (pás popisku je u BYTY tabule, ne text pod obrázkem).
+        //    Replika v OCR panelu je → tvar slov podle OCR a rozdíly ke kontrole; není v něm, ale je
+        //    v jiném panelu → zdvojená, pryč. Děj: jen diakritika („šípce“ → „šipce“) — děj se pak
+        //    překládá, jiné rozdíly (koncovky, písmena) OCR nerozhoduje.
+        val dejBezOcr = deje.filter { (n, d) -> ocrPopisku[n]?.let { SbOcrShoda.podilVOcr(d, it) >= 0.5 } != true }.keys
+        if (radkyObrazu != null && (overit.isNotEmpty() || dejBezOcr.isNotEmpty())) {
+            val panely = radkyObrazu.flatten()
+            val cisla = (overit.keys + dejBezOcr).filter { it in 1..panely.size }.sorted()
+            val texty = if (cisla.isEmpty()) null
+            else runCatching { model.ocr(jmeno, cisla.map { panely[it - 1] }, prubeh.krokNavic()) }.getOrNull()
+            if (texty != null && texty.size == cisla.size) {
+                val ocrPanelu = cisla.zip(texty).toMap()
+                for (n in dejBezOcr) {
+                    val d = deje[n] ?: continue
+                    val t = ocrPanelu[n] ?: continue
+                    if (SbOcrShoda.podilVOcr(d, t) >= 0.5) deje[n] = SbOcrShoda.porovnej(d, t, jenDiakritika = true).text
+                }
+                fun jinde(n: Int, co: String): Boolean =
+                    opravene.any { (m, r) -> m != n && SbFilmPrepis.repliky(r).any { normRepl(it.second) == normRepl(co) } } ||
+                        ocrPanelu.any { (m, t) -> m != n && m in overit && SbOcrShoda.podilVOcr(co, t) >= 0.75 }
+                for (n in cisla.filter { it in overit }) {
+                    val ocrText = ocrPanelu.getValue(n)
+                    val potvrzene = mutableListOf<Pair<String, String>>()
+                    var nejiste = false
+                    val opravy = mutableListOf<SbOcrShoda.Oprava>()
+                    val sporna = mutableListOf<SbOcrShoda.Oprava>()
+                    for ((kdo, co) in overit.getValue(n)) {
+                        when {
+                            SbOcrShoda.podilVOcr(co, ocrText) >= 0.5 -> {
+                                val por = SbOcrShoda.porovnej(co, ocrText)
+                                potvrzene += kdo to por.text
+                                opravy += por.opravy; sporna += por.neprijate
+                            }
+                            jinde(n, co) -> Unit
+                            else -> { potvrzene += kdo to co; nejiste = true }
+                        }
+                    }
+                    if (opravy.isNotEmpty()) ocrOpravy[n] = opravy.joinToString(", ") { "${it.z} → ${it.na}" }
+                    if (sporna.isNotEmpty()) sporne[n] = sporna.joinToString("; ") { "${it.z} / ${it.na}" }
+                    when {
+                        potvrzene.isEmpty() -> bezReplik += n
+                        // Nepotvrzenou repliku nechá prázdné čtení řádku — kontrola ji ukáže jako nejistou.
+                        nejiste && potvrzene.size == overit.getValue(n).size -> Unit
+                        else -> opravene[n] = potvrzene.joinToString("; ") { (k, c) -> "$k: „$c“" }
+                    }
+                }
+            }
+        }
+        // Bez vytištěného jména a s jedinou postavou mluví všude jeden mluvčí (5.69); hlas a vzhled,
+        // které k vymyšlenému jménu dalo celé čtení, patří jemu.
+        val jedenMluvci = jedenMluvciBezJmena(cteni, opravene)
+        if (jedenMluvci) {
+            val vymyslena = cteni.panely.flatMap { SbFilmPrepis.repliky(it.repliky).map { r -> r.first } }.toSet()
+            prvni = SbFilmPlan.prejmenujMluvciho(prvni, vymyslena, SbFilmPlan.VYCHOZI_MLUVCI)
+        }
         // Hlas a vzhled mluvčích, které celé čtení vynechalo — jinak každý úsek jiný hlas (5.56, 5.60).
-        val mluvci = SbFilmPrepis.slucCteni(cteni.panely, opravene)
+        val cteniH = if (jedenMluvci) SbFilmPlan.precti(prvni) else cteni
+        val mluvci = sloucene(cteniH, opravene, jedenMluvci, bezReplik)
             .flatMap { p -> SbFilmPrepis.repliky(p.repliky).map { it.first } }
             .distinctBy { it.lowercase() }
-            .filter { m -> cteni.hlasy.keys.none { it.equals(m, ignoreCase = true) } || cteni.vzhled.keys.none { it.equals(m, ignoreCase = true) } }
+            .filter { m -> cteniH.hlasy.keys.none { it.equals(m, ignoreCase = true) } || cteniH.vzhled.keys.none { it.equals(m, ignoreCase = true) } }
         if (mluvci.isNotEmpty()) {
             val odp = model.precti(jmeno, SbFilmPlan.otazkaHlasu(mluvci), prubeh.krokNavic())
-            val bezHlasu = mluvci.filter { m -> cteni.hlasy.keys.none { it.equals(m, ignoreCase = true) } }
-            val bezVzhledu = mluvci.filter { m -> cteni.vzhled.keys.none { it.equals(m, ignoreCase = true) } }
+            val bezHlasu = mluvci.filter { m -> cteniH.hlasy.keys.none { it.equals(m, ignoreCase = true) } }
+            val bezVzhledu = mluvci.filter { m -> cteniH.vzhled.keys.none { it.equals(m, ignoreCase = true) } }
             prvni = SbFilmPlan.doplnHlasy(prvni, SbFilmPlan.prectiHlasy(odp, bezHlasu))
             prvni = SbFilmPlan.doplnVzhled(prvni, SbFilmPlan.prectiVzhled(odp, bezVzhledu))
         }
         val naladyOpis = nalady.toMap()
         val dejeOpis = deje.toMap()
-        // Zvuky, emoce a děj ze storyboardu do angličtiny — česky je přepisovač opsal doslova (5.57, 5.61, 5.67).
-        if (zvuky.isNotEmpty() || nalady.isNotEmpty() || deje.isNotEmpty()) {
+        val nadpisyOpis = nadpisy.toMap()
+        // Zvuky, emoce, děj a nadpisy ze storyboardu do angličtiny — česky je přepisovač opsal doslova (5.57, 5.61, 5.67).
+        if (zvuky.isNotEmpty() || nalady.isNotEmpty() || deje.isNotEmpty() || nadpisy.isNotEmpty()) {
             val odp = model.precti(
-                jmeno, SbFilmPlan.otazkaPrekladu(zvuky.toSortedMap(), nalady.toSortedMap(), deje.toSortedMap()), prubeh.krokNavic(),
+                jmeno, SbFilmPlan.otazkaPrekladu(zvuky.toSortedMap(), nalady.toSortedMap(), deje.toSortedMap(), nadpisy.toSortedMap()),
+                prubeh.krokNavic(),
             )
             zvuky.putAll(SbFilmPlan.prectiPreklad(odp, "SOUND", zvuky.keys.toSet()))
             nalady.putAll(SbFilmPlan.prectiPreklad(odp, "MOOD", nalady.keys.toSet()))
@@ -236,9 +371,17 @@ object SbCteniTok {
             val dejeEn = SbFilmPlan.prectiPreklad(odp, "ACTION", deje.keys.toSet())
             deje.clear(); deje.putAll(dejeEn)
             kamery.putAll(SbFilmPlan.prectiPreklad(odp, "CAMERA", dejeEn.keys))
+            // Nepřeložený nadpis taky ne (česky by ho přepisovač opsal).
+            val nadpisyEn = SbFilmPlan.prectiPreklad(odp, "TITLE", nadpisy.keys.toSet())
+            nadpisy.clear(); nadpisy.putAll(nadpisyEn)
         }
-        return Vysledek(prvni, opravene, nalady, zvuky, deje, kamery, poRadcich, naladyOpis, dejeOpis, nejiste, sporne, ocrOpravy)
+        return Vysledek(
+            prvni, opravene, nalady, zvuky, deje, kamery, poRadcich, naladyOpis, dejeOpis, nejiste, sporne, ocrOpravy,
+            nadpisy, nadpisyOpis, sbor, jedenMluvci, zabery, bezReplik,
+        )
     }
+
+    private fun normRepl(t: String) = t.lowercase().replace(Regex("""[^\p{L}\p{N}]"""), "")
 
     /** Text bez mezer a interpunkce, s diakritikou (potvrzení repliky textem OCR). */
     private fun normDiakritika(t: String) = t.lowercase().replace(Regex("""[^\p{L}\p{N}]"""), "")
@@ -248,16 +391,30 @@ object SbCteniTok {
     /** Výsledek čtení → plán panelů a nálezy kontroly. */
     fun sestav(v: Vysledek): Sestaveno {
         val cele = SbFilmPlan.precti(v.text)
-        val cteni = cele.copy(panely = SbFilmPrepis.slucCteni(cele.panely, v.repliky).map { p ->
+        val cteni = cele.copy(panely = sloucene(cele, v.repliky, v.jedenMluvci, v.bezReplik).map { p ->
             // Děj vytištěný pod panelem má přednost před dějem odhadnutým z obrázku (5.67);
-            // nálada z řádků do popisu záběru → herecké podání.
+            // nálada z řádků do popisu záběru → herecké podání. Nadpis panelu (5.69) jen jako
+            // nápověda „Title:“ za dějem — Sound: musí zůstat poslední (hlídka ho odtud bere).
             val dej = v.deje[p.cislo]?.let { if (it.endsWith(".") || it.endsWith("!") || it.endsWith("?")) it else "$it." }
             p.copy(
-                popis = SbFilmPlan.doplnZvuk(SbFilmPlan.doplnNaladu(dej ?: p.popis, v.nalady[p.cislo]), v.zvuky[p.cislo]),
+                popis = SbFilmPlan.doplnZvuk(
+                    SbFilmPlan.doplnNaladu(SbFilmPlan.doplnNadpis(dej ?: p.popis, v.nadpisy[p.cislo]), v.nalady[p.cislo]),
+                    v.zvuky[p.cislo],
+                ),
                 kamera = v.kamery[p.cislo] ?: p.kamera,
+                // Vytištěná velikost záběru (5.69) má přednost před odhadem celého čtení.
+                typ = v.zabery[p.cislo] ?: p.typ,
             )
         })
-        val plan = SbFilmPlan.naplanuj(cteni)
+        val plan0 = SbFilmPlan.naplanuj(cteni)
+        // Replika „(společně)“ (5.69): mluvčí panelu ji řekne s ostatními najednou. Replika zůstává
+        // doslova v jednom <d>, podání jde před ni ([SbFilmPrepis.hlidka]) — kontrola zadání ani
+        // vynucení replik se nemění.
+        val plan = plan0.copy(panely = plan0.panely.map { p ->
+            val r = SbFilmPrepis.repliky(p.repliky)
+            if (p.cislo !in v.sbor || r.isEmpty() || p.podani.isNotBlank()) p
+            else p.copy(podani = r.joinToString(";") { SbFilmPlan.PODANI_SBOR })
+        })
         val nalezy = SbFilmKontrola.storyboard(cele.panely, v.repliky, cteni.radku, cteni.sloupcu, v.poRadcich, plan.panely) +
             v.nejiste.sorted().map { SbNalez(it, t("Repliku se nepodařilo přečíst jistě — zkontroluj ji proti storyboardu.")) } +
             v.sporne.toSortedMap().map { (n, slova) -> SbNalez(n, t("Nejisté slovo v replice: %s — zkontroluj proti storyboardu.").format(slova)) }

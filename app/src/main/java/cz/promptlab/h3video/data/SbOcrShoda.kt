@@ -13,6 +13,9 @@ object SbOcrShoda {
 
     data class Oprava(val z: String, val na: String)
 
+    /** Výsledek [porovnej]: opravený text, přijaté opravy a slova, kde OCR čte jinak a oprava přijata nebyla. */
+    data class Porovnani(val text: String, val opravy: List<Oprava>, val neprijate: List<Oprava>)
+
     /** Kostra slova: malá písmena bez diakritiky a interpunkce. */
     fun kostra(s: String): String = Normalizer.normalize(s.lowercase(), Normalizer.Form.NFD)
         .replace(Regex("""\p{M}"""), "").replace(Regex("""[^\p{L}\p{N}]"""), "")
@@ -56,6 +59,21 @@ object SbOcrShoda {
         return d <= 2 && prefix >= 3 && prefix >= minOf(kv.length, ko.length) - 2
     }
 
+    /**
+     * OCR jen ztratilo diakritiku nad velkým písmenem („Úloha“ → „Uloha“, Robot hledá domov 5.69): čárka
+     * a háček nad verzálkou sahají nad výšku řádku a Tesseract je ořízne. Vidoucí model je tam čte správně.
+     */
+    private fun ztrataNadVerzalkou(v: String, o: String): Boolean {
+        if (v.length != o.length) return false
+        var ztrata = false
+        for (i in v.indices) {
+            if (v[i] == o[i]) continue
+            val zaklad = Normalizer.normalize(v[i].toString(), Normalizer.Form.NFD).replace(Regex("""\p{M}"""), "")
+            if (v[i].isUpperCase() && zaklad == o[i].toString()) ztrata = true else return false
+        }
+        return ztrata
+    }
+
     /** I a l jsou v bezpatkovém písmu stejné (AI / Al) — takový rozdíl OCR nerozhodne. */
     private fun jenIl(a: String, b: String) =
         a.length == b.length && a.zip(b).all { (x, y) -> x == y || setOf(x, y) == setOf('I', 'l') }
@@ -68,10 +86,17 @@ object SbOcrShoda {
      * slovo mezi dvěma spárovanými se nahradí jedním slovem OCR na stejném místě („ušetřili celý večer“
      * × „ušetřili celej večer“). Interpunkce a mezery repliky zůstávají.
      */
-    fun oprav(text: String, ocr: String): Pair<String, List<Oprava>> {
+    fun oprav(text: String, ocr: String): Pair<String, List<Oprava>> = porovnej(text, ocr).let { it.text to it.opravy }
+
+    /**
+     * Jako [oprav], navíc vrací slova, kde OCR čte jinak, ale opravu nepřijme („chrnění“ × „chrlení“
+     * v bublině — Drak na pohovoru, 5.69): ta jdou uživateli ke kontrole, aby chyba nebyla tichá.
+     * [jenDiakritika] = oprava jen tam, kde se slova liší jen diakritikou (děj pod panelem).
+     */
+    fun porovnej(text: String, ocr: String, jenDiakritika: Boolean = false): Porovnani {
         val v = SLOVO.findAll(text).toList()
         val o = SLOVO.findAll(ocr).map { it.value }.toList()
-        if (v.isEmpty() || o.isEmpty()) return text to emptyList()
+        if (v.isEmpty() || o.isEmpty()) return Porovnani(text, emptyList(), emptyList())
         // LCS podle stejne().
         val n = v.size; val m = o.size
         val dp = Array(n + 1) { IntArray(m + 1) }
@@ -85,30 +110,45 @@ object SbOcrShoda {
         }
         // Málo shody = OCR četl jiný text (jiný panel, šum) — nic neměnit.
         val sparovano = par.count { it != null }
-        if (sparovano * 2 < n) return text to emptyList()
+        if (sparovano * 2 < n) return Porovnani(text, emptyList(), emptyList())
+        // Spárované podle kostry (ne doplněné do mezery) — jen u nich má smysl hlásit nepřijatý rozdíl.
+        val podleKostry = par.map { it != null }
         // Mezera přesně o jedno slovo mezi spárovanými sousedy.
         for (k in 1 until n - 1) {
             val a = par[k - 1]; val b = par[k + 1]
             if (par[k] == null && a != null && b != null && b - a == 2) par[k] = a + 1
         }
         val opravy = mutableListOf<Oprava>()
+        val neprijate = mutableListOf<Oprava>()
         val sb = StringBuilder()
         var pos = 0
         v.forEachIndexed { k, m0 ->
             sb.append(text, pos, m0.range.first)
             val ocrSlovo = par[k]?.let { o[it] }
-            val nove = if (ocrSlovo != null && ocrSlovo != m0.value && !jenIl(m0.value, ocrSlovo) && prijmout(m0.value, ocrSlovo) &&
+            val jine = ocrSlovo != null && ocrSlovo != m0.value && !jenIl(m0.value, ocrSlovo) &&
                 // Velikost písmen drží replika (OCR čte i jmenovky a štítky velkými).
                 !(ocrSlovo.equals(m0.value, ignoreCase = true))
-            ) ocrSlovo.let { if (m0.value.first().isUpperCase()) it.replaceFirstChar { c -> c.uppercaseChar() } else it }
+            val prijato = jine && prijmout(m0.value, ocrSlovo!!) && !ztrataNadVerzalkou(m0.value, ocrSlovo) &&
+                (!jenDiakritika || kostra(m0.value) == kostra(ocrSlovo))
+            val nove = if (prijato) ocrSlovo!!.let { if (m0.value.first().isUpperCase()) it.replaceFirstChar { c -> c.uppercaseChar() } else it }
             else m0.value
             // „Ted'“ a „Teď“ je totéž písmeno jinak zapsané — žádná oprava.
             if (nove != m0.value && SbFilmPrepis.opravHacky(m0.value) != SbFilmPrepis.opravHacky(nove)) opravy += Oprava(m0.value, nove)
+            else if (!prijato && jine && podleKostry[k] && !ztrataNadVerzalkou(m0.value, ocrSlovo!!) &&
+                SbFilmPrepis.opravHacky(m0.value) != SbFilmPrepis.opravHacky(ocrSlovo)) neprijate += Oprava(m0.value, ocrSlovo)
             sb.append(nove)
             pos = m0.range.last + 1
         }
         sb.append(text.substring(pos))
-        return sb.toString() to opravy
+        return Porovnani(sb.toString(), opravy, neprijate)
+    }
+
+    /** Podíl slov [text], která OCR textu [ocr] obsahuje (podle kostry) — je replika v tomhle výřezu? */
+    fun podilVOcr(text: String, ocr: String): Double {
+        val v = SLOVO.findAll(text).map { kostra(it.value) }.filter { it.isNotEmpty() }.toList()
+        if (v.isEmpty()) return 0.0
+        val o = SLOVO.findAll(ocr).map { it.value }.toList()
+        return v.count { w -> o.any { stejne(w, it) } }.toDouble() / v.size
     }
 
     /** Repliky panelu (`Kdo: "…"; …`) opravené podle OCR — jména mluvčích se nemění. */

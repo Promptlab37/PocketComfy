@@ -126,6 +126,75 @@ class SbPanelyObrazuTest {
         val a = SbPanelyObrazu.najdi(px, w, h); assertEquals(SbPanelyObrazu.duvod, 6, a?.size)
     }
 
+    /**
+     * Vyrobený list ve stylu sady 20 (5.69): [sl] × [rd] panelů = obrázek (pestrý šum kolem [jas])
+     * + světlý popisek s řádky „písma“; nahoře pruh nadpisu [nadpis] px, mezery [mezera] px.
+     * [pozadi] vrací barvu pozadí bodu (jednolité, nebo zrnitý pergamen).
+     */
+    private fun listSada20(w: Int, h: Int, sl: Int, rd: Int, mezera: Int, nadpis: Int, jas: Int,
+                           pozadi: (Int, Int) -> Int, ramecek: Boolean = false): IntArray {
+        val px = IntArray(w * h) { pozadi(it % w, it / w) }
+        val rnd = java.util.Random(11)
+        // Nadpis: velká písmena přes půl šířky.
+        for (y in nadpis / 4 until nadpis * 3 / 4) for (x in w / 20 until w / 2) if ((x / 18) % 3 != 0) px[y * w + x] = 0xFFE8C020.toInt()
+        val pw = (w - mezera * (sl + 1)) / sl
+        val ph = (h - nadpis - mezera * (rd + 1)) / rd
+        for (r in 0 until rd) for (c in 0 until sl) {
+            val x0 = mezera + c * (pw + mezera); val y0 = nadpis + mezera + r * (ph + mezera)
+            val obr = ph * 7 / 10
+            for (y in y0 until y0 + ph) for (x in x0 until x0 + pw) {
+                px[y * w + x] = if (y < y0 + obr) {
+                    val v = (jas + rnd.nextInt(90) - 45).coerceIn(0, 255)
+                    (0xFF shl 24) or (v shl 16) or (((v + x) and 0xFF) shl 8) or ((v * 2 + y) and 0xFF)
+                } else {
+                    // Popisek: světlý, tři řádky „písma“ (krátké tmavé úseky).
+                    val ry = (y - y0 - obr) % (ph / 10)
+                    val pismo = ry in 3..(ph / 10 - 4) && x > x0 + 10 && x < x0 + pw * 3 / 4 && (x / 7 + y / 5) % 4 == 0
+                    if (pismo) 0xFF202020.toInt() else 0xFFF8F8F4.toInt()
+                }
+                if (ramecek && (x == x0 || x == x0 + pw - 1 || y == y0 || y == y0 + ph - 1)) px[y * w + x] = 0xFF302010.toInt()
+            }
+        }
+        return px
+    }
+
+    @Test
+    fun `zatez - tmavy list s tenkymi mezerami a nadpisem`() {
+        // Start za minutu: 4 × 3 na tmavém pozadí, mezery 2 px (hledání oblastí je při zmenšení
+        // přeskočí a panely slije), tmavé obrázky, nadpis nahoře.
+        val w = 1990; val h = 1120
+        val px = listSada20(w, h, 4, 3, 2, 130, 70, { _, _ -> 0xFF0A0F1C.toInt() })
+        val a = SbPanelyObrazu.najdi(px, w, h)
+        assertEquals(SbPanelyObrazu.duvod, 12, a?.size)
+        assertEquals(listOf(4, 4, 4), SbPanelyObrazu.radky(a!!).map { it.size })
+        // Nadpis do prvního řádku nepatří.
+        assertTrue(a.all { it.y0 >= 120 })
+    }
+
+    @Test
+    fun `zatez - nadpis pres celou sirku neni panel`() {
+        // Kuchař roku: světlé mezery, tmavý pruh nadpisu přes celou šířku nad 4 × 2.
+        val w = 1600; val h = 800
+        val px = listSada20(w, h, 4, 2, 6, 70, 120, { _, y -> if (y < 66) 0xFF14284A.toInt() else 0xFFFFFFFF.toInt() })
+        val a = SbPanelyObrazu.najdi(px, w, h)
+        assertEquals(SbPanelyObrazu.duvod, 8, a?.size)
+        assertEquals(listOf(4, 4), SbPanelyObrazu.radky(a!!).map { it.size })
+    }
+
+    @Test
+    fun `zatez - zrnity pergamen s ramecky`() {
+        // Čtyři přání: pozadí není jednolité (zrno ±20), panely v rámečku; dřív „D2“.
+        val w = 1800; val h = 850
+        val zrno = java.util.Random(7)
+        val px = listSada20(w, h, 4, 2, 9, 80, 110, { _, _ ->
+            val d = zrno.nextInt(41) - 20
+            (0xFF shl 24) or ((236 + d).coerceIn(0, 255) shl 16) or ((205 + d) shl 8) or (150 + d)
+        }, ramecek = true)
+        val a = SbPanelyObrazu.najdi(px, w, h)
+        assertEquals(SbPanelyObrazu.duvod, 8, a?.size)
+        assertEquals(listOf(4, 4), SbPanelyObrazu.radky(a!!).map { it.size })
+    }
+
     @Test
     fun `prazdne policko se vraci zvlast - model ho muze zapocitat`() {
         obrazky()

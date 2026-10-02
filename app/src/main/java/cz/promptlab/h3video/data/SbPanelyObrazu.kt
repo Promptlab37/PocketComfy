@@ -52,8 +52,35 @@ object SbPanelyObrazu {
      * Všechna políčka v pořadí čtení včetně prázdných v rámečku (5.38): model
      * může prázdné políčko započítat (10 oken, jedno bez děje) — pak se
      * porovnává počet všech políček. Null = nejisté.
+     *
+     * Dva nezávislé pohledy (5.69, sada 20 listů 2. 10. 2026, 10 z 21 nových listů špatně):
+     *  - [podleOblasti] = původní hledání souvislých oblastí obsahu; bez titulku a patičky
+     *    ([bezTitulku]) — pruh s nadpisem nad mřížkou se dřív počítal jako panel;
+     *  - [podleMezer] = řezy po mezerách mezi panely; najde mřížku i na tmavém listu
+     *    s tenkými mezerami a na zdobeném okraji, kde oblasti selžou.
+     * Přednost má původní výsledek (staré listy dávají přesně to co dřív); mezery
+     * ho nahradí, jen když oblasti nic nenašly, nebo když mezery rozdělí slité
+     * oblasti na víc panelů ([zjemnuje]).
      */
     fun najdiBunky(argb: IntArray, w: Int, h: Int): List<Bunka>? {
+        duvod = ""
+        if (w < 50 || h < 50 || argb.size < w * h) run { duvod = "D1"; return null }
+        val oblasti = podleOblasti(argb, w, h)?.let { bezTitulku(it) }
+        val duvodOblasti = duvod
+        val mezery = podleMezer(argb, w, h)
+        val plne = oblasti?.filter { !it.prazdna }
+        val vysledek = when {
+            mezery == null -> oblasti
+            oblasti == null || plne!!.size < 2 -> mezery.map { Bunka(it, false) }
+            mezery.size > plne.size && zjemnuje(mezery, plne.map { it.obdelnik }, max(w, h)) -> mezery.map { Bunka(it, false) }
+            else -> oblasti
+        }
+        duvod = if (vysledek === oblasti) duvodOblasti else "M podle mezer"
+        return vysledek
+    }
+
+    /** Původní hledání po souvislých oblastech obsahu (5.38), null = nejisté. */
+    private fun podleOblasti(argb: IntArray, w: Int, h: Int): List<Bunka>? {
         if (w < 50 || h < 50 || argb.size < w * h) run { duvod = "D1"; return null }
         val krok = max(1, (max(w, h) + PRACOVNI - 1) / PRACOVNI)
         val sw = w / krok
@@ -123,6 +150,192 @@ object SbPanelyObrazu {
         return poradi(panely + prazdna).map {
             Bunka(Obdelnik(it.x0 * krok, it.y0 * krok, min(w, it.x1 * krok), min(h, it.y1 * krok)), it in prazdne)
         }
+    }
+
+    /**
+     * Bez titulku a patičky (5.69): nízký pruh celý nad všemi panely (nadpis „STORYBOARD – …“,
+     * řádek Postavy) nebo celý pod nimi (Kontinuita) není panel. Nízký = pod polovinou
+     * mediánu výšky; prázdná políčka se neposuzují. Sada 20: listy 02, 03, 13, 16, 17.
+     */
+    private fun bezTitulku(bunky: List<Bunka>): List<Bunka> {
+        val plne = bunky.filter { !it.prazdna }
+        if (plne.size < 3) return bunky
+        val med = plne.map { it.obdelnik.vyska }.sorted()[plne.size / 2]
+        val vysoke = plne.filter { it.obdelnik.vyska * 2 >= med }
+        if (vysoke.size < 2) return bunky
+        val tol = med / 20
+        val horni = vysoke.minOf { it.obdelnik.y0 }
+        val dolni = vysoke.maxOf { it.obdelnik.y1 }
+        val pryc = plne.filter { b ->
+            b.obdelnik.vyska * 2 < med && (b.obdelnik.y1 <= horni + tol || b.obdelnik.y0 >= dolni - tol)
+        }.toSet()
+        if (pryc.isEmpty()) return bunky
+        return bunky.filter { it !in pryc }
+    }
+
+    /**
+     * Mezery jen rozdělily slité oblasti (tmavý list s tenkou mezerou, nadpis přetékající přes
+     * horní řádek): každý panel z mezer leží uvnitř některé oblasti (s tolerancí) a v každém
+     * řádku jsou panely zhruba stejně široké. Nestejné kusy = řez skrz obrázek (svislý sloupek
+     * na fotce), tomu se nevěří (Otevřené dveře).
+     */
+    private fun zjemnuje(mezery: List<Obdelnik>, oblasti: List<Obdelnik>, rozmer: Int): Boolean {
+        val tol = rozmer / 50
+        val uvnitr = mezery.all { m ->
+            oblasti.any { o -> m.x0 >= o.x0 - tol && m.y0 >= o.y0 - tol && m.x1 <= o.x1 + tol && m.y1 <= o.y1 + tol }
+        }
+        return uvnitr && radky(mezery).all { r -> r.minOf { it.sirka } * 10 >= r.maxOf { it.sirka } * 6 }
+    }
+
+    /** Pracovní rozlišení hledání mezer: tenké mezery tmavých listů (3 px na 1672) musí přežít zmenšení. */
+    private const val MEZERY_PRACOVNI = 1000
+
+    /** Tolerance barvy mezery po složkách RGB. */
+    private const val MEZERY_TOL = 28
+
+    /**
+     * Panely podle mezer (5.69), řezy jako u stránky komiksu (XY-cut):
+     *  1. Vodorovné mezery přes celou šířku listu: pás řádků jedné barvy, který aspoň z jedné
+     *     strany ostře ukončí obsah (hrana panelu, rámeček). Mezera mezi řádky textu v popisku
+     *     řezem není — text kolem ní je řídký.
+     *  2. Vysoké pruhy s obrázkem jsou řádky panelů; nízké pruhy a pruhy z řídkého textu
+     *     (popisek pod obrázkem, vyprávění pod řadou komiksu, patička) patří k řádku nad sebou,
+     *     nízký řádek úplně nahoře (nadpis listu) se zahodí.
+     *  3. V každém řádku svislé mezery přes celou výšku řádku (když je přetne patička, jen
+     *     přes vysokou část) → panely; úzké zbytky u okraje (ozdobný rám) se zahodí.
+     * Barva mezer se nebere z celého listu — každá mezera má svoji (tmavé i světlé listy,
+     * zdobené okraje). Null = nejisté.
+     */
+    private fun podleMezer(argb: IntArray, w0: Int, h0: Int): List<Obdelnik>? {
+        val krok = max(1, (max(w0, h0) + MEZERY_PRACOVNI - 1) / MEZERY_PRACOVNI)
+        val w = w0 / krok
+        val h = h0 / krok
+        if (w < 50 || h < 50) return null
+        val px = IntArray(w * h) { i -> argb[(i / w) * krok * w0 + (i % w) * krok] }
+        val vodorovne = rezy(px, w, 0, h, 0, w, vodorovne = true)
+        val pruhy = useky(vodorovne.pasy, h)
+        if (pruhy.isEmpty()) return null
+        val nejvyssi = pruhy.maxOf { it[1] - it[0] }
+        // Pruh s obrázkem: většina řádků pestrá. Pruh s textem má i řádky s písmem skoro jednolité.
+        fun obrazovy(p: IntArray): Boolean {
+            val podily = (p[0] until p[1]).map { vodorovne.podil[it] }.sorted()
+            return podily[podily.size / 2] < 0.6f
+        }
+        // Řádek panelů: [začátek, konec vysoké části, konec i s nízkými pruhy pod ní].
+        val radky = mutableListOf<IntArray>()
+        for (p in pruhy) {
+            if ((p[1] - p[0]) * 10 >= nejvyssi * 4 && obrazovy(p)) radky += intArrayOf(p[0], p[1], p[1])
+            else radky.lastOrNull()?.let { it[2] = p[1] }
+        }
+        if (radky.isEmpty()) return null
+        val medR = radky.map { it[2] - it[0] }.sorted()[radky.size / 2]
+        while (radky.size > 1 && (radky[0][2] - radky[0][0]) * 2 < medR) radky.removeAt(0)
+        val bunky = mutableListOf<Obdelnik>()
+        for ((y0, yVysoka, y1) in radky) {
+            var sloupce = useky(rezy(px, w, y0, y1, 0, w, vodorovne = false).pasy, w)
+            if (sloupce.size <= 1 && y1 > yVysoka) sloupce = useky(rezy(px, w, y0, yVysoka, 0, w, vodorovne = false).pasy, w)
+            if (sloupce.isEmpty()) continue
+            val nejsirsi = sloupce.maxOf { it[1] - it[0] }
+            for (s in sloupce) if ((s[1] - s[0]) * 10 >= nejsirsi * 3) bunky += Obdelnik(s[0], y0, s[1], y1)
+        }
+        if (bunky.size < 2) return null
+        val med = bunky.map { it.plocha }.sorted()[bunky.size / 2]
+        if (bunky.any { it.plocha < med / 5 }) return null
+        if (bunky.sumOf { it.plocha }.toDouble() / (w.toLong() * h) < 0.45) return null
+        return poradi(bunky).map {
+            Obdelnik(it.x0 * krok, it.y0 * krok, min(w0, it.x1 * krok), min(h0, it.y1 * krok))
+        }
+    }
+
+    /** Výsledek [rezy]: pásy mezer (od, do) a podíl jednolitých bodů každé čáry řezu. */
+    private class Rezy(val pasy: List<IntArray>, val podil: FloatArray)
+
+    /**
+     * Pásy mezer v oblasti [a0, a1) × [b0, b1) jako dvojice (od, do) relativně k začátku osy řezu:
+     * u [vodorovne] řádky y ∈ [a0, a1) přes x ∈ [b0, b1), jinak sloupce x ∈ [b0, b1) přes y ∈ [a0, a1).
+     * Pásy na okraji oblasti (okraj listu) se vrací vždy — jen ohraničují úseky.
+     */
+    private fun rezy(px: IntArray, w: Int, a0: Int, a1: Int, b0: Int, b1: Int, vodorovne: Boolean): Rezy {
+        val n = if (vodorovne) a1 - a0 else b1 - b0
+        val delka = if (vodorovne) b1 - b0 else a1 - a0
+        if (n < 3 || delka < 3) return Rezy(emptyList(), FloatArray(max(0, n)))
+        fun bod(i: Int, k: Int) = if (vodorovne) px[(a0 + i) * w + b0 + k] else px[(a0 + k) * w + b0 + i]
+        // Pro každou čáru řezu: medián barvy po složkách a podíl bodů blízko něj.
+        val podil = FloatArray(n)
+        val barva = IntArray(n)
+        val hr = IntArray(256); val hg = IntArray(256); val hb = IntArray(256)
+        fun median(hist: IntArray): Int { var s = 0; for (v in 0..255) { s += hist[v]; if (s * 2 >= delka) return v }; return 255 }
+        for (i in 0 until n) {
+            for (k in 0 until delka) { val c = bod(i, k); hr[(c shr 16) and 255]++; hg[(c shr 8) and 255]++; hb[c and 255]++ }
+            val mr = median(hr); val mg = median(hg); val mb = median(hb)
+            var stejne = 0
+            for (k in 0 until delka) {
+                val c = bod(i, k)
+                val r = (c shr 16) and 255; val g = (c shr 8) and 255; val b = c and 255
+                hr[r]--; hg[g]--; hb[b]--
+                if (abs(r - mr) <= MEZERY_TOL && abs(g - mg) <= MEZERY_TOL && abs(b - mb) <= MEZERY_TOL) stejne++
+            }
+            podil[i] = stejne.toFloat() / delka
+            barva[i] = (mr shl 16) or (mg shl 8) or mb
+        }
+        fun blizko(c: Int, d: Int) = abs(((c shr 16) and 255) - ((d shr 16) and 255)) <= MEZERY_TOL &&
+            abs(((c shr 8) and 255) - ((d shr 8) and 255)) <= MEZERY_TOL && abs((c and 255) - (d and 255)) <= MEZERY_TOL
+        // Hustota čáry i vůči barvě mezery c: podíl bodů, které se od ní liší.
+        fun hustota(i: Int, c: Int): Float {
+            if (i < 0 || i >= n) return 0f
+            var jine = 0
+            for (k in 0 until delka) if (!blizko(bod(i, k), c)) jine++
+            return jine.toFloat() / delka
+        }
+        // Pásy po sobě jdoucích čar s podílem aspoň [prah]; změna barvy pás dělí (tmavá mezera
+        // se světlou linkou uprostřed jsou dva pásy — Soused z Marsu).
+        fun pasy(prah: Float): List<IntArray> {
+            val out = mutableListOf<IntArray>()
+            var i = 0
+            while (i < n) {
+                if (podil[i] < prah) { i++; continue }
+                var j = i + 1
+                while (j < n && podil[j] >= prah && blizko(barva[j], barva[j - 1])) j++
+                out += intArrayOf(i, j)
+                i = j
+            }
+            return out
+        }
+        // Barva pásu = medián barev jeho čar po složkách.
+        fun barvaPasu(i: Int, j: Int): Int {
+            fun slozka(sh: Int) = (i until j).map { (barva[it] shr sh) and 255 }.sorted()[(j - i) / 2]
+            return (slozka(16) shl 16) or (slozka(8) shl 8) or slozka(0)
+        }
+        val out = mutableListOf<IntArray>()
+        for ((i, j) in pasy(0.9f)) {
+            if (i == 0 || j == n) { out += intArrayOf(i, j); continue }
+            val c = barvaPasu(i, j)
+            // Ostrá hrana obsahu aspoň z jedné strany.
+            if (max(max(hustota(i - 1, c), hustota(i - 2, c)), max(hustota(j, c), hustota(j + 1, c))) >= 0.5f) out += intArrayOf(i, j)
+        }
+        // Zdobený list (pergamen s přechodem, Čtyři přání) má vodorovnou mezeru méně jednolitou:
+        // stačí 70 % čáry, když ji obsah ostře ukončí z obou stran.
+        if (vodorovne) {
+            for ((i, j) in pasy(0.7f)) {
+                if (i == 0 || j == n || out.any { it[0] < j && i < it[1] }) continue
+                val c = barvaPasu(i, j)
+                if (min(max(hustota(i - 1, c), hustota(i - 2, c)), max(hustota(j, c), hustota(j + 1, c))) >= 0.7f) out += intArrayOf(i, j)
+            }
+            out.sortBy { it[0] }
+        }
+        return Rezy(out, podil)
+    }
+
+    /** Úseky [od, do) mezi pásy mezer na ose délky [n]. */
+    private fun useky(pasy: List<IntArray>, n: Int): List<IntArray> {
+        val out = mutableListOf<IntArray>()
+        var s = 0
+        for (p in pasy) {
+            if (p[0] > s) out += intArrayOf(s, p[0])
+            s = max(s, p[1])
+        }
+        if (s < n) out += intArrayOf(s, n)
+        return out
     }
 
     /** Řádky panelů (pro čtení replik po řádcích); v každém zleva doprava. */

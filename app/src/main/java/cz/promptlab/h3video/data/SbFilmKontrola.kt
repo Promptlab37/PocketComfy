@@ -40,7 +40,9 @@ object SbFilmKontrola {
                 out += SbNalez(0, t("Přečteno %d panelů, mřížka je %d × %d.").format(n, radku, sloupcu))
             }
         }
-        val sousedni = { c: Int -> listOf(c - 1, c + 1).mapNotNull { radky[it] }.flatMap { SbFilmPrepis.repliky(it) }.map { norm(it.second) } }
+        // Replika přečtená řádkem v jiném panelu (do 5.68 jen v sousedním) = celé čtení ji zdvojilo,
+        // plán ji z tohoto panelu vyřadil ([SbFilmPrepis.slucCteni]).
+        val sousedni = { c: Int -> radky.filterKeys { it != c }.values.flatMap { SbFilmPrepis.repliky(it) }.map { norm(it.second) } }
         cele.forEach { p ->
             val zCelku = SbFilmPrepis.repliky(p.repliky)
             if (zCelku.isEmpty() || !poRadcich) return@forEach

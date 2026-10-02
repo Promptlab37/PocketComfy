@@ -100,8 +100,15 @@ class SbScenarChatGptPrepisTest {
             val pn = panely.getOrNull(i) ?: return@forEachIndexed
             val r = SbFilmPrepis.repliky(pn.repliky)
             if (!stejne(r, x.repliky)) chyby += "${p.jmeno} panel ${x.cislo}: repliky v plánu $r, čekáno ${x.repliky}"
-            if (sCasy && kotlin.math.abs(pn.sekundy - (x.doS!! - x.od!!)) > 1e-6)
-                chyby += "${p.jmeno} panel ${x.cislo}: ${pn.sekundy} s, čekáno ${x.doS - x.od} s"
+            // Vytištěný čas platí přesně. Delší smí být jen panel, kam se replika fyzicky nevejde (5.69,
+            // BYTY: 12 slabik do 2 s) — pak přesně na délku řeči ([SbFilmPlan.delkaReci]: tempo, nástup
+            // a dozvuk, bez nichž H3 usekne poslední slabiku). Kratší než vytištěný nikdy (dřív strop 45 s).
+            if (sCasy) {
+                val tisk = x.doS!! - x.od!!
+                val rec = SbFilmPlan.delkaReci(pn.repliky)?.coerceAtMost(SbFilmPlan.MAX_PANEL_S)
+                val ocek = if (rec != null && rec > tisk) Math.round(rec * 10) / 10.0 else tisk
+                if (kotlin.math.abs(pn.sekundy - ocek) > 1e-6) chyby += "${p.jmeno} panel ${x.cislo}: ${pn.sekundy} s, čekáno $ocek s (vytištěno $tisk s)"
+            }
         }
         return chyby
     }
