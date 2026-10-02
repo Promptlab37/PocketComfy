@@ -28,6 +28,8 @@ class H3App : Application() {
         runCatching { GenerationEngine.init(this) }
         // Fronta běhů je věc procesu, ne obrazovky — hlídač musí běžet od startu.
         runCatching { cz.promptlab.h3video.engine.RunQueue.init() }
+        // Nová verze se stáhne sama na pozadí (Wi-Fi) a čeká na Nainstalovat (5.68).
+        runCatching { cz.promptlab.h3video.update.UpdateWorker.naplanuj(this) }
     }
 
     /**

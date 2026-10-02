@@ -687,7 +687,12 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 val postup: (Float) -> Unit = { p -> _update.value = UpdateState.Downloading(nejnovejsi, p, jeTiche()) }
                 // Systémový správce stahování — doběhne i po odchodu z appky (5.39);
                 // když na telefonu nejde, stáhne appka sama jako dřív.
-                runCatching { UpdateChecker.downloadSystemem(getApplication(), nejnovejsi, settings.githubToken, postup) }
+                // Tiché stahování appkou samotnou — systémový správce by ukázal oznámení „stahuje se“
+                // a vypadalo by to, že stahování vyskočilo (uživatel 2. 10. 2026).
+                runCatching {
+                    if (tiche) UpdateChecker.download(getApplication(), nejnovejsi, settings.githubToken, postup)
+                    else UpdateChecker.downloadSystemem(getApplication(), nejnovejsi, settings.githubToken, postup)
+                }
                     .recoverCatching { e ->
                         if (e is IllegalStateException && e.message?.contains("kontrolnímu součtu") == true) throw e
                         UpdateChecker.download(getApplication(), nejnovejsi, settings.githubToken, postup)

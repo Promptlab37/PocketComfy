@@ -35,8 +35,8 @@ android {
         applicationId = "cz.promptlab.h3video"
         minSdk = 26
         targetSdk = 35
-        versionCode = 378
-        versionName = "5.67"
+        versionCode = 379
+        versionName = "5.68"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "GITHUB_TOKEN", "\"\"")
         buildConfigField("String", "DEFAULT_SERVER", "\"\"")
@@ -101,6 +101,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-process:2.8.7")
     implementation("androidx.activity:activity-compose:1.9.3")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+    // Aktualizace na pozadí (5.68).
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     // Prohlížeč 3D modelu (karta 3D model). Compose-nativní nadstavba nad
     // Google Filamentem — jediná udržovaná cesta, jak na Androidu vykreslit
