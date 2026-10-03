@@ -147,6 +147,53 @@ object SbFilmBuilder {
     const val KONTEXT_SNIMKU = 22
     const val ROZLISENI = "480P"
     const val CONTINUITY = "latent_guide"
+    /** Snímková frekvence filmu (vstup `fps` plánu úseků, H3 vzorkuje 24 snímků/s). */
+    const val FPS = 24.0
+
+    /**
+     * Skrytá předpona úseku v sekundách (5.71). Od 2. úseku vzorkuje `SegmentStep` vzorek
+     * `head_frames + delivery_frames`, kde `head_frames` = `context_length` (latent_guide i guide,
+     * u native_guide 0; Minimax-H3-Latent-Continuation `nodes.py` 6474). Obraz i zvuk vzorku sdílí
+     * jednu časovou osu od začátku předpony: zvuk předpony je přišpendlený na konec předchozího
+     * úseku (`_segment_apply_guide_handoff`, maska 0) a Decode ořízne obraz i zvuk stejně
+     * (`head_start = head_frames − 1`, `_segment_trim_audio`). H3 proto čte časy záběrů
+     * i zvukovou stopu od začátku předpony — změřeno ve filmu 33 (střihy úseku 2 −1,0 s
+     * proti plánu od viditelného začátku, ±0,2 s od začátku vzorku; AUDIT_v1 bod 2.4).
+     */
+    fun skrytaPredponaS(usek: Int): Double =
+        if (usek <= 0 || CONTINUITY == "native_guide") 0.0 else KONTEXT_SNIMKU / FPS
+
+    private val CAS = Regex("""(?<![\d:.])(\d{1,3}):(\d{2})(\.\d{1,3})?(?![\d:])""")
+    private val PRED_CASEM = Regex("""(?i)\bat\s*$""")
+    private val D_BLOK = Regex("""<d>.*?</d>""", RegexOption.DOT_MATCHES_ALL)
+    private val ZABER1_BEZ_CASU = Regex("""(?m)^([ \t]*\[Shot 1])[ \t]*(?!:?\s*At\s+\d)(?:(A|An|The)\b)?""")
+
+    /**
+     * Časy v zadání úseku z viditelného úseku na časy vzorku (5.71): každý čas `MM:SS.mmm`
+     * (i „at 00:03“) mimo repliky `<d>` se posune o [posunS] a `[Shot 1]` dostane `At` na konci
+     * předpony — předpona je ještě konec předchozího úseku. Kontroly a uživatel dál vidí
+     * časy od viditelného začátku, posouvá se až v grafu.
+     */
+    fun casyVeVzorku(text: String, posunS: Double): String {
+        if (posunS <= 0.0) return text
+        fun posun(kus: String) = CAS.replace(kus) { m ->
+            val predtim = kus.substring(0, m.range.first)
+            if (m.groups[3] == null && !PRED_CASEM.containsMatchIn(predtim)) return@replace m.value
+            val s = m.groupValues[1].toInt() * 60 + (m.groupValues[2] + m.groupValues[3]).toDouble()
+            SbFilmPlan.casH3(s + posunS)
+        }
+        val sb = StringBuilder()
+        var od = 0
+        D_BLOK.findAll(text).forEach { m ->
+            sb.append(posun(text.substring(od, m.range.first))).append(m.value)
+            od = m.range.last + 1
+        }
+        sb.append(posun(text.substring(od)))
+        return ZABER1_BEZ_CASU.replace(sb.toString()) { m ->
+            // „A medium shot …“ → „At 00:00.917, a medium shot …“; jména a značky beze změny.
+            "${m.groupValues[1]} At ${SbFilmPlan.casH3(posunS)}, " + m.groupValues[2].lowercase()
+        }
+    }
 
     /**
      * @param obrazky jména nahraných obrázků v pořadí [SbFilmScene.uploadImages]
@@ -281,7 +328,8 @@ object SbFilmBuilder {
             val id = (N_USEK_PRVNI + i).toString()
             val vstupy = JSONObject()
                 .put("seed", (seed + i) and 0xFFFFFFFFL)
-                .put("prompt_override", text)
+                // Od 2. úseku časy od začátku vzorku včetně skryté předpony (5.71).
+                .put("prompt_override", casyVeVzorku(text, skrytaPredponaS(i)))
             if (predchozi == null) vstupy.put("sample_setup", odkaz(N_SETUP))
             else vstupy.put("previous_segment", odkaz(predchozi!!))
             wf.put(id, uzel("MiniMaxH3EasySegmentStep_SatoDive", "Úsek ${i + 1}", vstupy))

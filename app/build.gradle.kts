@@ -35,8 +35,8 @@ android {
         applicationId = "cz.promptlab.h3video"
         minSdk = 26
         targetSdk = 35
-        versionCode = 380
-        versionName = "5.69"
+        versionCode = 382
+        versionName = "5.71"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "GITHUB_TOKEN", "\"\"")
         buildConfigField("String", "DEFAULT_SERVER", "\"\"")
@@ -74,6 +74,18 @@ android {
         }
         debug {
             applicationIdSuffix = ".debug"
+        }
+    }
+
+    // Soukromé doplňky jen v soukromém repu (do veřejného je sync nekopíruje). Jdou do ladicí
+    // i vydané verze; když složka chybí, Gradle ji prostě přeskočí a sestavení je beze změny.
+    sourceSets {
+        getByName("main") {
+            java.srcDir("src/soukrome/main/java")
+            resources.srcDir("src/soukrome/main/resources")
+        }
+        getByName("test") {
+            java.srcDir("src/soukrome/test/java")
         }
     }
 

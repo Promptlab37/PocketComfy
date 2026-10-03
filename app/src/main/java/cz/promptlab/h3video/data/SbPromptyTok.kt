@@ -31,7 +31,7 @@ object SbPromptyTok {
                     s.postavy.map { s.jmenoFotky(it.soubor)!! } else emptyList(),
                 jenTvarFotek = s.postavy.map { it.soubor.absolutePath in s.jenTvar },
                 popisyFilmu = s.panely.map { it.popis },
-            ).let { sp.hlidkaSNahravkami(it, stopyUseku.map { st -> st.mluvci }.distinct()) }
+            ).let { sp.hlidkaSNahravkami(it, stopyUseku.flatMap { st -> st.mluvci }.distinct()) }
             // Storyboard je první obrázek, fotky postav za ním.
             val jenTvar = s.postavy.withIndex().filter { it.value.soubor.absolutePath in s.jenTvar }
                 .map { it.index + (if (s.seStoryboardem) 1 else 0) }.toSet()

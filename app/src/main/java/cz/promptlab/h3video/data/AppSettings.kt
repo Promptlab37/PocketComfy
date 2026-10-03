@@ -110,6 +110,11 @@ class AppSettings(ctx: Context) {
         get() = sp.getBoolean("vyber_ze_souboru", false)
         set(v) = sp.edit().putBoolean("vyber_ze_souboru", v).apply()
 
+    /** Doplňkový přepisovač Storyboardu ([DoplnkovyPrepisovac]); platí, jen když ho sestavení má. */
+    var doplnkovyPrepisovac: Boolean
+        get() = sp.getBoolean("doplnkovyPrepisovac", true)
+        set(v) = sp.edit().putBoolean("doplnkovyPrepisovac", v).apply()
+
     /** U výběru obrázku nabídnout i hledání na internetu (viz ui.VyberFotek). */
     var hledatNaInternetu: Boolean
         get() = sp.getBoolean("hledat_na_internetu", true)

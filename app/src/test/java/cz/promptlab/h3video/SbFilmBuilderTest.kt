@@ -45,7 +45,10 @@ class SbFilmBuilderTest {
             val v = wf.vstupy(kroky[i].toString())
             assertFalse(v.has("sample_setup"))
             assertEquals(kroky[i - 1].toString(), v.getJSONArray("previous_segment").getString(0))
-            assertEquals(zadani[i], v.getString("prompt_override"))
+            // Od 2. úseku časy od začátku vzorku včetně skryté předpony (5.71).
+            assertEquals(SbFilmBuilder.casyVeVzorku(zadani[i], SbFilmBuilder.skrytaPredponaS(i)), v.getString("prompt_override"))
+            assertTrue(v.getString("prompt_override").startsWith("[Shot 1] At 00:00.917, part $i"))
+            assertTrue(v.getString("prompt_override").contains("[Shot 2] At 00:03.917, x"))
         }
         assertEquals(kroky.last().toString(),
             wf.vstupy(SbFilmBuilder.N_COLLECT).getJSONArray("final_segment").getString(0))

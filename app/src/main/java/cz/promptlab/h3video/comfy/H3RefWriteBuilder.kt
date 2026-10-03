@@ -184,6 +184,8 @@ object H3RefWriteBuilder {
         hlidka: String? = null,
         /** Indexy obrázků (0 = první), ze kterých se popisuje jen tvář. */
         jenTvar: Set<Int> = emptySet(),
+        /** Vlastní `system_prompt` uzlu (doplňkový přepisovač); `null` = vstup se nepošle, uzel složí svůj. */
+        systemPrompt: String? = null,
     ): JSONObject {
         val wf = JSONObject()
 
@@ -227,6 +229,7 @@ object H3RefWriteBuilder {
             .put("seed", seed)
             .put("keep_model_loaded", false)
             .put("options", odkaz(N_OPTIONS))
+        if (systemPrompt != null) vstupy.put("system_prompt", systemPrompt)
 
         obrazky.forEachIndexed { i, jmeno ->
             val id = (N_OBRAZEK_PRVNI + i).toString()

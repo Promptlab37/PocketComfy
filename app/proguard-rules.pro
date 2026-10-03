@@ -22,3 +22,7 @@
 # PdfBox pro Android (5.20): JPEG 2000 dekodér je volitelný a v appce není.
 -dontwarn com.gemalto.jp2.**
 -dontwarn com.tom_roush.pdfbox.filter.JPXFilter
+
+# Doplňkový přepisovač (data.DoplnkovyPrepisovac): zdroj se hledá přes Class.forName a pole
+# INSTANCE, R8 ho jinak zahodí nebo přejmenuje. Bez té třídy v sestavení pravidlo nic nedělá.
+-keep class cz.promptlab.h3video.doplnek.** { *; }

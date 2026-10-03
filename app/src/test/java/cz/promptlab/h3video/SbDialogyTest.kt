@@ -38,19 +38,24 @@ class SbDialogyTest {
     private val vse: (File) -> Boolean = { true }
 
     @Test
-    fun `plan stop po mluvcich a casech panelu`() {
+    fun `plan jedne stopy na usek v casech panelu`() {
         val s0 = scena()
         val s = s0.copy(panely = SbDialogy.upravPanely(s0, vse))
         val stopy = SbDialogy.planuj(s, existuje = vse)
         assertEquals(1, s.useky.size)
-        assertEquals(listOf("Anna" to 1, "Pavel" to 2), stopy.map { it.mluvci to it.cislo })
-        val anna = stopy[0].umisteni
+        // 5.71: jedna stopa na úsek se všemi mluvčími.
+        assertEquals(1, stopy.size)
+        assertEquals(listOf("Anna", "Pavel"), stopy[0].mluvci)
+        assertEquals(1, stopy[0].cislo)
+        val u = stopy[0].umisteni
+        assertEquals(listOf("Anna", "Pavel", "Anna"), u.map { it.kdo })
         // Úvodní záběr filmu: 0,75 s vzduchu (+ polovina zbytku do celého snímku).
-        assertEquals(0.758, anna[0].startS, 0.01)
+        assertEquals(0.758, u[0].startS, 0.01)
         // Pavel po Anně a mezeře při střídání mluvčích 0,25 s.
-        assertEquals(0.758 + 0.8 + 0.25, stopy[1].umisteni[0].startS, 0.01)
+        assertEquals(0.758 + 0.8 + 0.25, u[1].startS, 0.01)
         // Panel 3 začíná po zkráceném panelu 1 (2,92 s) a tichém panelu 2 (3 s), nástup 0,25 s.
-        assertEquals(2.9167 + 3.0 + 0.25, anna[1].startS, 0.01)
+        assertEquals(2.9167 + 3.0 + 0.25, u[2].startS, 0.01)
+        assertEquals(0.0, stopy[0].predponaS, 0.0)
         assertTrue(SbDialogy.problemy(stopy).isEmpty())
     }
 
@@ -94,11 +99,14 @@ class SbDialogyTest {
             "[Shot 1] Anna smiles. In a warm, low voice, she says (S1) <d>[Czech] Ahoj.</d> Pavel nods and says (S2) <d>[Czech] Čau.</d>\n" +
             "[Shot 3] At 00:07.000, Anna, in the same warm voice, says (S1) <d>[Czech] Jdeme.</d>\n\noverall_soundscape:\nN/A"
         val o = SbDialogy.doplnPrompt(prompt, stopy, mapOf("Anna" to "S1", "Pavel" to "S2"))
-        assertTrue(o.contains("<Audio 1> is the recorded voice of the speaker Anna (S1).\n<Audio 2> is the recorded voice of the speaker Pavel (S2).\n\nsummary:"))
+        assertTrue(o.contains("<Audio 1> is the recorded dialogue track of this part, with the voices of Anna (S1) and Pavel (S2); " +
+            "each line is spoken by the subject named in its shot.\n\nsummary:"))
+        assertFalse(o.contains("recorded voice of the speaker"))
         assertTrue(o.contains("[reference generation + audio reuse]"))
         assertTrue(o.contains("<Audio 1>: partially_copy"))
+        assertFalse(o.contains("<Audio 2>"))
         assertTrue(o.contains("of <Audio 1>, <d>[Czech] Ahoj.</d>"))
-        assertTrue(o.contains("of <Audio 2>, <d>[Czech] Čau.</d>"))
+        assertTrue(o.contains("of <Audio 1>, <d>[Czech] Čau.</d>"))
         assertTrue(o.contains("of <Audio 1>, <d>[Czech] Jdeme.</d>"))
         assertFalse(o.contains("warm, low voice"))
         assertFalse(o.contains("same warm voice"))
@@ -117,7 +125,8 @@ class SbDialogyTest {
         assertFalse(k.has("media"))
         assertEquals("image", k.getString("media_type_1"))
         assertEquals("audio", k.getString("media_type_2"))
-        assertEquals("audio", k.getString("media_type_3"))
+        // Jedna stopa na úsek (5.71).
+        assertFalse(k.has("media_type_3"))
         val tridy = g.keys().asSequence().map { g.getJSONObject(it).getString("class_type") }.toList()
         assertEquals(3, tridy.count { it == "LoadAudio" })
         assertTrue(tridy.containsAll(listOf("EmptyAudio", "AudioConcat", "AudioMerge")))
@@ -200,6 +209,129 @@ class SbDialogyTest {
         val sOrez = SbDialogy.planuj(orez, existuje = vse)[0].umisteni[0]
         assertEquals(bez - 0.03, sOrez.startS, 1e-9)
         assertEquals(0.83, sOrez.delkaS, 1e-9)
+    }
+
+    /**
+     * 5.71 (film 33 „Sněmovna“, AUDIT_v1): tři mluvčí v jednom úseku = jedna stopa se všemi
+     * replikami v jejich časech, v grafu jediné médium audio a v promptu jediné <Audio N>.
+     */
+    @Test
+    fun `tri mluvci v jednom useku - jedna stopa, casy replik, jedno Audio`() {
+        val babis = VoiceSource.Library("babis", "Babiš")
+        val pavel = VoiceSource.Library("pavel", "Pavel")
+        val macinka = VoiceSource.Library("macinka", "Macinka")
+        val panely = listOf(
+            SbPanel(1, "Babiš leans in.", "extreme close-up", "static", 2.25, repliky = "Babiš: „Přestaň scrollovat!“"),
+            SbPanel(2, "Babiš shows a phone.", "medium", "static", 3.5, repliky = "Babiš: „Nebo ti pustím dalších sedmnáct minut.“"),
+            SbPanel(3, "Pavel sits.", "medium", "static", 2.333, repliky = "Pavel: „Já už sedím. Vy si to vyřešte.“"),
+            SbPanel(4, "Macinka points.", "medium", "static", 2.833, repliky = "Macinka: „Tohle místo bylo slíbený mně!“"),
+        )
+        fun n(c: Int, text: String, hlas: String, d: Double) =
+            SbDialogy.klic(c, 0) to SbDialogy.zakoduj(SbDialogy.Nahravka(File("/x/r$c.wav"), text, hlas, d, 0.03))
+        val s = SbFilmScene(
+            panely = panely, dialogyHiggs = true,
+            hlasyMluvcich = mapOf("Babiš" to SbDialogy.zakoduj(babis), "Pavel" to SbDialogy.zakoduj(pavel), "Macinka" to SbDialogy.zakoduj(macinka)),
+            nahravky = mapOf(
+                n(1, "Přestaň scrollovat!", babis.klic, 1.34), n(2, "Nebo ti pustím dalších sedmnáct minut.", babis.klic, 3.06),
+                n(3, "Já už sedím. Vy si to vyřešte.", pavel.klic, 1.92), n(4, "Tohle místo bylo slíbený mně!", macinka.klic, 2.12),
+            ),
+        )
+        val useky = listOf(cz.promptlab.h3video.data.SbUsek(panely))
+        val stopy = SbDialogy.planuj(s, useky, existuje = vse)
+        assertEquals(1, stopy.size)
+        val st = stopy[0]
+        assertEquals(listOf("Babiš", "Pavel", "Macinka"), st.mluvci)
+        assertEquals(listOf("Babiš", "Babiš", "Pavel", "Macinka"), st.umisteni.map { it.kdo })
+        // Řeč začíná po nástupu panelu (úvod filmu 0,75 s, jinak 0,25 s + polovina přebytku), soubor o 0,03 s dřív.
+        val zacatky = listOf(0.0, 2.25, 5.75, 8.083)
+        st.umisteni.forEachIndexed { i, u -> assertTrue("replika $i v panelu", u.startS + 0.03 >= zacatky[i] && u.startS < zacatky[i] + 1.0) }
+        assertEquals(0.75 - 0.03, st.umisteni[0].startS, 0.01)
+        assertEquals(2.25 + 0.25 - 0.03, st.umisteni[1].startS, 0.01)
+        assertTrue(SbDialogy.problemy(stopy).isEmpty())
+
+        val prompt = "subject_definitions:\n<Subject 1> is Babiš.\n<Subject 2> is Pavel.\n<Subject 3> is Macinka.\n\nsummary:\n[reference generation] Three men argue.\n\n" +
+            "retention_analysis:\n<Subject 1>: fully_preserved.\n\ndetailed_description:\n" +
+            "[Shot 1] <Subject 1> (S1) says <d>[Czech] Přestaň scrollovat!</d>\n" +
+            "[Shot 2] At 00:02.250, <Subject 1> (S1) says <d>[Czech] Nebo ti pustím dalších sedmnáct minut.</d>\n" +
+            "[Shot 3] At 00:05.750, <Subject 2> (S2) says <d>[Czech] Já už sedím. Vy si to vyřešte.</d>\n" +
+            "[Shot 4] At 00:08.083, <Subject 3> (S3) says <d>[Czech] Tohle místo bylo slíbený mně!</d>\n\noverall_soundscape:\nN/A"
+        val o = SbDialogy.doplnPrompt(prompt, stopy, mapOf("Babiš" to "S1", "Pavel" to "S2", "Macinka" to "S3"))
+        assertEquals(setOf("<Audio 1>"), Regex("""<Audio \d+>""").findAll(o).map { it.value }.toSet())
+        assertTrue(o.contains("<Audio 1> is the recorded dialogue track of this part, with the voices of Babiš (S1), Pavel (S2) and Macinka (S3); " +
+            "each line is spoken by the subject named in its shot."))
+        assertEquals(1, Regex("""partially_copy""").findAll(o).count())
+        assertEquals(4, Regex("""of <Audio 1>, <d>""").findAll(o).count())
+        assertTrue(o.contains("<Subject 2> (S2) says, in exactly the voice, pitch, timing and intonation of <Audio 1>, <d>[Czech] Já už sedím."))
+
+        val nazvy = st.umisteni.associate { it.soubor to "ref_${it.soubor.name}" }
+        val wf = SbFilmBuilder.buildFilm(s, useky, listOf(o), listOf("sb.png"), "16:9", 1L)
+        val g = SbDialogy.doplnGraf(wf, stopy, nazvy, SbFilmBuilder.N_KONTEXT, SbFilmBuilder.N_MEDIA)
+        val k = g.getJSONObject(SbFilmBuilder.N_KONTEXT).getJSONObject("inputs")
+        assertEquals(listOf("image", "audio"), (1..9).mapNotNull { k.optString("media_type_$it").takeIf { t -> t.isNotEmpty() } })
+        val uzly = g.keys().asSequence().map { g.getJSONObject(it) }.toList()
+        assertEquals(4, uzly.count { it.getString("class_type") == "LoadAudio" })
+        // Stopa = ticho délky úseku, předsazky = časy replik.
+        val ticha = g.keys().asSequence().sortedBy { it.toInt() }.map { g.getJSONObject(it) }
+            .filter { it.getString("class_type") == "EmptyAudio" }.map { it.getJSONObject("inputs").getDouble("duration") }.toList()
+        assertEquals(useky[0].sekundy, ticha[0], 1e-9)
+        assertEquals(st.umisteni.map { it.startS }, ticha.drop(1))
+    }
+
+    @Test
+    fun `jeden mluvci v useku drzi tvar filmu 32`() {
+        val s = scena().let { it.copy(panely = it.panely.map { p -> if (p.cislo == 1) p.copy(repliky = "Anna: „Ahoj.“") else p }) }
+        val stopy = SbDialogy.planuj(s, existuje = vse)
+        val o = SbDialogy.doplnPrompt("summary:\n[reference generation] x\n\nretention_analysis:\n\ndetailed_description:\n" +
+            "[Shot 1] Anna says (S1) <d>[Czech] Ahoj.</d>\n", stopy, mapOf("Anna" to "S1"))
+        assertTrue(o.contains("<Audio 1> is the recorded voice of the speaker Anna (S1).\n\nsummary:"))
+    }
+
+    /**
+     * 5.71: od 2. úseku počítá H3 obraz i zvuk od začátku vzorku včetně skryté předpony
+     * navazování (22 snímků / 24 fps) — stopa i časy záběrů se o ni posunou.
+     */
+    @Test
+    fun `usek 2 - stopa i casy zaberu posunute o skrytou predponu`() {
+        val predpona = SbFilmBuilder.KONTEXT_SNIMKU / SbFilmBuilder.FPS
+        assertEquals(22 / 24.0, predpona, 1e-12)
+        assertEquals(0.0, SbFilmBuilder.skrytaPredponaS(0), 0.0)
+        assertEquals(predpona, SbFilmBuilder.skrytaPredponaS(1), 1e-12)
+        val s = scena()
+        val useky = listOf(cz.promptlab.h3video.data.SbUsek(s.panely.take(2)), cz.promptlab.h3video.data.SbUsek(s.panely.drop(2)))
+        val bez = SbDialogy.planuj(s, useky, predpona = { 0.0 }, existuje = vse)
+        val sPosunem = SbDialogy.planuj(s, useky, existuje = vse)
+        assertEquals(listOf(0, 1), sPosunem.map { it.usek })
+        assertEquals(0.0, sPosunem[0].predponaS, 0.0)
+        assertEquals(bez[0].umisteni, sPosunem[0].umisteni)
+        assertEquals(predpona, sPosunem[1].predponaS, 1e-12)
+        assertEquals(bez[1].umisteni[0].startS + predpona, sPosunem[1].umisteni[0].startS, 1e-9)
+        assertEquals(useky[1].sekundy + predpona, sPosunem[1].delkaStopyS, 1e-9)
+        // První replika úseku 2 (panel 3, nástup 0,4 s) je za předponou, ne v ní.
+        assertTrue(sPosunem[1].umisteni[0].startS > predpona + 0.3)
+
+        val p2 = "summary:\n[reference generation] In [Shot 2], at 00:03.000, he leaves.\n\ndetailed_description:\n" +
+            "[Shot 1] A close-up of <Subject 1> holding a phone showing 17:00. He says <d>[Czech] Je 12:30.500.</d>\n" +
+            "[Shot 2] At 00:03.000, the shot cuts to a wide frame.\n\noverall_soundscape:\nA beat begins at 00:03.000."
+        val wf = SbFilmBuilder.buildFilm(s, useky, listOf("[Shot 1] A wide shot.\n[Shot 2] At 00:02.000, x", p2), listOf("sb.png"), "16:9", 1L)
+        val prvni = wf.getJSONObject(SbFilmBuilder.N_USEK_PRVNI.toString()).getJSONObject("inputs").getString("prompt_override")
+        assertEquals("[Shot 1] A wide shot.\n[Shot 2] At 00:02.000, x", prvni)
+        val druhy = wf.getJSONObject((SbFilmBuilder.N_USEK_PRVNI + 1).toString()).getJSONObject("inputs").getString("prompt_override")
+        assertTrue(druhy, druhy.contains("[Shot 1] At 00:00.917, a close-up of <Subject 1> holding a phone showing 17:00."))
+        assertTrue(druhy.contains("<d>[Czech] Je 12:30.500.</d>"))
+        assertTrue(druhy.contains("[Shot 2] At 00:03.917, the shot cuts"))
+        assertTrue(druhy.contains("In [Shot 2], at 00:03.917, he leaves."))
+        assertTrue(druhy.contains("A beat begins at 00:03.917."))
+        // Záběr začínající značkou: čas se vloží, text beze změny; „00:01:500“ není čas H3 a zůstane.
+        assertEquals("[Shot 1] At 00:00.917, <Subject 1> sits.\n[Shot 2] At 00:01:500 x",
+            SbFilmBuilder.casyVeVzorku("[Shot 1] <Subject 1> sits.\n[Shot 2] At 00:01:500 x", predpona))
+        assertEquals("[Shot 1] At 00:00.917, x\n[Shot 2] At 00:02.417, y",
+            SbFilmBuilder.casyVeVzorku("[Shot 1] x\n[Shot 2] At 00:01.500, y", predpona))
+        // Graf úseku 2: ticho stopy = předpona + úsek.
+        val g = SbDialogy.doplnGraf(JSONObject(wf.toString()), sPosunem, sPosunem.flatMap { it.umisteni }.associate { it.soubor to it.soubor.name },
+            SbFilmBuilder.N_KONTEXT, SbFilmBuilder.N_MEDIA)
+        val stopa2 = g.keys().asSequence().map { g.getJSONObject(it) }
+            .first { it.getString("class_type") == "EmptyAudio" && it.getJSONObject("_meta").getString("title").endsWith("úsek 2") }
+        assertEquals(useky[1].sekundy + predpona, stopa2.getJSONObject("inputs").getDouble("duration"), 1e-9)
     }
 
     /** „points his finger“ není pointa ani důvod držet délku (test na emulátoru 1. 10. 2026). */

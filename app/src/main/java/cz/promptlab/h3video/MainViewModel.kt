@@ -2466,6 +2466,32 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         _vyberZeSouboru.value = v
     }
 
+    /** Doplňkový přepisovač Storyboardu ([cz.promptlab.h3video.data.DoplnkovyPrepisovac]); bez zdroje v sestavení se nepoužije. */
+    private val _doplnkovyPrepisovac = MutableStateFlow(settings.doplnkovyPrepisovac)
+        .also { cz.promptlab.h3video.data.DoplnkovyPrepisovac.zapnuto = it.value }
+    val doplnkovyPrepisovac: StateFlow<Boolean> = _doplnkovyPrepisovac.asStateFlow()
+
+    fun setDoplnkovyPrepisovac(v: Boolean) {
+        settings.doplnkovyPrepisovac = v
+        cz.promptlab.h3video.data.DoplnkovyPrepisovac.zapnuto = v
+        _doplnkovyPrepisovac.value = v
+    }
+
+    /** Má server model doplňkového přepisovače? Jinak se přepínač nenabízí (žádné mrtvé volby). */
+    private val _doplnkovyPrepisovacNaServeru = MutableStateFlow(false)
+    val doplnkovyPrepisovacNaServeru: StateFlow<Boolean> = _doplnkovyPrepisovacNaServeru.asStateFlow()
+
+    fun overDoplnkovyPrepisovac() {
+        val volba = cz.promptlab.h3video.data.DoplnkovyPrepisovac.volba ?: return
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val nabidka = ComfyClient(settings.serverUrl).objectInfo(H3RefWriteBuilder.NODE_CLASS)
+                    ?.optJSONObject("input")?.optJSONObject("required")?.nabidka("writer_model").orEmpty()
+                _doplnkovyPrepisovacNaServeru.value = cz.promptlab.h3video.data.DoplnkovyPrepisovac.polozka(nabidka, volba) != null
+            }
+        }
+    }
+
     /** U výběru obrázku nabídnout i hledání na internetu. */
     private val _hledatNaInternetu = MutableStateFlow(settings.hledatNaInternetu)
     val hledatNaInternetu: StateFlow<Boolean> = _hledatNaInternetu.asStateFlow()
@@ -3443,6 +3469,8 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         krok: Int? = null,
         /** Indexy fotek (v [fotky]), ze kterých se popisuje jen tvář. */
         jenTvar: Set<Int> = emptySet(),
+        /** Doplňkový přepisovač (Storyboard); `null` = přepis přesně jako dosud. */
+        doplnek: cz.promptlab.h3video.data.DoplnkovyPrepisovac.Volba? = null,
     ): String {
         val spec = client.objectInfo(H3RefWriteBuilder.NODE_CLASS)
             ?: throw ComfyException(
@@ -3460,9 +3488,9 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             "zadny captioner",
             t("Přepisovač nemá čím fotky přečíst — chybí vidoucí GGUF s projektorem."),
         )
-        val writer = H3RefWriteBuilder.vyberOdblokovany(
-            volby("writer_model"), H3RefWriteBuilder.WRITER_ODVAZANY,
-        ) ?: throw ComfyException(
+        // Bez modelu doplňku na serveru obyčejný přepisovač (stejný výběr jako dosud).
+        val pisatel = cz.promptlab.h3video.data.DoplnkovyPrepisovac.pisatel(volby("writer_model"), doplnek)
+        val writer = pisatel.writer ?: throw ComfyException(
             "zadny writer",
             t("Přepisovač nemá čím psát — nahraj GGUF do models/LLM."),
         )
@@ -3485,6 +3513,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             storyboard = storyboard,
             hlidka = hlidka,
             jenTvar = jenTvar,
+            systemPrompt = pisatel.systemPrompt,
             // Film: šest polí s doslovnými replikami všech záběrů potřebuje víc místa (5.64).
             maxTokenu = if (hlidka != null) H3RefWriteBuilder.MAX_TOKENU_STORYBOARD else H3RefWriteBuilder.MAX_TOKENU,
         )
@@ -5949,11 +5978,14 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             st
         } else emptyList()
         // Hlídka, přepis, úklid a kontrola replik jsou v SbPromptyTok (5.67) — stejný kód pouští test proti serveru.
+        // Doplňkový přepisovač jen se zdrojem v sestavení a zapnutým přepínačem, jinak null = beze změny.
+        val doplnek = cz.promptlab.h3video.data.DoplnkovyPrepisovac.aktivni()
         val v = cz.promptlab.h3video.data.SbPromptyTok.napis(s, { sekundy, zadani, hlidka, jenTvar, krok ->
             prepisSReferencemi(
                 client, s.uploadImages, sekundy, zadani,
                 storyboard = s.seStoryboardem, hlidka = hlidka,
                 hlidatDialogy = false, pomer = s.pomer.kod, krok = krok, jenTvar = jenTvar,
+                doplnek = doplnek,
             )
         }, stopy, krokOd)
         nalezyPrepisu += v.nalezy

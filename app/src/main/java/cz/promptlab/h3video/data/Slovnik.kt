@@ -1906,6 +1906,7 @@ object Slovnik {
         "Z telefonu" to "From phone",
         "Hledat na internetu" to "Search the internet",
         "Hledat obrázky na internetu" to "Search images on the internet",
+        "Přepisovač LoRA" to "LoRA prompt writer",
         "Hledám a stahuji obrázky" to "Searching and downloading images",
         "Přenáším do telefonu %d / %d" to "Transferring to phone %d / %d",
         "Nejdřív v Nastavení vyplň adresu serveru." to "Enter the server address in Settings first.",

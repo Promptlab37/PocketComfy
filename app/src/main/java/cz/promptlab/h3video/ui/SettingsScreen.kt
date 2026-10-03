@@ -33,6 +33,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -454,6 +455,30 @@ fun SettingsScreen(vm: MainViewModel, modifier: Modifier = Modifier) {
                     )
                 }
             ) {}
+
+            // Jen když sestavení má doplňkový přepisovač a server jeho model (DoplnkovyPrepisovac).
+            if (cz.promptlab.h3video.data.DoplnkovyPrepisovac.volba != null) {
+                LaunchedEffect(server) { vm.overDoplnkovyPrepisovac() }
+            }
+            val doplnekNaServeru by vm.doplnkovyPrepisovacNaServeru.collectAsStateWithLifecycle()
+            if (doplnekNaServeru) {
+                val doplnekZapnuto by vm.doplnkovyPrepisovac.collectAsStateWithLifecycle()
+                SectionCard(
+                    title = t("Přepisovač LoRA"),
+                    trailing = {
+                        Switch(
+                            checked = doplnekZapnuto,
+                            onCheckedChange = { vm.setDoplnkovyPrepisovac(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = Violet,
+                                uncheckedTrackColor = Surface2,
+                                uncheckedBorderColor = Outline1,
+                            )
+                        )
+                    }
+                ) {}
+            }
 
             val velkeNaDatech by vm.velkeNaDatech.collectAsStateWithLifecycle()
             SectionCard(

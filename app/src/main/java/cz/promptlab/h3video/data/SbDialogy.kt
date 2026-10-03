@@ -12,9 +12,14 @@ import java.io.File
  * film má pak přesně ten hlas a slova, pohyb pusy podle nahrávky.
  *
  * Postup ověřený testem 29. 9. 2026 (natočený film s dialogy, 1. 10. 2026):
- *  - jedna stopa = jeden mluvčí v jednom úseku: ticho délky úseku a do něj repliky
- *    v časech jejich panelů; stopy se skládají až na serveru (EmptyAudio +
- *    AudioConcat + AudioMerge), telefon zvuk nezpracovává,
+ *  - jedna stopa = jeden úsek (5.71): ticho délky úseku a do něj VŠECHNY repliky úseku
+ *    v časech jejich panelů, ať mluví kdokoli; stopy se skládají až na serveru (EmptyAudio +
+ *    AudioConcat + AudioMerge), telefon zvuk nezpracovává. Dřív stopa na mluvčího: tři
+ *    souběžné stopy plné ticha H3 nerozmístil podle jejich času (film 33 „Sněmovna“,
+ *    AUDIT_v1: Pavlova replika na místě Babišovy, Babišova vypadla); jedna stopa se dvěma
+ *    replikami (film 32) seděla,
+ *  - od 2. úseku stopa začíná skrytou předponou navazování ([SbFilmBuilder.skrytaPredponaS],
+ *    22 snímků = 0,917 s): H3 počítá čas obrazu i zvuku od začátku vzorku včetně předpony,
  *  - k převzaté replice se píše jen „exactly the voice, pitch, timing and intonation
  *    of <Audio N>“ — vlastní popis hlasu v promptu hlas od nahrávky odtáhne,
  *  - média jdou přímými vstupy `media_N` uzlu úseků (obrázky první, pak stopy),
@@ -55,7 +60,7 @@ object SbDialogy {
     /** Mluvený panel delší o víc než tohle se zkrátí na řeč a vzduch kolem ní. */
     const val TOLERANCE_ZKRACENI_S = 0.4
     const val SNIMEK_S = 1.0 / 24
-    const val MAX_NA_USEK = 3
+    /** Stop (= úseků s replikami) na film; v úseku je od 5.71 vždy nejvýš jedna. */
     const val MAX_NA_FILM = 9
     const val VZORKOVANI = 44100
 
@@ -203,24 +208,43 @@ object SbDialogy {
 
     // ---------- plán stop
 
-    data class Umisteni(val soubor: File, val startS: Double, val delkaS: Double, val text: String)
-
-    /** Stopa jednoho mluvčího v jednom úseku; [cislo] = `<Audio N>` v celém filmu. */
-    data class Stopa(val usek: Int, val mluvci: String, val cislo: Int, val delkaUsekuS: Double, val umisteni: List<Umisteni>)
+    /**
+     * Replika ve stopě: [startS] = začátek souboru ve stopě (ne řeči), počítaný od začátku
+     * stopy — od 2. úseku tedy včetně skryté předpony; [kdo] = mluvčí.
+     */
+    data class Umisteni(val soubor: File, val startS: Double, val delkaS: Double, val text: String, val kdo: String = "")
 
     /**
-     * Stopy filmu: řeč každé repliky začne po nástupu svého panelu (přebytek délky panelu jde
-     * z poloviny před repliku — pohled, pak řeč — nejvýš na [NASTUP_MAX_S]), další repliky
-     * po přirozené mezeře. [Umisteni.startS] je začátek souboru, ne řeči.
+     * Stopa jednoho úseku se všemi jeho replikami (5.71); [cislo] = `<Audio N>` v celém filmu,
+     * [mluvci] = mluvčí v pořadí první repliky. Stopa je dlouhá [predponaS] + [delkaUsekuS]:
+     * od 2. úseku vzorek začíná skrytou předponou navazování a v ní je ve stopě ticho.
      */
-    fun planuj(s: SbFilmScene, useky: List<SbUsek> = s.useky, existuje: (File) -> Boolean = { it.exists() }): List<Stopa> {
+    data class Stopa(
+        val usek: Int, val mluvci: List<String>, val cislo: Int, val delkaUsekuS: Double,
+        val umisteni: List<Umisteni>, val predponaS: Double = 0.0,
+    ) {
+        val delkaStopyS: Double get() = predponaS + delkaUsekuS
+    }
+
+    /**
+     * Stopy filmu, jedna na úsek s replikami: řeč každé repliky začne po nástupu svého panelu
+     * (přebytek délky panelu jde z poloviny před repliku — pohled, pak řeč — nejvýš na
+     * [NASTUP_MAX_S]), další repliky po přirozené mezeře. Od 2. úseku se všechno posune
+     * o skrytou předponu ([predpona]; výchozí podle navazování grafu filmu).
+     */
+    fun planuj(
+        s: SbFilmScene, useky: List<SbUsek> = s.useky,
+        predpona: (Int) -> Double = cz.promptlab.h3video.comfy.SbFilmBuilder::skrytaPredponaS,
+        existuje: (File) -> Boolean = { it.exists() },
+    ): List<Stopa> {
         if (!s.dialogyHiggs) return emptyList()
         val poz = pozice(s.panely)
         val stopy = mutableListOf<Stopa>()
         var cislo = 0
         useky.forEachIndexed { k, u ->
-            val poMluvcich = linkedMapOf<String, MutableList<Umisteni>>()
-            var zacatekPanelu = 0.0
+            val umisteni = mutableListOf<Umisteni>()
+            val posun = predpona(k)
+            var zacatekPanelu = posun
             u.panely.forEach { p ->
                 val vScene = s.panely.firstOrNull { it.cislo == p.cislo } ?: p
                 val i = s.panely.indexOf(vScene)
@@ -234,12 +258,14 @@ object SbDialogy {
                 repl.forEachIndexed { r, (kdo, text) ->
                     val n = platna(s, p, r, kdo, text, existuje) ?: return@forEachIndexed
                     if (r > 0) t += mezera(repl[r - 1], repl[r], p)
-                    poMluvcich.getOrPut(kdo.trim()) { mutableListOf() } += Umisteni(n.soubor, maxOf(0.0, t - n.odS), n.delkaS + n.odS, text)
+                    umisteni += Umisteni(n.soubor, maxOf(0.0, t - n.odS), n.delkaS + n.odS, text, kdo.trim())
                     t += n.delkaS
                 }
                 zacatekPanelu += p.sekundy
             }
-            poMluvcich.forEach { (kdo, um) -> stopy += Stopa(k, kdo, ++cislo, u.sekundy, um) }
+            if (umisteni.isNotEmpty()) stopy += Stopa(
+                k, umisteni.map { it.kdo }.distinctBy { it.lowercase() }, ++cislo, u.sekundy, umisteni, posun,
+            )
         }
         return stopy
     }
@@ -248,11 +274,8 @@ object SbDialogy {
     fun problemy(stopy: List<Stopa>): List<String> {
         val p = mutableListOf<String>()
         if (stopy.size > MAX_NA_FILM) p += t("Film má %d zvukových stop, H3 unese nejvýš %d.").format(stopy.size, MAX_NA_FILM)
-        stopy.groupBy { it.usek }.forEach { (k, s) ->
-            if (s.size > MAX_NA_USEK) p += t("Úsek %d: mluví v něm %d postav, nejvýš %d.").format(k + 1, s.size, MAX_NA_USEK)
-        }
         stopy.forEach { s ->
-            s.umisteni.filter { it.startS + it.delkaS > s.delkaUsekuS + 0.01 }.forEach {
+            s.umisteni.filter { it.startS + it.delkaS > s.delkaStopyS + 0.01 }.forEach {
                 p += t("Úsek %d: replika „%s“ přesahuje konec úseku.").format(s.usek + 1, it.text.take(30))
             }
         }
@@ -294,9 +317,13 @@ object SbDialogy {
                 text = text.substring(0, zacatekVety) + predtim + oddelovac + hlasZ(s.cislo) + text.substring(m.range.first)
             }
         }
+        fun sId(kdo: String) = kdo + (idMluvcich.entries.firstOrNull { it.key.equals(kdo, ignoreCase = true) }?.value?.let { " ($it)" } ?: "")
         val definice = stopyUseku.joinToString("\n") { s ->
-            val id = idMluvcich.entries.firstOrNull { it.key.equals(s.mluvci, ignoreCase = true) }?.value
-            "<Audio ${s.cislo}> is the recorded voice of the speaker ${s.mluvci}" + (id?.let { " ($it)" } ?: "") + "."
+            // Jeden mluvčí: přesně tvar filmu 32, který repliky dal na místo. Víc mluvčích: jedna
+            // společná stopa (5.71) — kdo mluví, určuje (Sx) a <Subject> v záběru repliky.
+            if (s.mluvci.size <= 1) "<Audio ${s.cislo}> is the recorded voice of the speaker ${sId(s.mluvci.firstOrNull().orEmpty())}."
+            else "<Audio ${s.cislo}> is the recorded dialogue track of this part, with the voices of " +
+                vycet(s.mluvci.map(::sId)) + "; each line is spoken by the subject named in its shot."
         }
         text = vlozPred(text, "summary:", definice)
         text = text.replaceFirst("[reference generation]", "[reference generation + audio reuse]")
@@ -306,6 +333,8 @@ object SbDialogy {
         }
         return vlozPred(text, "detailed_description:", retence)
     }
+
+    private fun vycet(x: List<String>) = if (x.size <= 1) x.joinToString() else x.dropLast(1).joinToString(", ") + " and " + x.last()
 
     /** Vloží řádky na konec sekce před [pole]; když pole chybí, přidá je na konec. */
     private fun vlozPred(text: String, pole: String, radky: String): String {
@@ -349,7 +378,7 @@ object SbDialogy {
 
         val nacteno = HashMap<File, String>()
         stopy.sortedBy { it.cislo }.forEach { s ->
-            var stopa = uzel("EmptyAudio", "Stopa ${s.cislo} – ${s.mluvci}", ticho(s.delkaUsekuS))
+            var stopa = uzel("EmptyAudio", "Stopa ${s.cislo} – úsek ${s.usek + 1}", ticho(s.delkaStopyS))
             s.umisteni.forEach { u ->
                 val nahravka = nacteno.getOrPut(u.soubor) {
                     uzel("LoadAudio", "Replika", JSONObject().put("audio", nazvy.getValue(u.soubor)))
